@@ -2,7 +2,7 @@
 
 ## Milestone 1 — vertical slice
 
-- Land the `1100_noxalerts_control_plane.sql` schema through Unticket's migration pipeline.
+- Land the `1100_noxalert_control_plane.sql` schema through Unticket's migration pipeline.
 - Provision staging ClickHouse and a pinned OpenTelemetry Collector Contrib image.
 - Add scoped ingest-key creation/revocation and collector authentication.
 - Implement log-count rules end to end, including no-data behavior.

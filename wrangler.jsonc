@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "noxalerts",
+  "name": "noxalert",
   "main": "src/index.ts",
   "compatibility_date": "2026-08-14",
   "compatibility_flags": ["nodejs_compat"],
@@ -19,15 +19,15 @@
   ],
   "queues": {
     "producers": [
-      { "binding": "ALERT_DELIVERIES", "queue": "noxalerts-deliveries" }
+      { "binding": "ALERT_DELIVERIES", "queue": "noxalert-deliveries" }
     ],
     "consumers": [
       {
-        "queue": "noxalerts-deliveries",
+        "queue": "noxalert-deliveries",
         "max_batch_size": 10,
         "max_batch_timeout": 5,
         "max_retries": 5,
-        "dead_letter_queue": "noxalerts-deliveries-dlq"
+        "dead_letter_queue": "noxalert-deliveries-dlq"
       }
     ]
   },

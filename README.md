@@ -1,8 +1,8 @@
-# NoxAlerts
+# NoxAlert
 
-NoxAlerts receives OpenTelemetry data and turns it into actionable, deduplicated alerts. Slack is the first notification channel. It is part of the Nox family and reuses Unticket/Nox identity, projects, GitHub installations, the shared D1 control plane, and the existing encrypted Slack installation.
+NoxAlert receives OpenTelemetry data and turns it into actionable, deduplicated alerts. Slack is the first notification channel. It is part of the Nox family and reuses Unticket/Nox identity, projects, GitHub installations, the shared D1 control plane, and the existing encrypted Slack installation.
 
-This repository starts with the architecture and the alert state machine. It intentionally does **not** implement a home-grown OTLP receiver: applications send standard OTLP to an OpenTelemetry Collector gateway, and the gateway writes telemetry to ClickHouse. NoxAlerts owns alert rules, evaluation state, incidents, and delivery.
+This repository starts with the architecture and the alert state machine. It intentionally does **not** implement a home-grown OTLP receiver: applications send standard OTLP to an OpenTelemetry Collector gateway, and the gateway writes telemetry to ClickHouse. NoxAlert owns alert rules, evaluation state, incidents, and delivery.
 
 ## Architecture
 
@@ -19,7 +19,7 @@ ClickHouse / ClickStack                 Unticket / shared Nox
         │                                      │
         └──────────────┬───────────────────────┘
                        ▼
-               NoxAlerts Worker
+               NoxAlert Worker
           scheduler → per-rule Durable Object
                        │
                   delivery Queue + DLQ
@@ -53,11 +53,11 @@ npm run dev
 
 Then request `http://localhost:8787/health`.
 
-Do not apply `migrations/1100_noxalerts_control_plane.sql` to production directly from this repository. The shared database contract must be reviewed and landed in `No-Box-Dev/unticket` first; Unticket remains the migration authority.
+Do not apply `migrations/1100_noxalert_control_plane.sql` to production directly from this repository. The shared database contract must be reviewed and landed in `No-Box-Dev/unticket` first; Unticket remains the migration authority.
 
 ## Secrets
 
 Use Wrangler secrets; never commit values:
 
-- `ENCRYPTION_KEY` — exactly the same AES-256-GCM key used by Unticket, so NoxAlerts can use its encrypted Slack bot token.
+- `ENCRYPTION_KEY` — exactly the same AES-256-GCM key used by Unticket, so NoxAlert can use its encrypted Slack bot token.
 - `CLICKHOUSE_URL`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD` — evaluator data-plane access (added with the query adapter).

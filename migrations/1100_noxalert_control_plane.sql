@@ -1,4 +1,4 @@
--- NoxAlerts control-plane schema for the shared Nox D1 database.
+-- NoxAlert control-plane schema for the shared Nox D1 database.
 -- Raw OpenTelemetry data must never be inserted here; it belongs in ClickHouse.
 
 CREATE TABLE IF NOT EXISTS alert_api_keys (

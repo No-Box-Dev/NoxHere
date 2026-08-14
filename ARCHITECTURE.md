@@ -1,8 +1,8 @@
-# NoxAlerts architecture
+# NoxAlert architecture
 
 ## The central decision
 
-NoxAlerts separates its control plane from its telemetry data plane.
+NoxAlert separates its control plane from its telemetry data plane.
 
 - The **control plane** is a Cloudflare Worker plus the shared Nox D1 database. It stores tenants, API-key hashes, projects, alert rules, incidents, delivery ledgers, and references to Unticket's Slack installation.
 - The **data plane** is the upstream OpenTelemetry Collector plus ClickHouse/ClickStack. It receives OTLP, performs bounded processing, and stores high-cardinality logs, metrics, and traces.
@@ -11,8 +11,8 @@ D1 is deliberately not used for raw telemetry. A shared D1 database is a good re
 
 ## Request and evaluation flow
 
-1. A customer creates a scoped ingest key in NoxAlerts. Only its SHA-256 hash is stored.
-2. Their SDK or local collector sends OTLP/gRPC or OTLP/HTTP to the NoxAlerts Collector gateway.
+1. A customer creates a scoped ingest key in NoxAlert. Only its SHA-256 hash is stored.
+2. Their SDK or local collector sends OTLP/gRPC or OTLP/HTTP to the NoxAlert Collector gateway.
 3. The gateway authenticates before decoding expensive payloads, limits request size/rate, stamps the immutable tenant ID, redacts configured attributes, batches, and exports to ClickHouse with a persistent queue and retry policy.
 4. A scheduler selects due rules from D1 and fans out by deterministic rule ID.
 5. One SQLite-backed Durable Object per `{owner_id}:{rule_id}` serializes evaluation state, preventing overlapping evaluations and alert flapping.
@@ -59,5 +59,5 @@ Each rule supports consecutive breach/recovery counts, a repeat interval, and ex
 ## Ownership boundaries
 
 - `No-Box-Dev/unticket`: shared D1 migrations, GitHub identity/install sync, org membership, Slack OAuth/token lifecycle.
-- `No-Box-Dev/noxalerts`: rule API/UI, evaluation, incident lifecycle, notification delivery, collector configuration.
+- `No-Box-Dev/NoxAlert`: rule API/UI, evaluation, incident lifecycle, notification delivery, collector configuration.
 - ClickHouse: telemetry retention and analytical queries; never the identity source of truth.

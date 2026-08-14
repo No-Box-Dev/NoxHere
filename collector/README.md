@@ -1,6 +1,6 @@
 # Collector gateway
 
-NoxAlerts uses the upstream OpenTelemetry Collector Contrib distribution as its public OTLP edge. Do not replace it with a custom Worker decoder.
+NoxAlert uses the upstream OpenTelemetry Collector Contrib distribution as its public OTLP edge. Do not replace it with a custom Worker decoder.
 
 The production configuration will be added with the first ClickHouse environment and pinned to an image digest. It must include:
 
