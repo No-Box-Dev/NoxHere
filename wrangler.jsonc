@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "noxalerts",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "limits": { "cpu_ms": 30000 },
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  },
+  "d1_databases": [
+    {
+      "binding": "NOX_DB",
+      "database_name": "unticket",
+      "database_id": "c94084e6-d0be-423c-8de6-249e7cf8bf25"
+    }
+  ],
+  "queues": {
+    "producers": [
+      { "binding": "ALERT_DELIVERIES", "queue": "noxalerts-deliveries" }
+    ],
+    "consumers": [
+      {
+        "queue": "noxalerts-deliveries",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "dead_letter_queue": "noxalerts-deliveries-dlq"
+      }
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "RULE_EVALUATORS", "class_name": "RuleEvaluator" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RuleEvaluator"] }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production"
+  }
+}
