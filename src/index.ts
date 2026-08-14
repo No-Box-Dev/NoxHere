@@ -1,9 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
 import {
-  buildSlackMessage,
+  buildSlackPayload,
   CANARY_SOURCE,
   CanaryRequestError,
   isAuthorized,
+  normalizeSlackPayload,
   readCanaryInput,
   type CanaryDeliveryStatus,
   type NoxSlackDeliveryTask,
@@ -13,7 +14,7 @@ import { alertRuleSchema, evaluate, evaluationStateSchema, INITIAL_EVALUATION_ST
 
 interface CanaryTargetRow {
   org_id: number;
-  site_id: string;
+  site_id: null;
   channel_id: string;
 }
 
@@ -53,15 +54,48 @@ function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
+async function enqueueCanaryDelivery(env: Env, deliveryId: string): Promise<boolean> {
+  try {
+    const task: NoxSlackDeliveryTask = {
+      type: "deliver_slack",
+      outboxId: deliveryId,
+      ownerId: env.CANARY_OWNER_ID,
+      deliveryId,
+    };
+    await env.NOX_TASKS.send(task);
+    await env.NOX_DB.prepare(
+      `UPDATE delivery_outbox SET status = 'queued',
+         updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+       WHERE id = ? AND status = 'pending'`,
+    ).bind(deliveryId).run();
+    return true;
+  } catch (error) {
+    console.error(JSON.stringify({
+      message: "canary queue send failed; Unticket recovery will retry",
+      deliveryId,
+      error: error instanceof Error ? error.message : String(error),
+    }));
+    return false;
+  }
+}
+
 async function createCanaryDelivery(request: Request, env: Env): Promise<Response> {
   if (!isAuthorized(request, env.CANARY_TOKEN)) return jsonError("unauthorized", 401);
   const input = await readCanaryInput(request);
   const target = await env.NOX_DB.prepare(
-    `SELECT org.id AS org_id, site.id AS site_id, site.slack_channel_id AS channel_id
+    `SELECT org.id AS org_id, NULL AS site_id,
+            COALESCE(
+              NULLIF(TRIM(json_extract(config.data, '$.slack.postsChannelId')), ''),
+              NULLIF(TRIM(json_extract(config.data, '$.slack.releaseNotesChannelId')), '')
+            ) AS channel_id
        FROM orgs org
-       JOIN spot_sites site ON site.org_id = org.id
-      WHERE org.github_login = ? AND site.id = ? AND site.slack_channel_id IS NOT NULL`,
-  ).bind(env.CANARY_OWNER_ID, env.CANARY_SITE_ID).first<CanaryTargetRow>();
+       JOIN config ON config.org_id = org.id AND config.key = 'settings'
+      WHERE org.github_login = ?
+        AND COALESCE(
+              NULLIF(TRIM(json_extract(config.data, '$.slack.postsChannelId')), ''),
+              NULLIF(TRIM(json_extract(config.data, '$.slack.releaseNotesChannelId')), '')
+            ) IS NOT NULL`,
+  ).bind(env.CANARY_OWNER_ID).first<CanaryTargetRow>();
   if (!target) return jsonError("canary_destination_not_configured", 503);
 
   const recent = await env.NOX_DB.prepare(
@@ -84,32 +118,45 @@ async function createCanaryDelivery(request: Request, env: Env): Promise<Respons
     deliveryId,
     target.site_id,
     target.channel_id,
-    JSON.stringify({ message: buildSlackMessage(input, deliveryId) }),
+    JSON.stringify(buildSlackPayload(input, deliveryId)),
   ).run();
 
-  let queued = false;
-  try {
-    const task: NoxSlackDeliveryTask = {
-      type: "deliver_slack",
-      outboxId: deliveryId,
-      ownerId: env.CANARY_OWNER_ID,
-      deliveryId,
-    };
-    await env.NOX_TASKS.send(task);
-    await env.NOX_DB.prepare(
-      `UPDATE delivery_outbox SET status = 'queued',
-         updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-       WHERE id = ? AND status = 'pending'`,
-    ).bind(deliveryId).run();
-    queued = true;
-  } catch (error) {
-    console.error(JSON.stringify({
-      message: "canary queue send failed; Unticket recovery will retry",
-      deliveryId,
-      error: error instanceof Error ? error.message : String(error),
-    }));
-  }
+  const queued = await enqueueCanaryDelivery(env, deliveryId);
 
+  return Response.json({ accepted: true, queued, deliveryId }, {
+    status: 202,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
+async function retryCanaryDelivery(request: Request, env: Env, deliveryId: string): Promise<Response> {
+  if (!isAuthorized(request, env.CANARY_TOKEN)) return jsonError("unauthorized", 401);
+  if (!/^[0-9a-f-]{36}$/i.test(deliveryId)) return jsonError("not_found", 404);
+  const row = await env.NOX_DB.prepare(
+    `SELECT delivery.payload_json AS payloadJson, delivery.status
+       FROM delivery_outbox delivery
+       JOIN orgs org ON org.id = delivery.org_id
+      WHERE delivery.id = ? AND delivery.source = ? AND org.github_login = ?`,
+  ).bind(deliveryId, CANARY_SOURCE, env.CANARY_OWNER_ID).first<{ payloadJson: string; status: string }>();
+  if (!row) return jsonError("not_found", 404);
+  if (row.status === "delivered") return jsonError("already_delivered", 409);
+
+  let payload: ReturnType<typeof normalizeSlackPayload>;
+  try {
+    payload = normalizeSlackPayload(JSON.parse(row.payloadJson));
+  } catch {
+    payload = null;
+  }
+  if (!payload) return jsonError("invalid_delivery_payload", 409);
+
+  await env.NOX_DB.prepare(
+    `UPDATE delivery_outbox
+        SET payload_json = ?, status = 'pending', attempt_count = 0,
+            last_error_code = NULL, last_error = NULL, next_attempt_at = NULL,
+            updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+      WHERE id = ?`,
+  ).bind(JSON.stringify(payload), deliveryId).run();
+  const queued = await enqueueCanaryDelivery(env, deliveryId);
   return Response.json({ accepted: true, queued, deliveryId }, {
     status: 202,
     headers: { "Cache-Control": "no-store" },
@@ -143,6 +190,10 @@ export default {
     try {
       if (request.method === "POST" && url.pathname === "/api/canary") {
         return await createCanaryDelivery(request, env);
+      }
+      if (request.method === "POST") {
+        const retryMatch = url.pathname.match(/^\/api\/canary\/([^/]+)\/retry$/);
+        if (retryMatch?.[1]) return await retryCanaryDelivery(request, env, retryMatch[1]);
       }
       if (request.method === "GET") {
         const statusMatch = url.pathname.match(/^\/api\/canary\/([^/]+)$/);

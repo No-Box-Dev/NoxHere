@@ -32,7 +32,6 @@
   ],
   "vars": {
     "ENVIRONMENT": "production",
-    "CANARY_OWNER_ID": "No-Box-Dev",
-    "CANARY_SITE_ID": "78c27fe2-881b-41bb-b750-771f6e547ad9"
+    "CANARY_OWNER_ID": "No-Box-Dev"
   }
 }
