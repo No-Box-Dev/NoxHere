@@ -1,28 +1,33 @@
 # Delivery roadmap
 
-## Milestone 1 — vertical slice
+## Milestone 1 — browser error vertical slice
 
-- Land the `1100_noxalert_control_plane.sql` schema through Unticket's migration pipeline.
-- Provision staging ClickHouse and a pinned OpenTelemetry Collector Contrib image.
-- Add scoped ingest-key creation/revocation and collector authentication.
-- Implement log-count rules end to end, including no-data behavior.
-- Reuse Unticket's Slack installation and add channel selection.
-- Add replay, DLQ inspection, audit log, and a synthetic canary alert.
+- Land the shared error-control-plane schema through Unticket's migration pipeline.
+- Add authenticated project settings for allowed origins, key create/rotate/revoke,
+  error filters, thresholds, reminder interval, and Slack destination.
+- Ship the small React/browser helper and global error handlers.
+- Run one production error through filtering, grouping, the shared outbox, and Slack.
+- Add rule preview, delivery status, audit entries, and a synthetic error button.
 
-Exit condition: a user can send OTLP logs, create a rule, receive one Slack firing message and one recovery message, and see the incident history.
+Exit condition: a user enables a project, copies its public ingest key, selects
+production plus a Slack channel, triggers an error in React, and receives one
+deduplicated Slack alert with an occurrence count.
 
 ## Milestone 2 — production hardening
 
-- Metrics and trace rule adapters.
-- Per-tenant quotas, retention, cost attribution, and cardinality guards.
-- Collector persistent queues, autoscaling, availability-zone spread, and SLOs.
-- Rule preview against historical data and safe query-cost estimation.
-- Slack message updates/threads, acknowledgements, silences, and maintenance windows.
-- Backup/restore drills and incident runbooks.
+- Incident acknowledgement, manual resolution, quiet-period auto-resolution,
+  silences, and maintenance windows.
+- Source-map upload and server-side stack symbolication.
+- Rate-limit analytics, plan-specific quotas, abuse controls, and key rotation.
+- Filter previews against recent grouped samples and a “why was this filtered?”
+  diagnostic visible only to project administrators.
+- Backup/restore drills, DLQ replay, synthetic canaries, SLOs, and runbooks.
+- Webhook and email destinations where customer demand justifies them.
 
-## Milestone 3 — richer routing
+## Milestone 3 — general OpenTelemetry
 
-- Escalation policies and schedules.
-- Webhook and email destinations; PagerDuty only when incident workflows justify it.
-- Composite/SLO and burn-rate alerts.
-- Optional stream evaluation for sub-minute latency.
+- OTLP logs, metrics, and traces through an upstream OpenTelemetry Collector.
+- An analytical telemetry store and constrained query adapters.
+- Trace error-rate, latency percentile, metric threshold, missing-data, and SLO
+  burn-rate alerts.
+- Per-tenant retention, cost attribution, sampling, and cardinality controls.

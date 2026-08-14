@@ -1,10 +1,24 @@
 -- NoxAlert control-plane schema for the shared Nox D1 database.
--- Raw OpenTelemetry data must never be inserted here; it belongs in ClickHouse.
+-- Raw error events must never be appended here. Only bounded per-fingerprint
+-- state is retained for alert deduplication and repeat suppression.
+
+CREATE TABLE IF NOT EXISTS alert_project_settings (
+  project_id           TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+  org_id               INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  owner_id             TEXT NOT NULL,
+  enabled              INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+  allowed_origins_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(allowed_origins_json)),
+  created_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_alert_project_settings_owner
+  ON alert_project_settings(owner_id, project_id);
 
 CREATE TABLE IF NOT EXISTS alert_api_keys (
   id           TEXT PRIMARY KEY,
   org_id       INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
   owner_id     TEXT NOT NULL,
+  project_id   TEXT NOT NULL REFERENCES alert_project_settings(project_id) ON DELETE CASCADE,
   name         TEXT NOT NULL,
   key_prefix   TEXT NOT NULL,
   key_hash     TEXT NOT NULL UNIQUE,
@@ -15,83 +29,39 @@ CREATE TABLE IF NOT EXISTS alert_api_keys (
 );
 CREATE INDEX IF NOT EXISTS idx_alert_api_keys_owner ON alert_api_keys(owner_id, revoked_at);
 
-CREATE TABLE IF NOT EXISTS alert_destinations (
-  id               TEXT PRIMARY KEY,
-  org_id           INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
-  owner_id         TEXT NOT NULL,
-  name             TEXT NOT NULL,
-  kind             TEXT NOT NULL CHECK (kind IN ('slack')),
-  slack_channel_id TEXT NOT NULL,
-  enabled          INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
-  created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-  updated_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-  UNIQUE(owner_id, name)
+CREATE TABLE IF NOT EXISTS alert_error_rules (
+  id                   TEXT PRIMARY KEY,
+  org_id               INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  owner_id             TEXT NOT NULL,
+  project_id           TEXT NOT NULL REFERENCES alert_project_settings(project_id) ON DELETE CASCADE,
+  name                 TEXT NOT NULL,
+  filters_json         TEXT NOT NULL CHECK (json_valid(filters_json)),
+  notify_after_count   INTEGER NOT NULL DEFAULT 1 CHECK (notify_after_count BETWEEN 1 AND 10000),
+  window_seconds       INTEGER NOT NULL DEFAULT 300 CHECK (window_seconds BETWEEN 60 AND 86400),
+  repeat_after_seconds INTEGER NOT NULL DEFAULT 900 CHECK (repeat_after_seconds BETWEEN 60 AND 604800),
+  enabled              INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+  created_by           TEXT NOT NULL,
+  created_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
+CREATE INDEX IF NOT EXISTS idx_alert_error_rules_project
+  ON alert_error_rules(project_id, enabled, created_at);
+CREATE INDEX IF NOT EXISTS idx_alert_error_rules_owner
+  ON alert_error_rules(owner_id, created_at DESC);
 
-CREATE TABLE IF NOT EXISTS alert_rules (
-  id                    TEXT PRIMARY KEY,
-  org_id                INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
-  owner_id              TEXT NOT NULL,
-  project_id            TEXT REFERENCES projects(id) ON DELETE SET NULL,
-  destination_id        TEXT NOT NULL REFERENCES alert_destinations(id),
-  name                   TEXT NOT NULL,
-  signal                 TEXT NOT NULL CHECK (signal IN ('logs', 'metrics', 'traces')),
-  query_json             TEXT NOT NULL,
-  comparator             TEXT NOT NULL CHECK (comparator IN ('above', 'at_or_above', 'below', 'at_or_below')),
-  threshold              REAL NOT NULL,
-  window_seconds         INTEGER NOT NULL CHECK (window_seconds BETWEEN 60 AND 86400),
-  interval_seconds       INTEGER NOT NULL CHECK (interval_seconds BETWEEN 60 AND 3600),
-  consecutive_breaches   INTEGER NOT NULL DEFAULT 1 CHECK (consecutive_breaches BETWEEN 1 AND 60),
-  consecutive_recoveries INTEGER NOT NULL DEFAULT 1 CHECK (consecutive_recoveries BETWEEN 1 AND 60),
-  repeat_after_seconds   INTEGER NOT NULL DEFAULT 900 CHECK (repeat_after_seconds BETWEEN 0 AND 604800),
-  enabled                INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
-  next_evaluation_at     TEXT,
-  created_by             TEXT NOT NULL,
-  created_at             TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-  updated_at             TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+-- One row per rule/fingerprint. This stores aggregate incident state and one
+-- bounded sample, never an append-only copy of every browser error.
+CREATE TABLE IF NOT EXISTS alert_error_groups (
+  rule_id             TEXT NOT NULL REFERENCES alert_error_rules(id) ON DELETE CASCADE,
+  fingerprint         TEXT NOT NULL,
+  occurrence_count    INTEGER NOT NULL DEFAULT 1,
+  window_started_at   TEXT NOT NULL,
+  first_seen_at       TEXT NOT NULL,
+  last_seen_at        TEXT NOT NULL,
+  last_notified_at    TEXT,
+  pending_delivery_id TEXT,
+  sample_json         TEXT NOT NULL CHECK (json_valid(sample_json)),
+  PRIMARY KEY (rule_id, fingerprint)
 );
-CREATE INDEX IF NOT EXISTS idx_alert_rules_due ON alert_rules(enabled, next_evaluation_at);
-CREATE INDEX IF NOT EXISTS idx_alert_rules_owner ON alert_rules(owner_id, created_at DESC);
-
-CREATE TABLE IF NOT EXISTS alert_incidents (
-  id                 TEXT PRIMARY KEY,
-  rule_id            TEXT NOT NULL REFERENCES alert_rules(id) ON DELETE CASCADE,
-  org_id              INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
-  owner_id            TEXT NOT NULL,
-  status              TEXT NOT NULL CHECK (status IN ('firing', 'resolved')),
-  started_at          TEXT NOT NULL,
-  resolved_at         TEXT,
-  last_value          REAL NOT NULL,
-  last_evaluated_at   TEXT NOT NULL,
-  notification_count INTEGER NOT NULL DEFAULT 0
-);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_incidents_one_open
-  ON alert_incidents(rule_id) WHERE status = 'firing';
-CREATE INDEX IF NOT EXISTS idx_alert_incidents_owner ON alert_incidents(owner_id, started_at DESC);
-
-CREATE TABLE IF NOT EXISTS alert_events (
-  id              TEXT PRIMARY KEY,
-  incident_id     TEXT NOT NULL REFERENCES alert_incidents(id) ON DELETE CASCADE,
-  rule_id         TEXT NOT NULL REFERENCES alert_rules(id) ON DELETE CASCADE,
-  transition      TEXT NOT NULL CHECK (transition IN ('firing', 'repeated', 'resolved')),
-  value           REAL NOT NULL,
-  evaluated_at    TEXT NOT NULL,
-  idempotency_key TEXT NOT NULL UNIQUE,
-  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-);
-
-CREATE TABLE IF NOT EXISTS alert_deliveries (
-  id               TEXT PRIMARY KEY,
-  event_id         TEXT NOT NULL REFERENCES alert_events(id) ON DELETE CASCADE,
-  destination_id   TEXT NOT NULL REFERENCES alert_destinations(id),
-  status           TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'delivering', 'delivered', 'failed')),
-  attempts         INTEGER NOT NULL DEFAULT 0,
-  slack_message_ts TEXT,
-  last_error       TEXT,
-  next_attempt_at  TEXT,
-  created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-  delivered_at     TEXT,
-  UNIQUE(event_id, destination_id)
-);
-CREATE INDEX IF NOT EXISTS idx_alert_deliveries_pending
-  ON alert_deliveries(status, next_attempt_at);
+CREATE INDEX IF NOT EXISTS idx_alert_error_groups_pending
+  ON alert_error_groups(pending_delivery_id) WHERE pending_delivery_id IS NOT NULL;

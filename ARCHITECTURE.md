@@ -1,63 +1,93 @@
 # NoxAlert architecture
 
-## The central decision
+## Version 1 boundary
 
-NoxAlert separates its control plane from its telemetry data plane.
+NoxAlert v1 receives browser errors and alerts on them immediately. It is not a
+general telemetry store.
 
-- The **control plane** is a Cloudflare Worker plus the shared Nox D1 database. It stores tenants, API-key hashes, projects, alert rules, incidents, delivery ledgers, and references to Unticket's Slack installation.
-- The **data plane** is the upstream OpenTelemetry Collector plus ClickHouse/ClickStack. It receives OTLP, performs bounded processing, and stores high-cardinality logs, metrics, and traces.
+- The React integration sends a bounded error envelope to `POST /v1/errors`.
+- The shared Nox D1 database stores projects, key hashes, rules, aggregate error
+  groups, and delivery state.
+- Unticket owns the Slack installation, token encryption, delivery queue,
+  retries, and dead-letter queue.
+- An OpenTelemetry Collector and ClickHouse are deferred until NoxAlert accepts
+  general logs, metrics, and traces.
 
-D1 is deliberately not used for raw telemetry. A shared D1 database is a good relational coordination store but is the wrong shape and scale for append-heavy observability data.
+Applications already using OpenTelemetry can attach their active trace and span
+IDs. NoxAlert preserves those identifiers on the grouped error without taking
+ownership of the complete trace.
 
-## Request and evaluation flow
+## Ingestion flow
 
-1. A customer creates a scoped ingest key in NoxAlert. Only its SHA-256 hash is stored.
-2. Their SDK or local collector sends OTLP/gRPC or OTLP/HTTP to the NoxAlert Collector gateway.
-3. The gateway authenticates before decoding expensive payloads, limits request size/rate, stamps the immutable tenant ID, redacts configured attributes, batches, and exports to ClickHouse with a persistent queue and retry policy.
-4. A scheduler selects due rules from D1 and fans out by deterministic rule ID.
-5. One SQLite-backed Durable Object per `{owner_id}:{rule_id}` serializes evaluation state, preventing overlapping evaluations and alert flapping.
-6. The evaluator compiles a constrained rule DSL into parameterized ClickHouse queries. User-authored SQL is not accepted in v1.
-7. A state transition creates an idempotent alert event, stages the shared Nox `delivery_outbox` row in D1, and publishes `deliver_slack` to `unticket-tasks`.
-8. Unticket's existing queue consumer resolves the encrypted Slack installation, posts the message, and records delivery state. Retryable failures back off; terminal failures land in its DLQ and surface through shared operations data.
+1. An administrator enables NoxAlert for a Nox project, saves exact browser
+   origins, creates a public write-only ingest key, and configures an error rule.
+2. The browser helper catches an error and posts its bounded JSON envelope with
+   the project key.
+3. The Worker applies an IP rate limit before querying D1.
+4. The key's SHA-256 hash resolves the immutable organization and project scope.
+5. The Worker checks the exact browser origin and applies the project rate limit.
+6. The error is validated against a strict schema and evaluated against enabled
+   project rules.
+7. Matching errors are fingerprinted from rule, service, environment, type,
+   normalized message, and the first stack frame. Changing request IDs and
+   numeric values do not create new groups.
+8. A D1 upsert atomically increments the aggregate group. A notification claim
+   prevents concurrent requests from producing parallel Slack messages.
+9. The claimed notification is persisted in the shared `delivery_outbox` before
+   publishing `deliver_slack` to `unticket-tasks`.
+10. Unticket resolves the project's selected Slack destination and records the
+    Slack receipt. Failed queue sends remain recoverable from the persisted
+    outbox row.
 
-## Reliability semantics
+## Filtering
 
-- Collector ingestion is at-least-once. ClickHouse rows carry stable tenant/signal IDs so duplicate input can be identified.
-- Rule evaluation is single-writer per rule and records `firing`, `repeated`, and `resolved` transitions.
-- Incident/event creation uses deterministic idempotency keys.
-- Queue delivery is at-least-once. Slack does not provide a general idempotency key for `chat.postMessage`, so the narrow crash window after Slack accepts a message but before D1 records completion can produce a duplicate. We prefer a visible duplicate over a lost page.
-- Every async path has a DLQ or persisted failure state. No `waitUntil` call is the sole durability mechanism.
+Rules use a constrained JSON filter model. The user selects:
 
-## Multi-tenancy and security
+- Environments and services
+- Include conditions
+- Exclusion conditions
+- Notification threshold and time window
+- Repeat interval
+- Slack destination
 
-- Tenant identity comes from a validated ingest key and is overwritten at the gateway; client-supplied tenant attributes are never trusted.
-- Every D1 query includes `org_id` or `owner_id`. Every ClickHouse table and query includes the immutable tenant ID.
-- Ingest, dashboard, and internal evaluator credentials are separate.
-- Secrets live in Cloudflare secrets. Slack tokens remain encrypted using Unticket's AES-256-GCM format.
-- Rule filters are a typed DSL compiled to bound query parameters. No raw SQL, arbitrary regex, or unbounded group-by is accepted initially.
-- Attribute cardinality, retention, request bytes, and per-tenant ingest rate have enforceable quotas.
+Fields are limited to service, environment, release, error type/message, page
+URL, and route. Operators are `equals`, `starts_with`, and `contains`; matching
+is case-insensitive. All include conditions must match, while any exclusion
+condition suppresses an event. Raw SQL and regular expressions are not accepted.
 
-## Initial rule types
+Server-side filters are authoritative. Optional browser suppression only reduces
+duplicate network traffic and cannot bypass or alter the saved policy.
 
-Ship a deliberately narrow set first:
+## Rate and reliability controls
 
-1. Log count over a window, filtered by service, environment, severity, and exact/contains attribute predicates.
-2. Trace error rate and latency percentile, grouped only by service/route.
-3. Metric threshold for gauge and rate-of-change for monotonic sums.
-4. Missing-data detection for each of the above.
+- Request body: 32 KiB maximum, enforced while streaming
+- Source IP: 120 requests per 60 seconds before authentication
+- Project: 600 requests per 60 seconds after authentication
+- Browser helper: one identical local error per 10 seconds
+- Default notification threshold: first occurrence within a five-minute window
+- Default repeat interval: 15 minutes for an identical fingerprint
+- One aggregate sample per rule/fingerprint; no append-only raw error stream
 
-Each rule supports consecutive breach/recovery counts, a repeat interval, and explicit no-data behavior. This prevents one-sample flapping and alert storms.
+Cloudflare's Worker rate-limit counters are fast, local, and eventually
+consistent. They protect the service from abuse but are not used for billing or
+exact occurrence accounting. D1 grouping and the shared delivery outbox provide
+the durable notification semantics.
 
-## Scale path
+## Security
 
-- Start with scheduled ClickHouse queries at 60-second resolution.
-- Separate interactive ClickStack queries from evaluator capacity when load warrants it.
-- Add a stream evaluator only for customers who need sub-minute alerts; keep the same rule/event/delivery contracts.
-- Partition ClickHouse by day and tenant-aware ordering, apply TTLs per plan, and archive only when customer retention requires it.
-- Scale Collector gateways horizontally and route trace-aware processors by trace ID. Observe collector queue fill, refused records, exporter failures, and end-to-end ingest lag.
+- Browser keys are scoped, revocable, write-only public credentials.
+- Only key hashes are stored.
+- Tenant and project identity always come from the validated key, never payload
+  fields.
+- Browser origins are exact allow-list entries; wildcards are not supported.
+- Payload fields, counts, lengths, and tags are bounded.
+- Stack traces are retained only as one bounded sample per fingerprint and are
+  not copied into Slack by default.
+- Slack tokens never enter NoxAlert.
 
-## Ownership boundaries
+## Future OTEL data plane
 
-- `No-Box-Dev/unticket`: shared D1 migrations, GitHub identity/install sync, org membership, Slack OAuth/token lifecycle.
-- `No-Box-Dev/NoxAlert`: rule API/UI, evaluation, incident lifecycle, notification delivery, collector configuration.
-- ClickHouse: telemetry retention and analytical queries; never the identity source of truth.
+When NoxAlert adds general logs, metrics, and traces, applications can send OTLP
+to an upstream OpenTelemetry Collector and analytical store. That future path
+will add batching, redaction, sampling, and high-volume retention. It is not
+required merely to turn a browser error into a Slack alert.

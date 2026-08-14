@@ -13,6 +13,7 @@ export interface CanaryDeliveryStatus {
   status: string;
   attemptCount: number;
   errorCode: string | null;
+  slackMessageTs: string | null;
   createdAt: string;
   deliveredAt: string | null;
 }

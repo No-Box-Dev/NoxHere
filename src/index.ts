@@ -11,6 +11,7 @@ import {
 } from "./canary";
 import { CANARY_PAGE, CANARY_PAGE_HEADERS } from "./canary-page";
 import { alertRuleSchema, evaluate, evaluationStateSchema, INITIAL_EVALUATION_STATE } from "./domain";
+import { handleBrowserError } from "./errors";
 
 interface CanaryTargetRow {
   org_id: number;
@@ -168,7 +169,8 @@ async function getCanaryDelivery(request: Request, env: Env, deliveryId: string)
   if (!/^[0-9a-f-]{36}$/i.test(deliveryId)) return jsonError("not_found", 404);
   const row = await env.NOX_DB.prepare(
     `SELECT delivery.id, delivery.status, delivery.attempt_count AS attemptCount,
-            delivery.last_error_code AS errorCode, delivery.created_at AS createdAt,
+            delivery.last_error_code AS errorCode, delivery.slack_message_ts AS slackMessageTs,
+            delivery.created_at AS createdAt,
             delivery.delivered_at AS deliveredAt
        FROM delivery_outbox delivery
        JOIN orgs org ON org.id = delivery.org_id
@@ -179,7 +181,7 @@ async function getCanaryDelivery(request: Request, env: Env, deliveryId: string)
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") {
       return Response.json({ service: "noxalert", status: "ok" });
@@ -188,6 +190,9 @@ export default {
       return new Response(CANARY_PAGE, { headers: CANARY_PAGE_HEADERS });
     }
     try {
+      if (url.pathname === "/v1/errors") {
+        return await handleBrowserError(request, env);
+      }
       if (request.method === "POST" && url.pathname === "/api/canary") {
         return await createCanaryDelivery(request, env);
       }
