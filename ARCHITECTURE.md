@@ -17,15 +17,15 @@ D1 is deliberately not used for raw telemetry. A shared D1 database is a good re
 4. A scheduler selects due rules from D1 and fans out by deterministic rule ID.
 5. One SQLite-backed Durable Object per `{owner_id}:{rule_id}` serializes evaluation state, preventing overlapping evaluations and alert flapping.
 6. The evaluator compiles a constrained rule DSL into parameterized ClickHouse queries. User-authored SQL is not accepted in v1.
-7. A state transition creates an idempotent alert event and delivery row in D1, then enqueues delivery.
-8. A queue consumer resolves the org's existing encrypted Slack token from `slack_settings`, posts Block Kit, and records the Slack timestamp. Retryable failures back off; terminal failures land in a DLQ and surface in the UI.
+7. A state transition creates an idempotent alert event, stages the shared Nox `delivery_outbox` row in D1, and publishes `deliver_slack` to `unticket-tasks`.
+8. Unticket's existing queue consumer resolves the encrypted Slack installation, posts the message, and records delivery state. Retryable failures back off; terminal failures land in its DLQ and surface through shared operations data.
 
 ## Reliability semantics
 
 - Collector ingestion is at-least-once. ClickHouse rows carry stable tenant/signal IDs so duplicate input can be identified.
 - Rule evaluation is single-writer per rule and records `firing`, `repeated`, and `resolved` transitions.
 - Incident/event creation uses deterministic idempotency keys.
-- Queue delivery is at-least-once. Slack does not provide a general idempotency key for `chat.postMessage`, so the narrow crash window after Slack accepts a message but before D1 records its timestamp can produce a duplicate. We prefer a visible duplicate over a lost page; later notifications update the known Slack message/thread when possible.
+- Queue delivery is at-least-once. Slack does not provide a general idempotency key for `chat.postMessage`, so the narrow crash window after Slack accepts a message but before D1 records completion can produce a duplicate. We prefer a visible duplicate over a lost page.
 - Every async path has a DLQ or persisted failure state. No `waitUntil` call is the sole durability mechanism.
 
 ## Multi-tenancy and security

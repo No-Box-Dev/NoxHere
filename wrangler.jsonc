@@ -19,16 +19,7 @@
   ],
   "queues": {
     "producers": [
-      { "binding": "ALERT_DELIVERIES", "queue": "noxalert-deliveries" }
-    ],
-    "consumers": [
-      {
-        "queue": "noxalert-deliveries",
-        "max_batch_size": 10,
-        "max_batch_timeout": 5,
-        "max_retries": 5,
-        "dead_letter_queue": "noxalert-deliveries-dlq"
-      }
+      { "binding": "NOX_TASKS", "queue": "unticket-tasks" }
     ]
   },
   "durable_objects": {
@@ -40,6 +31,8 @@
     { "tag": "v1", "new_sqlite_classes": ["RuleEvaluator"] }
   ],
   "vars": {
-    "ENVIRONMENT": "production"
+    "ENVIRONMENT": "production",
+    "CANARY_OWNER_ID": "No-Box-Dev",
+    "CANARY_SITE_ID": "78c27fe2-881b-41bb-b750-771f6e547ad9"
   }
 }

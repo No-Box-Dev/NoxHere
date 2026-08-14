@@ -22,7 +22,7 @@ ClickHouse / ClickStack                 Unticket / shared Nox
                NoxAlert Worker
           scheduler → per-rule Durable Object
                        │
-                  delivery Queue + DLQ
+          shared Nox delivery outbox + Queue/DLQ
                        │
                        ▼
                      Slack
@@ -38,7 +38,7 @@ Foundation only; not production-deployed yet.
 - Shared-Nox D1 schema contract
 - SQLite-backed, per-rule Durable Object state
 - Tested firing, repeat, and recovery transitions
-- Queue/DLQ bindings reserved for Slack delivery
+- Protected mock-error canary using Unticket's shared Slack outbox and Queue/DLQ
 - Next: authenticated collector gateway and ClickHouse query adapters
 
 Rules default to disabled at the database layer so an unsupported rule can never appear healthy while silently doing nothing.
@@ -53,11 +53,16 @@ npm run dev
 
 Then request `http://localhost:8787/health`.
 
+The deployed `/canary` page intentionally throws a synthetic browser error and
+routes it through the shared Nox delivery outbox. Its API requires the
+`CANARY_TOKEN` Worker secret. NoxAlert never reads Slack credentials; Unticket's
+existing `unticket-tasks` consumer owns decryption, retries, and delivery.
+
 Do not apply `migrations/1100_noxalert_control_plane.sql` to production directly from this repository. The shared database contract must be reviewed and landed in `No-Box-Dev/unticket` first; Unticket remains the migration authority.
 
 ## Secrets
 
 Use Wrangler secrets; never commit values:
 
-- `ENCRYPTION_KEY` — exactly the same AES-256-GCM key used by Unticket, so NoxAlert can use its encrypted Slack bot token.
+- `CANARY_TOKEN` — temporary bearer token protecting the mock-error canary API.
 - `CLICKHOUSE_URL`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD` — evaluator data-plane access (added with the query adapter).
