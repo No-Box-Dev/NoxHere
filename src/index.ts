@@ -47,7 +47,7 @@ export default {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") {
-      return Response.json({ service: "noxalerts", status: "ok" });
+      return Response.json({ service: "noxalert", status: "ok" });
     }
     return Response.json({ error: "not_found" }, { status: 404 });
   },
