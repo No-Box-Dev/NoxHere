@@ -1,8 +1,20 @@
 import { DurableObject } from "cloudflare:workers";
+import {
+  buildSlackMessage,
+  CANARY_SOURCE,
+  CanaryRequestError,
+  isAuthorized,
+  readCanaryInput,
+  type CanaryDeliveryStatus,
+  type NoxSlackDeliveryTask,
+} from "./canary";
+import { CANARY_PAGE, CANARY_PAGE_HEADERS } from "./canary-page";
 import { alertRuleSchema, evaluate, evaluationStateSchema, INITIAL_EVALUATION_STATE } from "./domain";
 
-interface DeliveryJob {
-  deliveryId: string;
+interface CanaryTargetRow {
+  org_id: number;
+  site_id: string;
+  channel_id: string;
 }
 
 export class RuleEvaluator extends DurableObject<Env> {
@@ -37,34 +49,113 @@ export class RuleEvaluator extends DurableObject<Env> {
   }
 }
 
-async function handleDelivery(_job: DeliveryJob, _env: Env): Promise<void> {
-  // Delivery persistence and Slack posting land with the first query adapter.
-  // Throwing prevents silent acknowledgement if a job appears prematurely.
-  throw new Error("Slack delivery adapter is not enabled yet");
+function jsonError(error: string, status: number): Response {
+  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+}
+
+async function createCanaryDelivery(request: Request, env: Env): Promise<Response> {
+  if (!isAuthorized(request, env.CANARY_TOKEN)) return jsonError("unauthorized", 401);
+  const input = await readCanaryInput(request);
+  const target = await env.NOX_DB.prepare(
+    `SELECT org.id AS org_id, site.id AS site_id, site.slack_channel_id AS channel_id
+       FROM orgs org
+       JOIN spot_sites site ON site.org_id = org.id
+      WHERE org.github_login = ? AND site.id = ? AND site.slack_channel_id IS NOT NULL`,
+  ).bind(env.CANARY_OWNER_ID, env.CANARY_SITE_ID).first<CanaryTargetRow>();
+  if (!target) return jsonError("canary_destination_not_configured", 503);
+
+  const recent = await env.NOX_DB.prepare(
+    `SELECT 1 AS found FROM delivery_outbox
+      WHERE org_id = ? AND source = ?
+        AND created_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-15 seconds')
+      LIMIT 1`,
+  ).bind(target.org_id, CANARY_SOURCE).first<{ found: number }>();
+  if (recent) return jsonError("canary_rate_limited", 429);
+
+  const deliveryId = crypto.randomUUID();
+  await env.NOX_DB.prepare(
+    `INSERT INTO delivery_outbox
+       (id, org_id, source, source_id, destination, site_id, channel_id, payload_json, status)
+     VALUES (?, ?, ?, ?, 'slack', ?, ?, ?, 'pending')`,
+  ).bind(
+    deliveryId,
+    target.org_id,
+    CANARY_SOURCE,
+    deliveryId,
+    target.site_id,
+    target.channel_id,
+    JSON.stringify({ message: buildSlackMessage(input, deliveryId) }),
+  ).run();
+
+  let queued = false;
+  try {
+    const task: NoxSlackDeliveryTask = {
+      type: "deliver_slack",
+      outboxId: deliveryId,
+      ownerId: env.CANARY_OWNER_ID,
+      deliveryId,
+    };
+    await env.NOX_TASKS.send(task);
+    await env.NOX_DB.prepare(
+      `UPDATE delivery_outbox SET status = 'queued',
+         updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+       WHERE id = ? AND status = 'pending'`,
+    ).bind(deliveryId).run();
+    queued = true;
+  } catch (error) {
+    console.error(JSON.stringify({
+      message: "canary queue send failed; Unticket recovery will retry",
+      deliveryId,
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
+
+  return Response.json({ accepted: true, queued, deliveryId }, {
+    status: 202,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
+async function getCanaryDelivery(request: Request, env: Env, deliveryId: string): Promise<Response> {
+  if (!isAuthorized(request, env.CANARY_TOKEN)) return jsonError("unauthorized", 401);
+  if (!/^[0-9a-f-]{36}$/i.test(deliveryId)) return jsonError("not_found", 404);
+  const row = await env.NOX_DB.prepare(
+    `SELECT delivery.id, delivery.status, delivery.attempt_count AS attemptCount,
+            delivery.last_error_code AS errorCode, delivery.created_at AS createdAt,
+            delivery.delivered_at AS deliveredAt
+       FROM delivery_outbox delivery
+       JOIN orgs org ON org.id = delivery.org_id
+      WHERE delivery.id = ? AND delivery.source = ? AND org.github_login = ?`,
+  ).bind(deliveryId, CANARY_SOURCE, env.CANARY_OWNER_ID).first<CanaryDeliveryStatus>();
+  if (!row) return jsonError("not_found", 404);
+  return Response.json(row, { headers: { "Cache-Control": "no-store" } });
 }
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") {
       return Response.json({ service: "noxalert", status: "ok" });
     }
-    return Response.json({ error: "not_found" }, { status: 404 });
-  },
-
-  async queue(batch: MessageBatch<DeliveryJob>, env: Env): Promise<void> {
-    for (const message of batch.messages) {
-      try {
-        await handleDelivery(message.body, env);
-        message.ack();
-      } catch (error) {
-        console.error(JSON.stringify({
-          message: "alert delivery failed",
-          deliveryId: message.body.deliveryId,
-          error: error instanceof Error ? error.message : String(error),
-        }));
-        message.retry();
-      }
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/canary")) {
+      return new Response(CANARY_PAGE, { headers: CANARY_PAGE_HEADERS });
     }
+    try {
+      if (request.method === "POST" && url.pathname === "/api/canary") {
+        return await createCanaryDelivery(request, env);
+      }
+      if (request.method === "GET") {
+        const statusMatch = url.pathname.match(/^\/api\/canary\/([^/]+)$/);
+        if (statusMatch?.[1]) return await getCanaryDelivery(request, env, statusMatch[1]);
+      }
+    } catch (error) {
+      if (error instanceof CanaryRequestError) return jsonError(error.message, error.status);
+      console.error(JSON.stringify({
+        message: "canary request failed",
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      return jsonError("internal_error", 500);
+    }
+    return jsonError("not_found", 404);
   },
-} satisfies ExportedHandler<Env, DeliveryJob>;
+} satisfies ExportedHandler<Env>;
