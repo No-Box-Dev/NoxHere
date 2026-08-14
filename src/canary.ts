@@ -89,3 +89,22 @@ export function buildSlackMessage(input: z.infer<typeof canaryInputSchema>, deli
     "_Generated intentionally from the NoxAlert mock error page._",
   ].join("\n");
 }
+
+/** Shared Unticket outbox contract: `message` is the chat.postMessage body. */
+export function buildSlackPayload(input: z.infer<typeof canaryInputSchema>, deliveryId: string) {
+  return {
+    message: {
+      text: buildSlackMessage(input, deliveryId),
+    },
+  };
+}
+
+export function normalizeSlackPayload(value: unknown): { message: Record<string, unknown> & { text: string } } | null {
+  if (!value || typeof value !== "object") return null;
+  const message = (value as { message?: unknown }).message;
+  if (typeof message === "string" && message.trim()) return { message: { text: message } };
+  if (!message || typeof message !== "object") return null;
+  const text = (message as { text?: unknown }).text;
+  if (typeof text !== "string" || !text.trim()) return null;
+  return { message: message as Record<string, unknown> & { text: string } };
+}
