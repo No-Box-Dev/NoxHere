@@ -82,7 +82,7 @@ export const errorRuleInputSchema = z.object({
   repeatAfterSeconds: z.number().int().min(60).max(604_800).default(900),
 }).strict();
 
-interface IngestKeyRow {
+export interface IngestKeyRow {
   id: string;
   org_id: number;
   owner_id: string;
@@ -230,7 +230,7 @@ export function buildErrorSlackMessage(
   return lines.join("\n");
 }
 
-async function findIngestKey(env: Env, provided: string): Promise<IngestKeyRow | null> {
+export async function findIngestKey(env: Env, provided: string): Promise<IngestKeyRow | null> {
   if (!/^nox_[a-z0-9_-]{20,}$/i.test(provided)) return null;
   const hash = await hashPublicKey(provided);
   return env.NOX_DB.prepare(
@@ -241,11 +241,12 @@ async function findIngestKey(env: Env, provided: string): Promise<IngestKeyRow |
   ).bind(hash).first<IngestKeyRow>();
 }
 
-async function readErrorRequest(request: Request): Promise<BrowserError> {
+/** Read a bounded JSON request body. Shared by the browser and OTLP ingest paths. */
+export async function readJsonBody(request: Request, maxBytes: number): Promise<unknown> {
   const contentType = request.headers.get("Content-Type")?.split(";", 1)[0]?.trim().toLowerCase();
   if (contentType !== "application/json") throw new Error("unsupported_content_type");
   const rawLength = request.headers.get("Content-Length");
-  if (rawLength && /^\d+$/.test(rawLength) && Number(rawLength) > MAX_ERROR_BODY_BYTES) {
+  if (rawLength && /^\d+$/.test(rawLength) && Number(rawLength) > maxBytes) {
     throw new Error("payload_too_large");
   }
   if (!request.body) throw new Error("empty_payload");
@@ -257,7 +258,7 @@ async function readErrorRequest(request: Request): Promise<BrowserError> {
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
-    if (total > MAX_ERROR_BODY_BYTES) {
+    if (total > maxBytes) {
       await reader.cancel("payload_too_large");
       throw new Error("payload_too_large");
     }
@@ -270,13 +271,11 @@ async function readErrorRequest(request: Request): Promise<BrowserError> {
     body.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  let decoded: unknown;
   try {
-    decoded = JSON.parse(new TextDecoder().decode(body));
+    return JSON.parse(new TextDecoder().decode(body));
   } catch {
     throw new Error("invalid_json");
   }
-  return browserErrorSchema.parse(decoded);
 }
 
 async function recordOccurrence(
@@ -397,7 +396,79 @@ async function persistAndQueueDelivery(
   }
 }
 
-function errorStatus(error: unknown): { code: string; status: number } {
+/**
+ * Run one error through every enabled rule for its project: filter, group,
+ * threshold, repeat-suppress, deliver. This is the whole "alert or not"
+ * decision — both the browser endpoint and the OTLP endpoint call it, so the
+ * ingest shape never gets a say in the outcome. Returns how many rules matched.
+ */
+export async function evaluateError(
+  env: Env,
+  key: IngestKeyRow,
+  error: BrowserError,
+  now: Date,
+): Promise<number> {
+  const { results } = await env.NOX_DB.prepare(
+    `SELECT rule.id, rule.name, rule.filters_json, rule.notify_after_count AS threshold,
+            rule.window_seconds, rule.repeat_after_seconds,
+            COALESCE(
+              NULLIF(json_extract(config.data, '$.slack.noxAlertChannelId'), ''),
+              NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')
+            ) AS slack_channel_id
+       FROM alert_error_rules rule
+       JOIN config ON config.org_id = rule.org_id AND config.key = 'settings'
+      WHERE rule.project_id = ? AND rule.enabled = 1
+        AND COALESCE(
+          NULLIF(json_extract(config.data, '$.slack.noxAlertChannelId'), ''),
+          NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')
+        ) IS NOT NULL
+      ORDER BY rule.created_at
+      LIMIT 50`,
+  ).bind(key.project_id).all<ErrorRuleRow>();
+
+  let matchedRules = 0;
+  for (const rawRule of results ?? []) {
+    const parsedRule = storedErrorRuleSchema.safeParse(rawRule);
+    if (!parsedRule.success) {
+      console.error(JSON.stringify({ message: "invalid stored error rule", ruleId: rawRule.id }));
+      continue;
+    }
+    const rule: ErrorRuleRow = parsedRule.data;
+    let storedFilter: unknown;
+    try {
+      storedFilter = JSON.parse(rule.filters_json);
+    } catch {
+      storedFilter = null;
+    }
+    const parsedFilter = errorFilterSchema.safeParse(storedFilter);
+    if (!parsedFilter.success) {
+      console.error(JSON.stringify({ message: "invalid stored error filter", ruleId: rule.id }));
+      continue;
+    }
+    if (!matchesErrorFilter(error, parsedFilter.data)) continue;
+    matchedRules += 1;
+    const fingerprint = await fingerprintError(error, rule.id);
+    const group = await recordOccurrence(env, rule, fingerprint, error, now);
+    const deliveryId = await claimDelivery(env, rule, fingerprint, now);
+    if (!deliveryId) continue;
+    await persistAndQueueDelivery(
+      env,
+      key,
+      rule,
+      deliveryId,
+      buildErrorSlackMessage(error, rule, group.occurrence_count, fingerprint),
+    );
+  }
+  return matchedRules;
+}
+
+export async function touchIngestKey(env: Env, key: IngestKeyRow, now: Date): Promise<void> {
+  await env.NOX_DB.prepare(
+    `UPDATE alert_api_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
+  ).bind(now.toISOString(), key.id).run();
+}
+
+export function errorStatus(error: unknown): { code: string; status: number } {
   if (error instanceof z.ZodError) return { code: "invalid_error", status: 400 };
   const code = error instanceof Error ? error.message : "internal_error";
   switch (code) {
@@ -437,68 +508,15 @@ export async function handleBrowserError(request: Request, env: Env): Promise<Re
 
   let error: BrowserError;
   try {
-    error = await readErrorRequest(request);
+    error = browserErrorSchema.parse(await readJsonBody(request, MAX_ERROR_BODY_BYTES));
   } catch (cause) {
     const { code, status } = errorStatus(cause);
     return jsonResponse({ error: code }, status, origin);
   }
 
-  const { results } = await env.NOX_DB.prepare(
-    `SELECT rule.id, rule.name, rule.filters_json, rule.notify_after_count AS threshold,
-            rule.window_seconds, rule.repeat_after_seconds,
-            COALESCE(
-              NULLIF(json_extract(config.data, '$.slack.noxAlertChannelId'), ''),
-              NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')
-            ) AS slack_channel_id
-       FROM alert_error_rules rule
-       JOIN config ON config.org_id = rule.org_id AND config.key = 'settings'
-      WHERE rule.project_id = ? AND rule.enabled = 1
-        AND COALESCE(
-          NULLIF(json_extract(config.data, '$.slack.noxAlertChannelId'), ''),
-          NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')
-        ) IS NOT NULL
-      ORDER BY rule.created_at
-      LIMIT 50`,
-  ).bind(key.project_id).all<ErrorRuleRow>();
-
   const now = new Date();
-  let matchedRules = 0;
-  for (const rawRule of results ?? []) {
-    const parsedRule = storedErrorRuleSchema.safeParse(rawRule);
-    if (!parsedRule.success) {
-      console.error(JSON.stringify({ message: "invalid stored error rule", ruleId: rawRule.id }));
-      continue;
-    }
-    const rule: ErrorRuleRow = parsedRule.data;
-    let storedFilter: unknown;
-    try {
-      storedFilter = JSON.parse(rule.filters_json);
-    } catch {
-      storedFilter = null;
-    }
-    const parsedFilter = errorFilterSchema.safeParse(storedFilter);
-    if (!parsedFilter.success) {
-      console.error(JSON.stringify({ message: "invalid stored error filter", ruleId: rule.id }));
-      continue;
-    }
-    if (!matchesErrorFilter(error, parsedFilter.data)) continue;
-    matchedRules += 1;
-    const fingerprint = await fingerprintError(error, rule.id);
-    const group = await recordOccurrence(env, rule, fingerprint, error, now);
-    const deliveryId = await claimDelivery(env, rule, fingerprint, now);
-    if (!deliveryId) continue;
-    await persistAndQueueDelivery(
-      env,
-      key,
-      rule,
-      deliveryId,
-      buildErrorSlackMessage(error, rule, group.occurrence_count, fingerprint),
-    );
-  }
-
-  await env.NOX_DB.prepare(
-    `UPDATE alert_api_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
-  ).bind(now.toISOString(), key.id).run();
+  const matchedRules = await evaluateError(env, key, error, now);
+  await touchIngestKey(env, key, now);
 
   return jsonResponse({ accepted: true, eventId: error.eventId ?? crypto.randomUUID(), matchedRules }, 202, origin);
 }

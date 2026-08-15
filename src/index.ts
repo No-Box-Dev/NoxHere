@@ -12,6 +12,7 @@ import {
 import { CANARY_PAGE, CANARY_PAGE_HEADERS } from "./canary-page";
 import { alertRuleSchema, evaluate, evaluationStateSchema, INITIAL_EVALUATION_STATE } from "./domain";
 import { handleBrowserError } from "./errors";
+import { handleOtlpLogs } from "./otlp";
 
 interface CanaryTargetRow {
   org_id: number;
@@ -192,6 +193,9 @@ export default {
     try {
       if (url.pathname === "/v1/errors") {
         return await handleBrowserError(request, env);
+      }
+      if (url.pathname === "/v1/logs") {
+        return await handleOtlpLogs(request, env);
       }
       if (request.method === "POST" && url.pathname === "/api/canary") {
         return await createCanaryDelivery(request, env);

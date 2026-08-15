@@ -2,16 +2,20 @@
 
 ## Version 1 boundary
 
-NoxAlert v1 receives browser errors and alerts on them immediately. It is not a
-general telemetry store.
+NoxAlert v1 receives errors and alerts on them immediately. It is not a general
+telemetry store.
 
 - The React integration sends a bounded error envelope to `POST /v1/errors`.
+- A backend already running OpenTelemetry exports selected log records to
+  `POST /v1/logs` as OTLP/HTTP JSON.
+- Both routes converge on one decision function, so the ingest shape never
+  changes whether an error alerts — only the project's saved rules do.
 - The shared Nox D1 database stores projects, key hashes, rules, aggregate error
   groups, and delivery state.
 - Unticket owns the Slack installation, token encryption, delivery queue,
   retries, and dead-letter queue.
-- An OpenTelemetry Collector and ClickHouse are deferred until NoxAlert accepts
-  general logs, metrics, and traces.
+- ClickHouse and a NoxAlert-operated Collector are deferred until NoxAlert
+  stores general logs, metrics, and traces rather than only alerting on them.
 
 Applications already using OpenTelemetry can attach their active trace and span
 IDs. NoxAlert preserves those identifiers on the grouped error without taking
@@ -28,6 +32,10 @@ ownership of the complete trace.
 5. The Worker checks the exact browser origin and applies the project rate limit.
 6. The error is validated against a strict schema and evaluated against enabled
    project rules.
+   An OTLP export follows the same path from step 3, except that origin checks do
+   not apply, each log record is projected onto the error shape before step 6,
+   and unmappable records are reported back as `partialSuccess` instead of
+   failing the whole export.
 7. Matching errors are fingerprinted from rule, service, environment, type,
    normalized message, and the first stack frame. Changing request IDs and
    numeric values do not create new groups.
