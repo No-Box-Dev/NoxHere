@@ -115,30 +115,41 @@ function metricField(
   const average = validComparisonValue(comparison?.average30d)
     ? formatMetric(comparison.average30d, kind, true)
     : "—";
-  const trend = sparkline(comparison?.history);
+  const trend = lineSparkline(comparison?.history);
   return [
     `*${label}*`,
     `*${formatMetric(value, kind, false)}*  ${formatDelta(value, comparison?.yesterday, kind)}`,
-    `\`${trend}\`  _30 days_`,
+    `${trend}  _30 days_`,
     `Yesterday ${yesterday} · 30d avg ${average}`,
   ].join("\n");
 }
 
-function sparkline(history: MetricComparison["history"]): string {
+function lineSparkline(history: MetricComparison["history"]): string {
   const rawValues = (history ?? [])
     .map((point) => point?.value)
     .filter((value): value is number => validComparisonValue(value))
     .slice(-30);
-  const values = compactTrend(rawValues, 12);
+  const values = compactTrend(rawValues, 24);
   if (values.length === 0) return "—";
-  const levels = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
   const min = Math.min(...values);
   const max = Math.max(...values);
-  if (min === max) return (max === 0 ? levels[0]! : levels[4]!).repeat(values.length);
-  return values.map((value) => {
-    const index = Math.round(((value - min) / (max - min)) * (levels.length - 1));
-    return levels[index]!;
-  }).join("");
+  const rows = values.map((value) => min === max
+    ? 2
+    : Math.round(((max - value) / (max - min)) * 3));
+  if (rows.length % 2 === 1) rows.push(rows.at(-1)!);
+  const dotBits = [
+    [0x01, 0x08],
+    [0x02, 0x10],
+    [0x04, 0x20],
+    [0x40, 0x80],
+  ] as const;
+  let line = "";
+  for (let index = 0; index < rows.length; index += 2) {
+    const left = dotBits[rows[index]!]![0];
+    const right = dotBits[rows[index + 1]!]![1];
+    line += String.fromCodePoint(0x2800 + left + right);
+  }
+  return line;
 }
 
 function compactTrend(values: number[], targetPoints: number): number[] {

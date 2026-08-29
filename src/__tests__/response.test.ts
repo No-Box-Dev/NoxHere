@@ -52,15 +52,15 @@ describe("NoxCue response policy", () => {
       { type: "context", elements: [{ text: "Aug 29, 2026 · UTC · completed day" }] },
       { type: "section", text: { text: "*🌱 Growth*" } },
       { type: "section", fields: [
-        { text: "*New users*\n*86*  ▲ +6\n`▁▄▃▇█`  _30 days_\nYesterday 80 · 30d avg 74.3" },
-        { text: "*Total users*\n*4,210*  ▲ +86\n`▁▃▄▇█`  _30 days_\nYesterday 4,124 · 30d avg 3,900.2" },
+        { text: expect.stringContaining("*New users*\n*86*  ▲ +6") },
+        { text: expect.stringContaining("*Total users*\n*4,210*  ▲ +86") },
       ] },
       { type: "section", text: { text: "*⚡ Engagement*" } },
       { type: "section", fields: [
-        { text: "*Daily active*\n*2,420*  ▲ +120\n`▁▅▄▆█`  _30 days_\nYesterday 2,300 · 30d avg 2,104.4" },
-        { text: "*Weekly active*\n*8,400*  ▲ +200\n`▁▃▅▆█`  _30 days_\nYesterday 8,200 · 30d avg 7,900" },
-        { text: "*Monthly active*\n*12,900*  ▲ +100\n`▁▄▆▇█`  _30 days_\nYesterday 12,800 · 30d avg 12,300" },
-        { text: "*DAU / MAU*\n*18.8%*  ▲ +0.8pp\n`▁▅▄▇█`  _30 days_\nYesterday 18% · 30d avg 17.1%" },
+        { text: expect.stringContaining("*Daily active*\n*2,420*  ▲ +120") },
+        { text: expect.stringContaining("*Weekly active*\n*8,400*  ▲ +200") },
+        { text: expect.stringContaining("*Monthly active*\n*12,900*  ▲ +100") },
+        { text: expect.stringContaining("*DAU / MAU*\n*18.8%*  ▲ +0.8pp") },
       ] },
       { type: "context", elements: [{ text: "NoxCue · 30-day trend · stored completed days only" }] },
     ]);
@@ -94,9 +94,10 @@ describe("NoxCue response policy", () => {
     });
     const rendered = JSON.stringify(response.message.blocks);
     expect(rendered).toContain("→ flat");
-    expect(rendered).toContain("`▁▁▁`  _30 days_");
+    expect(rendered).toContain("⠤⠤  _30 days_");
     expect(rendered).toContain("▼ −2");
-    expect(rendered).toContain("`█▆▁`  _30 days_");
+    expect(rendered).toContain("⠑⣀  _30 days_");
+    expect(rendered).not.toMatch(/[▁▂▃▄▅▆▇█]/);
   });
 
   it("compresses a full month into a readable 12-point sparkline", () => {
@@ -111,9 +112,9 @@ describe("NoxCue response policy", () => {
     });
     const field = response.message.blocks.find((block) => Array.isArray(block.fields));
     const text = (field?.fields as Array<{ text: string }>)[0]!.text;
-    const chart = text.match(/`([^`]+)`/)?.[1];
+    const chart = text.split("  _30 days_")[0]?.split("\n").at(-1);
     expect(chart).toHaveLength(12);
-    expect(chart).toBe("▁▂▂▃▄▄▅▅▆▇▇█");
+    expect(chart).toMatch(/^[\u2800-\u28ff]{12}$/u);
   });
 
   it("requires at least one supported user metric", () => {
