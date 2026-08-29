@@ -91,7 +91,7 @@ export function buildDigestResponse(
   }
   blocks.push({
     type: "context",
-    elements: [{ type: "mrkdwn", text: "NoxCue · 30-day trend · stored completed days only" }],
+    elements: [{ type: "mrkdwn", text: "NoxCue · Solid: daily values · Dashed: 30d average · completed days only" }],
   });
   const newUsers = metrics["users.new"];
   const summary = typeof newUsers === "number"
@@ -145,24 +145,28 @@ function chartAltText(
   return `${sourceName} 30-day user statistics chart. ${summary}`.slice(0, 2000);
 }
 
-function formatDelta(value: number, yesterday: number | null | undefined, kind: "count" | "ratio"): string {
-  if (!validComparisonValue(yesterday)) return "• new";
+export function formatDelta(value: number, yesterday: number | null | undefined, kind: "count" | "ratio"): string {
+  if (!validComparisonValue(yesterday)) return "No prior day";
   const delta = value - yesterday;
   const epsilon = kind === "ratio" ? 0.0005 : 0.5;
-  if (Math.abs(delta) < epsilon) return "→ flat";
-  const direction = delta > 0 ? "▲" : "▼";
-  const sign = delta > 0 ? "+" : "−";
-  const amount = kind === "ratio"
-    ? `${Math.abs(delta * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}pp`
-    : Math.abs(delta).toLocaleString("en-US", { maximumFractionDigits: 0 });
-  return `${direction} ${sign}${amount}`;
+  if (Math.abs(delta) < epsilon) return "Same as yesterday";
+  const direction = delta > 0 ? "↑" : "↓";
+  if (kind === "ratio") {
+    const points = Math.abs(delta * 100).toLocaleString("en-US", { maximumFractionDigits: 1 });
+    return `${direction} ${points}pp vs yesterday`;
+  }
+  const amount = Math.abs(delta).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const percent = yesterday > 0
+    ? ` · ${(Math.abs(delta) / yesterday * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`
+    : "";
+  return `${direction} ${amount}${percent} vs yesterday`;
 }
 
 function validComparisonValue(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
-function formatMetric(value: number, kind: "count" | "ratio", average: boolean): string {
+export function formatMetric(value: number, kind: "count" | "ratio", average: boolean): string {
   if (kind === "ratio") {
     return `${(value * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
   }

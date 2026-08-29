@@ -25,10 +25,34 @@ describe("NoxCue chart", () => {
     });
     expect(svg).toContain('width="1000"');
     expect(svg).toContain(">New users</text>");
-    expect(svg).toContain(">+1 vs yesterday</text>");
+    expect(svg).toContain(">↑ 1 · 33.3% vs yesterday</text>");
     expect(svg).toContain(">30d avg 1.7</text>");
+    expect(svg).toContain('stroke="#7aa7ff"');
+    expect(svg).toContain('stroke-dasharray="6 7"');
+    expect(svg).not.toContain("No change");
+    expect(svg).not.toContain("#5ee38f");
+    expect(svg).not.toContain("#f6a33a");
     expect(svg.match(/<path d="M/g)).toHaveLength(1);
     expect(svg).not.toContain("<script");
+  });
+
+  it("names a flat comparison and keeps it visually neutral", () => {
+    const svg = buildChartSvg({
+      sourceName: "Playnist",
+      period: "2026-08-29",
+      metrics: { "users.active.daily": 7 },
+      comparisons: {
+        "users.active.daily": {
+          yesterday: 7,
+          average30d: 9.1,
+          sampleDays: 30,
+          history: [10, 8, 7, 7].map((value, index) => ({ period: String(index), value })),
+        },
+      },
+    });
+    expect(svg).toContain(">Same as yesterday</text>");
+    expect(svg).toContain('class="delta"');
+    expect(svg).not.toMatch(/class="delta"[^>]+fill=/);
   });
 
   it("escapes labels before placing them in SVG", () => {

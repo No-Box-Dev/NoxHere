@@ -50,10 +50,11 @@ describe("NoxCue response policy", () => {
     expect(response.message.blocks).toMatchObject([
       { type: "header", text: { text: "📊 Acme · Daily pulse" } },
       { type: "context", elements: [{ text: "Aug 29, 2026 · UTC · completed day" }] },
-      { type: "image", image_url: "https://noxcue.example/v1/charts/123.png", alt_text: expect.stringContaining("New users: 86, ▲ +6, 30-day average 74.3") },
-      { type: "context", elements: [{ text: "NoxCue · 30-day trend · stored completed days only" }] },
+      { type: "image", image_url: "https://noxcue.example/v1/charts/123.png", alt_text: expect.stringContaining("New users: 86, ↑ 6 · 7.5% vs yesterday, 30-day average 74.3") },
+      { type: "context", elements: [{ text: "NoxCue · Solid: daily values · Dashed: 30d average · completed days only" }] },
     ]);
     expect(response.message.blocks).toHaveLength(4);
+    expect(JSON.stringify(response.message.blocks)).toContain("DAU / MAU: 18.8%, ↑ 0.8pp vs yesterday");
   });
 
   it("keeps a readable text fallback if image generation is unavailable", () => {
@@ -75,8 +76,8 @@ describe("NoxCue response policy", () => {
       },
     });
     const rendered = JSON.stringify(response.message.blocks);
-    expect(rendered).toContain("→ flat");
-    expect(rendered).toContain("▼ −2");
+    expect(rendered).toContain("Same as yesterday");
+    expect(rendered).toContain("↓ 2 · 22.2% vs yesterday");
     expect(rendered).toContain("Yesterday 9 · 30d avg 9.1");
     expect(rendered).not.toContain("image_url");
   });
