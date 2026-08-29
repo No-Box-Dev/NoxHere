@@ -1,4 +1,5 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
+import { createChartSnapshot, handleChartImage } from "./chart";
 import { handleCueEvent } from "./events";
 import { buildDigestResponse, buildTestResponse, type MetricComparisons } from "./response";
 
@@ -9,6 +10,8 @@ function jsonError(error: string, status: number): Response {
 export default class NoxCueService extends WorkerEntrypoint<Env> {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    const chartResponse = await handleChartImage(request, this.env.NOX_DB);
+    if (chartResponse) return chartResponse;
     if (request.method === "GET" && url.pathname === "/health") {
       return Response.json({ service: "noxcue", status: "ok" });
     }
@@ -30,12 +33,22 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     return buildTestResponse(orgLogin);
   }
 
-  buildDigestResponse(
+  async buildDigestResponse(
     sourceName: string,
     period: string,
     metrics: Record<string, number>,
     comparisons: MetricComparisons = {},
   ) {
-    return buildDigestResponse(sourceName, period, metrics, comparisons);
+    const textFallback = buildDigestResponse(sourceName, period, metrics, comparisons);
+    let chartImageUrl: string | undefined;
+    try {
+      const id = await createChartSnapshot(this.env.NOX_DB, { sourceName, period, metrics, comparisons });
+      chartImageUrl = `${this.env.PUBLIC_BASE_URL.replace(/\/$/, "")}/v1/charts/${id}.png`;
+    } catch (error) {
+      console.error("NoxCue chart snapshot failed", error);
+    }
+    return chartImageUrl
+      ? buildDigestResponse(sourceName, period, metrics, comparisons, chartImageUrl)
+      : textFallback;
   }
 }

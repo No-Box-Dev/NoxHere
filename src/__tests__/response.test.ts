@@ -44,37 +44,19 @@ describe("NoxCue response policy", () => {
         yesterday: 0.1797, average30d: 0.1711, sampleDays: 30,
         history: [0.15, 0.17, 0.166, 0.1797, 0.1876].map((value, index) => ({ period: `2026-08-${25 + index}`, value })),
       },
-    });
+    }, "https://noxcue.example/v1/charts/123.png");
     expect(response).toMatchObject({ contract: "noxcue.response", kind: "daily_digest" });
     expect(response.message.text).toBe("Acme: 86 new users on 2026-08-29");
     expect(response.message.blocks).toMatchObject([
       { type: "header", text: { text: "📊 Acme · Daily pulse" } },
       { type: "context", elements: [{ text: "Aug 29, 2026 · UTC · completed day" }] },
-      { type: "section", text: { text: "*🌱 Growth*" } },
-      { type: "section", fields: [
-        { text: expect.stringContaining("*New users*\n*86*  ▲ +6") },
-        { text: expect.stringContaining("*Total users*\n*4,210*  ▲ +86") },
-      ] },
-      { type: "section", text: { text: "*⚡ Engagement*" } },
-      { type: "section", fields: [
-        { text: expect.stringContaining("*Daily active*\n*2,420*  ▲ +120") },
-        { text: expect.stringContaining("*Weekly active*\n*8,400*  ▲ +200") },
-        { text: expect.stringContaining("*Monthly active*\n*12,900*  ▲ +100") },
-        { text: expect.stringContaining("*DAU / MAU*\n*18.8%*  ▲ +0.8pp") },
-      ] },
+      { type: "image", image_url: "https://noxcue.example/v1/charts/123.png", alt_text: expect.stringContaining("New users: 86, ▲ +6, 30-day average 74.3") },
       { type: "context", elements: [{ text: "NoxCue · 30-day trend · stored completed days only" }] },
     ]);
-    const rendered = response.message.blocks.flatMap((block) =>
-      Array.isArray(block.fields)
-        ? (block.fields as Array<{ text: string }>).map((field) => field.text)
-        : [],
-    ).join("\n");
-    expect(rendered).toContain("\n");
-    expect(rendered).not.toContain("\\n");
-    expect(rendered).toContain("*DAU / MAU*\n*18.8%*  ▲ +0.8pp");
+    expect(response.message.blocks).toHaveLength(4);
   });
 
-  it("renders stable and falling trends without inventing history", () => {
+  it("keeps a readable text fallback if image generation is unavailable", () => {
     const response = buildDigestResponse("Acme", "2026-08-29", {
       "users.new": 0,
       "users.active.daily": 7,
@@ -94,13 +76,12 @@ describe("NoxCue response policy", () => {
     });
     const rendered = JSON.stringify(response.message.blocks);
     expect(rendered).toContain("→ flat");
-    expect(rendered).toContain("⠤⠤  _30 days_");
     expect(rendered).toContain("▼ −2");
-    expect(rendered).toContain("⠑⣀  _30 days_");
-    expect(rendered).not.toMatch(/[▁▂▃▄▅▆▇█]/);
+    expect(rendered).toContain("Yesterday 9 · 30d avg 9.1");
+    expect(rendered).not.toContain("image_url");
   });
 
-  it("compresses a full month into a readable 12-point sparkline", () => {
+  it("does not put text sparklines into fallback fields", () => {
     const history = Array.from({ length: 30 }, (_, index) => ({
       period: `2026-08-${String(index + 1).padStart(2, "0")}`,
       value: index,
@@ -112,9 +93,8 @@ describe("NoxCue response policy", () => {
     });
     const field = response.message.blocks.find((block) => Array.isArray(block.fields));
     const text = (field?.fields as Array<{ text: string }>)[0]!.text;
-    const chart = text.split("  _30 days_")[0]?.split("\n").at(-1);
-    expect(chart).toHaveLength(12);
-    expect(chart).toMatch(/^[\u2800-\u28ff]{12}$/u);
+    expect(text).toContain("Yesterday 28 · 30d avg 14.5");
+    expect(text).not.toMatch(/[\u2800-\u28ff▁▂▃▄▅▆▇█]/u);
   });
 
   it("requires at least one supported user metric", () => {
