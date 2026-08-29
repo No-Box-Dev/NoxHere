@@ -1,0 +1,122 @@
+import { describe, expect, it, vi } from "vitest";
+import {
+  buildCueSlackMessage,
+  cueErrorEventSchema,
+  cueEventSchema,
+  cueUserActiveEventSchema,
+  cueUserRegisteredEventSchema,
+  handleCueEvent,
+} from "../events";
+
+describe("NoxCue event contract", () => {
+  it("accepts explicit errors and only the closed user lifecycle events", () => {
+    expect(cueErrorEventSchema.parse({
+      type: "error.occurred",
+      title: "Payment failed",
+      data: { errorCode: "CARD_DECLINED", component: "checkout" },
+    })).toMatchObject({ version: 1, level: "error" });
+    expect(cueUserRegisteredEventSchema.parse({
+      type: "user.registered",
+      userId: "user-7",
+      occurredAt: "2026-08-29T02:00:00Z",
+    })).toMatchObject({ type: "user.registered", userId: "user-7" });
+    expect(cueUserActiveEventSchema.parse({ type: "user.active", userId: "user-7" }))
+      .toMatchObject({ type: "user.active", userId: "user-7" });
+  });
+
+  it("rejects telemetry, aggregate snapshots, arbitrary events, and unknown fields", () => {
+    expect(cueEventSchema.safeParse({ type: "logs", title: "Batch", data: { records: [] } }).success).toBe(false);
+    expect(cueEventSchema.safeParse({ type: "stats.daily", period: "2026-08-29", metrics: { "users.new": 3 } }).success).toBe(false);
+    expect(cueEventSchema.safeParse({ type: "user.did_something", userId: "user-7" }).success).toBe(false);
+    expect(cueEventSchema.safeParse({ type: "user.active", userId: "user-7", page: "/home" }).success).toBe(false);
+  });
+
+  it("builds escaped Slack blocks", () => {
+    const event = cueErrorEventSchema.parse({
+      type: "error.occurred",
+      title: "Payment <failed>",
+      message: "Declined & stopped",
+      url: "https://app.example.com/orders/1842",
+      data: { errorCode: "CARD_<DECLINED>" },
+    });
+    const message = buildCueSlackMessage("Checkout & billing", event, 1);
+    expect(message.text).toContain("Payment <failed>");
+    expect(JSON.stringify(message.blocks)).toContain("Payment &lt;failed&gt;");
+    expect(JSON.stringify(message.blocks)).toContain("Declined &amp; stopped");
+  });
+
+  it("stores an error and publishes NoxConnect's delivery task", async () => {
+    const queue = { send: vi.fn(async () => undefined) };
+    const batch = vi.fn(async () => []);
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn(() => statement),
+        first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
+          key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
+          source_id: "source-1", source_name: "Checkout", project_id: null,
+          allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
+          error_cooldown_minutes: 15, slack_channel_id: "C123", slack_connection_id: "conn-1",
+        } : null),
+        run: vi.fn(async () => ({ success: true })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const env = {
+      NOX_DB: { prepare, batch }, NOX_TASKS: queue,
+      CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
+      CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
+    } as unknown as Env;
+    const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
+      method: "POST",
+      headers: {
+        Origin: "https://app.example.com",
+        "Content-Type": "application/json",
+        "X-Nox-Ingest-Key": `nox_pub_${"a".repeat(43)}`,
+      },
+      body: JSON.stringify({ type: "error.occurred", title: "Payment failed", idempotencyKey: "attempt-1" }),
+    }), env);
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ accepted: true, stored: true, queued: true });
+    expect(batch).toHaveBeenCalledOnce();
+    expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_slack" }));
+  });
+
+  it.each([
+    ["user.registered", "cue_user_registrations"],
+    ["user.active", "cue_user_active_days"],
+  ])("hashes and deduplicates %s facts without storing the raw user ID", async (type, table) => {
+    const bindings: unknown[][] = [];
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn((...values: unknown[]) => { bindings.push(values); return statement; }),
+        first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
+          key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
+          source_id: "source-1", source_name: "Playnist", project_id: null,
+          allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
+          slack_channel_id: "C123", slack_connection_id: "conn-1",
+        } : null),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const env = {
+      NOX_DB: { prepare, batch: vi.fn() }, NOX_TASKS: { send: vi.fn() },
+      CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
+      CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
+    } as unknown as Env;
+    const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": `nox_secret_${"a".repeat(43)}` },
+      body: JSON.stringify({ type, userId: "raw-user-7", occurredAt: "2026-08-29T02:00:00Z" }),
+    }), env);
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ accepted: true, duplicate: false, period: "2026-08-29" });
+    expect(prepare.mock.calls.some(([sql]) => String(sql).includes(table))).toBe(true);
+    const inserted = bindings.find((values) => values.includes("source-1") && values.includes("2026-08-29"));
+    expect(inserted).toBeDefined();
+    expect(inserted).not.toContain("raw-user-7");
+  });
+});

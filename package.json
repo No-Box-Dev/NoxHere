@@ -1,5 +1,5 @@
 {
-  "name": "noxalert",
+  "name": "noxcue",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "wrangler deploy --dry-run --outdir dist",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
-    "example:check": "tsc --ignoreConfig --noEmit --strict --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution Bundler examples/react/noxalert.ts",
+    "example:check": "tsc --ignoreConfig --noEmit --strict --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution Bundler examples/browser/noxcue.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run cf-typegen && npm run typecheck && npm run example:check && npm test && npm run build"
