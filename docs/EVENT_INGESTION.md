@@ -20,7 +20,9 @@ timestamp:
 ```
 
 NoxCue hashes the identifier before storage. It retains one registration fact
-per source/user and one activity fact per source/user/local-day, then derives
+per source/user and one activity fact per source/user/local-day. A registration
+also counts as activity on that local day, so a new integration produces DAU
+from the same single call. NoxCue then derives
 new users, total users, DAU, WAU, MAU, DAU/MAU, yesterday, and 30-day averages.
 
 ## Immediate error

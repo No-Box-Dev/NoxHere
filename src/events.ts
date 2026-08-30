@@ -263,18 +263,31 @@ async function storeUserEvent(
   const period = localPeriodAt(occurredAt, source.timezone);
   const subjectHash = await hash(`${source.source_id}\u0000${event.userId}`);
   const receivedAt = new Date().toISOString();
-  const statement = event.type === "user.registered"
-    ? env.NOX_DB.prepare(
+  if (event.type === "user.registered") {
+    const [registration] = await env.NOX_DB.batch([
+      env.NOX_DB.prepare(
       `INSERT OR IGNORE INTO cue_user_registrations
          (org_id, source_id, subject_hash, period, occurred_at, received_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
-    ).bind(source.org_id, source.source_id, subjectHash, period, occurredAt.toISOString(), receivedAt)
-    : env.NOX_DB.prepare(
+      ).bind(source.org_id, source.source_id, subjectHash, period, occurredAt.toISOString(), receivedAt),
+      env.NOX_DB.prepare(
+        `INSERT OR IGNORE INTO cue_user_active_days
+           (org_id, source_id, period, subject_hash, occurred_at, received_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).bind(source.org_id, source.source_id, period, subjectHash, occurredAt.toISOString(), receivedAt),
+    ]);
+    return {
+      eventId,
+      queued: false,
+      duplicate: Number(registration?.meta.changes ?? 0) === 0,
+      period,
+    };
+  }
+  const result = await env.NOX_DB.prepare(
       `INSERT OR IGNORE INTO cue_user_active_days
          (org_id, source_id, period, subject_hash, occurred_at, received_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
-    ).bind(source.org_id, source.source_id, period, subjectHash, occurredAt.toISOString(), receivedAt);
-  const result = await statement.run();
+    ).bind(source.org_id, source.source_id, period, subjectHash, occurredAt.toISOString(), receivedAt).run();
   return { eventId, queued: false, duplicate: Number(result.meta.changes ?? 0) === 0, period };
 }
 

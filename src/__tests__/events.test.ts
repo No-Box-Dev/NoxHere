@@ -101,8 +101,9 @@ describe("NoxCue event contract", () => {
       return statement;
     });
     const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const batch = vi.fn(async (statements: unknown[]) => statements.map(() => ({ success: true, meta: { changes: 1 } })));
     const env = {
-      NOX_DB: { prepare, batch: vi.fn() }, NOX_TASKS: { send: vi.fn() },
+      NOX_DB: { prepare, batch }, NOX_TASKS: { send: vi.fn() },
       CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
       CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
     } as unknown as Env;
@@ -115,6 +116,10 @@ describe("NoxCue event contract", () => {
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ accepted: true, duplicate: false, period: "2026-08-29" });
     expect(prepare.mock.calls.some(([sql]) => String(sql).includes(table))).toBe(true);
+    if (type === "user.registered") {
+      expect(prepare.mock.calls.some(([sql]) => String(sql).includes("cue_user_active_days"))).toBe(true);
+      expect(batch).toHaveBeenCalledOnce();
+    }
     const inserted = bindings.find((values) => values.includes("source-1") && values.includes("2026-08-29"));
     expect(inserted).toBeDefined();
     expect(inserted).not.toContain("raw-user-7");

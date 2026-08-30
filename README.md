@@ -36,6 +36,10 @@ await noxcue.userRegistered(user.id);
 await noxcue.userActive(user.id);
 ```
 
+Registration automatically counts as activity for that local day. Call
+`userActive` for returning users when they perform a meaningful authenticated
+action.
+
 Both use `POST /v1/events` with a secret server key. NoxCue hashes the user ID,
 deduplicates the facts, and derives the daily statistics. See
 [`docs/EVENT_INGESTION.md`](./docs/EVENT_INGESTION.md) for the contract.
