@@ -62,6 +62,7 @@ interface StateRow {
   consecutive_failures: number;
   consecutive_successes: number;
   incident_started_at: string | null;
+  last_reason: string | null;
 }
 
 interface SlackTask {
@@ -82,16 +83,16 @@ const LABELS: Record<(typeof AUTH_FEATURES)[number], string> = {
   "auth.logout": "Log out",
 };
 
-function slackMessage(source: FeatureSource, event: CueFeatureResult, recovered: boolean) {
+function slackMessage(source: FeatureSource, event: CueFeatureResult) {
   const label = LABELS[event.feature];
-  const headline = recovered ? `${label} recovered` : `${label} has an issue`;
-  const detail = recovered
-    ? "Two successful attempts were received after the incident."
-    : `Three consecutive system failures were received${event.reason ? ` · ${event.reason.replaceAll("_", " ")}` : ""}.`;
+  const headline = `${label} failed`;
+  const detail = `${event.feature === "auth.signup"
+    ? "A user was prevented from signing up"
+    : "A critical system failure prevented this action"}${event.reason ? ` · ${event.reason.replaceAll("_", " ")}` : ""}.`;
   return {
     text: `${source.source_name}: ${headline}`,
     blocks: [
-      { type: "section", text: { type: "mrkdwn", text: `${recovered ? ":white_check_mark:" : ":rotating_light:"} *${headline}*\n${detail}` } },
+      { type: "section", text: { type: "mrkdwn", text: `:rotating_light: *${headline}*\n${detail}` } },
       { type: "context", elements: [{ type: "mrkdwn", text: `NoxCue · ${source.source_name} · ${event.feature}` }] },
     ],
   };
@@ -101,11 +102,10 @@ async function stageDelivery(
   env: Env,
   source: FeatureSource,
   event: CueFeatureResult,
-  transition: "issue" | "recovery",
-  transitionAt: string,
+  eventId: string,
 ): Promise<boolean> {
   if (!source.slack_channel_id) return false;
-  const sourceId = `feature:${source.source_id}:${event.feature}:${transition}:${transitionAt}`;
+  const sourceId = `feature:${source.source_id}:${event.feature}:incident:${eventId}`;
   const deliveryId = crypto.randomUUID();
   const inserted = await env.NOX_DB.prepare(
     `INSERT OR IGNORE INTO delivery_outbox
@@ -114,7 +114,7 @@ async function stageDelivery(
      VALUES (?, ?, 'noxcue', ?, 'slack', NULL, ?, ?, ?, 'pending')`,
   ).bind(
     deliveryId, source.org_id, sourceId, source.slack_connection_id, source.slack_channel_id,
-    JSON.stringify({ message: slackMessage(source, event, transition === "recovery") }),
+    JSON.stringify({ message: slackMessage(source, event) }),
   ).run();
   if (!inserted.meta.changes) return false;
   try {
@@ -147,7 +147,7 @@ export async function storeFeatureResult(
   ).bind(source.org_id, source.source_id, eventId, event.feature, event.outcome,
     event.reason ?? null, event.durationMs ?? null, event.test ? 1 : 0, occurredAt.toISOString(), now).run();
   const previous = await env.NOX_DB.prepare(
-    `SELECT status, consecutive_failures, consecutive_successes, incident_started_at
+    `SELECT status, consecutive_failures, consecutive_successes, incident_started_at, last_reason
        FROM cue_feature_states WHERE source_id = ? AND feature_key = ?`,
   ).bind(source.source_id, event.feature).first<StateRow>();
   if (!inserted.meta.changes) {
@@ -163,16 +163,15 @@ export async function storeFeatureResult(
   if (event.outcome === "failure") {
     failures += 1;
     successes = 0;
-    if (failures >= 3) {
-      status = "issue";
-      incidentAt ??= now;
-    }
+    status = "issue";
+    incidentAt ??= now;
   } else if (event.outcome === "success") {
-    failures = 0;
-    successes = oldStatus === "issue" ? successes + 1 : 0;
-    if (oldStatus !== "issue" || successes >= 2) {
+    if (oldStatus === "issue") {
+      successes += 1;
+    } else {
       status = "healthy";
       incidentAt = null;
+      failures = 0;
       successes = 0;
     }
   }
@@ -191,11 +190,12 @@ export async function storeFeatureResult(
        last_reason = excluded.last_reason, updated_at = excluded.updated_at`,
   ).bind(source.org_id, source.source_id, event.feature, status, failures, successes, incidentAt,
     now, event.outcome === "success" ? now : null, event.outcome === "failure" ? now : null,
-    event.reason ?? null, now).run();
+    event.outcome === "failure" ? event.reason ?? "unknown" : oldStatus === "issue" ? previous?.last_reason ?? null : event.reason ?? null,
+    now).run();
 
-  const transition = oldStatus !== "issue" && status === "issue"
-    ? "issue"
-    : oldStatus === "issue" && status === "healthy" ? "recovery" : null;
-  const queued = transition ? await stageDelivery(env, source, event, transition, transition === "issue" ? incidentAt! : now) : false;
+  // A feature failure means a user-facing action did not work. Each distinct
+  // failure is its own incident; later successful attempts are evidence only
+  // and must never silently resolve it.
+  const queued = event.outcome === "failure" ? await stageDelivery(env, source, event, eventId) : false;
   return { eventId, duplicate: false, status, queued };
 }
