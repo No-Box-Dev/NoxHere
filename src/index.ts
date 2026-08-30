@@ -2,12 +2,16 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import { createChartSnapshot, handleChartImage } from "./chart";
 import { handleCueEvent } from "./events";
 import { buildDigestResponse, buildTestResponse, type MetricComparisons } from "./response";
+import { runEndpointMonitors } from "./monitor";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 export default class NoxCueService extends WorkerEntrypoint<Env> {
+  async scheduled(): Promise<void> {
+    await runEndpointMonitors(this.env);
+  }
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const chartResponse = await handleChartImage(request, this.env.NOX_DB);
@@ -23,7 +27,7 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
         service: "NoxCue",
         message: "Daily app health and immediate explicit errors, delivered to your team and saved for later.",
         ingest: "POST /v1/events",
-        types: ["user.registered", "user.active", "error.occurred"],
+        types: ["user.registered", "user.active", "feature.result", "error.occurred"],
       });
     }
     return jsonError("not_found", 404);

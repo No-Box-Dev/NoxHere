@@ -7,6 +7,7 @@ import {
   cueUserRegisteredEventSchema,
   handleCueEvent,
 } from "../events";
+import { cueFeatureResultSchema } from "../feature-health";
 
 describe("NoxCue event contract", () => {
   it("accepts explicit errors and only the closed user lifecycle events", () => {
@@ -29,6 +30,22 @@ describe("NoxCue event contract", () => {
     expect(cueEventSchema.safeParse({ type: "stats.daily", period: "2026-08-29", metrics: { "users.new": 3 } }).success).toBe(false);
     expect(cueEventSchema.safeParse({ type: "user.did_something", userId: "user-7" }).success).toBe(false);
     expect(cueEventSchema.safeParse({ type: "user.active", userId: "user-7", page: "/home" }).success).toBe(false);
+  });
+
+  it("accepts only standardized, privacy-safe auth outcomes", () => {
+    expect(cueFeatureResultSchema.parse({
+      type: "feature.result", feature: "auth.password_reset", outcome: "failure",
+      reason: "email_delivery_failed", durationMs: 842,
+    })).toMatchObject({ version: 1, feature: "auth.password_reset", test: false });
+    expect(cueFeatureResultSchema.safeParse({
+      type: "feature.result", feature: "auth.login", outcome: "failure", email: "person@example.com",
+    }).success).toBe(false);
+    expect(cueFeatureResultSchema.safeParse({
+      type: "feature.result", feature: "auth.magic_custom_flow", outcome: "success",
+    }).success).toBe(false);
+    expect(cueFeatureResultSchema.safeParse({
+      type: "feature.result", feature: "auth.login", outcome: "failure", reason: "provider_raw_message",
+    }).success).toBe(false);
   });
 
   it("builds escaped Slack blocks", () => {
