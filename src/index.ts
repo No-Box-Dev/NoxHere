@@ -1,6 +1,7 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { createChartSnapshot, handleChartImage } from "./chart";
 import { handleCueEvent } from "./events";
+import { narrateDailyStats } from "./narration";
 import { buildDigestResponse, buildTestResponse, type MetricComparisons } from "./response";
 import { runEndpointMonitors } from "./monitor";
 
@@ -44,15 +45,22 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     comparisons: MetricComparisons = {},
   ) {
     const textFallback = buildDigestResponse(sourceName, period, metrics, comparisons);
-    let chartImageUrl: string | undefined;
-    try {
-      const id = await createChartSnapshot(this.env.NOX_DB, { sourceName, period, metrics, comparisons });
-      chartImageUrl = `${this.env.PUBLIC_BASE_URL.replace(/\/$/, "")}/v1/charts/${id}.png`;
-    } catch (error) {
-      console.error("NoxCue chart snapshot failed", error);
-    }
-    return chartImageUrl
-      ? buildDigestResponse(sourceName, period, metrics, comparisons, chartImageUrl)
+    const chart = (async () => {
+      try {
+        const id = await createChartSnapshot(this.env.NOX_DB, { sourceName, period, metrics, comparisons });
+        return `${this.env.PUBLIC_BASE_URL.replace(/\/$/, "")}/v1/charts/${id}.png`;
+      } catch (error) {
+        console.error("NoxCue chart snapshot failed", error);
+        return undefined;
+      }
+    })();
+    const narration = narrateDailyStats(
+      { sourceName, period, metrics, comparisons },
+      this.env.ANTHROPIC_API_KEY,
+    );
+    const [chartImageUrl, narrative] = await Promise.all([chart, narration]);
+    return chartImageUrl || narrative
+      ? buildDigestResponse(sourceName, period, metrics, comparisons, chartImageUrl, narrative)
       : textFallback;
   }
 }

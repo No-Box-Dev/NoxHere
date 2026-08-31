@@ -46,6 +46,7 @@ export function buildDigestResponse(
   metrics: Record<string, number>,
   comparisons: MetricComparisons = {},
   chartImageUrl?: string,
+  narration?: string,
 ) {
   requireText(sourceName, "sourceName", 120);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(period)) throw new Error("Invalid NoxCue period");
@@ -67,6 +68,12 @@ export function buildDigestResponse(
     { type: "header", text: { type: "plain_text", text: `📊 ${sourceName} · Daily pulse`, emoji: true } },
     { type: "context", elements: [{ type: "mrkdwn", text: `${displayDate} · UTC · completed day` }] },
   ];
+  if (narration) {
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: `✨ *In brief*\n${escapeMrkdwn(narration)}` },
+    });
+  }
   if (chartImageUrl) {
     blocks.push({
       type: "image",

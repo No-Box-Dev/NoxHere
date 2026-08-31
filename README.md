@@ -44,6 +44,11 @@ Both use `POST /v1/events` with a secret server key. NoxCue hashes the user ID,
 deduplicates the facts, and derives the daily statistics. See
 [`docs/EVENT_INGESTION.md`](./docs/EVENT_INGESTION.md) for the contract.
 
+The daily Slack brief can add a one- or two-sentence AI observation above its
+chart. NoxCue generates it centrally from the completed-day values, yesterday,
+and the 30-day average. It uses the server-only `ANTHROPIC_API_KEY`; if the
+provider is unavailable, the normal chart and statistics still post.
+
 NoxCue is not an observability or general product-analytics system. It does not
 collect logs, traces, OTLP, arbitrary metrics, sessions, funnels, or arbitrary
 activity names and properties.

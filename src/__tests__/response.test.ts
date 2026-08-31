@@ -82,6 +82,19 @@ describe("NoxCue response policy", () => {
     expect(rendered).not.toContain("image_url");
   });
 
+  it("places an escaped AI brief above the chart", () => {
+    const response = buildDigestResponse("Acme", "2026-08-29", {
+      "users.new": 4,
+    }, {}, "https://noxcue.example/chart.png", "Signups rose <without a known cause> & stayed healthy.");
+    expect(response.message.blocks).toMatchObject([
+      { type: "header" },
+      { type: "context" },
+      { type: "section", text: { text: "✨ *In brief*\nSignups rose &lt;without a known cause&gt; &amp; stayed healthy." } },
+      { type: "image", image_url: "https://noxcue.example/chart.png" },
+      { type: "context" },
+    ]);
+  });
+
   it("does not put text sparklines into fallback fields", () => {
     const history = Array.from({ length: 30 }, (_, index) => ({
       period: `2026-08-${String(index + 1).padStart(2, "0")}`,
