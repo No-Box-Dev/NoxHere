@@ -1,7 +1,55 @@
 # NoxCue V1 ingestion
 
 `POST /v1/events` accepts a closed catalog with `X-Nox-Ingest-Key`:
-`user.registered`, `user.active`, and the immediate `error.occurred` cue.
+`user.registered`, `user.active`, `activity.occurred`, `feature.result`, and the immediate
+`error.occurred` cue.
+
+## Feature results
+
+NoxCue owns a closed standard catalog. V1 contains these auth journeys:
+
+- `auth.signup`
+- `auth.login`
+- `auth.password_reset`
+- `auth.email_verification`
+- `auth.oauth`
+- `auth.mfa`
+- `auth.session_refresh`
+- `auth.logout`
+
+App-specific features use the `custom.*` namespace and must be registered in
+NoxConnect before the app sends them. A linked source uses its project catalog,
+so staging and production share the same definitions; an unlinked source has an
+isolated catalog. Registration owns the display label and default user-impact
+message. Sending a valid but unknown
+name does not create a feature: NoxCue stores it through the error pipeline as
+`UNREGISTERED_FEATURE` and returns `classification: "unregistered"`.
+Feature keys are lowercase dot-separated identifiers; each segment may contain
+letters, digits, and underscores.
+
+```ts
+await noxcue.observe("custom.journal.publish", () => publishJournal(input));
+```
+
+Every `failure` includes the bounded technical error object sent by the app.
+NoxCue stores both the registered impact message and that technical error, and
+includes both in the immediate Slack incident. Expected rejections do not carry
+an error and do not alert.
+
+```json
+{
+  "type": "feature.result",
+  "feature": "auth.signup",
+  "outcome": "failure",
+  "reason": "dependency_unavailable",
+  "error": {
+    "name": "AuthApiError",
+    "message": "Authentication service timed out",
+    "code": "AUTH_TIMEOUT",
+    "status": 503
+  }
+}
+```
 
 ## User statistics
 
@@ -24,6 +72,26 @@ per source/user and one activity fact per source/user/local-day. A registration
 also counts as activity on that local day, so a new integration produces DAU
 from the same single call. NoxCue then derives
 new users, total users, DAU, WAU, MAU, DAU/MAU, yesterday, and 30-day averages.
+
+## Custom activity metrics
+
+Register each `custom.*` activity name in the NoxCue project settings before
+the app sends it. The app emits one event after a successful write; it does not
+query or aggregate its own database:
+
+```json
+{
+  "type": "activity.occurred",
+  "metric": "custom.journals.added",
+  "userId": "app-user-1842",
+  "eventId": "89195f9a-4a26-44e6-a147-9f2d003bc7f5"
+}
+```
+
+`eventId` is required and makes retries idempotent. NoxCue hashes `userId`,
+stores the event once, and derives a cumulative total plus cumulative events
+per registered user. Unknown names become one `UNREGISTERED_METRIC` error and
+never create a metric implicitly.
 
 ## Immediate error
 
@@ -53,7 +121,7 @@ affected-user rollup.
 ## Limits
 
 - 32 KiB request body
-- 1,000 requests/minute per edge IP and per user-event source
+- 1,000 requests/minute per edge IP and per user/activity/feature source
 - 30 immediate errors/minute per source
 - 60 total submissions/minute per organization
 - Exact browser origins; no wildcards

@@ -82,6 +82,17 @@ describe("NoxCue response policy", () => {
     expect(rendered).not.toContain("image_url");
   });
 
+  it("groups custom activity metrics separately in the text fallback", () => {
+    const response = buildDigestResponse("Playnist", "2026-08-29", {
+      "custom.comments.written": 210,
+      "custom.comments.written.per_user": 2.92,
+    });
+    const rendered = JSON.stringify(response.message.blocks);
+    expect(rendered).toContain("✍️ Activity");
+    expect(rendered).toContain("Comments written / user");
+    expect(rendered).toContain("2.92");
+  });
+
   it("places an escaped AI brief above the chart", () => {
     const response = buildDigestResponse("Acme", "2026-08-29", {
       "users.new": 4,

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { cueFeatureResultSchema, storeFeatureResult } from "../feature-health";
+import { standardFeature } from "../feature-catalog";
 
 function featureEnv(previous: Record<string, unknown> | null) {
   const bindings: Array<{ sql: string; values: unknown[] }> = [];
@@ -30,6 +31,7 @@ const source = {
   slack_channel_id: "C123",
   slack_connection_id: "conn-1",
 };
+const signup = standardFeature("auth.signup")!;
 
 describe("critical feature incidents", () => {
   it("opens and queues an incident on the first system failure", async () => {
@@ -40,15 +42,17 @@ describe("critical feature incidents", () => {
     const event = cueFeatureResultSchema.parse({
       type: "feature.result", feature: "auth.signup", outcome: "failure",
       reason: "dependency_unavailable",
+      error: { name: "AuthApiError", message: "Authentication service unavailable", status: 503 },
     });
 
-    const result = await storeFeatureResult(env, source, event, "11111111-1111-4111-8111-111111111111");
+    const result = await storeFeatureResult(env, source, event, "11111111-1111-4111-8111-111111111111", signup);
 
     expect(result).toMatchObject({ status: "issue", queued: true, duplicate: false });
     expect(queue.send).toHaveBeenCalledOnce();
     const outbox = bindings.find(({ sql }) => sql.includes("INSERT OR IGNORE INTO delivery_outbox"));
     expect(outbox?.values).toContain("feature:source-1:auth.signup:incident:11111111-1111-4111-8111-111111111111");
     expect(JSON.stringify(outbox?.values)).toContain("A user was prevented from signing up");
+    expect(JSON.stringify(outbox?.values)).toContain("Authentication service unavailable");
   });
 
   it("queues every subsequent system failure as a distinct incident", async () => {
@@ -58,9 +62,10 @@ describe("critical feature incidents", () => {
     });
     const event = cueFeatureResultSchema.parse({
       type: "feature.result", feature: "auth.signup", outcome: "failure", reason: "timeout",
+      error: { message: "Request timed out", code: "AUTH_TIMEOUT" },
     });
 
-    const result = await storeFeatureResult(env, source, event, "22222222-2222-4222-8222-222222222222");
+    const result = await storeFeatureResult(env, source, event, "22222222-2222-4222-8222-222222222222", signup);
 
     expect(result).toMatchObject({ status: "issue", queued: true });
     expect(queue.send).toHaveBeenCalledOnce();
@@ -75,7 +80,7 @@ describe("critical feature incidents", () => {
       type: "feature.result", feature: "auth.signup", outcome: "success",
     });
 
-    const result = await storeFeatureResult(env, source, event, "33333333-3333-4333-8333-333333333333");
+    const result = await storeFeatureResult(env, source, event, "33333333-3333-4333-8333-333333333333", signup);
 
     expect(result).toMatchObject({ status: "issue", queued: false });
     expect(queue.send).not.toHaveBeenCalled();

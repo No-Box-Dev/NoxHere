@@ -2,11 +2,13 @@
 
 Know how your app did today—and know immediately when it did not.
 
-NoxCue accepts a deliberately small, closed event catalog:
+NoxCue accepts a deliberately small, governed event catalog:
 
 - a registered user;
 - an active user;
 - an explicit error that is saved and delivered to Slack immediately;
+- a standard feature result, or a NoxConnect-registered `custom.*` feature result;
+- a NoxConnect-registered `custom.*` activity event that NoxCue aggregates into total and per-user statistics;
 
 ```text
 App event → NoxCue Worker → hashed user facts in NoxConnect D1
@@ -51,7 +53,8 @@ provider is unavailable, the normal chart and statistics still post.
 
 NoxCue is not an observability or general product-analytics system. It does not
 collect logs, traces, OTLP, arbitrary metrics, sessions, funnels, or arbitrary
-activity names and properties.
+activity names and properties. Unknown feature names become one bounded
+`UNREGISTERED_FEATURE` error; they never create new features or metrics.
 
 ## Local development
 

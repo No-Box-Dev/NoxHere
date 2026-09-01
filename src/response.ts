@@ -10,14 +10,36 @@ export interface MetricComparison {
 
 export type MetricComparisons = Record<string, MetricComparison>;
 
-export const DISPLAY_METRICS = [
+export interface DisplayMetric {
+  key: string;
+  label: string;
+  kind: "count" | "ratio" | "decimal";
+  group: "Growth" | "Engagement" | "Activity";
+}
+
+export const DISPLAY_METRICS: DisplayMetric[] = [
   { key: "users.new", label: "New users", kind: "count", group: "Growth" },
   { key: "users.total", label: "Total users", kind: "count", group: "Growth" },
   { key: "users.active.daily", label: "Daily active", kind: "count", group: "Engagement" },
   { key: "users.active.weekly", label: "Weekly active", kind: "count", group: "Engagement" },
   { key: "users.active.monthly", label: "Monthly active", kind: "count", group: "Engagement" },
   { key: "users.stickiness.dau_mau", label: "DAU / MAU", kind: "ratio", group: "Engagement" },
-] as const;
+];
+
+export function displayMetricsFor(metrics: Record<string, number>, labels: Record<string, string> = {}): DisplayMetric[] {
+  const custom = Object.keys(metrics)
+    .filter((key) => key.startsWith("custom."))
+    .sort()
+    .map((key) => {
+      const perUser = key.endsWith(".per_user");
+      const base = key.replace(/^custom\./, "").replace(/\.per_user$/, "");
+      const words = base.split(".").join(" ").replace(/_/g, " ");
+      const fallback = `${words.charAt(0).toUpperCase()}${words.slice(1)}${perUser ? " / user" : ""}`;
+      const label = labels[key]?.trim() || fallback;
+      return { key, label, kind: perUser ? "decimal" as const : "count" as const, group: "Activity" as const };
+    });
+  return [...DISPLAY_METRICS, ...custom];
+}
 
 export function buildTestResponse(orgLogin: string) {
   requireText(orgLogin, "orgLogin", 200);
@@ -47,11 +69,12 @@ export function buildDigestResponse(
   comparisons: MetricComparisons = {},
   chartImageUrl?: string,
   narration?: string,
+  metricLabels: Record<string, string> = {},
 ) {
   requireText(sourceName, "sourceName", 120);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(period)) throw new Error("Invalid NoxCue period");
   if (!metrics || typeof metrics !== "object" || Array.isArray(metrics)) throw new Error("Invalid NoxCue metrics");
-  const visibleMetrics = DISPLAY_METRICS.filter(({ key }) => {
+  const visibleMetrics = displayMetricsFor(metrics, metricLabels).filter(({ key }) => {
     const value = metrics[key];
     return typeof value === "number" && Number.isFinite(value) && value >= 0;
   });
@@ -82,10 +105,10 @@ export function buildDigestResponse(
     });
   }
   if (!chartImageUrl) {
-    for (const group of ["Growth", "Engagement"] as const) {
+    for (const group of ["Growth", "Engagement", "Activity"] as const) {
       const groupMetrics = visibleMetrics.filter((metric) => metric.group === group);
       if (groupMetrics.length === 0) continue;
-      const groupIcon = group === "Growth" ? "🌱" : "⚡";
+      const groupIcon = group === "Growth" ? "🌱" : group === "Engagement" ? "⚡" : "✍️";
       blocks.push({ type: "section", text: { type: "mrkdwn", text: `*${groupIcon} ${group}*` } });
       blocks.push({
         type: "section",
@@ -103,7 +126,7 @@ export function buildDigestResponse(
   const newUsers = metrics["users.new"];
   const summary = typeof newUsers === "number"
     ? `${formatMetric(newUsers, "count", false)} new users`
-    : `${visibleMetrics.length} user statistics`;
+    : `${visibleMetrics.length} daily statistics`;
   return {
     contract: CONTRACT,
     version: VERSION,
@@ -118,7 +141,7 @@ export function buildDigestResponse(
 function metricField(
   label: string,
   value: number,
-  kind: "count" | "ratio",
+  kind: DisplayMetric["kind"],
   comparison: MetricComparison | undefined,
 ): string {
   const yesterday = validComparisonValue(comparison?.yesterday)
@@ -136,7 +159,7 @@ function metricField(
 
 function chartAltText(
   sourceName: string,
-  visibleMetrics: typeof DISPLAY_METRICS[number][],
+  visibleMetrics: DisplayMetric[],
   metrics: Record<string, number>,
   comparisons: MetricComparisons,
 ): string {
@@ -149,18 +172,22 @@ function chartAltText(
       return `${metric.label}: ${formatMetric(metrics[metric.key]!, metric.kind, false)}, ${formatDelta(metrics[metric.key]!, comparison?.yesterday, metric.kind)}, 30-day average ${average}`;
     })
     .join("; ");
-  return `${sourceName} 30-day user statistics chart. ${summary}`.slice(0, 2000);
+  return `${sourceName} 30-day product statistics chart. ${summary}`.slice(0, 2000);
 }
 
-export function formatDelta(value: number, yesterday: number | null | undefined, kind: "count" | "ratio"): string {
+export function formatDelta(value: number, yesterday: number | null | undefined, kind: DisplayMetric["kind"]): string {
   if (!validComparisonValue(yesterday)) return "No prior day";
   const delta = value - yesterday;
-  const epsilon = kind === "ratio" ? 0.0005 : 0.5;
+  const epsilon = kind === "ratio" ? 0.0005 : kind === "decimal" ? 0.005 : 0.5;
   if (Math.abs(delta) < epsilon) return "Same as yesterday";
   const direction = delta > 0 ? "↑" : "↓";
   if (kind === "ratio") {
     const points = Math.abs(delta * 100).toLocaleString("en-US", { maximumFractionDigits: 1 });
     return `${direction} ${points}pp vs yesterday`;
+  }
+  if (kind === "decimal") {
+    const amount = Math.abs(delta).toLocaleString("en-US", { maximumFractionDigits: 2 });
+    return `${direction} ${amount} vs yesterday`;
   }
   const amount = Math.abs(delta).toLocaleString("en-US", { maximumFractionDigits: 0 });
   const percent = yesterday > 0
@@ -173,9 +200,12 @@ function validComparisonValue(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
-export function formatMetric(value: number, kind: "count" | "ratio", average: boolean): string {
+export function formatMetric(value: number, kind: DisplayMetric["kind"], average: boolean): string {
   if (kind === "ratio") {
     return `${(value * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
+  }
+  if (kind === "decimal") {
+    return value.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
   }
   return value.toLocaleString("en-US", {
     minimumFractionDigits: average && !Number.isInteger(value) ? 1 : 0,

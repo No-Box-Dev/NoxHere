@@ -4,6 +4,7 @@ export const NOXCUE_AUTH_FEATURES = [
 ] as const;
 
 export type NoxCueAuthFeature = (typeof NOXCUE_AUTH_FEATURES)[number];
+export type NoxCueFeature = NoxCueAuthFeature | `custom.${string}`;
 export type NoxCueOutcome = "success" | "rejected" | "failure";
 export type NoxCueReason =
   | "invalid_input" | "invalid_credentials" | "account_exists" | "account_unverified"
@@ -20,7 +21,10 @@ export interface ErrorCueInput {
 }
 
 interface ProviderResult { error?: unknown; }
-interface ProviderError { status?: unknown; statusCode?: unknown; name?: unknown; }
+interface ProviderError {
+  status?: unknown; statusCode?: unknown; name?: unknown; message?: unknown; code?: unknown;
+}
+interface TechnicalError { name?: string; message: string; code?: string; status?: number; }
 type AuthOperation = <T>(operation: () => T | Promise<T>) => Promise<T>;
 
 function statusOf(value: unknown): number | null {
@@ -47,6 +51,33 @@ function classify(feature: NoxCueAuthFeature, value: unknown): { outcome: NoxCue
   return { outcome: "failure", reason: "unknown" };
 }
 
+function technicalError(value: unknown): TechnicalError {
+  if (value instanceof Response) {
+    return { name: "ResponseError", message: `${value.status} ${value.statusText || "Request failed"}`, status: value.status };
+  }
+  if (value instanceof Error) {
+    const provider = value as Error & ProviderError;
+    const status = statusOf(provider) ?? undefined;
+    return {
+      name: value.name || undefined,
+      message: value.message || "Unknown error",
+      ...(typeof provider.code === "string" ? { code: provider.code } : {}),
+      ...(status ? { status } : {}),
+    };
+  }
+  if (value && typeof value === "object") {
+    const provider = value as ProviderError;
+    const status = statusOf(provider) ?? undefined;
+    return {
+      ...(typeof provider.name === "string" ? { name: provider.name } : {}),
+      message: typeof provider.message === "string" ? provider.message : "Provider returned an error",
+      ...(typeof provider.code === "string" ? { code: provider.code } : {}),
+      ...(status ? { status } : {}),
+    };
+  }
+  return { message: typeof value === "string" ? value : "Unknown error" };
+}
+
 export function createNoxCue(options: NoxCueOptions) {
   const endpoint = (options.endpoint ?? "https://noxcue.jasper-414.workers.dev").replace(/\/$/, "");
   async function post(body: Record<string, unknown>): Promise<string> {
@@ -62,18 +93,25 @@ export function createNoxCue(options: NoxCueOptions) {
     // Reporting is fail-open: it never delays or changes the application's auth result.
     void post(body).catch(() => undefined);
   }
-  async function observe<T>(feature: NoxCueAuthFeature, operation: () => T | Promise<T>): Promise<T> {
+  async function observe<T>(feature: NoxCueFeature, operation: () => T | Promise<T>): Promise<T> {
     const started = performance.now();
     try {
       const result = await operation();
       const providerError = result && typeof result === "object" && "error" in result
         ? (result as ProviderResult).error : null;
-      const measured = providerError ? classify(feature, providerError) : result instanceof Response && !result.ok
-        ? classify(feature, result) : { outcome: "success" as const };
-      report({ type: "feature.result", feature, ...measured, durationMs: Math.round(performance.now() - started) });
+      const failedValue = providerError || result instanceof Response && !result.ok ? providerError ?? result : null;
+      const measured = failedValue
+        ? classify(feature as NoxCueAuthFeature, failedValue)
+        : { outcome: "success" as const };
+      report({ type: "feature.result", feature, ...measured,
+        ...(measured.outcome === "failure" ? { error: technicalError(failedValue) } : {}),
+        durationMs: Math.round(performance.now() - started) });
       return result;
     } catch (error) {
-      report({ type: "feature.result", feature, ...classify(feature, error), durationMs: Math.round(performance.now() - started) });
+      const measured = classify(feature as NoxCueAuthFeature, error);
+      report({ type: "feature.result", feature, ...measured,
+        ...(measured.outcome === "failure" ? { error: technicalError(error) } : {}),
+        durationMs: Math.round(performance.now() - started) });
       throw error;
     }
   }
@@ -84,6 +122,7 @@ export function createNoxCue(options: NoxCueOptions) {
       emailVerification: wrap("auth.email_verification"), oauth: wrap("auth.oauth"), mfa: wrap("auth.mfa"),
       sessionRefresh: wrap("auth.session_refresh"), logout: wrap("auth.logout"),
     },
+    observe,
     test: (feature: NoxCueAuthFeature = "auth.signup") =>
       post({ type: "feature.result", feature, outcome: "success", test: true }),
     userRegistered: (userId: string, occurredAt?: string) =>

@@ -1,4 +1,4 @@
-import { DISPLAY_METRICS, formatDelta, formatMetric, type MetricComparisons } from "./response";
+import { displayMetricsFor, formatDelta, formatMetric, type MetricComparisons } from "./response";
 
 const SNAPSHOT_LIFETIME_DAYS = 35;
 const CHART_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -8,6 +8,7 @@ export interface ChartSnapshot {
   period: string;
   metrics: Record<string, number>;
   comparisons: MetricComparisons;
+  metricLabels?: Record<string, string>;
 }
 
 let wasmReady: Promise<void> | undefined;
@@ -81,7 +82,7 @@ export async function renderChartPng(snapshot: ChartSnapshot): Promise<Uint8Arra
 }
 
 export function buildChartSvg(snapshot: ChartSnapshot): string {
-  const visible = DISPLAY_METRICS.filter(({ key }) => validNumber(snapshot.metrics[key]));
+  const visible = displayMetricsFor(snapshot.metrics, snapshot.metricLabels).filter(({ key }) => validNumber(snapshot.metrics[key]));
   const width = 1000;
   const height = Math.max(190, Math.ceil(visible.length / 2) * 174 + 18);
   const cards = visible.map((metric, index) => {

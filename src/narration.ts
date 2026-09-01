@@ -1,4 +1,4 @@
-import { DISPLAY_METRICS, type MetricComparisons } from "./response";
+import { displayMetricsFor, type MetricComparisons } from "./response";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -12,6 +12,7 @@ interface NarrationInput {
   period: string;
   metrics: Record<string, number>;
   comparisons: MetricComparisons;
+  metricLabels?: Record<string, string>;
 }
 
 export async function narrateDailyStats(
@@ -20,7 +21,7 @@ export async function narrateDailyStats(
   request: typeof fetch = fetch,
 ): Promise<string | undefined> {
   if (!apiKey) return undefined;
-  const statistics = DISPLAY_METRICS.flatMap((metric) => {
+  const statistics = displayMetricsFor(input.metrics, input.metricLabels).flatMap((metric) => {
     const value = input.metrics[metric.key];
     if (!validNumber(value)) return [];
     const comparison = input.comparisons[metric.key];

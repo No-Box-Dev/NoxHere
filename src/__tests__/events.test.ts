@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildCueSlackMessage,
   cueErrorEventSchema,
+  cueActivityEventSchema,
   cueEventSchema,
   cueUserActiveEventSchema,
   cueUserRegisteredEventSchema,
@@ -32,19 +33,37 @@ describe("NoxCue event contract", () => {
     expect(cueEventSchema.safeParse({ type: "user.active", userId: "user-7", page: "/home" }).success).toBe(false);
   });
 
-  it("accepts only standardized, privacy-safe auth outcomes", () => {
+  it("accepts bounded feature names and requires the actual error for failures", () => {
     expect(cueFeatureResultSchema.parse({
       type: "feature.result", feature: "auth.password_reset", outcome: "failure",
       reason: "email_delivery_failed", durationMs: 842,
+      error: { name: "EmailError", message: "Provider timed out", code: "EMAIL_TIMEOUT", status: 503 },
     })).toMatchObject({ version: 1, feature: "auth.password_reset", test: false });
     expect(cueFeatureResultSchema.safeParse({
       type: "feature.result", feature: "auth.login", outcome: "failure", email: "person@example.com",
     }).success).toBe(false);
     expect(cueFeatureResultSchema.safeParse({
-      type: "feature.result", feature: "auth.magic_custom_flow", outcome: "success",
-    }).success).toBe(false);
+      type: "feature.result", feature: "custom.journal.publish", outcome: "success",
+    }).success).toBe(true);
     expect(cueFeatureResultSchema.safeParse({
       type: "feature.result", feature: "auth.login", outcome: "failure", reason: "provider_raw_message",
+    }).success).toBe(false);
+    expect(cueFeatureResultSchema.safeParse({
+      type: "feature.result", feature: "auth.login", outcome: "failure", reason: "internal_error",
+    }).success).toBe(false);
+  });
+
+  it("accepts only registered-shape custom activity events with an idempotent event ID", () => {
+    expect(cueActivityEventSchema.safeParse({
+      type: "activity.occurred", metric: "custom.journals.added", userId: "user-7",
+      eventId: "89195f9a-4a26-44e6-a147-9f2d003bc7f5",
+    }).success).toBe(true);
+    expect(cueActivityEventSchema.safeParse({
+      type: "activity.occurred", metric: "journals.added", userId: "user-7",
+      eventId: "89195f9a-4a26-44e6-a147-9f2d003bc7f5",
+    }).success).toBe(false);
+    expect(cueActivityEventSchema.safeParse({
+      type: "activity.occurred", metric: "custom.journals.added", userId: "user-7",
     }).success).toBe(false);
   });
 
@@ -99,6 +118,64 @@ describe("NoxCue event contract", () => {
     expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_slack" }));
   });
 
+  it("stores an unknown feature as one unregistered error without creating a feature", async () => {
+    const queue = { send: vi.fn(async () => undefined) };
+    const batch = vi.fn(async () => []);
+    const sqlSeen: string[] = [];
+    const bindings: unknown[][] = [];
+    const prepare = vi.fn((sql: string) => {
+      sqlSeen.push(sql);
+      const statement = {
+        bind: vi.fn((...values: unknown[]) => { bindings.push(values); return statement; }),
+        first: vi.fn(async () => {
+          if (sql.includes("FROM cue_source_keys")) return {
+            key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
+            source_id: "source-1", source_name: "Playnist", project_id: "playnist",
+            allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
+            error_cooldown_minutes: 15, slack_channel_id: "C123", slack_connection_id: "conn-1",
+          };
+          if (sql.includes("FROM cue_custom_features")) return null;
+          return null;
+        }),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const env = {
+      NOX_DB: { prepare, batch }, NOX_TASKS: queue,
+      CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
+      CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
+    } as unknown as Env;
+
+    const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
+      method: "POST",
+      headers: {
+        Origin: "https://app.example.com",
+        "Content-Type": "application/json",
+        "X-Nox-Ingest-Key": `nox_pub_${"a".repeat(43)}`,
+      },
+      body: JSON.stringify({
+        type: "feature.result", feature: "journal.publish", outcome: "failure",
+        message: "A user could not publish a journal.",
+        error: { code: "DB_TIMEOUT", message: "Database request timed out" },
+      }),
+    }), env);
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({
+      accepted: true,
+      stored: true,
+      classification: "unregistered",
+      requestedFeature: "journal.publish",
+    });
+    expect(sqlSeen.some((sql) => sql.includes("INSERT INTO cue_feature_results"))).toBe(false);
+    expect(JSON.stringify(bindings)).toContain("A user could not publish a journal");
+    expect(JSON.stringify(bindings)).toContain("DB_TIMEOUT: Database request timed out");
+    expect(batch).toHaveBeenCalledOnce();
+    expect(queue.send).toHaveBeenCalledOnce();
+  });
+
   it.each([
     ["user.registered", "cue_user_registrations"],
     ["user.active", "cue_user_active_days"],
@@ -140,5 +217,47 @@ describe("NoxCue event contract", () => {
     const inserted = bindings.find((values) => values.includes("source-1") && values.includes("2026-08-29"));
     expect(inserted).toBeDefined();
     expect(inserted).not.toContain("raw-user-7");
+  });
+
+  it("stores a registered activity once without storing the raw user ID", async () => {
+    const bindings: unknown[][] = [];
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn((...values: unknown[]) => { bindings.push(values); return statement; }),
+        first: vi.fn(async () => {
+          if (sql.includes("FROM cue_source_keys")) return {
+            key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
+            source_id: "source-1", source_name: "Playnist", project_id: "playnist",
+            allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
+            slack_channel_id: null, slack_connection_id: null,
+          };
+          if (sql.includes("FROM cue_custom_metrics")) return { label: "Journals added" };
+          return null;
+        }),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const env = {
+      NOX_DB: { prepare, batch: vi.fn() }, NOX_TASKS: { send: vi.fn() },
+      CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
+      CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
+    } as unknown as Env;
+    const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": `nox_secret_${"a".repeat(43)}` },
+      body: JSON.stringify({
+        type: "activity.occurred", metric: "custom.journals.added", userId: "raw-user-7",
+        eventId: "89195f9a-4a26-44e6-a147-9f2d003bc7f5", occurredAt: "2026-08-29T02:00:00Z",
+      }),
+    }), env);
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ accepted: true, duplicate: false, period: "2026-08-29" });
+    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("INSERT OR IGNORE INTO cue_activity_events"))).toBe(true);
+    const activityBindings = bindings.find((values) => values.includes("custom.journals.added") && values.includes("2026-08-29"));
+    expect(activityBindings).toBeDefined();
+    expect(activityBindings).not.toContain("raw-user-7");
   });
 });

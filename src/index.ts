@@ -28,7 +28,7 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
         service: "NoxCue",
         message: "Daily app health and immediate explicit errors, delivered to your team and saved for later.",
         ingest: "POST /v1/events",
-        types: ["user.registered", "user.active", "feature.result", "error.occurred"],
+        types: ["user.registered", "user.active", "activity.occurred", "feature.result", "error.occurred"],
       });
     }
     return jsonError("not_found", 404);
@@ -43,11 +43,12 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     period: string,
     metrics: Record<string, number>,
     comparisons: MetricComparisons = {},
+    metricLabels: Record<string, string> = {},
   ) {
-    const textFallback = buildDigestResponse(sourceName, period, metrics, comparisons);
+    const textFallback = buildDigestResponse(sourceName, period, metrics, comparisons, undefined, undefined, metricLabels);
     const chart = (async () => {
       try {
-        const id = await createChartSnapshot(this.env.NOX_DB, { sourceName, period, metrics, comparisons });
+        const id = await createChartSnapshot(this.env.NOX_DB, { sourceName, period, metrics, comparisons, metricLabels });
         return `${this.env.PUBLIC_BASE_URL.replace(/\/$/, "")}/v1/charts/${id}.png`;
       } catch (error) {
         console.error("NoxCue chart snapshot failed", error);
@@ -55,12 +56,12 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
       }
     })();
     const narration = narrateDailyStats(
-      { sourceName, period, metrics, comparisons },
+      { sourceName, period, metrics, comparisons, metricLabels },
       this.env.ANTHROPIC_API_KEY,
     );
     const [chartImageUrl, narrative] = await Promise.all([chart, narration]);
     return chartImageUrl || narrative
-      ? buildDigestResponse(sourceName, period, metrics, comparisons, chartImageUrl, narrative)
+      ? buildDigestResponse(sourceName, period, metrics, comparisons, chartImageUrl, narrative, metricLabels)
       : textFallback;
   }
 }

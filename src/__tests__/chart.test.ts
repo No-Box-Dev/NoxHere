@@ -65,4 +65,17 @@ describe("NoxCue chart", () => {
     expect(svg).toContain(">New users</text>");
     expect(svg).not.toContain("A&B");
   });
+
+  it("renders custom activity totals and per-user values as readable cards", () => {
+    const svg = buildChartSvg({
+      sourceName: "Playnist",
+      period: "2026-08-29",
+      metrics: { "custom.journals.added": 140, "custom.journals.added.per_user": 1.94 },
+      comparisons: {},
+    });
+    expect(svg).toContain(">Journals added</text>");
+    expect(svg).toContain(">Journals added / user</text>");
+    expect(svg).toContain(">1.94</text>");
+    expect(svg).not.toContain("194%");
+  });
 });

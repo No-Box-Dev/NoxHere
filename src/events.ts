@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { localPeriodAt } from "./metrics";
 import { cueFeatureResultSchema, storeFeatureResult } from "./feature-health";
+import { resolveFeature } from "./feature-catalog";
+import { resolveActivityMetric, type ResolvedActivityMetric } from "./activity-catalog";
 
 const MAX_BODY_BYTES = 32_768;
 const shortText = (max: number) => z.string().trim().min(1).max(max);
@@ -46,15 +48,27 @@ export const cueUserActiveEventSchema = z.object({
   type: z.literal("user.active"),
 }).strict();
 
+export const cueActivityEventSchema = z.object({
+  ...commonFields,
+  type: z.literal("activity.occurred"),
+  eventId: z.string().uuid(),
+  metric: z.string().trim().min(8).max(120)
+    .regex(/^custom\.[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){0,4}$/),
+  userId: shortText(200),
+  occurredAt: z.string().datetime({ offset: true }).optional(),
+}).strict();
+
 export const cueEventSchema = z.discriminatedUnion("type", [
   cueErrorEventSchema,
   cueUserRegisteredEventSchema,
   cueUserActiveEventSchema,
+  cueActivityEventSchema,
   cueFeatureResultSchema,
 ]);
 export type CueEvent = z.infer<typeof cueEventSchema>;
 export type CueErrorEvent = z.infer<typeof cueErrorEventSchema>;
 export type CueUserEvent = z.infer<typeof cueUserRegisteredEventSchema> | z.infer<typeof cueUserActiveEventSchema>;
+export type CueActivityEvent = z.infer<typeof cueActivityEventSchema>;
 
 interface CueSourceRow {
   key_id: string;
@@ -84,6 +98,51 @@ interface StoredResult {
   notificationSuppressed?: boolean;
   duplicate?: boolean;
   period?: string;
+  classification?: "unregistered";
+  requestedFeature?: string;
+  requestedMetric?: string;
+}
+
+function unregisteredMetricError(event: CueActivityEvent): CueErrorEvent {
+  return cueErrorEventSchema.parse({
+    version: 1,
+    type: "error.occurred",
+    eventId: event.eventId,
+    title: "Unregistered metric received",
+    message: `NoxCue received “${event.metric}”, but it is not registered for this project. Register it before sending activity events.`,
+    occurredAt: event.occurredAt,
+    data: {
+      errorCode: "UNREGISTERED_METRIC",
+      fingerprint: "metric.unregistered",
+      component: event.metric,
+      fatal: false,
+      unhandled: false,
+    },
+  });
+}
+
+function unregisteredFeatureError(event: Extract<CueEvent, { type: "feature.result" }>): CueErrorEvent {
+  const context = [
+    `NoxCue received “${event.feature}”, but it is neither a standard feature nor a registered custom feature.`,
+    event.message ? `Message: ${event.message}` : null,
+    event.error ? `Error: ${[event.error.code, event.error.message].filter(Boolean).join(": ")}` : null,
+  ].filter((line): line is string => Boolean(line)).join("\n").slice(0, 2_000);
+  return cueErrorEventSchema.parse({
+    version: 1,
+    type: "error.occurred",
+    eventId: event.eventId,
+    idempotencyKey: event.idempotencyKey,
+    title: "Unregistered feature received",
+    message: context,
+    occurredAt: event.occurredAt,
+    data: {
+      errorCode: "UNREGISTERED_FEATURE",
+      fingerprint: "feature.unregistered",
+      component: event.feature,
+      fatal: false,
+      unhandled: false,
+    },
+  });
 }
 
 function corsHeaders(origin: string | null): Headers {
@@ -313,6 +372,33 @@ async function storeUserEvent(
   return { eventId, queued: false, duplicate: Number(result.meta.changes ?? 0) === 0, period };
 }
 
+async function storeActivityEvent(
+  env: Env,
+  source: CueSourceRow,
+  event: CueActivityEvent,
+  eventId: string,
+  metric: ResolvedActivityMetric,
+): Promise<StoredResult> {
+  const occurredAt = event.occurredAt ? new Date(event.occurredAt) : new Date();
+  if (occurredAt.valueOf() > Date.now() + 5 * 60_000) throw new Error("invalid_occurred_at");
+  const period = localPeriodAt(occurredAt, source.timezone);
+  const result = await env.NOX_DB.prepare(
+    `INSERT OR IGNORE INTO cue_activity_events
+       (org_id, source_id, event_id, metric_key, subject_hash, period, occurred_at, received_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    source.org_id,
+    source.source_id,
+    eventId,
+    metric.key,
+    await hash(`${source.source_id}\u0000${event.userId}`),
+    period,
+    occurredAt.toISOString(),
+    new Date().toISOString(),
+  ).run();
+  return { eventId, queued: false, duplicate: Number(result.meta.changes ?? 0) === 0, period };
+}
+
 async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, eventId: string): Promise<StoredResult> {
   const existing = await env.NOX_DB.prepare(
     `SELECT delivery.id, delivery.status
@@ -435,26 +521,51 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
     const event = cueEventSchema.parse(await readJsonBody(request));
     const isUserEvent = event.type === "user.registered" || event.type === "user.active";
     const isFeatureEvent = event.type === "feature.result";
-    if (isUserEvent && source.key_kind !== "secret") {
+    const isActivityEvent = event.type === "activity.occurred";
+    if ((isUserEvent || isActivityEvent) && source.key_kind !== "secret") {
       return jsonResponse({ error: "secret_key_required" }, 403, origin);
     }
     if (isFeatureEvent && source.key_kind === "publishable" && !origin) {
       return jsonResponse({ error: "origin_required" }, 403, null);
     }
     const [sourceLimit, orgLimit] = await Promise.all([
-      isUserEvent || isFeatureEvent
+      isUserEvent || isFeatureEvent || isActivityEvent
         ? env.CUE_USER_EVENT_RATE_LIMITER.limit({ key: `source:${source.source_id}` })
         : env.CUE_ERROR_RATE_LIMITER.limit({ key: `source:${source.source_id}` }),
-      isUserEvent || isFeatureEvent
+      isUserEvent || isFeatureEvent || isActivityEvent
         ? Promise.resolve({ success: true })
         : env.CUE_ORG_RATE_LIMITER.limit({ key: `org:${source.org_id}` }),
     ]);
     if (!sourceLimit.success || !orgLimit.success) return rateLimited(origin);
     const eventId = await eventIdFor(source.source_id, source.timezone, event);
+    const definition = isFeatureEvent ? await resolveFeature(env, {
+      orgId: source.org_id,
+      sourceId: source.source_id,
+      projectId: source.project_id,
+    }, event.feature) : null;
+    const activityMetric = isActivityEvent ? await resolveActivityMetric(env, {
+      orgId: source.org_id,
+      sourceId: source.source_id,
+      projectId: source.project_id,
+    }, event.metric) : null;
     const result = isUserEvent
       ? await storeUserEvent(env, source, event, eventId)
+      : isActivityEvent
+        ? activityMetric
+          ? await storeActivityEvent(env, source, event, eventId, activityMetric)
+          : {
+              ...await storeError(env, source, unregisteredMetricError(event), eventId),
+              classification: "unregistered" as const,
+              requestedMetric: event.metric,
+            }
       : isFeatureEvent
-        ? await storeFeatureResult(env, source, event, eventId)
+        ? definition
+          ? await storeFeatureResult(env, source, event, eventId, definition)
+          : {
+              ...await storeError(env, source, unregisteredFeatureError(event), eventId),
+              classification: "unregistered" as const,
+              requestedFeature: event.feature,
+            }
         : await storeError(env, source, event, eventId);
     await env.NOX_DB.prepare(
       `UPDATE cue_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
