@@ -30,7 +30,10 @@ describe("daily statistics narration", () => {
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(init?.headers).toMatchObject({ "x-api-key": "managed-key", "anthropic-version": "2023-06-01" });
     const body = JSON.parse(String(init?.body));
-    expect(body).toMatchObject({ model: "claude-haiku-4-5-20251001", max_tokens: 180 });
+    expect(body).toMatchObject({ model: "claude-haiku-4-5-20251001", max_tokens: 100 });
+    expect(body.system).toContain("Mention at most two metrics");
+    expect(body.system).toContain("reference below 5");
+    expect(body.system).toContain("under 260 characters");
     const supplied = JSON.parse(body.messages[0].content);
     expect(supplied.statistics[0]).toMatchObject({
       key: "users.new",
@@ -83,7 +86,7 @@ describe("daily statistics narration", () => {
       content: [{ type: "text", text: `  "${"A".repeat(600)}"  ` }],
     })));
     const result = await narrateDailyStats(input, "managed-key", request);
-    expect(result).toHaveLength(420);
+    expect(result).toHaveLength(300);
     expect(result?.endsWith("…")).toBe(true);
   });
 });
