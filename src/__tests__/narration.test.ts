@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildNarrationStatistics, narrateDailyStats } from "../narration";
+import { buildNarrationCandidates, buildNarrationStatistics, narrateDailyStats } from "../narration";
 
 const dailyHistory = Array.from({ length: 15 }, (_, index) => ({
   period: `2026-08-${String(16 + index).padStart(2, "0")}`,
@@ -20,30 +20,59 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("daily statistics narration", () => {
   it("uses the managed NoxFeed model with deterministic statistical context", async () => {
-    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
-      content: [{ type: "text", text: "New users rose to 12, while daily activity stayed close to yesterday." }],
-    }), { headers: { "Content-Type": "application/json" } }));
+    const request = vi.fn<typeof fetch>(async (_url, init) => {
+      const body = JSON.parse(String(init?.body));
+      const supplied = JSON.parse(body.messages[0].content);
+      const newUsers = supplied.facts.find((fact: { key: string; horizon: string }) =>
+        fact.key === "users.new" && fact.horizon === "completed_day");
+      const dailyActive = supplied.facts.find((fact: { key: string; horizon: string }) =>
+        fact.key === "users.active.daily" && fact.horizon === "completed_day");
+      return new Response(JSON.stringify({
+        content: [{ type: "text", text: JSON.stringify({ factIds: [newUsers.id, dailyActive.id] }) }],
+      }), { headers: { "Content-Type": "application/json" } });
+    });
 
     await expect(narrateDailyStats(input, "managed-key", request))
-      .resolves.toBe("New users rose to 12, while daily activity stayed close to yesterday.");
+      .resolves.toBe("New users: 12, up from 8 yesterday. Daily active: 80, down from 82 yesterday.");
     const [url, init] = request.mock.calls[0]!;
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(init?.headers).toMatchObject({ "x-api-key": "managed-key", "anthropic-version": "2023-06-01" });
     const body = JSON.parse(String(init?.body));
-    expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 100 });
-    expect(body.system).toContain("Mention at most two metrics");
-    expect(body.system).toContain("reference below 5");
-    expect(body.system).toContain("under 260 characters");
+    expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 60 });
+    expect(body.system).toContain("Return only JSON");
     const supplied = JSON.parse(body.messages[0].content);
-    expect(supplied.statistics[0]).toMatchObject({
+    expect(supplied.facts).toEqual(expect.arrayContaining([expect.objectContaining({
       key: "users.new",
-      behavior: "daily_flow",
-      today: { value: 12, display: "12" },
-      dayOverDay: { yesterday: 8, absoluteChange: 4, relativeChangePercent: 50 },
-      baseline30d: { mean: 9.5, meanDisplay: "9.5", todayVsMeanDisplay: "2.5 (26.3%) above 30-day mean", sampleDays: 30 },
-      momentum: { basis: "daily_value", recent7MeanDisplay: "10.3" },
+      horizon: "completed_day",
+      sentence: "New users: 12, up from 8 yesterday.",
+    })]));
+    expect(body.messages[0].content).not.toContain("series");
+    expect(body.messages[0].content).not.toContain("relativeChangePercent");
+  });
+
+  it("offers only one metric per group and removes redundant totals and per-user variants", () => {
+    const candidates = buildNarrationCandidates({
+      ...input,
+      metrics: {
+        ...input.metrics,
+        "users.total": 128,
+        "users.active.weekly": 90,
+        "custom.reviews.written": 3,
+        "custom.reviews.written.per_user": 0.02,
+      },
+      comparisons: {
+        ...input.comparisons,
+        "users.total": { yesterday: 127, average30d: 110, sampleDays: 30 },
+        "users.active.weekly": { yesterday: 88, average30d: 84, sampleDays: 30 },
+        "custom.reviews.written": { yesterday: 0, average30d: 0.5, sampleDays: 30 },
+        "custom.reviews.written.per_user": { yesterday: 0, average30d: 0.01, sampleDays: 30 },
+      },
     });
-    expect(supplied.statistics[0].series).toHaveLength(15);
+    const keys = new Set(candidates.map(({ key }) => key));
+    expect(keys).toContain("users.new");
+    expect(keys).not.toContain("users.total");
+    expect(keys).not.toContain("custom.reviews.written.per_user");
+    expect([...keys].filter((key) => key.startsWith("users.active."))).toHaveLength(1);
   });
 
   it("accepts an operational model override", async () => {
@@ -87,15 +116,15 @@ describe("daily statistics narration", () => {
   it("falls back cleanly when the provider fails", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const request = vi.fn<typeof fetch>(async () => new Response("unavailable", { status: 503 }));
-    await expect(narrateDailyStats(input, "managed-key", request)).resolves.toBeUndefined();
+    await expect(narrateDailyStats(input, "managed-key", request))
+      .resolves.toBe("Daily active: 80, down from 82 yesterday. New users: 12, up from 8 yesterday.");
   });
 
-  it("normalizes and bounds provider output", async () => {
+  it("ignores unapproved model prose and renders deterministic facts", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: `  "${"A".repeat(600)}"  ` }],
     })));
-    const result = await narrateDailyStats(input, "managed-key", request);
-    expect(result).toHaveLength(300);
-    expect(result?.endsWith("…")).toBe(true);
+    await expect(narrateDailyStats(input, "managed-key", request))
+      .resolves.toBe("Daily active: 80, down from 82 yesterday. New users: 12, up from 8 yesterday.");
   });
 });
