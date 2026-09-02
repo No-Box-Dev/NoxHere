@@ -371,7 +371,9 @@ function numericTokens(text: string): Set<string> {
 function trimAtSentenceBoundary(text: string, maxWords: number): string | undefined {
   const wordCount = (value: string) => value.trim().split(/\s+/).filter(Boolean).length;
   if (wordCount(text) <= maxWords) return text;
-  const sentences = text.match(/[^.!?]+[.!?]+(?:\s+|$)/g) ?? [];
+  // A decimal point is not a sentence boundary. Match lazily until punctuation
+  // that is actually followed by whitespace or the end of the response.
+  const sentences = text.match(/.*?(?:[.!?]+(?=\s+|$)|$)/gs)?.filter((sentence) => sentence.trim()) ?? [];
   let result = "";
   for (const sentence of sentences) {
     const next = `${result}${sentence}`;

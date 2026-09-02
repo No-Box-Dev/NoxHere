@@ -186,6 +186,24 @@ describe("daily statistics narration", () => {
     expect(narration).toMatch(/\.$/);
   });
 
+  it("does not split a percentage decimal while trimming", async () => {
+    const ratioInput = {
+      ...input,
+      metrics: { ...input.metrics, "users.stickiness.dau_mau": 0.156 },
+      comparisons: {
+        ...input.comparisons,
+        "users.stickiness.dau_mau": { yesterday: 0.2, average30d: 0.18, sampleDays: 2 },
+      },
+    };
+    const review = `${"Daily activity was 80 users. ".repeat(20)}DAU / MAU was 15.6% as monthly activity expanded. This final sentence exceeds the limit.`;
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      content: [{ type: "text", text: review }],
+    })));
+    const narration = await narrateDailyStats(ratioInput, "managed-key", request);
+    expect(narration).toMatch(/DAU \/ MAU was 15\.6% as monthly activity expanded\.$/);
+    expect(narration).not.toContain("This final sentence");
+  });
+
   it("suppresses dramatic-looking trends caused by tiny baselines", () => {
     const lowVolumeHistory = [
       ...Array.from({ length: 7 }, (_, index) => ({ period: `2026-08-${String(16 + index).padStart(2, "0")}`, value: index === 0 ? 1 : 0 })),
