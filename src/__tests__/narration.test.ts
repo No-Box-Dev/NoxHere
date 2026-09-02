@@ -31,9 +31,9 @@ describe("daily statistics narration", () => {
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(init?.headers).toMatchObject({ "x-api-key": "managed-key", "anthropic-version": "2023-06-01" });
     const body = JSON.parse(String(init?.body));
-    expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 400 });
-    expect(body.system).toContain("Reason across the entire supplied dataset");
-    expect(body.system).toContain("do not target a fixed number of facts or sentences");
+    expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 240 });
+    expect(body.system).toContain("Analyze the entire supplied dataset privately");
+    expect(body.system).toContain("hard limit of 110 words");
     expect(body.system).not.toContain("for example");
     const supplied = JSON.parse(body.messages[0].content);
     expect(supplied.selectedMetrics).toEqual(expect.arrayContaining([expect.objectContaining({
@@ -129,6 +129,60 @@ describe("daily statistics narration", () => {
     })));
     await expect(narrateDailyStats(input, "managed-key", request))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+  });
+
+  it("accepts calendar dates present in the supplied history", async () => {
+    const review = "The August 29 lift has eased, while 12 new users joined today.";
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      content: [{ type: "text", text: review }],
+    })));
+    await expect(narrateDailyStats(input, "managed-key", request)).resolves.toBe(review);
+  });
+
+  it("accepts displayed percentages from a ratio history", async () => {
+    const ratioInput = {
+      sourceName: "Small launch",
+      period: "2026-08-30",
+      metrics: { "users.stickiness.dau_mau": 0.22 },
+      comparisons: {
+        "users.stickiness.dau_mau": {
+          yesterday: 0.25,
+          average30d: 0.24,
+          sampleDays: 3,
+          history: [
+            { period: "2026-08-28", value: 0.18 },
+            { period: "2026-08-29", value: 0.35 },
+            { period: "2026-08-30", value: 0.22 },
+          ],
+        },
+      },
+    };
+    const review = "DAU / MAU was 22%, within its recent 18% to 35% range.";
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      content: [{ type: "text", text: review }],
+    })));
+    await expect(narrateDailyStats(ratioInput, "managed-key", request)).resolves.toBe(review);
+  });
+
+  it("rejects a provider response truncated at the token limit", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      stop_reason: "max_tokens",
+      content: [{ type: "text", text: "Daily activity was 80 users but" }],
+    })));
+    await expect(narrateDailyStats(input, "managed-key", request))
+      .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+  });
+
+  it("trims an overlong review only at a complete sentence boundary", async () => {
+    const review = "Daily activity was 80 users. ".repeat(30).trim();
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      content: [{ type: "text", text: review }],
+    })));
+    const narration = await narrateDailyStats(input, "managed-key", request);
+    expect(narration).toBeDefined();
+    expect(narration!.split(/\s+/)).toHaveLength(130);
+    expect(narration).toMatch(/\.$/);
   });
 
   it("suppresses dramatic-looking trends caused by tiny baselines", () => {
