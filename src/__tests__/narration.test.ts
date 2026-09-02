@@ -35,6 +35,8 @@ describe("daily statistics narration", () => {
     expect(body.system).toContain("Analyze the entire supplied dataset privately");
     expect(body.system).toContain("hard limit of 100 words");
     expect(body.system).toContain("same metric's dated series");
+    expect(body.system).toContain("cause cannot be determined");
+    expect(body.system).toContain("Never describe aggregate product statistics as healthy or unhealthy");
     expect(body.system).not.toContain("for example");
     const supplied = JSON.parse(body.messages[0].content);
     expect(supplied.selectedMetrics).toEqual(expect.arrayContaining([expect.objectContaining({
