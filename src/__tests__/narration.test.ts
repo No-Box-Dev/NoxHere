@@ -33,7 +33,8 @@ describe("daily statistics narration", () => {
     const body = JSON.parse(String(init?.body));
     expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 240 });
     expect(body.system).toContain("Analyze the entire supplied dataset privately");
-    expect(body.system).toContain("hard limit of 110 words");
+    expect(body.system).toContain("hard limit of 100 words");
+    expect(body.system).toContain("same metric's dated series");
     expect(body.system).not.toContain("for example");
     const supplied = JSON.parse(body.messages[0].content);
     expect(supplied.selectedMetrics).toEqual(expect.arrayContaining([expect.objectContaining({
@@ -181,7 +182,7 @@ describe("daily statistics narration", () => {
     })));
     const narration = await narrateDailyStats(input, "managed-key", request);
     expect(narration).toBeDefined();
-    expect(narration!.split(/\s+/)).toHaveLength(130);
+    expect(narration!.split(/\s+/)).toHaveLength(110);
     expect(narration).toMatch(/\.$/);
   });
 
