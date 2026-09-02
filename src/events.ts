@@ -179,14 +179,16 @@ async function findSource(env: Env, providedKey: string): Promise<CueSourceRow |
             source.id AS source_id, source.name AS source_name, source.project_id,
             source.allowed_origins_json, source.timezone, source.error_cooldown_minutes,
             COALESCE(
+              NULLIF(alert_route.channel_id, ''),
+              NULLIF(legacy_project_route.channel_id, ''),
               NULLIF(source.slack_channel_id, ''),
-              NULLIF(project_route.channel_id, ''),
               NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), ''),
               NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')
             ) AS slack_channel_id,
             CASE
+              WHEN NULLIF(alert_route.channel_id, '') IS NOT NULL THEN NULLIF(alert_route.connection_id, '')
+              WHEN NULLIF(legacy_project_route.channel_id, '') IS NOT NULL THEN NULLIF(legacy_project_route.connection_id, '')
               WHEN NULLIF(source.slack_channel_id, '') IS NOT NULL THEN NULLIF(source.slack_connection_id, '')
-              WHEN NULLIF(project_route.channel_id, '') IS NOT NULL THEN NULLIF(project_route.connection_id, '')
               WHEN NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), '') IS NOT NULL
                 THEN NULLIF(json_extract(config.data, '$.slack.noxCueConnectionId'), '')
               ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '')
@@ -194,16 +196,20 @@ async function findSource(env: Env, providedKey: string): Promise<CueSourceRow |
        FROM cue_source_keys key
        JOIN cue_sources source ON source.id = key.source_id
        LEFT JOIN config ON config.org_id = source.org_id AND config.key = 'settings'
-       LEFT JOIN project_slack_routes project_route
-         ON project_route.org_id = source.org_id
-        AND project_route.project_id = source.project_id
-        AND project_route.route_key = 'noxcue'
-        AND EXISTS (
-          SELECT 1 FROM project_routing_settings routing_settings
-           WHERE routing_settings.org_id = source.org_id
-             AND routing_settings.project_id = source.project_id
-             AND routing_settings.enabled = 1
-        )
+       LEFT JOIN project_routing_settings routing_settings
+         ON routing_settings.org_id = source.org_id
+        AND routing_settings.project_id = source.project_id
+        AND routing_settings.enabled = 1
+       LEFT JOIN project_slack_routes alert_route
+         ON alert_route.org_id = source.org_id
+        AND alert_route.project_id = source.project_id
+        AND alert_route.route_key = 'noxcue_alerts'
+        AND routing_settings.enabled = 1
+       LEFT JOIN project_slack_routes legacy_project_route
+         ON legacy_project_route.org_id = source.org_id
+        AND legacy_project_route.project_id = source.project_id
+        AND legacy_project_route.route_key = 'noxcue'
+        AND routing_settings.enabled = 1
       WHERE key.key_hash = ? AND key.revoked_at IS NULL AND source.enabled = 1
         AND COALESCE(json_extract(config.data, '$.apps.noxcue'), 1) != 0`,
   ).bind(keyHash).first<CueSourceRow>();

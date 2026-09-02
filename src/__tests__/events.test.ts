@@ -114,6 +114,10 @@ describe("NoxCue event contract", () => {
     }), env);
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ accepted: true, stored: true, queued: true });
+    const sourceLookup = prepare.mock.calls.find(([sql]) => String(sql).includes("FROM cue_source_keys"));
+    expect(String(sourceLookup?.[0])).toContain("alert_route.route_key = 'noxcue_alerts'");
+    expect(String(sourceLookup?.[0]).indexOf("NULLIF(alert_route.channel_id"))
+      .toBeLessThan(String(sourceLookup?.[0]).indexOf("NULLIF(source.slack_channel_id"));
     expect(batch).toHaveBeenCalledOnce();
     expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_slack" }));
   });
