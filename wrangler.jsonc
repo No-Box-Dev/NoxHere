@@ -51,6 +51,7 @@
   ],
   "vars": {
     "ENVIRONMENT": "production",
-    "PUBLIC_BASE_URL": "https://noxcue.jasper-414.workers.dev"
+    "PUBLIC_BASE_URL": "https://noxcue.jasper-414.workers.dev",
+    "NARRATION_MODEL": "claude-sonnet-4-6"
   }
 }

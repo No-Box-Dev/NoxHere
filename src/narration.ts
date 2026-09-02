@@ -2,7 +2,7 @@ import { displayMetricsFor, formatDelta, formatMetric, type DisplayMetric, type 
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
-const MODEL = "claude-haiku-4-5-20251001";
+const DEFAULT_MODEL = "claude-sonnet-4-6";
 const TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 32 * 1024;
 const MAX_NARRATION_LENGTH = 300;
@@ -204,6 +204,7 @@ export async function narrateDailyStats(
   input: NarrationInput,
   apiKey: string | undefined,
   request: typeof fetch = fetch,
+  model = DEFAULT_MODEL,
 ): Promise<string | undefined> {
   if (!apiKey) return undefined;
   const statistics = buildNarrationStatistics(input);
@@ -220,7 +221,7 @@ export async function narrateDailyStats(
         "anthropic-version": ANTHROPIC_VERSION,
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: model.trim() || DEFAULT_MODEL,
         max_tokens: 100,
         system: [
           "Write a calm, concise product-health note for a completed 24-hour Slack digest.",

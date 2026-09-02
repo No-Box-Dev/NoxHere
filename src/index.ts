@@ -58,6 +58,8 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     const narration = narrateDailyStats(
       { sourceName, period, metrics, comparisons, metricLabels },
       this.env.ANTHROPIC_API_KEY,
+      fetch,
+      this.env.NARRATION_MODEL,
     );
     const [chartImageUrl, narrative] = await Promise.all([chart, narration]);
     return chartImageUrl || narrative
