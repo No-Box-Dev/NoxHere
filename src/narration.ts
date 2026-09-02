@@ -368,12 +368,25 @@ function numericTokens(text: string): Set<string> {
   return new Set((withoutRangeHyphens.match(/[-+]?\d[\d,]*(?:\.\d+)?%?/g) ?? []).map(normalizedNumericToken));
 }
 
+function narrationSentences(text: string): string[] {
+  // A decimal point is not a sentence boundary. Match lazily until punctuation
+  // that is actually followed by whitespace or the end of the response.
+  return text.match(/.*?(?:[.!?]+(?=\s+|$)|$)/gs)?.filter((sentence) => sentence.trim()) ?? [];
+}
+
+const UNSUPPORTED_CLAIM = /\b(?:normal|expected|healthy|unhealthy|reflect(?:s|ed|ing)?|(?:caused|driven|supported)\s+by|(?:single|common|external) cause)\b/i;
+
+function removeUnsupportedClaims(text: string): string {
+  return narrationSentences(text)
+    .filter((sentence) => !UNSUPPORTED_CLAIM.test(sentence))
+    .join("")
+    .trim();
+}
+
 function trimAtSentenceBoundary(text: string, maxWords: number): string | undefined {
   const wordCount = (value: string) => value.trim().split(/\s+/).filter(Boolean).length;
   if (wordCount(text) <= maxWords) return text;
-  // A decimal point is not a sentence boundary. Match lazily until punctuation
-  // that is actually followed by whitespace or the end of the response.
-  const sentences = text.match(/.*?(?:[.!?]+(?=\s+|$)|$)/gs)?.filter((sentence) => sentence.trim()) ?? [];
+  const sentences = narrationSentences(text);
   let result = "";
   for (const sentence of sentences) {
     const next = `${result}${sentence}`;
@@ -384,8 +397,10 @@ function trimAtSentenceBoundary(text: string, maxWords: number): string | undefi
 }
 
 function validatedNarration(text: string, statistics: NarrationStatistic[]): string | undefined {
-  const narration = text.trim().replace(/^```(?:text)?\s*/i, "").replace(/\s*```$/, "").trim();
-  if (!narration || narration.length > MAX_NARRATION_LENGTH || /^[{[]/.test(narration)) return undefined;
+  const rawNarration = text.trim().replace(/^```(?:text)?\s*/i, "").replace(/\s*```$/, "").trim();
+  if (!rawNarration || rawNarration.length > MAX_NARRATION_LENGTH || /^[{[]/.test(rawNarration)) return undefined;
+  const narration = removeUnsupportedClaims(rawNarration);
+  if (!narration) return undefined;
 
   const supplied = JSON.stringify(statistics);
   const allowedNumbers = numericTokens(supplied);

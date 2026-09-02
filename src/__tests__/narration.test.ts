@@ -206,6 +206,15 @@ describe("daily statistics narration", () => {
     expect(narration).not.toContain("This final sentence");
   });
 
+  it("removes unsupported causal and normality claims while retaining factual sentences", async () => {
+    const review = "Daily activity was 80 users, reflecting new-user growth. 12 new users signed up. The dip was normal.";
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      content: [{ type: "text", text: review }],
+    })));
+    await expect(narrateDailyStats(input, "managed-key", request))
+      .resolves.toBe("12 new users signed up.");
+  });
+
   it("suppresses dramatic-looking trends caused by tiny baselines", () => {
     const lowVolumeHistory = [
       ...Array.from({ length: 7 }, (_, index) => ({ period: `2026-08-${String(16 + index).padStart(2, "0")}`, value: index === 0 ? 1 : 0 })),
