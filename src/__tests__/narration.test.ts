@@ -33,7 +33,7 @@ describe("daily statistics narration", () => {
     });
 
     await expect(narrateDailyStats(input, "managed-key", request))
-      .resolves.toBe("New users: 12, up from 8 yesterday. Daily active: 80, down from 82 yesterday.");
+      .resolves.toBe("12 new users signed up, up from 8 yesterday. Daily activity fell to 80 users from 82 yesterday.");
     const [url, init] = request.mock.calls[0]!;
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(init?.headers).toMatchObject({ "x-api-key": "managed-key", "anthropic-version": "2023-06-01" });
@@ -44,7 +44,7 @@ describe("daily statistics narration", () => {
     expect(supplied.facts).toEqual(expect.arrayContaining([expect.objectContaining({
       key: "users.new",
       horizon: "completed_day",
-      sentence: "New users: 12, up from 8 yesterday.",
+      sentence: "12 new users signed up, up from 8 yesterday.",
     })]));
     expect(body.messages[0].content).not.toContain("series");
     expect(body.messages[0].content).not.toContain("relativeChangePercent");
@@ -117,7 +117,7 @@ describe("daily statistics narration", () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const request = vi.fn<typeof fetch>(async () => new Response("unavailable", { status: 503 }));
     await expect(narrateDailyStats(input, "managed-key", request))
-      .resolves.toBe("Daily active: 80, down from 82 yesterday. New users: 12, up from 8 yesterday.");
+      .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
   });
 
   it("ignores unapproved model prose and renders deterministic facts", async () => {
@@ -125,6 +125,26 @@ describe("daily statistics narration", () => {
       content: [{ type: "text", text: `  "${"A".repeat(600)}"  ` }],
     })));
     await expect(narrateDailyStats(input, "managed-key", request))
-      .resolves.toBe("Daily active: 80, down from 82 yesterday. New users: 12, up from 8 yesterday.");
+      .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+  });
+
+  it("suppresses dramatic-looking trends caused by tiny baselines", () => {
+    const lowVolumeHistory = [
+      ...Array.from({ length: 7 }, (_, index) => ({ period: `2026-08-${String(16 + index).padStart(2, "0")}`, value: index === 0 ? 1 : 0 })),
+      ...Array.from({ length: 7 }, (_, index) => ({ period: `2026-08-${String(23 + index).padStart(2, "0")}`, value: index < 3 ? 2 : 1 })),
+    ];
+    const candidates = buildNarrationCandidates({
+      sourceName: "Playnist",
+      period: "2026-08-30",
+      metrics: { "users.new": 1 },
+      comparisons: {
+        "users.new": { yesterday: 3, average30d: 0.8, sampleDays: 30, history: lowVolumeHistory },
+      },
+    });
+
+    expect(candidates).toEqual([expect.objectContaining({
+      horizon: "completed_day",
+      sentence: "1 new user signed up, down from 3 yesterday.",
+    })]);
   });
 });
