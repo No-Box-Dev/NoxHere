@@ -19,35 +19,30 @@ const input = {
 afterEach(() => vi.restoreAllMocks());
 
 describe("daily statistics narration", () => {
-  it("uses the managed NoxFeed model with deterministic statistical context", async () => {
-    const request = vi.fn<typeof fetch>(async (_url, init) => {
-      const body = JSON.parse(String(init?.body));
-      const supplied = JSON.parse(body.messages[0].content);
-      const newUsers = supplied.facts.find((fact: { key: string; horizon: string }) =>
-        fact.key === "users.new" && fact.horizon === "completed_day");
-      const dailyActive = supplied.facts.find((fact: { key: string; horizon: string }) =>
-        fact.key === "users.active.daily" && fact.horizon === "completed_day");
-      return new Response(JSON.stringify({
-        content: [{ type: "text", text: JSON.stringify({ factIds: [newUsers.id, dailyActive.id] }) }],
-      }), { headers: { "Content-Type": "application/json" } });
-    });
+  it("asks the managed model for an editorial review using complete selected-metric context", async () => {
+    const review = "Acquisition improved with 12 new users, while daily activity remained close to its recent norm at 80 users.";
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      content: [{ type: "text", text: review }],
+    }), { headers: { "Content-Type": "application/json" } }));
 
     await expect(narrateDailyStats(input, "managed-key", request))
-      .resolves.toBe("12 new users signed up, up from 8 yesterday. Daily activity fell to 80 users from 82 yesterday.");
+      .resolves.toBe(review);
     const [url, init] = request.mock.calls[0]!;
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(init?.headers).toMatchObject({ "x-api-key": "managed-key", "anthropic-version": "2023-06-01" });
     const body = JSON.parse(String(init?.body));
-    expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 60 });
-    expect(body.system).toContain("Return only JSON");
+    expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 400 });
+    expect(body.system).toContain("Reason across the entire supplied dataset");
+    expect(body.system).toContain("do not target a fixed number of facts or sentences");
+    expect(body.system).not.toContain("for example");
     const supplied = JSON.parse(body.messages[0].content);
-    expect(supplied.facts).toEqual(expect.arrayContaining([expect.objectContaining({
+    expect(supplied.selectedMetrics).toEqual(expect.arrayContaining([expect.objectContaining({
       key: "users.new",
-      horizon: "completed_day",
-      sentence: "12 new users signed up, up from 8 yesterday.",
+      behavior: "daily_flow",
+      today: { value: 12, display: "12" },
+      series: expect.any(Array),
     })]));
-    expect(body.messages[0].content).not.toContain("series");
-    expect(body.messages[0].content).not.toContain("relativeChangePercent");
+    expect(body.messages[0].content).toContain("relativeChangePercent");
   });
 
   it("offers only one metric per group and removes redundant totals and per-user variants", () => {
@@ -123,6 +118,14 @@ describe("daily statistics narration", () => {
   it("ignores unapproved model prose and renders deterministic facts", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: `  "${"A".repeat(600)}"  ` }],
+    })));
+    await expect(narrateDailyStats(input, "managed-key", request))
+      .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+  });
+
+  it("rejects quantitative claims that are absent from the supplied statistics", async () => {
+    const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      content: [{ type: "text", text: "Daily activity reached 999 users." }],
     })));
     await expect(narrateDailyStats(input, "managed-key", request))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
