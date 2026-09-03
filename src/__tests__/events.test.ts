@@ -91,7 +91,8 @@ describe("NoxCue event contract", () => {
           key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
           source_id: "source-1", source_name: "Checkout", project_id: null,
           allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
-          error_cooldown_minutes: 15, slack_channel_id: "C123", slack_connection_id: "conn-1",
+          error_cooldown_minutes: 15, environment: "production", alerts_enabled: 1,
+          slack_channel_id: "C123", slack_connection_id: "conn-1",
         } : null),
         run: vi.fn(async () => ({ success: true })),
       };
@@ -122,6 +123,42 @@ describe("NoxCue event contract", () => {
     expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_slack" }));
   });
 
+  it("rejects an event whose environment does not match the source key", async () => {
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn(() => statement),
+        first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
+          key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
+          source_id: "source-1", source_name: "Playnist Production", project_id: "playnist",
+          allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
+          environment: "production", alerts_enabled: 1,
+          slack_channel_id: "C123", slack_connection_id: "conn-1",
+        } : null),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const batch = vi.fn(async () => []);
+    const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": `nox_secret_${"a".repeat(43)}` },
+      body: JSON.stringify({ type: "user.registered", environment: "staging", userId: "user-7" }),
+    }), {
+      NOX_DB: { prepare, batch }, NOX_TASKS: { send: vi.fn() },
+      CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
+      CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
+    } as unknown as Env);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "environment_mismatch",
+      expectedEnvironment: "production",
+      receivedEnvironment: "staging",
+    });
+    expect(batch).not.toHaveBeenCalled();
+  });
+
   it("stores an unknown feature as one unregistered error without creating a feature", async () => {
     const queue = { send: vi.fn(async () => undefined) };
     const batch = vi.fn(async () => []);
@@ -136,7 +173,8 @@ describe("NoxCue event contract", () => {
             key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
             source_id: "source-1", source_name: "Playnist", project_id: "playnist",
             allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
-            error_cooldown_minutes: 15, slack_channel_id: "C123", slack_connection_id: "conn-1",
+            error_cooldown_minutes: 15, environment: "production", alerts_enabled: 1,
+            slack_channel_id: "C123", slack_connection_id: "conn-1",
           };
           if (sql.includes("FROM cue_custom_features")) return null;
           return null;
@@ -192,6 +230,7 @@ describe("NoxCue event contract", () => {
           key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
           source_id: "source-1", source_name: "Playnist", project_id: null,
           allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
+          environment: "production", alerts_enabled: 1,
           slack_channel_id: "C123", slack_connection_id: "conn-1",
         } : null),
         run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
@@ -233,6 +272,7 @@ describe("NoxCue event contract", () => {
             key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
             source_id: "source-1", source_name: "Playnist", project_id: "playnist",
             allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
+            environment: "production", alerts_enabled: 1,
             slack_channel_id: null, slack_connection_id: null,
           };
           if (sql.includes("FROM cue_custom_metrics")) return { label: "Journals added" };

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ResolvedFeature } from "./feature-catalog";
+import { cueEnvironmentSchema, type CueEnvironment } from "./environment";
 
 export const FEATURE_REASONS = [
   "invalid_input",
@@ -30,6 +31,7 @@ export const cueFeatureResultSchema = z.object({
   type: z.literal("feature.result"),
   eventId: z.string().uuid().optional(),
   idempotencyKey: z.string().trim().min(1).max(200).optional(),
+  environment: cueEnvironmentSchema.optional(),
   feature: z.string().trim().min(1).max(120).regex(FEATURE_KEY_PATTERN),
   outcome: z.enum(["success", "rejected", "failure"]),
   reason: z.enum(FEATURE_REASONS).optional(),
@@ -59,6 +61,7 @@ export interface FeatureSource {
   owner_id: string;
   source_id: string;
   source_name: string;
+  environment: CueEnvironment;
   slack_channel_id: string | null;
   slack_connection_id: string | null;
 }
@@ -90,7 +93,7 @@ function slackMessage(source: FeatureSource, definition: ResolvedFeature, event:
     text: `${source.source_name}: ${headline}`,
     blocks: [
       { type: "section", text: { type: "mrkdwn", text: `:rotating_light: *${escapeSlack(headline)}*\n${escapeSlack(impact)}\n*Error:* ${escapeSlack(technical)}` } },
-      { type: "context", elements: [{ type: "mrkdwn", text: `NoxCue · ${escapeSlack(source.source_name)} · ${escapeSlack(event.feature)}` }] },
+      { type: "context", elements: [{ type: "mrkdwn", text: `NoxCue · ${escapeSlack(source.source_name)} · ${escapeSlack(source.environment)} · ${escapeSlack(event.feature)}` }] },
     ],
   };
 }

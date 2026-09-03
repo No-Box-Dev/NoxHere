@@ -3,6 +3,7 @@ import { localPeriodAt } from "./metrics";
 import { cueFeatureResultSchema, storeFeatureResult } from "./feature-health";
 import { resolveFeature } from "./feature-catalog";
 import { resolveActivityMetric, type ResolvedActivityMetric } from "./activity-catalog";
+import { cueEnvironmentSchema, type CueEnvironment } from "./environment";
 
 const MAX_BODY_BYTES = 32_768;
 const shortText = (max: number) => z.string().trim().min(1).max(max);
@@ -11,6 +12,7 @@ const commonFields = {
   version: z.literal(1).default(1),
   eventId: z.string().uuid().optional(),
   idempotencyKey: optionalText(200),
+  environment: cueEnvironmentSchema.optional(),
 };
 
 export const cueErrorEventSchema = z.object({
@@ -81,6 +83,8 @@ interface CueSourceRow {
   allowed_origins_json: string;
   timezone: string;
   error_cooldown_minutes: number;
+  environment: CueEnvironment;
+  alerts_enabled: number;
   slack_channel_id: string | null;
   slack_connection_id: string | null;
 }
@@ -178,21 +182,22 @@ async function findSource(env: Env, providedKey: string): Promise<CueSourceRow |
     `SELECT key.id AS key_id, key.kind AS key_kind, source.org_id, source.owner_id,
             source.id AS source_id, source.name AS source_name, source.project_id,
             source.allowed_origins_json, source.timezone, source.error_cooldown_minutes,
-            COALESCE(
+            source.environment, source.alerts_enabled,
+            CASE WHEN source.alerts_enabled = 1 THEN COALESCE(
               NULLIF(alert_route.channel_id, ''),
               NULLIF(legacy_project_route.channel_id, ''),
               NULLIF(source.slack_channel_id, ''),
               NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), ''),
               NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')
-            ) AS slack_channel_id,
-            CASE
+            ) END AS slack_channel_id,
+            CASE WHEN source.alerts_enabled = 1 THEN CASE
               WHEN NULLIF(alert_route.channel_id, '') IS NOT NULL THEN NULLIF(alert_route.connection_id, '')
               WHEN NULLIF(legacy_project_route.channel_id, '') IS NOT NULL THEN NULLIF(legacy_project_route.connection_id, '')
               WHEN NULLIF(source.slack_channel_id, '') IS NOT NULL THEN NULLIF(source.slack_connection_id, '')
               WHEN NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), '') IS NOT NULL
                 THEN NULLIF(json_extract(config.data, '$.slack.noxCueConnectionId'), '')
               ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '')
-            END AS slack_connection_id
+            END END AS slack_connection_id
        FROM cue_source_keys key
        JOIN cue_sources source ON source.id = key.source_id
        LEFT JOIN config ON config.org_id = source.org_id AND config.key = 'settings'
@@ -256,20 +261,20 @@ async function readJsonBody(request: Request): Promise<unknown> {
   catch { throw new Error("invalid_json"); }
 }
 
-async function eventIdFor(sourceId: string, timezone: string, event: CueEvent): Promise<string> {
+async function eventIdFor(sourceId: string, timezone: string, environment: CueEnvironment, event: CueEvent): Promise<string> {
   if (event.type === "user.registered" || event.type === "user.active") {
     const period = event.type === "user.active"
       ? localPeriodAt(event.occurredAt ?? new Date(), timezone)
       : "lifetime";
-    return `cue_user_${(await hash(`${sourceId}\u0000${event.type}\u0000${event.userId}\u0000${period}`)).slice(0, 40)}`;
+    return `cue_user_${(await hash(`${sourceId}\u0000${environment}\u0000${event.type}\u0000${event.userId}\u0000${period}`)).slice(0, 40)}`;
   }
   if (event.type === "feature.result") {
     if (event.eventId) return event.eventId;
-    if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
+    if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
     return crypto.randomUUID();
   }
   if (event.eventId) return event.eventId;
-  if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
+  if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
   return crypto.randomUUID();
 }
 
@@ -289,7 +294,7 @@ export function buildCueSlackMessage(sourceName: string, event: CueErrorEvent, o
   const details = [
     event.data.errorCode ? `*Code:* \`${escapeSlack(event.data.errorCode)}\`` : null,
     event.data.component ? `*Component:* ${escapeSlack(event.data.component)}` : null,
-    event.data.environment ? `*Environment:* ${escapeSlack(event.data.environment)}` : null,
+    event.environment ? `*Environment:* ${escapeSlack(event.environment)}` : null,
     event.message ? escapeSlack(event.message) : null,
   ].filter((line): line is string => Boolean(line));
   return {
@@ -524,7 +529,19 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
   }
 
   try {
-    const event = cueEventSchema.parse(await readJsonBody(request));
+    const parsedEvent = cueEventSchema.parse(await readJsonBody(request));
+    const legacyEnvironment = parsedEvent.type === "error.occurred" ? parsedEvent.data.environment : undefined;
+    const suppliedEnvironment = parsedEvent.environment ?? legacyEnvironment;
+    if (suppliedEnvironment && suppliedEnvironment !== source.environment) {
+      return jsonResponse({
+        error: "environment_mismatch",
+        expectedEnvironment: source.environment,
+        receivedEnvironment: suppliedEnvironment,
+      }, 409, origin);
+    }
+    const event = parsedEvent.type === "error.occurred"
+      ? { ...parsedEvent, environment: source.environment, data: { ...parsedEvent.data, environment: source.environment } }
+      : { ...parsedEvent, environment: source.environment };
     const isUserEvent = event.type === "user.registered" || event.type === "user.active";
     const isFeatureEvent = event.type === "feature.result";
     const isActivityEvent = event.type === "activity.occurred";
@@ -543,7 +560,7 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
         : env.CUE_ORG_RATE_LIMITER.limit({ key: `org:${source.org_id}` }),
     ]);
     if (!sourceLimit.success || !orgLimit.success) return rateLimited(origin);
-    const eventId = await eventIdFor(source.source_id, source.timezone, event);
+    const eventId = await eventIdFor(source.source_id, source.timezone, source.environment, event);
     const definition = isFeatureEvent ? await resolveFeature(env, {
       orgId: source.org_id,
       sourceId: source.source_id,
@@ -576,7 +593,7 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
     await env.NOX_DB.prepare(
       `UPDATE cue_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
     ).bind(new Date().toISOString(), source.key_id).run();
-    return jsonResponse({ accepted: true, stored: true, ...result }, 202, origin);
+    return jsonResponse({ accepted: true, stored: true, environment: source.environment, ...result }, 202, origin);
   } catch (error) {
     const { code, status } = inputError(error);
     if (status === 500) {

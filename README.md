@@ -10,6 +10,10 @@ NoxCue accepts a deliberately small, governed event catalog:
 - a standard feature result, or a NoxConnect-registered `custom.*` feature result;
 - a NoxConnect-registered `custom.*` activity event that NoxCue aggregates into total and per-user statistics;
 
+Each source key is scoped to one named environment. NoxCue validates the event's
+environment at ingestion, stores environments separately, and gives teams
+separate controls for collection, daily digests, and immediate Slack alerts.
+
 ```text
 App event → NoxCue Worker → hashed user facts in NoxConnect D1
                                 ├─ aggregate user health → Slack daily brief
@@ -21,6 +25,7 @@ App event → NoxCue Worker → hashed user facts in NoxConnect D1
 ```json
 {
   "type": "error.occurred",
+  "environment": "production",
   "title": "Invoice generation failed",
   "idempotencyKey": "invoice-1842-attempt-3",
   "data": {

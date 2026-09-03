@@ -13,7 +13,8 @@ export type NoxCueReason =
   | "email_delivery_failed" | "oauth_failed" | "session_failed"
   | "configuration_error" | "timeout" | "network_error" | "internal_error" | "unknown";
 
-export interface NoxCueOptions { endpoint?: string; ingestKey: string; }
+export type NoxCueEnvironment = "production" | "staging" | "development" | "preview" | "test" | "local";
+export interface NoxCueOptions { endpoint?: string; ingestKey: string; environment: NoxCueEnvironment; }
 export interface ErrorCueInput {
   title: string; message?: string; occurredAt?: string; url?: string; idempotencyKey?: string;
   data?: { errorCode?: string; fingerprint?: string; component?: string; environment?: string;
@@ -84,7 +85,7 @@ export function createNoxCue(options: NoxCueOptions) {
     const response = await fetch(`${endpoint}/v1/events`, {
       method: "POST", keepalive: true,
       headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": options.ingestKey },
-      body: JSON.stringify({ version: 1, ...body }),
+      body: JSON.stringify({ version: 1, environment: options.environment, ...body }),
     });
     if (!response.ok) throw new Error(`NoxCue rejected the event (${response.status})`);
     return ((await response.json()) as { eventId: string }).eventId;

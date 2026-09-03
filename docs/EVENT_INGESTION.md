@@ -4,6 +4,23 @@
 `user.registered`, `user.active`, `activity.occurred`, `feature.result`, and the immediate
 `error.occurred` cue.
 
+## Environments and delivery
+
+Every source and ingest key belongs to exactly one environment: `production`,
+`staging`, `development`, `preview`, `test`, or `local`. Send the environment at
+the top level of every event. NoxCue rejects a mismatch with
+`409 environment_mismatch`, which prevents a staging key from contaminating
+production statistics. Older clients that omit it inherit the key's environment.
+
+```json
+{ "type": "user.registered", "environment": "production", "userId": "app-user-1842" }
+```
+
+NoxConnect exposes separate controls for each environment: accept and store
+events, send the daily digest, and send immediate Slack alerts. Endpoint
+checks also have their own switch; when immediate alerts are paused, checks and
+status storage continue without Slack notifications.
+
 ## Feature results
 
 NoxCue owns a closed standard catalog. V1 contains these auth journeys:
@@ -39,6 +56,7 @@ an error and do not alert.
 ```json
 {
   "type": "feature.result",
+  "environment": "production",
   "feature": "auth.signup",
   "outcome": "failure",
   "reason": "dependency_unavailable",
@@ -64,7 +82,7 @@ The wire events contain only the stable app user identifier and an optional
 timestamp:
 
 ```json
-{ "type": "user.registered", "userId": "app-user-1842" }
+{ "type": "user.registered", "environment": "production", "userId": "app-user-1842" }
 ```
 
 NoxCue hashes the identifier before storage. It retains one registration fact
@@ -82,6 +100,7 @@ query or aggregate its own database:
 ```json
 {
   "type": "activity.occurred",
+  "environment": "production",
   "metric": "custom.journals.added",
   "userId": "app-user-1842",
   "eventId": "89195f9a-4a26-44e6-a147-9f2d003bc7f5"
@@ -98,6 +117,7 @@ never create a metric implicitly.
 ```json
 {
   "type": "error.occurred",
+  "environment": "production",
   "title": "Invoice generation failed",
   "idempotencyKey": "invoice-1842-attempt-3",
   "message": "PDF generation timed out",
@@ -105,7 +125,6 @@ never create a metric implicitly.
     "errorCode": "PDF_TIMEOUT",
     "fingerprint": "invoice:pdf-timeout",
     "component": "billing",
-    "environment": "production",
     "affectedUser": "opaque-user-reference",
     "fatal": false,
     "unhandled": true

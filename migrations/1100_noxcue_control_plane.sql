@@ -5,7 +5,10 @@ CREATE TABLE IF NOT EXISTS cue_sources (
   owner_id             TEXT NOT NULL,
   project_id           TEXT REFERENCES projects(id) ON DELETE SET NULL,
   name                 TEXT NOT NULL,
+  environment          TEXT NOT NULL DEFAULT 'production'
+                       CHECK (environment IN ('production', 'staging', 'development', 'preview', 'test', 'local')),
   enabled              INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+  alerts_enabled       INTEGER NOT NULL DEFAULT 1 CHECK (alerts_enabled IN (0, 1)),
   allowed_origins_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(allowed_origins_json)),
   timezone             TEXT NOT NULL DEFAULT 'UTC',
   digest_enabled       INTEGER NOT NULL DEFAULT 1 CHECK (digest_enabled IN (0, 1)),

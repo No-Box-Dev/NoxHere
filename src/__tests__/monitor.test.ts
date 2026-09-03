@@ -68,7 +68,7 @@ describe("manual delivery verification", () => {
   it("uses the latest scheduled result instead of creating a nested probe", async () => {
     const fetcher = vi.spyOn(globalThis, "fetch");
     const row = {
-      org_id: 7, owner_id: "acme", source_id: "source-1", source_name: "Playnist",
+      org_id: 7, owner_id: "acme", source_id: "source-1", source_name: "Playnist", environment: "production",
       url: "https://app.example.com/health", status: "healthy", consecutive_failures: 0,
       consecutive_successes: 4, incident_started_at: null, last_checked_at: new Date().toISOString(),
       last_status_code: 200, last_latency_ms: 86, last_error: null,

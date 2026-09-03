@@ -3,6 +3,7 @@ interface MonitorRow {
   owner_id: string;
   source_id: string;
   source_name: string;
+  environment: string;
   url: string;
   status: "waiting" | "healthy" | "issue";
   consecutive_failures: number;
@@ -139,7 +140,7 @@ function transitionMessage(row: MonitorRow, transition: "issue" | "recovery", re
     { type: "header", text: { type: "plain_text", text: `${recovered ? "✅" : "🚨"} ${headline}`, emoji: true } },
     { type: "section", text: { type: "mrkdwn", text: `*${slackEscape(row.source_name)}*\n${resultLine}` } },
     { type: "context", elements: [{ type: "mrkdwn", text: [
-      slackEscape(row.url), downtime ? `Unavailable for about ${downtime}` : null, "NoxCue endpoint health",
+      slackEscape(row.url), row.environment, downtime ? `Unavailable for about ${downtime}` : null, "NoxCue endpoint health",
     ].filter(Boolean).join(" · ") }] },
   ] };
 }
@@ -152,7 +153,7 @@ function testMessage(row: MonitorRow, result: EndpointProbeResult) {
   return { text: `${row.source_name}: ${headline}`, blocks: [
     { type: "header", text: { type: "plain_text", text: `${result.healthy ? "✅" : "⚠️"} ${headline}`, emoji: true } },
     { type: "section", text: { type: "mrkdwn", text: `*${slackEscape(row.source_name)}*\n${detail}` } },
-    { type: "context", elements: [{ type: "mrkdwn", text: `${slackEscape(row.url)} · Manual setup test · NoxCue` }] },
+    { type: "context", elements: [{ type: "mrkdwn", text: `${slackEscape(row.url)} · ${row.environment} · Manual setup test · NoxCue` }] },
   ] };
 }
 
@@ -203,19 +204,19 @@ export async function checkEndpointMonitor(env: Env, row: MonitorRow): Promise<v
 }
 
 const ROUTED_MONITOR_SELECT = `
-  SELECT monitor.org_id, source.owner_id, source.id AS source_id, source.name AS source_name,
+  SELECT monitor.org_id, source.owner_id, source.id AS source_id, source.name AS source_name, source.environment,
          monitor.url, monitor.status, monitor.consecutive_failures,
          COALESCE(monitor.consecutive_successes, 0) AS consecutive_successes, monitor.incident_started_at,
          monitor.last_checked_at, monitor.last_status_code, monitor.last_latency_ms, monitor.last_error,
-         COALESCE(NULLIF(alert_route.channel_id, ''), NULLIF(legacy_route.channel_id, ''),
+         CASE WHEN source.alerts_enabled = 1 THEN COALESCE(NULLIF(alert_route.channel_id, ''), NULLIF(legacy_route.channel_id, ''),
            NULLIF(source.slack_channel_id, ''), NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), ''),
-           NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')) AS slack_channel_id,
-         CASE WHEN NULLIF(alert_route.channel_id, '') IS NOT NULL THEN NULLIF(alert_route.connection_id, '')
+           NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')) END AS slack_channel_id,
+         CASE WHEN source.alerts_enabled = 1 THEN CASE WHEN NULLIF(alert_route.channel_id, '') IS NOT NULL THEN NULLIF(alert_route.connection_id, '')
            WHEN NULLIF(legacy_route.channel_id, '') IS NOT NULL THEN NULLIF(legacy_route.connection_id, '')
            WHEN NULLIF(source.slack_channel_id, '') IS NOT NULL THEN NULLIF(source.slack_connection_id, '')
            WHEN NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), '') IS NOT NULL
              THEN NULLIF(json_extract(config.data, '$.slack.noxCueConnectionId'), '')
-           ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '') END AS slack_connection_id
+           ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '') END END AS slack_connection_id
     FROM cue_endpoint_monitors monitor JOIN cue_sources source ON source.id = monitor.source_id
     LEFT JOIN config ON config.org_id = source.org_id AND config.key = 'settings'
     LEFT JOIN project_routing_settings routing ON routing.org_id = source.org_id
