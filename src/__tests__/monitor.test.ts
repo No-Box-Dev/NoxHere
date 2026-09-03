@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { isSafePublicUrl, nextEndpointState, probeEndpoint } from "../monitor";
+import { isSafePublicUrl, nextEndpointState, probeEndpoint, testEndpointMonitor } from "../monitor";
 
 describe("endpoint URL safety", () => {
   it.each([
@@ -61,5 +61,34 @@ describe("endpoint incident confirmation", () => {
     expect(first).toMatchObject({ status: "issue", consecutiveSuccesses: 1, incidentStartedAt: at });
     const second = nextEndpointState({ status: first.status, consecutiveFailures: 0, consecutiveSuccesses: 1, incidentStartedAt: at }, true, at);
     expect(second).toMatchObject({ status: "healthy", consecutiveSuccesses: 2, incidentStartedAt: null });
+  });
+});
+
+describe("manual delivery verification", () => {
+  it("uses the latest scheduled result instead of creating a nested probe", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch");
+    const row = {
+      org_id: 7, owner_id: "acme", source_id: "source-1", source_name: "Playnist",
+      url: "https://app.example.com/health", status: "healthy", consecutive_failures: 0,
+      consecutive_successes: 4, incident_started_at: null, last_checked_at: new Date().toISOString(),
+      last_status_code: 200, last_latency_ms: 86, last_error: null,
+      slack_channel_id: "C123", slack_connection_id: "connection-1",
+    };
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn(() => statement),
+        first: vi.fn(async () => row),
+        run: vi.fn(async () => ({ meta: { changes: sql.includes("INSERT OR IGNORE") ? 1 : 1 } })),
+      };
+      return statement;
+    });
+    const queue = { send: vi.fn(async () => undefined) };
+
+    const result = await testEndpointMonitor({ NOX_DB: { prepare }, NOX_TASKS: queue } as unknown as Env, 7, "source-1");
+
+    expect(result).toMatchObject({ healthy: true, statusCode: 200, latencyMs: 86, queued: true, checkedAt: row.last_checked_at });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(queue.send).toHaveBeenCalledOnce();
+    fetcher.mockRestore();
   });
 });

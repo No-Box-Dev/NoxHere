@@ -8,6 +8,10 @@ interface MonitorRow {
   consecutive_failures: number;
   consecutive_successes: number;
   incident_started_at: string | null;
+  last_checked_at: string | null;
+  last_status_code: number | null;
+  last_latency_ms: number | null;
+  last_error: string | null;
   slack_channel_id: string | null;
   slack_connection_id: string | null;
 }
@@ -25,6 +29,7 @@ export interface EndpointTestResult extends EndpointProbeResult {
   queued: boolean;
   channelConfigured: boolean;
   deliveryId: string | null;
+  checkedAt: string;
 }
 
 export interface EndpointStateInput {
@@ -201,6 +206,7 @@ const ROUTED_MONITOR_SELECT = `
   SELECT monitor.org_id, source.owner_id, source.id AS source_id, source.name AS source_name,
          monitor.url, monitor.status, monitor.consecutive_failures,
          COALESCE(monitor.consecutive_successes, 0) AS consecutive_successes, monitor.incident_started_at,
+         monitor.last_checked_at, monitor.last_status_code, monitor.last_latency_ms, monitor.last_error,
          COALESCE(NULLIF(alert_route.channel_id, ''), NULLIF(legacy_route.channel_id, ''),
            NULLIF(source.slack_channel_id, ''), NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), ''),
            NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')) AS slack_channel_id,
@@ -227,9 +233,25 @@ export async function testEndpointMonitor(env: Env, orgId: number, sourceId: str
         AND COALESCE(json_extract(config.data, '$.apps.noxcue'), 1) != 0`,
   ).bind(orgId, sourceId).first<MonitorRow>();
   if (!row) throw new Error("Enabled endpoint monitor not found");
-  const result = await probeEndpoint(row.url);
+  if (!row.last_checked_at || Date.now() - Date.parse(row.last_checked_at) > 3 * 60_000) {
+    throw new Error("No recent scheduled endpoint check");
+  }
+  const healthy = row.last_error === null && row.last_status_code !== null
+    && row.last_status_code >= 200 && row.last_status_code < 300;
+  const result: EndpointProbeResult = {
+    healthy,
+    statusCode: row.last_status_code,
+    latencyMs: row.last_latency_ms ?? 0,
+    error: healthy ? null : row.last_error ?? "The latest scheduled check failed",
+  };
   const deliveryId = await notify(env, row, "test", new Date().toISOString(), result);
-  return { ...result, queued: Boolean(deliveryId), channelConfigured: Boolean(row.slack_channel_id), deliveryId };
+  return {
+    ...result,
+    queued: Boolean(deliveryId),
+    channelConfigured: Boolean(row.slack_channel_id),
+    deliveryId,
+    checkedAt: row.last_checked_at,
+  };
 }
 
 export async function runEndpointMonitors(env: Env): Promise<void> {
