@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS cue_feature_states (
 CREATE TABLE IF NOT EXISTS cue_endpoint_monitors (
   org_id INTEGER NOT NULL, source_id TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
   url TEXT, status TEXT NOT NULL DEFAULT 'waiting', consecutive_failures INTEGER NOT NULL DEFAULT 0,
+  consecutive_successes INTEGER NOT NULL DEFAULT 0,
   last_checked_at TEXT, last_success_at TEXT, last_failure_at TEXT, last_error TEXT,
+  last_status_code INTEGER, last_latency_ms INTEGER, last_transition_at TEXT,
   incident_started_at TEXT, updated_at TEXT NOT NULL
 );

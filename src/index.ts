@@ -3,7 +3,7 @@ import { createChartSnapshot, handleChartImage } from "./chart";
 import { handleCueEvent } from "./events";
 import { narrateDailyStats } from "./narration";
 import { buildDigestResponse, buildTestResponse, type MetricComparisons } from "./response";
-import { runEndpointMonitors } from "./monitor";
+import { runEndpointMonitors, testEndpointMonitor } from "./monitor";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -36,6 +36,10 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
 
   buildTestResponse(orgLogin: string) {
     return buildTestResponse(orgLogin);
+  }
+
+  async testEndpointMonitor(orgId: number, sourceId: string) {
+    return testEndpointMonitor(this.env, orgId, sourceId);
   }
 
   async buildDigestResponse(
