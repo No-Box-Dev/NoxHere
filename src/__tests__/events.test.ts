@@ -11,6 +11,35 @@ import {
 import { cueFeatureResultSchema } from "../feature-health";
 
 describe("NoxCue event contract", () => {
+  it("accepts bounded structured error diagnostics", () => {
+    const parsed = cueErrorEventSchema.parse({
+      type: "error.occurred",
+      title: "Widget failed",
+      data: {
+        attributes: {
+          "runtime.browser": "Chrome",
+          "renderer.svgCharacters": 2_400_000,
+          "page.online": true,
+          "resources.recent[0].origin": "https://cdn.example",
+        },
+      },
+    });
+    expect(parsed.data.attributes?.["runtime.browser"]).toBe("Chrome");
+  });
+
+  it("rejects unbounded or nested error diagnostics", () => {
+    expect(cueErrorEventSchema.safeParse({
+      type: "error.occurred",
+      title: "Widget failed",
+      data: { attributes: { nested: { secret: "no" } } },
+    }).success).toBe(false);
+    expect(cueErrorEventSchema.safeParse({
+      type: "error.occurred",
+      title: "Widget failed",
+      data: { attributes: Object.fromEntries(Array.from({ length: 97 }, (_, i) => [`item.${i}`, i])) },
+    }).success).toBe(false);
+  });
+
   it("accepts explicit errors and only the closed user lifecycle events", () => {
     expect(cueErrorEventSchema.parse({
       type: "error.occurred",

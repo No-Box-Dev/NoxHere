@@ -8,6 +8,15 @@ import { cueEnvironmentSchema, type CueEnvironment } from "./environment";
 const MAX_BODY_BYTES = 32_768;
 const shortText = (max: number) => z.string().trim().min(1).max(max);
 const optionalText = (max: number) => z.string().trim().max(max).optional();
+const diagnosticValueSchema = z.union([
+  z.string().trim().max(300),
+  z.number().finite(),
+  z.boolean(),
+]);
+const diagnosticAttributesSchema = z.record(
+  z.string().regex(/^[a-z][a-z0-9_.\[\]-]{0,119}$/i),
+  diagnosticValueSchema,
+).refine((value) => Object.keys(value).length <= 96, "At most 96 diagnostic attributes are allowed");
 const commonFields = {
   version: z.literal(1).default(1),
   eventId: z.string().uuid().optional(),
@@ -31,6 +40,7 @@ export const cueErrorEventSchema = z.object({
     affectedUser: optionalText(200),
     fatal: z.boolean().default(false),
     unhandled: z.boolean().default(false),
+    attributes: diagnosticAttributesSchema.optional(),
   }).strict().default({ fatal: false, unhandled: false }),
 }).strict();
 
