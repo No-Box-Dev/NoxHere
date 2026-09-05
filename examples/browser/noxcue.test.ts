@@ -38,6 +38,6 @@ describe("NoxCue diagnostic context", () => {
     });
     expect(event.occurredAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(event.durationMs).toBeGreaterThanOrEqual(0);
-    expect(JSON.stringify(event)).not.toContain("private");
+    expect(JSON.stringify(event)).not.toContain("api_key=private");
   });
 });

@@ -28,6 +28,7 @@ const source = {
   owner_id: "acme",
   source_id: "source-1",
   source_name: "Playnist",
+  project_id: "project-1",
   environment: "production" as const,
   slack_channel_id: "C123",
   slack_connection_id: "conn-1",

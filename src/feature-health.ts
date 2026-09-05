@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ResolvedFeature } from "./feature-catalog";
 import { cueEnvironmentSchema, type CueEnvironment } from "./environment";
+import { featureIncidentKey, stageGithubIncident } from "./github-incidents";
 
 export const FEATURE_REASONS = [
   "invalid_input",
@@ -72,6 +73,7 @@ export interface FeatureSource {
   owner_id: string;
   source_id: string;
   source_name: string;
+  project_id: string | null;
   environment: CueEnvironment;
   slack_channel_id: string | null;
   slack_connection_id: string | null;
@@ -225,7 +227,7 @@ export async function storeFeatureResult(
   event: CueFeatureResult,
   eventId: string,
   definition: ResolvedFeature,
-): Promise<{ eventId: string; duplicate: boolean; status: StateRow["status"]; queued: boolean }> {
+): Promise<{ eventId: string; duplicate: boolean; status: StateRow["status"]; queued: boolean; githubQueued?: boolean }> {
   event = sanitizeFeatureResult(event);
   const occurredAt = event.occurredAt ? new Date(event.occurredAt) : new Date();
   if (occurredAt.valueOf() > Date.now() + 5 * 60_000) throw new Error("invalid_occurred_at");
@@ -300,6 +302,23 @@ export async function storeFeatureResult(
   // A feature failure means a user-facing action did not work. Each distinct
   // failure is its own incident; later successful attempts are evidence only
   // and must never silently resolve it.
-  const queued = event.outcome === "failure" ? await stageDelivery(env, source, definition, event, eventId) : false;
-  return { eventId, duplicate: false, status, queued };
+  if (event.outcome !== "failure") return { eventId, duplicate: false, status, queued: false };
+  const diagnosis = diagnoseFeatureFailure(event, definition.label);
+  const [queued, githubQueued] = await Promise.all([
+    stageDelivery(env, source, definition, event, eventId),
+    stageGithubIncident(env, source, {
+      key: featureIncidentKey(event),
+      kind: "feature",
+      title: `${definition.label} failed`,
+      occurredAt: occurredAt.toISOString(),
+      payload: {
+        impact: definition.failureMessage,
+        message: event.message,
+        error: event.error,
+        context: event.context,
+        diagnosis,
+      },
+    }),
+  ]);
+  return { eventId, duplicate: false, status, queued, githubQueued };
 }

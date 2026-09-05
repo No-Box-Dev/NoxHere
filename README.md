@@ -17,7 +17,7 @@ separate controls for collection, daily digests, and immediate Slack alerts.
 ```text
 App event → NoxCue Worker → hashed user facts in NoxConnect D1
                                 ├─ aggregate user health → Slack daily brief
-                                └─ errors → delivery_outbox → Queue → Slack now
+                                └─ detections → Slack now + deduplicated GitHub issue
 ```
 
 ## Immediate error
@@ -30,11 +30,18 @@ App event → NoxCue Worker → hashed user facts in NoxConnect D1
   "idempotencyKey": "invoice-1842-attempt-3",
   "data": {
     "errorCode": "PDF_TIMEOUT",
-    "fingerprint": "invoice:pdf-timeout",
+    "fingerprint": "billing/pdf_timeout/generate_invoice",
     "component": "billing"
   }
 }
 ```
+
+NoxCue normally derives a readable incident key such as
+`error.occurred/billing/pdf_timeout/generateinvoice`. A server-key caller may
+provide `data.fingerprint` to override it when domain knowledge produces a more
+stable key; browser keys cannot override grouping. NoxConnect can route selected
+project environments to GitHub. Repeats update the same open issue at the chosen
+cadence, while a recurrence after human closure creates a new linked issue.
 
 ## User statistics
 

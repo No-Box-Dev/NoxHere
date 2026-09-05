@@ -1,9 +1,13 @@
+import type { CueEnvironment } from "./environment";
+import { readableKeySegment, stageGithubIncident } from "./github-incidents";
+
 interface MonitorRow {
   org_id: number;
   owner_id: string;
   source_id: string;
   source_name: string;
-  environment: string;
+  project_id: string | null;
+  environment: CueEnvironment;
   url: string;
   status: "waiting" | "healthy" | "issue";
   consecutive_failures: number;
@@ -199,12 +203,44 @@ export async function checkEndpointMonitor(env: Env, row: MonitorRow): Promise<v
   ).bind(next.status, next.consecutiveFailures, next.consecutiveSuccesses, next.incidentStartedAt,
     now, result.statusCode, result.latencyMs, result.healthy ? 1 : 0, now, result.healthy ? 1 : 0,
     now, result.error, next.status, now, now, row.source_id).run();
-  if (row.status !== "issue" && next.status === "issue") await notify(env, row, "issue", next.incidentStartedAt!, result);
+  if (row.status !== "issue" && next.status === "issue") {
+    const host = new URL(row.url).hostname;
+    const code = result.statusCode ? `http_${result.statusCode}` : readableKeySegment(result.error, "network_error");
+    await Promise.all([
+      notify(env, row, "issue", next.incidentStartedAt!, result),
+      stageGithubIncident(env, row, {
+        key: `endpoint.health/unavailable/${readableKeySegment(host, "endpoint")}/${readableKeySegment(code, "unknown_code")}/health_check`,
+        kind: "endpoint",
+        title: "Endpoint unavailable",
+        occurredAt: next.incidentStartedAt!,
+        payload: {
+          impact: `Two consecutive health checks failed for ${row.url}.`,
+          message: result.error ?? "Endpoint check failed",
+          error: {
+            name: "EndpointHealthError",
+            message: result.error ?? "Endpoint check failed",
+            ...(result.statusCode ? { code: `HTTP_${result.statusCode}`, status: result.statusCode } : { code: "NETWORK_ERROR" }),
+          },
+          context: { runtime: "edge", url: row.url },
+          diagnosis: {
+            summary: result.statusCode
+              ? `Endpoint returned HTTP ${result.statusCode} twice.`
+              : "NoxCue could not reach the endpoint twice.",
+            possibleCauses: result.statusCode && result.statusCode >= 500
+              ? ["The application or a required dependency is unavailable.", "The deployed health route is failing."]
+              : ["DNS, TLS, routing or application availability interrupted the checks."],
+            possibleFixes: ["Inspect application and edge logs at the recorded time.", "Check the current deployment and dependency status.", "Verify the configured health URL still returns a 2xx response."],
+          },
+        },
+      }),
+    ]);
+  }
   if (row.status === "issue" && next.status === "healthy") await notify(env, row, "recovery", now, result);
 }
 
 const ROUTED_MONITOR_SELECT = `
-  SELECT monitor.org_id, source.owner_id, source.id AS source_id, source.name AS source_name, source.environment,
+  SELECT monitor.org_id, source.owner_id, source.id AS source_id, source.name AS source_name,
+         source.project_id, source.environment,
          monitor.url, monitor.status, monitor.consecutive_failures,
          COALESCE(monitor.consecutive_successes, 0) AS consecutive_successes, monitor.incident_started_at,
          monitor.last_checked_at, monitor.last_status_code, monitor.last_latency_ms, monitor.last_error,

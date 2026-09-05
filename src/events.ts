@@ -7,6 +7,7 @@ import {
 import { resolveFeature } from "./feature-catalog";
 import { resolveActivityMetric, type ResolvedActivityMetric } from "./activity-catalog";
 import { cueEnvironmentSchema, type CueEnvironment } from "./environment";
+import { errorIncidentKey, stageGithubIncident } from "./github-incidents";
 
 const MAX_BODY_BYTES = 32_768;
 const shortText = (max: number) => z.string().trim().min(1).max(max);
@@ -120,6 +121,7 @@ interface StoredResult {
   classification?: "unregistered";
   requestedFeature?: string;
   requestedMetric?: string;
+  githubQueued?: boolean;
 }
 
 function unregisteredMetricError(event: CueActivityEvent): CueErrorEvent {
@@ -293,14 +295,6 @@ async function eventIdFor(sourceId: string, timezone: string, environment: CueEn
   return crypto.randomUUID();
 }
 
-async function fingerprintFor(sourceId: string, event: CueErrorEvent): Promise<string> {
-  if (event.data.fingerprint) return event.data.fingerprint;
-  const basis = [sourceId, event.data.environment, event.data.component, event.data.errorCode, event.title]
-    .map((part) => part?.trim().toLowerCase() ?? "")
-    .join("\u0000");
-  return `err_${(await hash(basis)).slice(0, 40)}`;
-}
-
 function escapeSlack(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -427,7 +421,38 @@ async function storeActivityEvent(
   return { eventId, queued: false, duplicate: Number(result.meta.changes ?? 0) === 0, period };
 }
 
-async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, eventId: string): Promise<StoredResult> {
+function diagnoseError(event: CueErrorEvent) {
+  const status = event.error?.status;
+  const code = event.data.errorCode ?? event.error?.code ?? "unknown";
+  if (status === 429 || /rate.?limit/i.test(code)) return {
+    summary: `${event.title}: request rate was limited.`,
+    possibleCauses: ["The app or a required provider exceeded a request or quota limit."],
+    possibleFixes: ["Check request volume and provider quotas.", "Add bounded backoff where retrying the operation is safe."],
+  };
+  if (status && status >= 500) return {
+    summary: `${event.title}: a server or dependency returned HTTP ${status}.`,
+    possibleCauses: ["Application code failed while handling the request.", "A required dependency was unavailable or misconfigured."],
+    possibleFixes: ["Inspect the matching application and provider logs.", "Check dependency status and deployed configuration.", "Compare the first affected release with the previous healthy release."],
+  };
+  if (/timeout|network|fetch/i.test(`${code} ${event.error?.name ?? ""}`)) return {
+    summary: `${event.title}: the request did not complete normally.`,
+    possibleCauses: ["A network path, DNS, TLS, CORS or an upstream dependency interrupted the request."],
+    possibleFixes: ["Inspect the recorded stack and browser or edge logs.", "Verify the upstream hostname, allowed origins and timeout settings."],
+  };
+  return {
+    summary: `${event.title}: ${code}.`,
+    possibleCauses: ["The recorded component raised an unexpected application error."],
+    possibleFixes: ["Inspect the sanitized stack and matching application log.", "Check the release for a recent regression.", "Add a stable error code or component if the current evidence is ambiguous."],
+  };
+}
+
+async function storeError(
+  env: Env,
+  source: CueSourceRow,
+  event: CueErrorEvent,
+  eventId: string,
+  githubEligible = true,
+): Promise<StoredResult> {
   const existing = await env.NOX_DB.prepare(
     `SELECT delivery.id, delivery.status
        FROM events event
@@ -447,6 +472,7 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
   const period = localPeriodAt(receivedAt, source.timezone);
   const normalizedEvent: CueErrorEvent = {
     ...event,
+    title: redactDiagnosticText(event.title),
     message: event.message ? redactDiagnosticText(event.message) : undefined,
     error: event.error ? {
       ...event.error,
@@ -459,7 +485,7 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
     context: { ...event.context, environment: source.environment, url: sanitizeDiagnosticUrl(event.context?.url) },
     data: { ...event.data, environment: source.environment },
   };
-  const fingerprint = await fingerprintFor(source.source_id, normalizedEvent);
+  const fingerprint = errorIncidentKey(normalizedEvent);
   const group = await env.NOX_DB.prepare(
     `SELECT occurrence_count, last_notified_at FROM cue_error_groups
       WHERE source_id = ? AND fingerprint = ?`,
@@ -520,8 +546,24 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
     ));
   }
   await env.NOX_DB.batch(statements);
-  const queued = deliveryId ? await queueDelivery(env, source, eventId, deliveryId) : false;
-  return { eventId, queued, notificationSuppressed: !shouldNotify };
+  const diagnosis = diagnoseError(normalizedEvent);
+  const [queued, githubQueued] = await Promise.all([
+    deliveryId ? queueDelivery(env, source, eventId, deliveryId) : Promise.resolve(false),
+    githubEligible ? stageGithubIncident(env, source, {
+      key: fingerprint,
+      kind: "error",
+      title: normalizedEvent.title,
+      occurredAt: normalizedEvent.occurredAt ?? receivedAt.toISOString(),
+      payload: {
+        impact: normalizedEvent.message ?? "An explicit application error was detected.",
+        message: normalizedEvent.message,
+        error: normalizedEvent.error,
+        context: normalizedEvent.context,
+        diagnosis,
+      },
+    }) : Promise.resolve(false),
+  ]);
+  return { eventId, queued, githubQueued, notificationSuppressed: !shouldNotify };
 }
 
 function inputError(error: unknown): { code: string; status: number } {
@@ -580,8 +622,11 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
     if ((isUserEvent || isActivityEvent) && source.key_kind !== "secret") {
       return jsonResponse({ error: "secret_key_required" }, 403, origin);
     }
-    if (isFeatureEvent && source.key_kind === "publishable" && !origin) {
+    if ((isFeatureEvent || event.type === "error.occurred") && source.key_kind === "publishable" && !origin) {
       return jsonResponse({ error: "origin_required" }, 403, null);
+    }
+    if (event.type === "error.occurred" && event.data.fingerprint && source.key_kind !== "secret") {
+      return jsonResponse({ error: "explicit_incident_key_requires_secret_key" }, 403, origin);
     }
     const [sourceLimit, orgLimit] = await Promise.all([
       isUserEvent || isFeatureEvent || isActivityEvent
@@ -609,7 +654,7 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
         ? activityMetric
           ? await storeActivityEvent(env, source, event, eventId, activityMetric)
           : {
-              ...await storeError(env, source, unregisteredMetricError(event), eventId),
+              ...await storeError(env, source, unregisteredMetricError(event), eventId, false),
               classification: "unregistered" as const,
               requestedMetric: event.metric,
             }
@@ -617,7 +662,7 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
         ? definition
           ? await storeFeatureResult(env, source, event, eventId, definition)
           : {
-              ...await storeError(env, source, unregisteredFeatureError(event), eventId),
+              ...await storeError(env, source, unregisteredFeatureError(event), eventId, false),
               classification: "unregistered" as const,
               requestedFeature: event.feature,
             }

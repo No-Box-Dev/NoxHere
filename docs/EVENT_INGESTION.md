@@ -140,7 +140,7 @@ never create a metric implicitly.
   "message": "PDF generation timed out",
   "data": {
     "errorCode": "PDF_TIMEOUT",
-    "fingerprint": "invoice:pdf-timeout",
+    "fingerprint": "billing/pdf_timeout/generate_invoice",
     "component": "billing",
     "affectedUser": "opaque-user-reference",
     "fatal": false,
@@ -149,10 +149,25 @@ never create a metric implicitly.
 }
 ```
 
-Errors are saved immediately. The first occurrence of a fingerprint is sent to
+Errors are saved immediately. The first occurrence of an incident key is sent to
 Slack; repeats notify only after the source cooldown while still contributing
 to the daily totals. NoxCue hashes `affectedUser` before storing it in the
 affected-user rollup.
+
+By default NoxCue derives a readable key from stable evidence:
+`event-or-feature/reason-or-component/component-or-code/code/operation`. Dynamic
+IDs, timestamps, stack line numbers, and long numeric values are removed, so the
+key groups the same failure without becoming opaque—for example,
+`auth.signup/dependency_unavailable/auth/auth_503/createaccount`. Only callers
+using a secret server key may override grouping with `data.fingerprint`; use
+slash-separated stable components and never include user data.
+
+When GitHub routing is enabled for the linked project and environment,
+NoxConnect creates one issue for that key. It refreshes the open issue no more
+often than the configured interval. If a human closes it and the failure later
+recurs, NoxConnect opens a new issue linked to the previous occurrence. It lists
+possible causes and fixes to investigate, but never changes the app, applies a
+fix, or closes an issue.
 
 ## Limits
 
