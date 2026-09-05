@@ -26,7 +26,7 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     if (request.method === "GET" && url.pathname === "/") {
       return Response.json({
         service: "NoxCue",
-        message: "Daily app health and immediate explicit errors, delivered to your team and saved for later.",
+        message: "Detect app health failures, preserve safe evidence, and show developers possible fixes to investigate.",
         ingest: "POST /v1/events",
         types: ["user.registered", "user.active", "activity.occurred", "feature.result", "error.occurred"],
       });

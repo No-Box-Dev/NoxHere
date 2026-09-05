@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { localPeriodAt } from "./metrics";
-import { cueFeatureResultSchema, storeFeatureResult } from "./feature-health";
+import {
+  cueFeatureResultSchema, diagnosticContextSchema, redactDiagnosticText,
+  safeErrorSchema, sanitizeDiagnosticUrl, storeFeatureResult,
+} from "./feature-health";
 import { resolveFeature } from "./feature-catalog";
 import { resolveActivityMetric, type ResolvedActivityMetric } from "./activity-catalog";
 import { cueEnvironmentSchema, type CueEnvironment } from "./environment";
@@ -30,6 +33,8 @@ export const cueErrorEventSchema = z.object({
   title: shortText(200),
   level: z.literal("error").default("error"),
   message: optionalText(2_000),
+  error: safeErrorSchema.optional(),
+  context: diagnosticContextSchema.optional(),
   occurredAt: z.string().datetime({ offset: true }).optional(),
   url: z.string().url().max(2_048).optional(),
   data: z.object({
@@ -305,6 +310,8 @@ export function buildCueSlackMessage(sourceName: string, event: CueErrorEvent, o
     event.data.errorCode ? `*Code:* \`${escapeSlack(event.data.errorCode)}\`` : null,
     event.data.component ? `*Component:* ${escapeSlack(event.data.component)}` : null,
     event.environment ? `*Environment:* ${escapeSlack(event.environment)}` : null,
+    event.context?.release ? `*Release:* \`${escapeSlack(event.context.release)}\`` : null,
+    event.context?.runtime ? `*Runtime:* ${escapeSlack(event.context.runtime)}` : null,
     event.message ? escapeSlack(event.message) : null,
   ].filter((line): line is string => Boolean(line));
   return {
@@ -438,7 +445,21 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
 
   const receivedAt = new Date();
   const period = localPeriodAt(receivedAt, source.timezone);
-  const fingerprint = await fingerprintFor(source.source_id, event);
+  const normalizedEvent: CueErrorEvent = {
+    ...event,
+    message: event.message ? redactDiagnosticText(event.message) : undefined,
+    error: event.error ? {
+      ...event.error,
+      name: event.error.name ? redactDiagnosticText(event.error.name) : undefined,
+      message: redactDiagnosticText(event.error.message),
+      code: event.error.code ? redactDiagnosticText(event.error.code) : undefined,
+      stack: event.error.stack ? redactDiagnosticText(event.error.stack) : undefined,
+    } : undefined,
+    url: sanitizeDiagnosticUrl(event.url),
+    context: { ...event.context, environment: source.environment, url: sanitizeDiagnosticUrl(event.context?.url) },
+    data: { ...event.data, environment: source.environment },
+  };
+  const fingerprint = await fingerprintFor(source.source_id, normalizedEvent);
   const group = await env.NOX_DB.prepare(
     `SELECT occurrence_count, last_notified_at FROM cue_error_groups
       WHERE source_id = ? AND fingerprint = ?`,
@@ -448,9 +469,10 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
     !group?.last_notified_at || receivedAt.valueOf() - Date.parse(group.last_notified_at) >= cooldownMs
   );
   const occurrence = (group?.occurrence_count ?? 0) + 1;
-  const payload = { ...event, data: { ...event.data, fingerprint }, eventId, sourceId: source.source_id, source: source.source_name };
+  const payload = { ...normalizedEvent, data: { ...normalizedEvent.data, fingerprint },
+    eventId, sourceId: source.source_id, source: source.source_name };
   const statements = [
-    eventStatement(env, source, event, eventId, payload),
+    eventStatement(env, source, normalizedEvent, eventId, payload),
     env.NOX_DB.prepare(
       `INSERT INTO cue_error_groups
          (org_id, source_id, fingerprint, title, error_code, component, environment,
@@ -463,8 +485,8 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
          occurrence_count = cue_error_groups.occurrence_count + 1,
          last_notified_at = COALESCE(excluded.last_notified_at, cue_error_groups.last_notified_at)`,
     ).bind(
-      source.org_id, source.source_id, fingerprint, event.title, event.data.errorCode ?? null,
-      event.data.component ?? null, event.data.environment ?? null,
+      source.org_id, source.source_id, fingerprint, normalizedEvent.title, normalizedEvent.data.errorCode ?? null,
+      normalizedEvent.data.component ?? null, normalizedEvent.data.environment ?? null,
       receivedAt.toISOString(), receivedAt.toISOString(), shouldNotify ? receivedAt.toISOString() : null,
     ),
     env.NOX_DB.prepare(
@@ -475,7 +497,7 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
          occurrence_count = cue_error_daily_groups.occurrence_count + 1,
          fatal_count = cue_error_daily_groups.fatal_count + excluded.fatal_count,
          unhandled_count = cue_error_daily_groups.unhandled_count + excluded.unhandled_count`,
-    ).bind(source.org_id, source.source_id, period, fingerprint, event.data.fatal ? 1 : 0, event.data.unhandled ? 1 : 0),
+    ).bind(source.org_id, source.source_id, period, fingerprint, normalizedEvent.data.fatal ? 1 : 0, normalizedEvent.data.unhandled ? 1 : 0),
   ];
   if (event.data.affectedUser) {
     statements.push(env.NOX_DB.prepare(
@@ -494,7 +516,7 @@ async function storeError(env: Env, source: CueSourceRow, event: CueErrorEvent, 
        VALUES (?, ?, 'noxcue', ?, 'slack', NULL, ?, ?, ?, 'pending')`,
     ).bind(
       deliveryId, source.org_id, eventId, source.slack_connection_id, source.slack_channel_id,
-      JSON.stringify({ message: buildCueSlackMessage(source.source_name, event, occurrence) }),
+      JSON.stringify({ message: buildCueSlackMessage(source.source_name, normalizedEvent, occurrence) }),
     ));
   }
   await env.NOX_DB.batch(statements);

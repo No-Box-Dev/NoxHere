@@ -26,6 +26,21 @@ export const FEATURE_REASONS = [
 
 const FEATURE_KEY_PATTERN = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,5}$/;
 
+export const diagnosticContextSchema = z.object({
+  environment: z.string().trim().min(1).max(80).optional(),
+  release: z.string().trim().min(1).max(120).optional(),
+  runtime: z.enum(["browser", "server", "edge", "unknown"]).optional(),
+  url: z.string().url().max(2_048).optional(),
+}).strict();
+
+export const safeErrorSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  message: z.string().trim().min(1).max(2_000),
+  code: z.string().trim().min(1).max(120).optional(),
+  status: z.number().int().min(100).max(599).optional(),
+  stack: z.string().trim().min(1).max(8_000).optional(),
+}).strict();
+
 export const cueFeatureResultSchema = z.object({
   version: z.literal(1).default(1),
   type: z.literal("feature.result"),
@@ -35,13 +50,9 @@ export const cueFeatureResultSchema = z.object({
   feature: z.string().trim().min(1).max(120).regex(FEATURE_KEY_PATTERN),
   outcome: z.enum(["success", "rejected", "failure"]),
   reason: z.enum(FEATURE_REASONS).optional(),
-  message: z.string().trim().min(1).max(500).optional(),
-  error: z.object({
-    name: z.string().trim().min(1).max(120).optional(),
-    message: z.string().trim().min(1).max(2_000),
-    code: z.string().trim().min(1).max(120).optional(),
-    status: z.number().int().min(100).max(599).optional(),
-  }).strict().optional(),
+  message: z.string().trim().min(1).max(2_000).optional(),
+  error: safeErrorSchema.optional(),
+  context: diagnosticContextSchema.optional(),
   durationMs: z.number().int().min(0).max(120_000).optional(),
   test: z.boolean().default(false),
   occurredAt: z.string().datetime({ offset: true }).optional(),
@@ -85,15 +96,91 @@ function escapeSlack(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+export interface FeatureDiagnosis {
+  summary: string;
+  possibleCauses: string[];
+  possibleFixes: string[];
+}
+
+export function redactDiagnosticText(value: string): string {
+  return value
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[redacted-email]")
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer [redacted]")
+    .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[redacted-token]")
+    .replace(/([?&](?:token|key|secret|password|code)=)[^&#\s]+/gi, "$1[redacted]")
+    .replace(/\b(api[_-]?key|access[_-]?token|refresh[_-]?token|token|password|secret)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]");
+}
+
+export function sanitizeDiagnosticUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? `${url.origin}${url.pathname}` : undefined;
+  } catch { return undefined; }
+}
+
+function sanitizeFeatureResult(event: CueFeatureResult): CueFeatureResult {
+  return {
+    ...event,
+    message: event.message ? redactDiagnosticText(event.message) : undefined,
+    error: event.error ? {
+      ...event.error,
+      name: event.error.name ? redactDiagnosticText(event.error.name) : undefined,
+      message: redactDiagnosticText(event.error.message),
+      code: event.error.code ? redactDiagnosticText(event.error.code) : undefined,
+      stack: event.error.stack ? redactDiagnosticText(event.error.stack) : undefined,
+    } : undefined,
+    context: event.context ? { ...event.context, url: sanitizeDiagnosticUrl(event.context.url) } : undefined,
+  };
+}
+
+const DIAGNOSES: Record<(typeof FEATURE_REASONS)[number], Omit<FeatureDiagnosis, "summary">> = {
+  invalid_input: { possibleCauses: ["The submitted fields failed application validation."], possibleFixes: ["Confirm required fields and validation rules match between the client and API."] },
+  invalid_credentials: { possibleCauses: ["The supplied credentials were not accepted."], possibleFixes: ["Confirm this is an expected user rejection; inspect auth-provider logs if valid credentials also fail."] },
+  account_exists: { possibleCauses: ["An account already exists for this identity."], possibleFixes: ["Offer login or password reset without exposing whether an account exists to unauthenticated users."] },
+  account_unverified: { possibleCauses: ["The account has not completed verification."], possibleFixes: ["Confirm verification emails are delivered and the resend flow works."] },
+  account_locked: { possibleCauses: ["The account or identity was locked by policy."], possibleFixes: ["Check lockout policy and provide a safe account-recovery path."] },
+  verification_expired: { possibleCauses: ["The verification token expired before use."], possibleFixes: ["Check token lifetime, clock skew and the resend-verification flow."] },
+  mfa_required: { possibleCauses: ["Authentication requires an additional factor."], possibleFixes: ["Ensure the client handles the MFA challenge and continuation state."] },
+  rate_limited: { possibleCauses: ["The app or an upstream provider rejected excess requests."], possibleFixes: ["Inspect request volume and provider limits; add bounded retry with backoff where safe."] },
+  policy_rejected: { possibleCauses: ["A configured authentication or security policy rejected the request."], possibleFixes: ["Review the matching provider policy and the request attributes it evaluates."] },
+  dependency_unavailable: { possibleCauses: ["The authentication provider or another required upstream returned a server error.", "Production credentials or provider configuration may be invalid."], possibleFixes: ["Check provider status and request logs.", "Verify production credentials, callback URLs and environment configuration.", "Confirm the app exposes a safe retry path to the user."] },
+  database_unavailable: { possibleCauses: ["The application could not reach its user database.", "The database may have exhausted connections or failed over."], possibleFixes: ["Check database health, connection limits and recent failovers.", "Inspect the failed request trace around the recorded time."] },
+  email_delivery_failed: { possibleCauses: ["The email provider rejected or could not deliver the message.", "The sender domain or template configuration may be invalid."], possibleFixes: ["Inspect the provider delivery log and suppression list.", "Verify sender-domain authentication and the production template.", "Check provider quota and rate limits."] },
+  oauth_failed: { possibleCauses: ["The external identity provider rejected the OAuth exchange."], possibleFixes: ["Verify callback URL, client credentials, scopes and state/PKCE handling.", "Inspect the provider error recorded below."] },
+  session_failed: { possibleCauses: ["The application could not create or refresh the authenticated session."], possibleFixes: ["Check signing keys, cookie settings, session storage and clock skew."] },
+  configuration_error: { possibleCauses: ["Required production configuration is missing or inconsistent."], possibleFixes: ["Compare deployed environment variables and provider settings with the expected production configuration."] },
+  timeout: { possibleCauses: ["A required operation exceeded its deadline.", "An upstream service or network path may be slow."], possibleFixes: ["Inspect upstream latency at the recorded time.", "Verify timeout values and abort handling.", "Check whether the operation completed after the client stopped waiting."] },
+  network_error: { possibleCauses: ["The request did not receive a usable response.", "DNS, TLS, CORS or client connectivity may have interrupted the request."], possibleFixes: ["Check browser and edge logs for DNS, TLS and CORS failures.", "Verify the upstream hostname and allowed origins.", "Confirm offline and retry behaviour is safe."] },
+  internal_error: { possibleCauses: ["Application code raised an unexpected internal error."], possibleFixes: ["Inspect the sanitized stack and matching application log.", "Check the release for a recent regression.", "Reproduce the same journey with the recorded environment and release."] },
+  unknown: { possibleCauses: ["The SDK could not classify the failure from the available evidence."], possibleFixes: ["Inspect the error, stack, release and event timing below.", "Add a stable error code or HTTP status so future failures classify precisely."] },
+};
+
+export function diagnoseFeatureFailure(event: CueFeatureResult, label = event.feature): FeatureDiagnosis {
+  const reason = event.reason ?? "unknown";
+  const diagnosis = DIAGNOSES[reason];
+  return {
+    summary: `${label} failed: ${reason.replaceAll("_", " ")}.`,
+    possibleCauses: diagnosis.possibleCauses,
+    possibleFixes: diagnosis.possibleFixes,
+  };
+}
+
 function slackMessage(source: FeatureSource, definition: ResolvedFeature, event: CueFeatureResult) {
   const headline = `${definition.label} failed`;
-  const impact = event.message ?? definition.failureMessage;
+  const impact = definition.failureMessage;
+  const reportedMessage = event.message ? `\n*Message:* ${escapeSlack(event.message)}` : "";
   const technical = [event.error?.code, event.error?.message].filter(Boolean).join(": ");
+  const diagnosis = diagnoseFeatureFailure(event, definition.label);
+  const context = [source.environment, event.context?.release ? `release ${event.context.release}` : null]
+    .filter((value): value is string => Boolean(value)).join(" · ");
+  const fixes = diagnosis.possibleFixes.map((fix) => `• ${escapeSlack(fix)}`).join("\n");
   return {
     text: `${source.source_name}: ${headline}`,
     blocks: [
-      { type: "section", text: { type: "mrkdwn", text: `:rotating_light: *${escapeSlack(headline)}*\n${escapeSlack(impact)}\n*Error:* ${escapeSlack(technical)}` } },
-      { type: "context", elements: [{ type: "mrkdwn", text: `NoxCue · ${escapeSlack(source.source_name)} · ${escapeSlack(source.environment)} · ${escapeSlack(event.feature)}` }] },
+      { type: "section", text: { type: "mrkdwn", text: `:rotating_light: *${escapeSlack(headline)}*\n${escapeSlack(impact)}${reportedMessage}\n*Error:* ${escapeSlack(technical)}` } },
+      { type: "section", text: { type: "mrkdwn", text: `*Possible fixes to investigate*\n${fixes}` } },
+      { type: "context", elements: [{ type: "mrkdwn", text: `NoxCue · ${escapeSlack(source.source_name)} · ${escapeSlack(context)} · ${escapeSlack(event.feature)} · detection only` }] },
     ],
   };
 }
@@ -139,6 +226,7 @@ export async function storeFeatureResult(
   eventId: string,
   definition: ResolvedFeature,
 ): Promise<{ eventId: string; duplicate: boolean; status: StateRow["status"]; queued: boolean }> {
+  event = sanitizeFeatureResult(event);
   const occurredAt = event.occurredAt ? new Date(event.occurredAt) : new Date();
   if (occurredAt.valueOf() > Date.now() + 5 * 60_000) throw new Error("invalid_occurred_at");
   const now = new Date().toISOString();
@@ -150,7 +238,17 @@ export async function storeFeatureResult(
   ).bind(source.org_id, source.source_id, eventId, event.feature, definition.kind,
     event.outcome, event.reason ?? null,
     event.outcome === "failure" ? event.message ?? definition.failureMessage : null,
-    event.error ? JSON.stringify(event.error) : null,
+    event.outcome === "failure" ? JSON.stringify({
+      ...(event.error ?? { message: event.message ?? definition.failureMessage }),
+      context: {
+        source: source.source_name,
+        environment: source.environment,
+        release: event.context?.release ?? null,
+        runtime: event.context?.runtime ?? "unknown",
+        url: event.context?.url ?? null,
+      },
+      diagnosis: diagnoseFeatureFailure(event, definition.label),
+    }) : null,
     event.durationMs ?? null, event.test ? 1 : 0, occurredAt.toISOString(), now).run();
   const previous = await env.NOX_DB.prepare(
     `SELECT status, consecutive_failures, consecutive_successes, incident_started_at, last_reason

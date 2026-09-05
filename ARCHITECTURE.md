@@ -2,21 +2,25 @@
 
 ## Boundary
 
-NoxCue receives explicit errors and bounded daily user/auth snapshots. Errors
+NoxCue receives explicit errors and bounded user/auth outcomes. Errors
 are delivered immediately; snapshots become one calculated daily health brief.
 It is not an observability or general analytics system.
 
 - No OTLP or collector
 - No logs, traces, arbitrary metric names, or raw activity stream
 - No sampling, source maps, SLOs, or anomaly detection
-- No inferred error grouping; fingerprints are explicit or deterministically derived
+- No automated remediation, configuration changes, or product-operation retries
+- No recovery inferred from a later successful user request
+- Fingerprints are explicit or deterministically derived
 - No Slack credentials in the NoxCue Worker
 
 ## Ownership
 
 NoxCue owns the public event endpoint, validation, ingest-key authentication,
 origin checks, rate limiting, idempotency, daily formulas, error presentation,
-and daily-brief presentation.
+daily-brief presentation, evidence enrichment, failure classification, and
+reason-specific diagnostic guidance. Guidance is informational: developers
+decide and apply fixes outside NoxCue.
 
 NoxConnect owns organization identity, source/key administration, the shared D1
 migrations, Slack installations and routing, the delivery outbox,

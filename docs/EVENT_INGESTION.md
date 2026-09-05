@@ -69,6 +69,23 @@ an error and do not alert.
 }
 ```
 
+For user-journey detection, the browser wrapper emits `feature.result`. It adds
+`occurredAt`, environment, release, runtime, sanitized URL, duration, and
+redacted error evidence automatically. The source name and source environment
+are resolved from the ingest key and enriched server-side; they are never
+trusted from a client payload.
+
+```ts
+await noxcue.auth.signup(() => auth.signUp(input));
+```
+
+Failure evidence is deliberately bounded. Email addresses, bearer/JWT tokens,
+common credential assignments, and sensitive URL query values are redacted;
+URLs are reduced to origin and pathname. NoxCue stores a reason-specific list
+of likely causes and possible fixes for developers to investigate. Detection
+never invokes those fixes and successful later requests never silently resolve
+a critical incident.
+
 ## User statistics
 
 Instrument the two lifecycle moments; do not calculate metrics in the app:

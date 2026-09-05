@@ -66,8 +66,9 @@ describe("NoxCue event contract", () => {
     expect(cueFeatureResultSchema.parse({
       type: "feature.result", feature: "auth.password_reset", outcome: "failure",
       reason: "email_delivery_failed", durationMs: 842,
-      error: { name: "EmailError", message: "Provider timed out", code: "EMAIL_TIMEOUT", status: 503 },
-    })).toMatchObject({ version: 1, feature: "auth.password_reset", test: false });
+      message: "Mail provider timed out", error: { name: "EmailError", message: "Mail provider timed out", code: "MAIL_503", status: 503 },
+      context: { environment: "production", release: "app@abc123", runtime: "server" },
+    })).toMatchObject({ version: 1, feature: "auth.password_reset", test: false, context: { release: "app@abc123" } });
     expect(cueFeatureResultSchema.safeParse({
       type: "feature.result", feature: "auth.login", outcome: "failure", email: "person@example.com",
     }).success).toBe(false);
@@ -119,6 +120,7 @@ describe("NoxCue event contract", () => {
         first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
           key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
           source_id: "source-1", source_name: "Checkout", project_id: null,
+          source_environment: "production",
           allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
           error_cooldown_minutes: 15, environment: "production", alerts_enabled: 1,
           slack_channel_id: "C123", slack_connection_id: "conn-1",
@@ -258,6 +260,7 @@ describe("NoxCue event contract", () => {
         first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
           key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
           source_id: "source-1", source_name: "Playnist", project_id: null,
+          source_environment: "production",
           allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
           environment: "production", alerts_enabled: 1,
           slack_channel_id: "C123", slack_connection_id: "conn-1",

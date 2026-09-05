@@ -1,7 +1,8 @@
--- Reference-only schema contract. NoxConnect migration 0068 is authoritative.
+-- Reference-only schema contract. NoxConnect migration 0070 is authoritative.
 CREATE TABLE IF NOT EXISTS cue_feature_results (
   org_id INTEGER NOT NULL, source_id TEXT NOT NULL, event_id TEXT NOT NULL,
-  feature_key TEXT NOT NULL, outcome TEXT NOT NULL, reason TEXT,
+  feature_key TEXT NOT NULL, feature_kind TEXT NOT NULL,
+  outcome TEXT NOT NULL, reason TEXT, message TEXT, error_json TEXT,
   duration_ms INTEGER, is_test INTEGER NOT NULL DEFAULT 0,
   occurred_at TEXT NOT NULL, received_at TEXT NOT NULL,
   PRIMARY KEY (source_id, event_id)

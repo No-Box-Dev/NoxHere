@@ -61,6 +61,28 @@ collect logs, traces, OTLP, arbitrary metrics, sessions, funnels, or arbitrary
 activity names and properties. Unknown feature names become one bounded
 `UNREGISTERED_FEATURE` error; they never create new features or metrics.
 
+## Detection-first SDK
+
+Wrap the user-facing operation. NoxCue preserves the original result and never
+attempts a repair:
+
+```ts
+const noxcue = createNoxCue({
+  ingestKey: import.meta.env.VITE_NOXCUE_PUBLIC_KEY,
+  environment: import.meta.env.MODE,
+  release: __APP_VERSION__,
+});
+
+await noxcue.auth.signup(() => auth.signUp(input));
+```
+
+The SDK adds the occurrence time, runtime, sanitized URL, environment, release,
+duration, classification, and redacted error details. The ingest key resolves
+the authoritative NoxCue source server-side, so an app cannot post across
+projects by changing a payload field. NoxCue records the evidence and provides
+likely causes and possible fixes to investigate. It never changes application
+configuration, retries a product operation, or claims that an incident is fixed.
+
 ## Local development
 
 ```bash

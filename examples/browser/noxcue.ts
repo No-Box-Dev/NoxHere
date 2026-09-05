@@ -14,19 +14,85 @@ export type NoxCueReason =
   | "configuration_error" | "timeout" | "network_error" | "internal_error" | "unknown";
 
 export type NoxCueEnvironment = "production" | "staging" | "development" | "preview" | "test" | "local";
-export interface NoxCueOptions { endpoint?: string; ingestKey: string; environment: NoxCueEnvironment; }
+export interface NoxCueOptions {
+  endpoint?: string;
+  ingestKey: string;
+  environment: NoxCueEnvironment;
+  release?: string;
+}
 export interface ErrorCueInput {
-  title: string; message?: string; occurredAt?: string; url?: string; idempotencyKey?: string;
+  title: string; error?: unknown; message?: string; occurredAt?: string; url?: string; idempotencyKey?: string;
   data?: { errorCode?: string; fingerprint?: string; component?: string; environment?: string;
     affectedUser?: string; fatal?: boolean; unhandled?: boolean; };
 }
 
 interface ProviderResult { error?: unknown; }
 interface ProviderError {
-  status?: unknown; statusCode?: unknown; name?: unknown; message?: unknown; code?: unknown;
+  status?: unknown; statusCode?: unknown; name?: unknown; message?: unknown; code?: unknown; stack?: unknown;
 }
-interface TechnicalError { name?: string; message: string; code?: string; status?: number; }
 type AuthOperation = <T>(operation: () => T | Promise<T>) => Promise<T>;
+
+const MAX_MESSAGE = 2_000;
+const MAX_STACK = 8_000;
+
+function bounded(value: unknown, max: number): string | undefined {
+  if (typeof value !== "string" && typeof value !== "number") return undefined;
+  const normalized = String(value).trim();
+  return normalized ? normalized.slice(0, max) : undefined;
+}
+
+function redact(value: string): string {
+  return value
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[redacted-email]")
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer [redacted]")
+    .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[redacted-token]")
+    .replace(/([?&](?:token|key|secret|password|code)=)[^&#\s]+/gi, "$1[redacted]")
+    .replace(/\b(api[_-]?key|access[_-]?token|refresh[_-]?token|token|password|secret)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]");
+}
+
+function safeUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? `${url.origin}${url.pathname}` : undefined;
+  } catch { return undefined; }
+}
+
+export function safeErrorDetails(value: unknown) {
+  if (value instanceof Response) {
+    return { name: "ResponseError", message: `HTTP ${value.status} ${value.statusText || "request failed"}`.trim(), code: `HTTP_${value.status}`, status: value.status };
+  }
+  const record = value && typeof value === "object" ? value as ProviderError : {};
+  const message = redact(bounded(record.message, MAX_MESSAGE) ?? bounded(value, MAX_MESSAGE) ?? "Unknown error");
+  const name = redact(bounded(record.name, 120) ?? (value instanceof Error ? value.name : "Error"));
+  const code = redact(bounded(record.code, 120) ?? (statusOf(value) ? `HTTP_${statusOf(value)}` : "UNKNOWN"));
+  const stack = bounded(record.stack, MAX_STACK);
+  const status = statusOf(value);
+  return { name, message, code, ...(status !== null && status >= 100 && status <= 599 ? { status } : {}), ...(stack ? { stack: redact(stack) } : {}) };
+}
+
+function detectedRuntime(): "browser" | "server" | "edge" | "unknown" {
+  if (typeof window !== "undefined" && typeof document !== "undefined") return "browser";
+  if (typeof navigator !== "undefined" && /Cloudflare-Workers/i.test(navigator.userAgent)) return "edge";
+  return typeof globalThis !== "undefined" ? "server" : "unknown";
+}
+
+function metaValue(name: string): string | undefined {
+  return typeof document === "undefined" ? undefined
+    : bounded(document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content, 120);
+}
+
+function automaticContext(options: NoxCueOptions) {
+  const hostname = typeof location === "undefined" ? "" : location.hostname;
+  const inferredEnvironment = hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local")
+    ? "development" : "production";
+  return {
+    environment: bounded(options.environment, 80) ?? metaValue("noxcue-environment") ?? inferredEnvironment,
+    release: bounded(options.release, 120) ?? metaValue("noxcue-release"),
+    runtime: detectedRuntime(),
+    url: typeof location === "undefined" ? undefined : safeUrl(location.href),
+  };
+}
 
 function statusOf(value: unknown): number | null {
   if (value instanceof Response) return value.status;
@@ -52,33 +118,6 @@ function classify(feature: NoxCueAuthFeature, value: unknown): { outcome: NoxCue
   return { outcome: "failure", reason: "unknown" };
 }
 
-function technicalError(value: unknown): TechnicalError {
-  if (value instanceof Response) {
-    return { name: "ResponseError", message: `${value.status} ${value.statusText || "Request failed"}`, status: value.status };
-  }
-  if (value instanceof Error) {
-    const provider = value as Error & ProviderError;
-    const status = statusOf(provider) ?? undefined;
-    return {
-      name: value.name || undefined,
-      message: value.message || "Unknown error",
-      ...(typeof provider.code === "string" ? { code: provider.code } : {}),
-      ...(status ? { status } : {}),
-    };
-  }
-  if (value && typeof value === "object") {
-    const provider = value as ProviderError;
-    const status = statusOf(provider) ?? undefined;
-    return {
-      ...(typeof provider.name === "string" ? { name: provider.name } : {}),
-      message: typeof provider.message === "string" ? provider.message : "Provider returned an error",
-      ...(typeof provider.code === "string" ? { code: provider.code } : {}),
-      ...(status ? { status } : {}),
-    };
-  }
-  return { message: typeof value === "string" ? value : "Unknown error" };
-}
-
 export function createNoxCue(options: NoxCueOptions) {
   const endpoint = (options.endpoint ?? "https://noxcue.jasper-414.workers.dev").replace(/\/$/, "");
   async function post(body: Record<string, unknown>): Promise<string> {
@@ -94,6 +133,15 @@ export function createNoxCue(options: NoxCueOptions) {
     // Reporting is fail-open: it never delays or changes the application's auth result.
     void post(body).catch(() => undefined);
   }
+  function featureReport(feature: NoxCueFeature, measured: { outcome: NoxCueOutcome; reason?: NoxCueReason }, started: number, evidence?: unknown) {
+    const error = measured.outcome === "failure" ? safeErrorDetails(evidence) : undefined;
+    report({
+      type: "feature.result", feature, ...measured,
+      occurredAt: new Date().toISOString(), context: automaticContext(options),
+      durationMs: Math.round(performance.now() - started),
+      ...(error ? { message: error.message, error } : {}),
+    });
+  }
   async function observe<T>(feature: NoxCueFeature, operation: () => T | Promise<T>): Promise<T> {
     const started = performance.now();
     try {
@@ -104,15 +152,11 @@ export function createNoxCue(options: NoxCueOptions) {
       const measured = failedValue
         ? classify(feature as NoxCueAuthFeature, failedValue)
         : { outcome: "success" as const };
-      report({ type: "feature.result", feature, ...measured,
-        ...(measured.outcome === "failure" ? { error: technicalError(failedValue) } : {}),
-        durationMs: Math.round(performance.now() - started) });
+      featureReport(feature, measured, started, failedValue);
       return result;
     } catch (error) {
       const measured = classify(feature as NoxCueAuthFeature, error);
-      report({ type: "feature.result", feature, ...measured,
-        ...(measured.outcome === "failure" ? { error: technicalError(error) } : {}),
-        durationMs: Math.round(performance.now() - started) });
+      featureReport(feature, measured, started, error);
       throw error;
     }
   }
@@ -125,11 +169,28 @@ export function createNoxCue(options: NoxCueOptions) {
     },
     observe,
     test: (feature: NoxCueAuthFeature = "auth.signup") =>
-      post({ type: "feature.result", feature, outcome: "success", test: true }),
+      post({ type: "feature.result", feature, outcome: "success", test: true, occurredAt: new Date().toISOString(), context: automaticContext(options) }),
     userRegistered: (userId: string, occurredAt?: string) =>
-      post({ type: "user.registered", userId, ...(occurredAt ? { occurredAt } : {}) }),
+      post({ type: "user.registered", userId, occurredAt: occurredAt ?? new Date().toISOString() }),
     userActive: (userId: string, occurredAt?: string) =>
-      post({ type: "user.active", userId, ...(occurredAt ? { occurredAt } : {}) }),
-    error: (input: ErrorCueInput) => post({ type: "error.occurred", ...input }),
+      post({ type: "user.active", userId, occurredAt: occurredAt ?? new Date().toISOString() }),
+    error: (input: ErrorCueInput) => {
+      const details = input.error === undefined ? undefined : safeErrorDetails(input.error);
+      const context = automaticContext(options);
+      const { error: _error, ...event } = input;
+      return post({
+        type: "error.occurred", ...event,
+        occurredAt: input.occurredAt ?? new Date().toISOString(),
+        url: input.url ?? context.url,
+        message: input.message ?? details?.message,
+        error: details,
+        context,
+        data: {
+          ...input.data,
+          errorCode: input.data?.errorCode ?? details?.code,
+          environment: input.data?.environment ?? context.environment,
+        },
+      });
+    },
   };
 }
