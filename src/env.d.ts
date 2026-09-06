@@ -1,3 +1,9 @@
 interface Env {
-  ANTHROPIC_API_KEY?: string;
+  NOXCONNECT_CAPABILITIES: {
+    execute(command: unknown): Promise<{
+      provider: string;
+      status: string;
+      result: { text?: string | null };
+    }>;
+  };
 }
