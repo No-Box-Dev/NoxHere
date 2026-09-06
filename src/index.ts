@@ -4,12 +4,16 @@ import { handleCueEvent } from "./events";
 import { narrateDailyStats } from "./narration";
 import { buildDigestResponse, buildTestResponse, type MetricComparisons } from "./response";
 import { runEndpointMonitors, testEndpointMonitor } from "./monitor";
+import { NOXCUE_SERVICE_MANIFEST } from "./service-manifest";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 export default class NoxCueService extends WorkerEntrypoint<Env> {
+  describe() {
+    return NOXCUE_SERVICE_MANIFEST;
+  }
   async scheduled(): Promise<void> {
     await runEndpointMonitors(this.env);
   }
