@@ -15,6 +15,7 @@ const input = {
     "users.active.daily": { yesterday: 82, average30d: 75, sampleDays: 30, history: dailyHistory.map((point) => ({ ...point, value: point.value * 8 })) },
   },
 };
+const noWait = { sleep: async () => undefined };
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -114,24 +115,52 @@ describe("daily statistics narration", () => {
   it("falls back cleanly when the provider fails", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const request = vi.fn<typeof fetch>(async () => new Response("unavailable", { status: 503 }));
-    await expect(narrateDailyStats(input, "managed-key", request))
+    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it("recovers from transient provider failures before using the fallback", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const review = "Acquisition improved with 12 new users, while daily activity remained close to its recent norm at 80 users.";
+    const request = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429, headers: { "Retry-After": "2" } }))
+      .mockResolvedValueOnce(new Response("overloaded", { status: 529 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ content: [{ type: "text", text: review }] })));
+    const sleep = vi.fn(async () => undefined);
+
+    await expect(narrateDailyStats(input, "managed-key", request, undefined, { sleep, random: () => 1 }))
+      .resolves.toBe(review);
+    expect(request).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenNthCalledWith(1, 2_000);
+    expect(sleep).toHaveBeenNthCalledWith(2, 1_000);
+  });
+
+  it("does not retry permanent provider errors", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const request = vi.fn<typeof fetch>(async () => new Response("invalid key", { status: 401 }));
+
+    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
+      .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+    expect(request).toHaveBeenCalledOnce();
   });
 
   it("ignores unapproved model prose and renders deterministic facts", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: `  "${"A".repeat(600)}"  ` }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request))
+    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+    expect(request).toHaveBeenCalledTimes(3);
   });
 
   it("rejects quantitative claims that are absent from the supplied statistics", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: "Daily activity reached 999 users." }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request))
+    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+    expect(request).toHaveBeenCalledTimes(3);
   });
 
   it("accepts calendar dates present in the supplied history", async () => {
@@ -173,8 +202,9 @@ describe("daily statistics narration", () => {
       stop_reason: "max_tokens",
       content: [{ type: "text", text: "Daily activity was 80 users but" }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request))
+    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
+    expect(request).toHaveBeenCalledTimes(3);
   });
 
   it("trims an overlong review only at a complete sentence boundary", async () => {
