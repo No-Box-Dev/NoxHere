@@ -91,8 +91,8 @@ a critical incident.
 Instrument the two lifecycle moments; do not calculate metrics in the app:
 
 ```ts
-await noxcue.userRegistered(user.id);
-await noxcue.userActive(user.id);
+await noxcue.user.registered(user.id);
+await noxcue.user.active(user.id);
 ```
 
 The wire events contain only the stable app user identifier and an optional
@@ -179,3 +179,18 @@ fix, or closes an issue.
 
 Cloudflare’s edge rate limiter is a permissive burst guard. Schema bounds,
 idempotency, database uniqueness, and error cooldowns are authoritative.
+
+## SDK
+
+Install `@noxcue/sdk` and choose the entry point that matches where the event is
+created:
+
+```ts
+import { createNoxCue } from "@noxcue/sdk/browser"; // nox_pub_ key
+import { createNoxCue } from "@noxcue/sdk/server";  // nox_secret_ key
+```
+
+The SDK uses the stable NoxConnect gateway by default. It supplies event IDs,
+timestamps, environment, release, runtime, sanitized URLs, SDK version, and
+redacted bounded errors. Delivery is fail-open and retries one transient intake
+failure using the same event ID. It never retries the application operation.

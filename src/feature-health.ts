@@ -32,6 +32,7 @@ export const diagnosticContextSchema = z.object({
   release: z.string().trim().min(1).max(120).optional(),
   runtime: z.enum(["browser", "server", "edge", "unknown"]).optional(),
   url: z.string().url().max(2_048).optional(),
+  sdkVersion: z.string().trim().min(1).max(40).optional(),
 }).strict();
 
 export const safeErrorSchema = z.object({
@@ -248,6 +249,7 @@ export async function storeFeatureResult(
         release: event.context?.release ?? null,
         runtime: event.context?.runtime ?? "unknown",
         url: event.context?.url ?? null,
+        sdkVersion: event.context?.sdkVersion ?? null,
       },
       diagnosis: diagnoseFeatureFailure(event, definition.label),
     }) : null,
