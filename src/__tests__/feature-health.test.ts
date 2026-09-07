@@ -45,7 +45,7 @@ describe("critical feature incidents", () => {
       type: "feature.result", feature: "auth.signup", outcome: "failure",
       reason: "dependency_unavailable", message: "Provider returned 503 token=private",
       error: { name: "AuthError", message: "Provider returned 503 token=private", code: "AUTH_503", status: 503, stack: "AuthError token=private at signup.ts:42" },
-      context: { environment: "production", release: "playnist@abc123", runtime: "browser" },
+      context: { environment: "production", release: "playnist@abc123", runtime: "browser", sdkVersion: "0.1.0" },
     });
 
     const result = await storeFeatureResult(env, source, event, "11111111-1111-4111-8111-111111111111", signup);
@@ -58,6 +58,8 @@ describe("critical feature incidents", () => {
     expect(JSON.stringify(outbox?.values)).toContain("Provider returned 503");
     const storedResult = bindings.find(({ sql }) => sql.includes("INSERT OR IGNORE INTO cue_feature_results"));
     expect(JSON.stringify(storedResult?.values)).toContain("playnist@abc123");
+    const errorJson = storedResult?.values.find((value) => typeof value === "string" && value.includes("sdkVersion"));
+    expect(JSON.parse(String(errorJson))).toMatchObject({ context: { sdkVersion: "0.1.0" } });
     expect(JSON.stringify(storedResult?.values)).toContain("possibleFixes");
     expect(JSON.stringify(storedResult?.values)).toContain("token=[redacted]");
     expect(JSON.stringify(storedResult?.values)).not.toContain("token=private");

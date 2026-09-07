@@ -46,8 +46,16 @@ cadence, while a recurrence after human closure creates a new linked issue.
 ## User statistics
 
 ```ts
-await noxcue.userRegistered(user.id);
-await noxcue.userActive(user.id);
+import { createNoxCue } from "@noxcue/sdk/server";
+
+const noxcue = createNoxCue({
+  key: process.env.NOXCUE_SERVER_KEY!,
+  environment: "production",
+  release: process.env.APP_RELEASE,
+});
+
+await noxcue.user.registered(user.id);
+await noxcue.user.active(user.id);
 ```
 
 Registration automatically counts as activity for that local day. Call
@@ -74,9 +82,11 @@ Wrap the user-facing operation. NoxCue preserves the original result and never
 attempts a repair:
 
 ```ts
+import { createNoxCue } from "@noxcue/sdk/browser";
+
 const noxcue = createNoxCue({
-  ingestKey: import.meta.env.VITE_NOXCUE_PUBLIC_KEY,
-  environment: import.meta.env.MODE,
+  key: import.meta.env.VITE_NOXCUE_BROWSER_KEY,
+  environment: "production",
   release: __APP_VERSION__,
 });
 
@@ -84,11 +94,17 @@ await noxcue.auth.signup(() => auth.signUp(input));
 ```
 
 The SDK adds the occurrence time, runtime, sanitized URL, environment, release,
-duration, classification, and redacted error details. The ingest key resolves
+SDK version, duration, classification, and redacted error details. The ingest key resolves
 the authoritative NoxCue source server-side, so an app cannot post across
 projects by changing a payload field. NoxCue records the evidence and provides
 likely causes and possible fixes to investigate. It never changes application
 configuration, retries a product operation, or claims that an incident is fixed.
+
+Install `@noxcue/sdk` and import the explicit `/browser` or `/server` entry point.
+The browser entry accepts only an origin-restricted `nox_pub_…` key; the server
+entry accepts only a secret `nox_secret_…` key. Direct reports return a delivery
+receipt without throwing into the host app. Wrapped operations report in the
+background and preserve the application's original return value or error.
 
 ## Local development
 
