@@ -3,7 +3,10 @@ import { displayMetricsFor, formatDelta, formatMetric, type DisplayMetric, type 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 const DEFAULT_MODEL = "claude-sonnet-4-6";
-const TIMEOUT_MS = 25_000;
+const ATTEMPT_TIMEOUT_MS = 10_000;
+const MAX_ATTEMPTS = 3;
+const BASE_RETRY_DELAY_MS = 500;
+const MAX_RETRY_DELAY_MS = 5_000;
 const MAX_RESPONSE_BYTES = 32 * 1024;
 const MAX_NARRATION_LENGTH = 1_200;
 const MAX_NARRATION_WORDS = 110;
@@ -421,64 +424,119 @@ export async function narrateDailyStats(
   apiKey: string | undefined,
   request: typeof fetch = fetch,
   model = DEFAULT_MODEL,
+  retry: {
+    sleep?: (milliseconds: number) => Promise<void>;
+    attemptTimeoutMs?: number;
+    random?: () => number;
+  } = {},
 ): Promise<string | undefined> {
   if (!apiKey) return undefined;
   const statistics = buildNarrationStatistics(input);
   if (statistics.length === 0) return undefined;
   const candidates = buildNarrationCandidates(input);
   const fallback = () => renderSelection(fallbackSelection(candidates));
+  const sleep = retry.sleep ?? ((milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds)));
+  const attemptTimeoutMs = retry.attemptTimeoutMs ?? ATTEMPT_TIMEOUT_MS;
+  const random = retry.random ?? Math.random;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const response = await request(ANTHROPIC_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": ANTHROPIC_VERSION,
-      },
-      body: JSON.stringify({
-        model: model.trim() || DEFAULT_MODEL,
-        max_tokens: 240,
-        system: NARRATION_SYSTEM_PROMPT,
-        messages: [{
-          role: "user",
-          content: JSON.stringify({
-            source: input.sourceName,
-            completedDay: input.period,
-            selectedMetrics: statistics,
-          }),
-        }],
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      console.warn(JSON.stringify({ event: "noxcue_narration_failed", reason: "provider_http", status: response.status }));
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), attemptTimeoutMs);
+    let retryReason = "invalid_response";
+    let retryStatus: number | undefined;
+    let retryAfter: string | null = null;
+    try {
+      const response = await request(ANTHROPIC_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": ANTHROPIC_VERSION,
+        },
+        body: JSON.stringify({
+          model: model.trim() || DEFAULT_MODEL,
+          max_tokens: 240,
+          system: NARRATION_SYSTEM_PROMPT,
+          messages: [{
+            role: "user",
+            content: JSON.stringify({
+              source: input.sourceName,
+              completedDay: input.period,
+              selectedMetrics: statistics,
+            }),
+          }],
+        }),
+        signal: controller.signal,
+      });
+      retryStatus = response.status;
+      retryAfter = response.headers.get("retry-after");
+      if (!response.ok) {
+        retryReason = "provider_http";
+        if (!isRetryableStatus(response.status)) {
+          logNarrationFailure(retryReason, attempt, response.status);
+          return fallback();
+        }
+      } else {
+        const raw = await readBoundedText(response, MAX_RESPONSE_BYTES);
+        const body = JSON.parse(raw) as {
+          stop_reason?: unknown;
+          content?: Array<{ type?: unknown; text?: unknown }>;
+        };
+        if (body.stop_reason === "max_tokens") {
+          retryReason = "truncated";
+        } else {
+          const text = body.content?.find((block) => block.type === "text")?.text;
+          const narration = typeof text === "string" ? validatedNarration(text, statistics) : undefined;
+          if (narration) return narration;
+          retryReason = "validation";
+        }
+      }
+    } catch (error) {
+      retryReason = error instanceof Error && error.name === "AbortError" ? "timeout" : "invalid_response";
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (attempt === MAX_ATTEMPTS) {
+      logNarrationFailure(retryReason, attempt, retryStatus);
       return fallback();
     }
-    const raw = await readBoundedText(response, MAX_RESPONSE_BYTES);
-    const body = JSON.parse(raw) as {
-      stop_reason?: unknown;
-      content?: Array<{ type?: unknown; text?: unknown }>;
-    };
-    if (body.stop_reason === "max_tokens") {
-      console.warn(JSON.stringify({ event: "noxcue_narration_failed", reason: "truncated" }));
-      return fallback();
-    }
-    const text = body.content?.find((block) => block.type === "text")?.text;
-    return typeof text === "string"
-      ? validatedNarration(text, statistics) ?? fallback()
-      : fallback();
-  } catch (error) {
+    const delayMs = retryDelayMs(attempt, retryAfter, random);
     console.warn(JSON.stringify({
-      event: "noxcue_narration_failed",
-      reason: error instanceof Error && error.name === "AbortError" ? "timeout" : "invalid_response",
+      event: "noxcue_narration_retry",
+      reason: retryReason,
+      attempt,
+      nextAttempt: attempt + 1,
+      status: retryStatus,
+      delayMs,
     }));
-    return fallback();
-  } finally {
-    clearTimeout(timeout);
+    await sleep(delayMs);
   }
+
+  return fallback();
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function retryDelayMs(attempt: number, retryAfter: string | null, random: () => number): number {
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return Math.min(MAX_RETRY_DELAY_MS, Math.ceil(seconds * 1_000));
+    }
+    const date = Date.parse(retryAfter);
+    if (Number.isFinite(date)) {
+      return Math.min(MAX_RETRY_DELAY_MS, Math.max(0, date - Date.now()));
+    }
+  }
+  const ceiling = Math.min(MAX_RETRY_DELAY_MS, BASE_RETRY_DELAY_MS * 2 ** (attempt - 1));
+  return Math.ceil(ceiling * (0.5 + Math.min(1, Math.max(0, random())) * 0.5));
+}
+
+function logNarrationFailure(reason: string, attempts: number, status?: number): void {
+  console.warn(JSON.stringify({ event: "noxcue_narration_failed", reason, attempts, status }));
 }
 
 async function readBoundedText(response: Response, limit: number): Promise<string> {
