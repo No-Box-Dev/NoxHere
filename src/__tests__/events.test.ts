@@ -50,7 +50,12 @@ describe("NoxCue event contract", () => {
       type: "user.registered",
       userId: "user-7",
       occurredAt: "2026-08-29T02:00:00Z",
-    })).toMatchObject({ type: "user.registered", userId: "user-7" });
+      context: { environment: "production", release: "playnist@abc123", runtime: "server", sdkVersion: "0.1.1" },
+    })).toMatchObject({
+      type: "user.registered",
+      userId: "user-7",
+      context: { release: "playnist@abc123", sdkVersion: "0.1.1" },
+    });
     expect(cueUserActiveEventSchema.parse({ type: "user.active", userId: "user-7" }))
       .toMatchObject({ type: "user.active", userId: "user-7" });
   });
@@ -87,6 +92,7 @@ describe("NoxCue event contract", () => {
     expect(cueActivityEventSchema.safeParse({
       type: "activity.occurred", metric: "custom.journals.added", userId: "user-7",
       eventId: "89195f9a-4a26-44e6-a147-9f2d003bc7f5",
+      context: { environment: "production", release: "playnist@abc123", runtime: "server", sdkVersion: "0.1.1" },
     }).success).toBe(true);
     expect(cueActivityEventSchema.safeParse({
       type: "activity.occurred", metric: "journals.added", userId: "user-7",

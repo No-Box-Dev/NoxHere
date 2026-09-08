@@ -15,7 +15,7 @@ import type {
   ServerNoxCueClient,
 } from "./types.js";
 
-const SDK_VERSION = "0.1.0";
+const SDK_VERSION = "0.1.1";
 const DEFAULT_ENDPOINT = "https://app.unticket.ai/api/cues/public/v1/events";
 const DEFAULT_TIMEOUT_MS = 3_000;
 const MAX_TIMEOUT_MS = 10_000;
@@ -396,12 +396,14 @@ export function createClient(
         userId: userId.slice(0, 200),
         occurredAt: event.occurredAt ?? new Date().toISOString(),
         ...(event.idempotencyKey ? { idempotencyKey: event.idempotencyKey.slice(0, 200) } : {}),
+        context: context(),
       }),
       active: (userId: string, event: EventOptions = {}) => post({
         type: "user.active",
         userId: userId.slice(0, 200),
         occurredAt: event.occurredAt ?? new Date().toISOString(),
         ...(event.idempotencyKey ? { idempotencyKey: event.idempotencyKey.slice(0, 200) } : {}),
+        context: context(),
       }),
     },
     activity: (metric: `custom.${string}`, userId: string, event: ActivityOptions = {}) => post({
@@ -411,6 +413,7 @@ export function createClient(
       eventId: event.eventId ?? randomUuid(),
       occurredAt: event.occurredAt ?? new Date().toISOString(),
       ...(event.idempotencyKey ? { idempotencyKey: event.idempotencyKey.slice(0, 200) } : {}),
+      context: context(),
     }),
   };
 }

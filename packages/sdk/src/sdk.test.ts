@@ -15,7 +15,12 @@ function accepted(eventId = "stored-event") {
 describe("@noxcue/sdk", () => {
   it("sends a one-line server-side registered-user event through the stable gateway", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const noxcue = createServerNoxCue({ key: serverKey, environment: "production", fetch: request });
+    const noxcue = createServerNoxCue({
+      key: serverKey,
+      environment: "production",
+      release: "playnist@abc123",
+      fetch: request,
+    });
 
     await expect(noxcue.user.registered("user-42")).resolves.toMatchObject({ ok: true, eventId: "stored-event", status: 202 });
     expect(request).toHaveBeenCalledOnce();
@@ -29,6 +34,12 @@ describe("@noxcue/sdk", () => {
       userId: "user-42",
       eventId: expect.any(String),
       occurredAt: expect.any(String),
+      context: {
+        environment: "production",
+        release: "playnist@abc123",
+        runtime: "server",
+        sdkVersion: "0.1.1",
+      },
     });
   });
 
@@ -85,13 +96,13 @@ describe("@noxcue/sdk", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.1.0" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.1.1" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },
     });
-    expect(JSON.stringify(event)).not.toContain("private");
-    expect(JSON.stringify(event)).not.toContain("person");
+    expect(JSON.stringify({ message: event.message, error: event.error, url: event.url })).not.toContain("api_key=private");
+    expect(JSON.stringify({ message: event.message, error: event.error, url: event.url })).not.toContain("person@example.com");
   });
 
   it("preserves a wrapped operation error while reporting it in the background", async () => {

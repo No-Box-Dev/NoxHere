@@ -54,6 +54,7 @@ const userEventFields = {
   ...commonFields,
   userId: shortText(200),
   occurredAt: z.string().datetime({ offset: true }).optional(),
+  context: diagnosticContextSchema.optional(),
 };
 
 export const cueUserRegisteredEventSchema = z.object({
@@ -74,6 +75,7 @@ export const cueActivityEventSchema = z.object({
     .regex(/^custom\.[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){0,4}$/),
   userId: shortText(200),
   occurredAt: z.string().datetime({ offset: true }).optional(),
+  context: diagnosticContextSchema.optional(),
 }).strict();
 
 export const cueEventSchema = z.discriminatedUnion("type", [
