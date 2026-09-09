@@ -15,7 +15,7 @@ import type {
   ServerNoxCueClient,
 } from "./types.js";
 
-const SDK_VERSION = "0.1.6";
+const SDK_VERSION = "0.1.7";
 const DEFAULT_ENDPOINT = "https://app.noxhere.com/api/v1/cues/public/events";
 const DEFAULT_TIMEOUT_MS = 3_000;
 const MAX_TIMEOUT_MS = 10_000;

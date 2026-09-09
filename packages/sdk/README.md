@@ -9,7 +9,7 @@ collect arbitrary logs, traces, sessions, or analytics properties.
 import { createNoxCue } from "@noxcue/sdk/browser";
 
 const noxcue = createNoxCue({
-  key: import.meta.env.PUBLIC_NOXCUE_BROWSER_KEY,
+  key: import.meta.env.PUBLIC_NOXCUE_KEY,
   environment: "production",
   release: "my-app@1.4.0",
 });
@@ -27,7 +27,7 @@ user statistics or activity methods. Do not put a server key in frontend code.
 import { createNoxCue } from "@noxcue/sdk/server";
 
 const noxcue = createNoxCue({
-  key: process.env.NOXCUE_SERVER_KEY!,
+  key: process.env.NOXCUE_INGEST_KEY!,
   environment: "production",
   release: process.env.APP_RELEASE,
   waitUntil: (promise) => executionContext.waitUntil(promise),
