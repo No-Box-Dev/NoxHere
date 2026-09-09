@@ -2,7 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "noxcue",
   "main": "src/index.ts",
-  "compatibility_date": "2026-08-30",
+  "compatibility_date": "2026-09-09",
   "compatibility_flags": ["nodejs_compat"],
   "rules": [
     { "type": "Data", "globs": ["**/*.woff2"], "fallthrough": true }

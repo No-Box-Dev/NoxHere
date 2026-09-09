@@ -25,7 +25,7 @@ describe("@noxcue/sdk", () => {
     await expect(noxcue.user.registered("user-42")).resolves.toMatchObject({ ok: true, eventId: "stored-event", status: 202 });
     expect(request).toHaveBeenCalledOnce();
     const [url, init] = request.mock.calls[0]!;
-    expect(url).toBe("https://app.unticket.ai/api/cues/public/v1/events");
+    expect(url).toBe("https://app.noxhere.com/api/v1/cues/public/events");
     expect(init?.headers).toMatchObject({ "X-Nox-Ingest-Key": serverKey });
     expect(JSON.parse(String(init?.body))).toMatchObject({
       version: 1,

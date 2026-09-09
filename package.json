@@ -26,10 +26,13 @@
   "devDependencies": {
     "@types/node": "^26.2.0",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10",
-    "wrangler": "^4.127.1"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.130.0"
   },
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "sharp": "0.35.4"
   }
 }

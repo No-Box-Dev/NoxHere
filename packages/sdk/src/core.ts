@@ -16,7 +16,7 @@ import type {
 } from "./types.js";
 
 const SDK_VERSION = "0.1.1";
-const DEFAULT_ENDPOINT = "https://app.unticket.ai/api/cues/public/v1/events";
+const DEFAULT_ENDPOINT = "https://app.noxhere.com/api/v1/cues/public/events";
 const DEFAULT_TIMEOUT_MS = 3_000;
 const MAX_TIMEOUT_MS = 10_000;
 const MAX_BODY_BYTES = 32_768;
