@@ -1,6 +1,6 @@
 {
   "name": "@noxcue/sdk",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Detection-first browser and server SDK for NoxCue",
   "repository": {
     "type": "git",
