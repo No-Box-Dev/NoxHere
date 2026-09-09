@@ -44,5 +44,7 @@ jobs:
       - name: Run repository checks
         run: npm run check
 
-      - name: Publish public SDK with provenance
-        run: npm publish --workspace @noxcue/sdk
+      # The source repository is private, so npm provenance is unavailable.
+      # Authentication still uses the package's short-lived OIDC trusted publisher.
+      - name: Publish public SDK through trusted publishing
+        run: npm publish --workspace @noxcue/sdk --provenance=false
