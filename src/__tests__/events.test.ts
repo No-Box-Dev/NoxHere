@@ -7,6 +7,7 @@ import {
   cueUserActiveEventSchema,
   cueUserRegisteredEventSchema,
   handleCueEvent,
+  isDiscardedBrowserDiagnostic,
 } from "../events";
 import { cueFeatureResultSchema } from "../feature-health";
 
@@ -117,6 +118,73 @@ describe("NoxCue event contract", () => {
     expect(JSON.stringify(message.blocks)).toContain("Payment &lt;failed&gt;");
     expect(JSON.stringify(message.blocks)).toContain("*Message:* Declined &amp; stopped");
     expect(JSON.stringify(message.blocks)).toContain("*Error:* GatewayError: Provider &lt;timeout&gt; &amp; disconnected");
+  });
+
+  it.each([
+    { component: "window_error", unhandled: true, message: "ResizeObserver loop completed with undelivered notifications." },
+    { component: "unhandled_rejection", unhandled: true, message: "Promise rejected outside an observed action" },
+    { component: "browser.unhandled", unhandled: true, message: "Global browser error" },
+  ])("classifies ambient browser diagnostics as discarded", ({ component, unhandled, message }) => {
+    const event = cueErrorEventSchema.parse({
+      type: "error.occurred",
+      title: message,
+      message,
+      context: { runtime: "browser" },
+      data: { component, unhandled },
+    });
+    expect(isDiscardedBrowserDiagnostic(event)).toBe(true);
+  });
+
+  it("does not store, alert, analyze, or queue ambient browser diagnostics", async () => {
+    const queue = { send: vi.fn(async () => undefined) };
+    const batch = vi.fn(async () => []);
+    const sqlSeen: string[] = [];
+    const prepare = vi.fn((sql: string) => {
+      sqlSeen.push(sql);
+      const statement = {
+        bind: vi.fn(() => statement),
+        first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
+          key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
+          source_id: "source-1", source_name: "Playnist", project_id: "playnist",
+          allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
+          error_cooldown_minutes: 15, environment: "production", alerts_enabled: 1,
+          slack_channel_id: "C123", slack_connection_id: "conn-1",
+        } : null),
+        run: vi.fn(async () => ({ success: true })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
+      method: "POST",
+      headers: {
+        Origin: "https://app.example.com",
+        "Content-Type": "application/json",
+        "X-Nox-Ingest-Key": `nox_pub_${"a".repeat(43)}`,
+      },
+      body: JSON.stringify({
+        type: "error.occurred",
+        title: "ResizeObserver loop completed with undelivered notifications.",
+        message: "ResizeObserver loop completed with undelivered notifications.",
+        context: { runtime: "browser", release: "playnist@a7a6bec" },
+        data: { component: "window_error", unhandled: true },
+      }),
+    }), {
+      NOX_DB: { prepare, batch }, NOX_TASKS: queue,
+      CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
+      CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
+    } as unknown as Env);
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({
+      accepted: true,
+      stored: false,
+      queued: false,
+      classification: "discarded",
+    });
+    expect(sqlSeen.some((sql) => /INSERT INTO events|cue_error_groups|cue_error_daily_groups/.test(sql))).toBe(false);
+    expect(batch).not.toHaveBeenCalled();
+    expect(queue.send).not.toHaveBeenCalled();
   });
 
   it("stores an error and publishes NoxConnect's delivery task", async () => {

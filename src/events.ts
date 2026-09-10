@@ -117,10 +117,11 @@ interface SlackTask {
 interface StoredResult {
   eventId: string;
   queued: boolean;
+  stored?: boolean;
   notificationSuppressed?: boolean;
   duplicate?: boolean;
   period?: string;
-  classification?: "unregistered";
+  classification?: "unregistered" | "discarded";
   requestedFeature?: string;
   requestedMetric?: string;
   githubQueued?: boolean;
@@ -304,6 +305,22 @@ function escapeSlack(value: string): string {
 function slackDiagnostic(value: string | undefined, fallback: string): string {
   const normalized = value?.trim() || fallback;
   return escapeSlack(normalized.slice(0, 700));
+}
+
+const AMBIENT_BROWSER_COMPONENTS = new Set([
+  "window_error",
+  "unhandled_rejection",
+  "browser.unhandled",
+  "browser.unhandled-rejection",
+]);
+
+/** Browser runtime exceptions do not prove that a user-facing action failed. */
+export function isDiscardedBrowserDiagnostic(event: CueErrorEvent): boolean {
+  if (event.context?.runtime !== "browser") return false;
+  const component = event.data.component?.trim().toLowerCase();
+  if (event.data.unhandled || (component && AMBIENT_BROWSER_COMPONENTS.has(component))) return true;
+  const text = [event.title, event.message, event.error?.message].filter(Boolean).join("\n");
+  return /resizeobserver loop (?:limit exceeded|completed with undelivered notifications)/i.test(text);
 }
 
 export function buildCueSlackMessage(sourceName: string, event: CueErrorEvent, occurrence: number) {
@@ -683,7 +700,9 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
               classification: "unregistered" as const,
               requestedFeature: event.feature,
             }
-        : await storeError(env, source, event, eventId);
+        : isDiscardedBrowserDiagnostic(event)
+          ? { eventId, queued: false, stored: false, classification: "discarded" as const }
+          : await storeError(env, source, event, eventId);
     await env.NOX_DB.prepare(
       `UPDATE cue_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
     ).bind(new Date().toISOString(), source.key_id).run();

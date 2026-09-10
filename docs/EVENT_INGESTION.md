@@ -150,7 +150,13 @@ never create a metric implicitly.
 }
 ```
 
-Errors are saved immediately. The first occurrence of an incident key is sent to
+Explicit errors are saved immediately. Ambient browser exceptions do not prove
+user impact: `window_error`, unhandled promise rejections, and known
+ResizeObserver noise are accepted as discarded diagnostics without D1 storage,
+Slack delivery, AI analysis, or GitHub issue creation. Report a registered
+feature failure or a deliberate fatal render failure instead.
+
+The first occurrence of an incident key is sent to
 Slack; repeats notify only after the source cooldown while still contributing
 to the daily totals. Explicit error groups remain open until a developer
 acknowledges or resolves them in NoxConnect. A later occurrence reopens a
