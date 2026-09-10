@@ -50,8 +50,6 @@ import { createNoxCue } from "@noxcue/sdk/server";
 
 const noxcue = createNoxCue({
   key: process.env.NOXCUE_SERVER_KEY!,
-  environment: "production",
-  release: process.env.APP_RELEASE,
 });
 
 await noxcue.user.registered(user.id);
@@ -86,14 +84,13 @@ import { createNoxCue } from "@noxcue/sdk/browser";
 
 const noxcue = createNoxCue({
   key: import.meta.env.VITE_NOXCUE_BROWSER_KEY,
-  environment: "production",
-  release: __APP_VERSION__,
 });
 
 await noxcue.auth.signup(() => auth.signUp(input));
 ```
 
-The SDK adds the occurrence time, runtime, sanitized URL, environment, release,
+The source key supplies project and environment. The SDK adds occurrence time,
+runtime, sanitized URL, an inferred release when the platform exposes one,
 SDK version, duration, classification, and redacted error details. The ingest key resolves
 the authoritative NoxCue source server-side, so an app cannot post across
 projects by changing a payload field. NoxCue records the evidence and provides
@@ -105,6 +102,11 @@ The browser entry accepts only an origin-restricted `nox_pub_…` key; the serve
 entry accepts only a secret `nox_secret_…` key. Direct reports return a delivery
 receipt without throwing into the host app. Wrapped operations report in the
 background and preserve the application's original return value or error.
+Unhandled browser failures are captured automatically. Fetch/Next.js,
+Cloudflare Pages, and Express adapters report thrown errors and 5xx responses
+without changing application behavior. Critical reports are delivered
+immediately with bounded retries and one stable event ID; `flush()` lets tests
+and shutdown hooks wait for background reports.
 
 ## Local development
 
