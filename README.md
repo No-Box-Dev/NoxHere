@@ -103,9 +103,12 @@ The browser entry accepts only an origin-restricted `nox_pub_…` key; the serve
 entry accepts only a secret `nox_secret_…` key. Direct reports return a delivery
 receipt without throwing into the host app. Wrapped operations report in the
 background and preserve the application's original return value or error.
-Unhandled browser failures are captured automatically. Fetch/Next.js,
-Cloudflare Pages, and Express adapters report thrown errors and 5xx responses
-without changing application behavior. Critical reports are delivered
+Creating a client never installs error listeners or sends events by itself.
+NoxCue reports only methods and wrappers the developer explicitly uses.
+Global browser error capture is available only through the deliberate
+`captureUnhandled: true` option; prefer observing known user-impacting actions.
+Fetch/Next.js, Cloudflare Pages, and Express adapters report thrown errors and
+5xx responses only when the developer explicitly wraps a handler. Critical reports are delivered
 immediately with bounded retries and one stable event ID; `flush()` lets tests
 and shutdown hooks wait for background reports.
 

@@ -9,7 +9,7 @@ export function createNoxCue(options: BrowserNoxCueOptions): BrowserNoxCueClient
     kind: "browser",
     currentUrl: () => typeof location === "undefined" ? undefined : location.href,
   });
-  if (options.captureUnhandled !== false && typeof window !== "undefined") {
+  if (options.captureUnhandled === true && typeof window !== "undefined") {
     const onError = (event: ErrorEvent) => client.capture(event.error ?? new Error(event.message || "Unhandled browser error"), {
       component: "browser.unhandled",
       fatal: true,

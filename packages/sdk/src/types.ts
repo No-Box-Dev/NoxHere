@@ -56,7 +56,10 @@ export interface NoxCueOptions {
 }
 
 export interface BrowserNoxCueOptions extends NoxCueOptions {
-  /** Capture window errors and unhandled promise rejections. Defaults to true. */
+  /**
+   * Explicitly capture all window errors and unhandled promise rejections.
+   * Disabled by default; prefer reporting known user-impacting actions.
+   */
   captureUnhandled?: boolean;
 }
 

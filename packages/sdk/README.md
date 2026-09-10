@@ -17,9 +17,10 @@ await noxcue.auth.signup(() => auth.signUp(input));
 
 Browser entry points accept only `nox_pub_…` keys. Configure the exact browser
 origins in NoxConnect. They expose feature and error detection, but not trusted
-user statistics or activity methods. Unhandled browser errors and promise
-rejections are captured automatically. Set `captureUnhandled: false` only when
-another error boundary reports them. Do not put a server key in frontend code.
+user statistics or activity methods. Creating a client captures nothing by
+default. Report known user-impacting actions explicitly. If an application
+deliberately wants global browser listeners, it must opt in with
+`captureUnhandled: true`. Do not put a server key in frontend code.
 
 ## Server
 

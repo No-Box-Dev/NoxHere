@@ -39,7 +39,7 @@ describe("@noxcue/sdk", () => {
         environment: "production",
         release: "playnist@abc123",
         runtime: "server",
-        sdkVersion: "0.2.0",
+        sdkVersion: "0.2.1",
       },
     });
   });
@@ -58,12 +58,28 @@ describe("@noxcue/sdk", () => {
     expect("activity" in noxcue).toBe(false);
   });
 
-  it("captures unhandled browser errors by default and detaches cleanly", async () => {
+  it("does not capture unhandled browser errors by default", async () => {
     const browser = new EventTarget();
     const request = vi.fn<typeof fetch>(async () => accepted());
     vi.stubGlobal("window", browser);
     vi.stubGlobal("location", { href: "https://app.example.com/signup?token=private" });
     const noxcue = createBrowserNoxCue({ key: browserKey, fetch: request });
+
+    browser.dispatchEvent(Object.assign(new Event("error"), { error: new Error("render exploded"), message: "render exploded" }));
+    browser.dispatchEvent(Object.assign(new Event("unhandledrejection"), { reason: new Error("promise exploded") }));
+    await noxcue.flush();
+    expect(request).not.toHaveBeenCalled();
+
+    noxcue.close();
+    vi.unstubAllGlobals();
+  });
+
+  it("captures unhandled browser errors only after explicit opt-in and detaches cleanly", async () => {
+    const browser = new EventTarget();
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    vi.stubGlobal("window", browser);
+    vi.stubGlobal("location", { href: "https://app.example.com/signup?token=private" });
+    const noxcue = createBrowserNoxCue({ key: browserKey, captureUnhandled: true, fetch: request });
 
     browser.dispatchEvent(Object.assign(new Event("error"), { error: new Error("render exploded"), message: "render exploded" }));
     browser.dispatchEvent(Object.assign(new Event("unhandledrejection"), { reason: new Error("promise exploded") }));
@@ -119,7 +135,7 @@ describe("@noxcue/sdk", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.0" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.1" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },
