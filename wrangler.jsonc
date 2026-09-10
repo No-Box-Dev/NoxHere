@@ -22,6 +22,9 @@
       "database_id": "c94084e6-d0be-423c-8de6-249e7cf8bf25"
     }
   ],
+  "services": [
+    { "binding": "NOXCONNECT_CAPABILITIES", "service": "noxconnect-capabilities" }
+  ],
   "queues": {
     "producers": [
       { "binding": "NOX_TASKS", "queue": "noxconnect-tasks" }
@@ -51,7 +54,6 @@
   ],
   "vars": {
     "ENVIRONMENT": "production",
-    "PUBLIC_BASE_URL": "https://noxcue.jasper-414.workers.dev",
-    "NARRATION_MODEL": "claude-sonnet-4-6"
+    "PUBLIC_BASE_URL": "https://noxcue.jasper-414.workers.dev"
   }
 }

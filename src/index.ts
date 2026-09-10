@@ -4,12 +4,17 @@ import { handleCueEvent } from "./events";
 import { narrateDailyStats } from "./narration";
 import { buildDigestResponse, buildTestResponse, type MetricComparisons } from "./response";
 import { runEndpointMonitors, testEndpointMonitor } from "./monitor";
+import { NOXCUE_SERVICE_MANIFEST } from "./service-manifest";
+import { buildIncidentPresentation } from "./incident-presentation";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 export default class NoxCueService extends WorkerEntrypoint<Env> {
+  describe() {
+    return NOXCUE_SERVICE_MANIFEST;
+  }
   async scheduled(): Promise<void> {
     await runEndpointMonitors(this.env);
   }
@@ -38,6 +43,10 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     return buildTestResponse(orgLogin);
   }
 
+  buildGitHubIncident(input: Parameters<typeof buildIncidentPresentation>[0], previous?: Parameters<typeof buildIncidentPresentation>[1]) {
+    return buildIncidentPresentation(input, previous);
+  }
+
   async testEndpointMonitor(orgId: number, sourceId: string) {
     return testEndpointMonitor(this.env, orgId, sourceId);
   }
@@ -48,6 +57,7 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     metrics: Record<string, number>,
     comparisons: MetricComparisons = {},
     metricLabels: Record<string, string> = {},
+    scope?: { organizationId: number; projectId: string; sourceId: string },
   ) {
     const textFallback = buildDigestResponse(sourceName, period, metrics, comparisons, undefined, undefined, metricLabels);
     const chart = (async () => {
@@ -61,9 +71,21 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     })();
     const narration = narrateDailyStats(
       { sourceName, period, metrics, comparisons, metricLabels },
-      this.env.ANTHROPIC_API_KEY,
-      fetch,
-      this.env.NARRATION_MODEL,
+      scope ? async (request) => {
+        const idempotencyKey = `digest:${scope.sourceId}:${period}`;
+        const receipt = await this.env.NOXCONNECT_CAPABILITIES.execute({
+          contract: "noxconnect.connection-capability",
+          version: 1,
+          commandId: crypto.randomUUID(),
+          idempotencyKey,
+          service: "noxcue",
+          organizationId: scope.organizationId,
+          projectId: scope.projectId,
+          capability: "ai.complete",
+          input: request,
+        });
+        return receipt.provider === "ai" && receipt.status === "completed" ? receipt.result.text : null;
+      } : undefined,
     );
     const [chartImageUrl, narrative] = await Promise.all([chart, narration]);
     return chartImageUrl || narrative

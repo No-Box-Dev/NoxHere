@@ -15,9 +15,18 @@ const input = {
     "users.active.daily": { yesterday: 82, average30d: 75, sampleDays: 30, history: dailyHistory.map((point) => ({ ...point, value: point.value * 8 })) },
   },
 };
-const noWait = { sleep: async () => undefined };
 
 afterEach(() => vi.restoreAllMocks());
+
+function completionFrom(request: typeof fetch) {
+  return async (prompt: { purpose: string; system: string; user: string; maxTokens: number; responseFormat: "text" }) => {
+    const response = await request("https://connector.invalid/complete", { method: "POST", body: JSON.stringify(prompt) });
+    if (!response.ok) throw new Error(`completion ${response.status}`);
+    const value = await response.json() as { stop_reason?: string; content?: Array<{ type?: string; text?: string }> };
+    if (value.stop_reason === "max_tokens") throw new Error("truncated completion");
+    return value.content?.find((block) => block.type === "text")?.text;
+  };
+}
 
 describe("daily statistics narration", () => {
   it("asks the managed model for an editorial review using complete selected-metric context", async () => {
@@ -26,27 +35,25 @@ describe("daily statistics narration", () => {
       content: [{ type: "text", text: review }],
     }), { headers: { "Content-Type": "application/json" } }));
 
-    await expect(narrateDailyStats(input, "managed-key", request))
+    await expect(narrateDailyStats(input, completionFrom(request)))
       .resolves.toBe(review);
-    const [url, init] = request.mock.calls[0]!;
-    expect(url).toBe("https://api.anthropic.com/v1/messages");
-    expect(init?.headers).toMatchObject({ "x-api-key": "managed-key", "anthropic-version": "2023-06-01" });
+    const [, init] = request.mock.calls[0]!;
     const body = JSON.parse(String(init?.body));
-    expect(body).toMatchObject({ model: "claude-sonnet-4-6", max_tokens: 240 });
+    expect(body).toMatchObject({ purpose: "daily-statistics-narration", maxTokens: 240, responseFormat: "text" });
     expect(body.system).toContain("Analyze the entire supplied dataset privately");
     expect(body.system).toContain("hard limit of 100 words");
     expect(body.system).toContain("same metric's dated series");
     expect(body.system).toContain("cause cannot be determined");
     expect(body.system).toContain("Never describe aggregate product statistics as healthy or unhealthy");
     expect(body.system).not.toContain("for example");
-    const supplied = JSON.parse(body.messages[0].content);
+    const supplied = JSON.parse(body.user);
     expect(supplied.selectedMetrics).toEqual(expect.arrayContaining([expect.objectContaining({
       key: "users.new",
       behavior: "daily_flow",
       today: { value: 12, display: "12" },
       series: expect.any(Array),
     })]));
-    expect(body.messages[0].content).toContain("relativeChangePercent");
+    expect(body.user).toContain("relativeChangePercent");
   });
 
   it("offers only one metric per group and removes redundant totals and per-user variants", () => {
@@ -74,13 +81,13 @@ describe("daily statistics narration", () => {
     expect([...keys].filter((key) => key.startsWith("users.active."))).toHaveLength(1);
   });
 
-  it("accepts an operational model override", async () => {
+  it("does not choose a provider model inside NoxCue", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: "Daily active users were lower than yesterday." }],
     })));
-    await narrateDailyStats(input, "managed-key", request, "claude-sonnet-5");
+    await narrateDailyStats(input, completionFrom(request));
     const body = JSON.parse(String(request.mock.calls[0]![1]?.body));
-    expect(body.model).toBe("claude-sonnet-5");
+    expect(body).not.toHaveProperty("model");
   });
 
   it("analyzes cumulative totals using daily changes instead of their rising level", () => {
@@ -106,61 +113,33 @@ describe("daily statistics narration", () => {
     });
   });
 
-  it("does not call the provider without a server key", async () => {
+  it("uses deterministic narration without a managed completion", async () => {
     const request = vi.fn<typeof fetch>();
-    await expect(narrateDailyStats(input, undefined, request)).resolves.toBeUndefined();
+    await expect(narrateDailyStats(input)).resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
     expect(request).not.toHaveBeenCalled();
   });
 
   it("falls back cleanly when the provider fails", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const request = vi.fn<typeof fetch>(async () => new Response("unavailable", { status: 503 }));
-    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
+    await expect(narrateDailyStats(input, completionFrom(request)))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
-    expect(request).toHaveBeenCalledTimes(3);
-  });
-
-  it("recovers from transient provider failures before using the fallback", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const review = "Acquisition improved with 12 new users, while daily activity remained close to its recent norm at 80 users.";
-    const request = vi.fn<typeof fetch>()
-      .mockResolvedValueOnce(new Response("rate limited", { status: 429, headers: { "Retry-After": "2" } }))
-      .mockResolvedValueOnce(new Response("overloaded", { status: 529 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ content: [{ type: "text", text: review }] })));
-    const sleep = vi.fn(async () => undefined);
-
-    await expect(narrateDailyStats(input, "managed-key", request, undefined, { sleep, random: () => 1 }))
-      .resolves.toBe(review);
-    expect(request).toHaveBeenCalledTimes(3);
-    expect(sleep).toHaveBeenNthCalledWith(1, 2_000);
-    expect(sleep).toHaveBeenNthCalledWith(2, 1_000);
-  });
-
-  it("does not retry permanent provider errors", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const request = vi.fn<typeof fetch>(async () => new Response("invalid key", { status: 401 }));
-
-    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
-      .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
-    expect(request).toHaveBeenCalledOnce();
   });
 
   it("ignores unapproved model prose and renders deterministic facts", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: `  "${"A".repeat(600)}"  ` }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
+    await expect(narrateDailyStats(input, completionFrom(request)))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
-    expect(request).toHaveBeenCalledTimes(3);
   });
 
   it("rejects quantitative claims that are absent from the supplied statistics", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: "Daily activity reached 999 users." }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
+    await expect(narrateDailyStats(input, completionFrom(request)))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
-    expect(request).toHaveBeenCalledTimes(3);
   });
 
   it("accepts calendar dates present in the supplied history", async () => {
@@ -168,7 +147,7 @@ describe("daily statistics narration", () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: review }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request)).resolves.toBe(review);
+    await expect(narrateDailyStats(input, completionFrom(request))).resolves.toBe(review);
   });
 
   it("accepts displayed percentages from a ratio history", async () => {
@@ -193,7 +172,7 @@ describe("daily statistics narration", () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: review }],
     })));
-    await expect(narrateDailyStats(ratioInput, "managed-key", request)).resolves.toBe(review);
+    await expect(narrateDailyStats(ratioInput, completionFrom(request))).resolves.toBe(review);
   });
 
   it("rejects a provider response truncated at the token limit", async () => {
@@ -202,9 +181,8 @@ describe("daily statistics narration", () => {
       stop_reason: "max_tokens",
       content: [{ type: "text", text: "Daily activity was 80 users but" }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request, undefined, noWait))
+    await expect(narrateDailyStats(input, completionFrom(request)))
       .resolves.toBe("Daily activity fell to 80 users from 82 yesterday. 12 new users signed up, up from 8 yesterday.");
-    expect(request).toHaveBeenCalledTimes(3);
   });
 
   it("trims an overlong review only at a complete sentence boundary", async () => {
@@ -212,7 +190,7 @@ describe("daily statistics narration", () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: review }],
     })));
-    const narration = await narrateDailyStats(input, "managed-key", request);
+    const narration = await narrateDailyStats(input, completionFrom(request));
     expect(narration).toBeDefined();
     expect(narration!.split(/\s+/)).toHaveLength(110);
     expect(narration).toMatch(/\.$/);
@@ -231,7 +209,7 @@ describe("daily statistics narration", () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: review }],
     })));
-    const narration = await narrateDailyStats(ratioInput, "managed-key", request);
+    const narration = await narrateDailyStats(ratioInput, completionFrom(request));
     expect(narration).toMatch(/DAU \/ MAU was 15\.6% as monthly activity expanded\.$/);
     expect(narration).not.toContain("This final sentence");
   });
@@ -241,7 +219,7 @@ describe("daily statistics narration", () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       content: [{ type: "text", text: review }],
     })));
-    await expect(narrateDailyStats(input, "managed-key", request))
+    await expect(narrateDailyStats(input, completionFrom(request)))
       .resolves.toBe("12 new users signed up.");
   });
 
