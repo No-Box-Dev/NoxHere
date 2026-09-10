@@ -39,7 +39,7 @@ describe("@noxcue/sdk", () => {
         environment: "production",
         release: "playnist@abc123",
         runtime: "server",
-        sdkVersion: "0.2.1",
+        sdkVersion: "0.2.2",
       },
     });
   });
@@ -135,7 +135,7 @@ describe("@noxcue/sdk", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.1" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.2" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },
