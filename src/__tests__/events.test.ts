@@ -108,13 +108,15 @@ describe("NoxCue event contract", () => {
       type: "error.occurred",
       title: "Payment <failed>",
       message: "Declined & stopped",
+      error: { name: "GatewayError", message: "Provider <timeout> & disconnected" },
       url: "https://app.example.com/orders/1842",
       data: { errorCode: "CARD_<DECLINED>" },
     });
     const message = buildCueSlackMessage("Checkout & billing", event, 1);
     expect(message.text).toContain("Payment <failed>");
     expect(JSON.stringify(message.blocks)).toContain("Payment &lt;failed&gt;");
-    expect(JSON.stringify(message.blocks)).toContain("Declined &amp; stopped");
+    expect(JSON.stringify(message.blocks)).toContain("*Message:* Declined &amp; stopped");
+    expect(JSON.stringify(message.blocks)).toContain("*Error:* GatewayError: Provider &lt;timeout&gt; &amp; disconnected");
   });
 
   it("stores an error and publishes NoxConnect's delivery task", async () => {
@@ -156,6 +158,9 @@ describe("NoxCue event contract", () => {
     expect(String(sourceLookup?.[0])).toContain("alert_route.route_key = 'noxcue_alerts'");
     expect(String(sourceLookup?.[0]).indexOf("NULLIF(alert_route.channel_id"))
       .toBeLessThan(String(sourceLookup?.[0]).indexOf("NULLIF(source.slack_channel_id"));
+    const incidentUpsert = prepare.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO cue_error_groups"));
+    expect(String(incidentUpsert?.[0])).toContain("WHEN cue_error_groups.status = 'resolved' THEN 'open'");
+    expect(String(incidentUpsert?.[0])).toContain("resolved_at = NULL");
     expect(batch).toHaveBeenCalledOnce();
     expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_slack" }));
   });
@@ -292,8 +297,8 @@ describe("NoxCue event contract", () => {
     expect(await response.json()).toMatchObject({ accepted: true, duplicate: false, period: "2026-08-29" });
     expect(prepare.mock.calls.some(([sql]) => String(sql).includes(table))).toBe(true);
     if (type === "user.registered") {
-      expect(prepare.mock.calls.some(([sql]) => String(sql).includes("cue_user_active_days"))).toBe(true);
-      expect(batch).toHaveBeenCalledOnce();
+      expect(prepare.mock.calls.some(([sql]) => String(sql).includes("cue_user_active_days"))).toBe(false);
+      expect(batch).not.toHaveBeenCalled();
     }
     const inserted = bindings.find((values) => values.includes("source-1") && values.includes("2026-08-29"));
     expect(inserted).toBeDefined();

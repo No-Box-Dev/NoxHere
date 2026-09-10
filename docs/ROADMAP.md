@@ -6,8 +6,8 @@
 - Submit explicit `error.occurred` cues for immediate Slack delivery.
 - Group errors by an explicit or deterministic fingerprint and cool down repeats.
 - Emit closed `user.registered` and `user.active` events; NoxCue derives standardized user counts.
-- Store 20 versioned reported/calculated metric definitions in NoxConnect.
-- Calculate growth, activation, login success, and DAU/MAU stickiness.
+- Derive new users, total users, DAU, WAU, MAU, and DAU/MAU from individual
+  registration and app-defined activity signals.
 - Send exactly one Slack health brief after each source’s local day ends.
 - Show daily values, digest delivery state, and recent error groups in NoxConnect.
 - Automatically attach bounded timing, source, environment, release, runtime,

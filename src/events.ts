@@ -301,14 +301,25 @@ function escapeSlack(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function slackDiagnostic(value: string | undefined, fallback: string): string {
+  const normalized = value?.trim() || fallback;
+  return escapeSlack(normalized.slice(0, 700));
+}
+
 export function buildCueSlackMessage(sourceName: string, event: CueErrorEvent, occurrence: number) {
+  const errorName = event.error?.name?.trim();
+  const errorMessage = slackDiagnostic(event.error?.message, "No additional error detail supplied");
+  const actualError = errorName
+    ? `${escapeSlack(errorName.slice(0, 120))}: ${errorMessage}`
+    : errorMessage;
   const details = [
     event.data.errorCode ? `*Code:* \`${escapeSlack(event.data.errorCode)}\`` : null,
     event.data.component ? `*Component:* ${escapeSlack(event.data.component)}` : null,
     event.environment ? `*Environment:* ${escapeSlack(event.environment)}` : null,
     event.context?.release ? `*Release:* \`${escapeSlack(event.context.release)}\`` : null,
     event.context?.runtime ? `*Runtime:* ${escapeSlack(event.context.runtime)}` : null,
-    event.message ? escapeSlack(event.message) : null,
+    `*Message:* ${slackDiagnostic(event.message, "No message supplied")}`,
+    `*Error:* ${actualError}`,
   ].filter((line): line is string => Boolean(line));
   return {
     text: `${sourceName}: ${event.title}`,
@@ -369,18 +380,11 @@ async function storeUserEvent(
   const subjectHash = await hash(`${source.source_id}\u0000${event.userId}`);
   const receivedAt = new Date().toISOString();
   if (event.type === "user.registered") {
-    const [registration] = await env.NOX_DB.batch([
-      env.NOX_DB.prepare(
+    const registration = await env.NOX_DB.prepare(
       `INSERT OR IGNORE INTO cue_user_registrations
          (org_id, source_id, subject_hash, period, occurred_at, received_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      ).bind(source.org_id, source.source_id, subjectHash, period, occurredAt.toISOString(), receivedAt),
-      env.NOX_DB.prepare(
-        `INSERT OR IGNORE INTO cue_user_active_days
-           (org_id, source_id, period, subject_hash, occurred_at, received_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      ).bind(source.org_id, source.source_id, period, subjectHash, occurredAt.toISOString(), receivedAt),
-    ]);
+      ).bind(source.org_id, source.source_id, subjectHash, period, occurredAt.toISOString(), receivedAt).run();
     return {
       eventId,
       queued: false,
@@ -489,12 +493,18 @@ async function storeError(
   };
   const fingerprint = errorIncidentKey(normalizedEvent);
   const group = await env.NOX_DB.prepare(
-    `SELECT occurrence_count, last_notified_at FROM cue_error_groups
+    `SELECT occurrence_count, last_notified_at, status FROM cue_error_groups
       WHERE source_id = ? AND fingerprint = ?`,
-  ).bind(source.source_id, fingerprint).first<{ occurrence_count: number; last_notified_at: string | null }>();
+  ).bind(source.source_id, fingerprint).first<{
+    occurrence_count: number;
+    last_notified_at: string | null;
+    status: "open" | "acknowledged" | "resolved";
+  }>();
   const cooldownMs = source.error_cooldown_minutes * 60_000;
   const shouldNotify = Boolean(source.slack_channel_id) && (
-    !group?.last_notified_at || receivedAt.valueOf() - Date.parse(group.last_notified_at) >= cooldownMs
+    group?.status === "resolved"
+    || !group?.last_notified_at
+    || receivedAt.valueOf() - Date.parse(group.last_notified_at) >= cooldownMs
   );
   const occurrence = (group?.occurrence_count ?? 0) + 1;
   const payload = { ...normalizedEvent, data: { ...normalizedEvent.data, fingerprint },
@@ -504,14 +514,19 @@ async function storeError(
     env.NOX_DB.prepare(
       `INSERT INTO cue_error_groups
          (org_id, source_id, fingerprint, title, error_code, component, environment,
-          first_seen_at, last_seen_at, occurrence_count, last_notified_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+          first_seen_at, last_seen_at, occurrence_count, last_notified_at, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'open')
        ON CONFLICT(source_id, fingerprint) DO UPDATE SET
          title = excluded.title, error_code = excluded.error_code,
          component = excluded.component, environment = excluded.environment,
          last_seen_at = excluded.last_seen_at,
          occurrence_count = cue_error_groups.occurrence_count + 1,
-         last_notified_at = COALESCE(excluded.last_notified_at, cue_error_groups.last_notified_at)`,
+         last_notified_at = COALESCE(excluded.last_notified_at, cue_error_groups.last_notified_at),
+         status = CASE WHEN cue_error_groups.status = 'resolved' THEN 'open' ELSE cue_error_groups.status END,
+         acknowledged_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_at END,
+         acknowledged_by = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_by END,
+         resolved_at = NULL,
+         resolved_by = NULL`,
     ).bind(
       source.org_id, source.source_id, fingerprint, normalizedEvent.title, normalizedEvent.data.errorCode ?? null,
       normalizedEvent.data.component ?? null, normalizedEvent.data.environment ?? null,

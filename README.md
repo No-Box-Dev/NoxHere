@@ -50,17 +50,16 @@ import { createNoxCue } from "@noxcue/sdk/server";
 
 const noxcue = createNoxCue({
   key: process.env.NOXCUE_SERVER_KEY!,
-  environment: "production",
-  release: process.env.APP_RELEASE,
 });
 
 await noxcue.user.registered(user.id);
 await noxcue.user.active(user.id);
 ```
 
-Registration automatically counts as activity for that local day. Call
-`userActive` for returning users when they perform a meaningful authenticated
-action.
+Registration and activity are deliberately separate. The app defines DAU by
+calling `user.active` when a user performs a meaningful authenticated action.
+If signup should count as activity for a product, send both calls after signup
+succeeds.
 
 Both use `POST /v1/events` with a secret server key. NoxCue hashes the user ID,
 deduplicates the facts, and derives the daily statistics. See
@@ -87,14 +86,13 @@ import { createNoxCue } from "@noxcue/sdk/browser";
 
 const noxcue = createNoxCue({
   key: import.meta.env.VITE_NOXCUE_BROWSER_KEY,
-  environment: "production",
-  release: __APP_VERSION__,
 });
 
 await noxcue.auth.signup(() => auth.signUp(input));
 ```
 
-The SDK adds the occurrence time, runtime, sanitized URL, environment, release,
+The source key supplies project and environment. The SDK adds occurrence time,
+runtime, sanitized URL, an inferred release when the platform exposes one,
 SDK version, duration, classification, and redacted error details. The ingest key resolves
 the authoritative NoxCue source server-side, so an app cannot post across
 projects by changing a payload field. NoxCue records the evidence and provides
@@ -106,6 +104,14 @@ The browser entry accepts only an origin-restricted `nox_pub_…` key; the serve
 entry accepts only a secret `nox_secret_…` key. Direct reports return a delivery
 receipt without throwing into the host app. Wrapped operations report in the
 background and preserve the application's original return value or error.
+Creating a client never installs error listeners or sends events by itself.
+NoxCue reports only methods and wrappers the developer explicitly uses.
+Global browser error capture is available only through the deliberate
+`captureUnhandled: true` option; prefer observing known user-impacting actions.
+Fetch/Next.js, Cloudflare Pages, and Express adapters report thrown errors and
+5xx responses only when the developer explicitly wraps a handler. Critical reports are delivered
+immediately with bounded retries and one stable event ID; `flush()` lets tests
+and shutdown hooks wait for background reports.
 
 ## Local development
 

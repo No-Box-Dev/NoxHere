@@ -43,12 +43,24 @@ export interface DeliveryResult {
 
 export interface NoxCueOptions {
   key: string;
-  environment: NoxCueEnvironment;
+  /** Optional assertion. The source key remains the authoritative environment. */
+  environment?: NoxCueEnvironment;
   release?: string;
   endpoint?: string;
   timeoutMs?: number;
+  /** Retries after the first attempt. Defaults to 2 and is capped at 3. */
+  maxRetries?: number;
+  enabled?: boolean;
   fetch?: typeof fetch;
   waitUntil?: (promise: Promise<unknown>) => void;
+}
+
+export interface BrowserNoxCueOptions extends NoxCueOptions {
+  /**
+   * Explicitly capture all window errors and unhandled promise rejections.
+   * Disabled by default; prefer reporting known user-impacting actions.
+   */
+  captureUnhandled?: boolean;
 }
 
 export interface EventOptions {
@@ -106,9 +118,12 @@ interface BaseNoxCueClient<ErrorOptions extends BrowserErrorOptions> {
     sessionRefresh: ObservedOperation;
     logout: ObservedOperation;
   };
+  /** Fire-and-forget error capture. Delivery is tracked by flush(). */
+  capture(error: unknown, options?: ErrorOptions): void;
   error(error: unknown, options?: ErrorOptions): Promise<DeliveryResult>;
   test(feature?: NoxCueAuthFeature): Promise<DeliveryResult>;
   flush(): Promise<DeliveryResult[]>;
+  close(): void;
 }
 
 export type BrowserNoxCueClient = BaseNoxCueClient<BrowserErrorOptions>;
@@ -119,4 +134,8 @@ export interface ServerNoxCueClient extends BaseNoxCueClient<ServerErrorOptions>
     active(userId: string, options?: EventOptions): Promise<DeliveryResult>;
   };
   activity(metric: `custom.${string}`, userId: string, options?: ActivityOptions): Promise<DeliveryResult>;
+}
+
+export interface NoxCueAdapterOptions {
+  component?: string;
 }

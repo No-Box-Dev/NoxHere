@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createNoxCue as createBrowserNoxCue } from "./browser.js";
 import { createNoxCue as createServerNoxCue } from "./server.js";
+import { noxCueExpressErrorHandler, withNoxCue, withNoxCuePages } from "./adapters.js";
 
 const browserKey = `nox_pub_${"a".repeat(32)}`;
 const serverKey = `nox_secret_${"b".repeat(32)}`;
@@ -38,7 +39,7 @@ describe("@noxcue/sdk", () => {
         environment: "production",
         release: "playnist@abc123",
         runtime: "server",
-        sdkVersion: "0.1.7",
+        sdkVersion: "0.2.2",
       },
     });
   });
@@ -55,6 +56,44 @@ describe("@noxcue/sdk", () => {
     const noxcue = createBrowserNoxCue({ key: browserKey, environment: "production" });
     expect("user" in noxcue).toBe(false);
     expect("activity" in noxcue).toBe(false);
+  });
+
+  it("does not capture unhandled browser errors by default", async () => {
+    const browser = new EventTarget();
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    vi.stubGlobal("window", browser);
+    vi.stubGlobal("location", { href: "https://app.example.com/signup?token=private" });
+    const noxcue = createBrowserNoxCue({ key: browserKey, fetch: request });
+
+    browser.dispatchEvent(Object.assign(new Event("error"), { error: new Error("render exploded"), message: "render exploded" }));
+    browser.dispatchEvent(Object.assign(new Event("unhandledrejection"), { reason: new Error("promise exploded") }));
+    await noxcue.flush();
+    expect(request).not.toHaveBeenCalled();
+
+    noxcue.close();
+    vi.unstubAllGlobals();
+  });
+
+  it("captures unhandled browser errors only after explicit opt-in and detaches cleanly", async () => {
+    const browser = new EventTarget();
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    vi.stubGlobal("window", browser);
+    vi.stubGlobal("location", { href: "https://app.example.com/signup?token=private" });
+    const noxcue = createBrowserNoxCue({ key: browserKey, captureUnhandled: true, fetch: request });
+
+    browser.dispatchEvent(Object.assign(new Event("error"), { error: new Error("render exploded"), message: "render exploded" }));
+    browser.dispatchEvent(Object.assign(new Event("unhandledrejection"), { reason: new Error("promise exploded") }));
+    await noxcue.flush();
+    expect(request).toHaveBeenCalledTimes(2);
+    const events = request.mock.calls.map((call) => JSON.parse(String(call[1]?.body)));
+    expect(events.map((event) => event.data.component)).toEqual(["browser.unhandled", "browser.unhandled-rejection"]);
+    expect(events[0].context.url).toBe("https://app.example.com/signup");
+
+    noxcue.close();
+    browser.dispatchEvent(Object.assign(new Event("error"), { error: new Error("after close") }));
+    await noxcue.flush();
+    expect(request).toHaveBeenCalledTimes(2);
+    vi.unstubAllGlobals();
   });
 
   it("retries a transient response with the same event identity", async () => {
@@ -96,7 +135,7 @@ describe("@noxcue/sdk", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.1.7" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.2" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },
@@ -129,6 +168,72 @@ describe("@noxcue/sdk", () => {
 
     await expect(noxcue.error(new Error("Signup failed"), { title: "Signup failed" }))
       .resolves.toMatchObject({ ok: false, error: "network_error" });
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it("lets the source key supply the environment and tracks unawaited delivery", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const noxcue = createServerNoxCue({ key: serverKey, fetch: request });
+
+    noxcue.capture(Object.assign(new Error("database unavailable"), { code: "DB_DOWN" }));
+    const results = await noxcue.flush();
+
+    expect(results).toEqual([expect.objectContaining({ ok: true })]);
+    const event = JSON.parse(String(request.mock.calls[0]![1]?.body));
+    expect(event.environment).toBeUndefined();
+    expect(event.context.environment).toBeUndefined();
+    expect(event.data).toMatchObject({
+      component: "server.application",
+      fingerprint: "error.occurred|server.application|db_down|error",
+    });
+  });
+
+  it("wraps Fetch handlers and preserves successful, 5xx and thrown outcomes", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const noxcue = createServerNoxCue({ key: serverKey, fetch: request });
+    const ok = withNoxCue(noxcue, async () => new Response("ok"));
+    const failed = withNoxCue(noxcue, async () => new Response("no", { status: 503 }));
+    const original = new Error("handler exploded");
+    const thrown = withNoxCue(noxcue, async () => { throw original; });
+
+    await expect(ok(new Request("https://app.example.com/api/users"))).resolves.toMatchObject({ status: 200 });
+    await expect(failed(new Request("https://app.example.com/api/users"))).resolves.toMatchObject({ status: 503 });
+    await expect(thrown(new Request("https://app.example.com/api/users"))).rejects.toBe(original);
+    await noxcue.flush();
+
     expect(request).toHaveBeenCalledTimes(2);
+    const events = request.mock.calls.map((call) => JSON.parse(String(call[1]?.body)));
+    expect(events[0]).toMatchObject({ error: { code: "HTTP_503" }, data: { component: "server.request", unhandled: true } });
+    expect(events[1]).toMatchObject({ error: { message: "handler exploded" }, data: { component: "server.request", unhandled: true } });
+  });
+
+  it("creates a Cloudflare Pages client from bindings and keeps reports alive", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    let noxcue: ReturnType<typeof createServerNoxCue> | undefined;
+    const waitUntil = vi.fn<(promise: Promise<unknown>) => void>();
+    const handler = withNoxCuePages<{ NOXCUE_SERVER_KEY: string }>((context) => {
+      noxcue = createServerNoxCue({ key: context.env.NOXCUE_SERVER_KEY, fetch: request });
+      return noxcue;
+    }, async () => new Response(null, { status: 500 }));
+
+    await handler({
+      request: new Request("https://app.example.com/api/save"),
+      env: { NOXCUE_SERVER_KEY: serverKey },
+      waitUntil,
+    });
+    expect(waitUntil).toHaveBeenCalledOnce();
+    await noxcue?.flush();
+  });
+
+  it("provides Express error middleware without consuming the app error", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const noxcue = createServerNoxCue({ key: serverKey, fetch: request });
+    const next = vi.fn();
+    const error = new Error("express exploded");
+
+    noxCueExpressErrorHandler(noxcue)!(error, { method: "POST", originalUrl: "/signup" }, {}, next);
+    expect(next).toHaveBeenCalledWith(error);
+    await noxcue.flush();
+    expect(request).toHaveBeenCalledOnce();
   });
 });

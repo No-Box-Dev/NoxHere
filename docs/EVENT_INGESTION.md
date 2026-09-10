@@ -103,9 +103,10 @@ timestamp:
 ```
 
 NoxCue hashes the identifier before storage. It retains one registration fact
-per source/user and one activity fact per source/user/local-day. A registration
-also counts as activity on that local day, so a new integration produces DAU
-from the same single call. NoxCue then derives
+per source/user and one activity fact per source/user/local-day. Registration
+does not imply activity: the app defines DAU by choosing the meaningful moments
+where it sends `user.active`. If a signup should count for that product, send
+both calls after signup succeeds. NoxCue then derives
 new users, total users, DAU, WAU, MAU, DAU/MAU, yesterday, and 30-day averages.
 
 ## Custom activity metrics
@@ -125,8 +126,8 @@ query or aggregate its own database:
 ```
 
 `eventId` is required and makes retries idempotent. NoxCue hashes `userId`,
-stores the event once, and derives a cumulative total plus cumulative events
-per registered user. Unknown names become one `UNREGISTERED_METRIC` error and
+stores the event once, and derives each day's total plus daily events per
+registered user. Unknown names become one `UNREGISTERED_METRIC` error and
 never create a metric implicitly.
 
 ## Immediate error
@@ -151,7 +152,10 @@ never create a metric implicitly.
 
 Errors are saved immediately. The first occurrence of an incident key is sent to
 Slack; repeats notify only after the source cooldown while still contributing
-to the daily totals. NoxCue hashes `affectedUser` before storing it in the
+to the daily totals. Explicit error groups remain open until a developer
+acknowledges or resolves them in NoxConnect. A later occurrence reopens a
+resolved group; NoxCue never infers recovery from silence. NoxCue hashes
+`affectedUser` before storing it in the
 affected-user rollup.
 
 By default NoxCue derives a readable key from stable evidence:
