@@ -301,14 +301,25 @@ function escapeSlack(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function slackDiagnostic(value: string | undefined, fallback: string): string {
+  const normalized = value?.trim() || fallback;
+  return escapeSlack(normalized.slice(0, 700));
+}
+
 export function buildCueSlackMessage(sourceName: string, event: CueErrorEvent, occurrence: number) {
+  const errorName = event.error?.name?.trim();
+  const errorMessage = slackDiagnostic(event.error?.message, "No additional error detail supplied");
+  const actualError = errorName
+    ? `${escapeSlack(errorName.slice(0, 120))}: ${errorMessage}`
+    : errorMessage;
   const details = [
     event.data.errorCode ? `*Code:* \`${escapeSlack(event.data.errorCode)}\`` : null,
     event.data.component ? `*Component:* ${escapeSlack(event.data.component)}` : null,
     event.environment ? `*Environment:* ${escapeSlack(event.environment)}` : null,
     event.context?.release ? `*Release:* \`${escapeSlack(event.context.release)}\`` : null,
     event.context?.runtime ? `*Runtime:* ${escapeSlack(event.context.runtime)}` : null,
-    event.message ? escapeSlack(event.message) : null,
+    `*Message:* ${slackDiagnostic(event.message, "No message supplied")}`,
+    `*Error:* ${actualError}`,
   ].filter((line): line is string => Boolean(line));
   return {
     text: `${sourceName}: ${event.title}`,

@@ -108,13 +108,15 @@ describe("NoxCue event contract", () => {
       type: "error.occurred",
       title: "Payment <failed>",
       message: "Declined & stopped",
+      error: { name: "GatewayError", message: "Provider <timeout> & disconnected" },
       url: "https://app.example.com/orders/1842",
       data: { errorCode: "CARD_<DECLINED>" },
     });
     const message = buildCueSlackMessage("Checkout & billing", event, 1);
     expect(message.text).toContain("Payment <failed>");
     expect(JSON.stringify(message.blocks)).toContain("Payment &lt;failed&gt;");
-    expect(JSON.stringify(message.blocks)).toContain("Declined &amp; stopped");
+    expect(JSON.stringify(message.blocks)).toContain("*Message:* Declined &amp; stopped");
+    expect(JSON.stringify(message.blocks)).toContain("*Error:* GatewayError: Provider &lt;timeout&gt; &amp; disconnected");
   });
 
   it("stores an error and publishes NoxConnect's delivery task", async () => {
