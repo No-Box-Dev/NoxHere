@@ -56,9 +56,10 @@ await noxcue.user.registered(user.id);
 await noxcue.user.active(user.id);
 ```
 
-Registration automatically counts as activity for that local day. Call
-`userActive` for returning users when they perform a meaningful authenticated
-action.
+Registration and activity are deliberately separate. The app defines DAU by
+calling `user.active` when a user performs a meaningful authenticated action.
+If signup should count as activity for a product, send both calls after signup
+succeeds.
 
 Both use `POST /v1/events` with a secret server key. NoxCue hashes the user ID,
 deduplicates the facts, and derives the daily statistics. See

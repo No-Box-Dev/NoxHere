@@ -72,6 +72,11 @@ CREATE TABLE IF NOT EXISTS cue_error_groups (
   last_seen_at TEXT NOT NULL,
   occurrence_count INTEGER NOT NULL,
   last_notified_at TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'acknowledged', 'resolved')),
+  acknowledged_at TEXT,
+  acknowledged_by TEXT,
+  resolved_at TEXT,
+  resolved_by TEXT,
   PRIMARY KEY (source_id, fingerprint)
 );
 
