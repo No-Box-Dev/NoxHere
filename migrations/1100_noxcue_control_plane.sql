@@ -43,6 +43,21 @@ CREATE TABLE IF NOT EXISTS cue_daily_metrics (
   PRIMARY KEY (source_id, period, metric_key)
 );
 
+-- Apple analytics is delivered as late-arriving, replaceable report batches.
+-- NoxConnect owns the production migration; this table documents NoxCue's contract.
+CREATE TABLE IF NOT EXISTS cue_external_metric_contributions (
+  org_id INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  source_id TEXT NOT NULL REFERENCES cue_sources(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  batch_id TEXT NOT NULL,
+  period TEXT NOT NULL,
+  metric_key TEXT NOT NULL REFERENCES cue_metric_definitions(key),
+  value REAL NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (source_id, provider, batch_id, period, metric_key)
+);
+
 CREATE TABLE IF NOT EXISTS cue_user_registrations (
   org_id INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
   source_id TEXT NOT NULL REFERENCES cue_sources(id) ON DELETE CASCADE,

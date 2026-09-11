@@ -49,7 +49,7 @@ function metricBehavior(key: string, kind: DisplayMetric["kind"]): MetricBehavio
   if (key === "users.active.weekly" || key === "users.active.monthly") return "rolling_level";
   if (kind === "ratio") return "ratio";
   if (kind === "decimal") return "rate";
-  if (key === "users.new" || key.startsWith("custom.")) return "daily_flow";
+  if (key === "users.new" || key.startsWith("custom.") || key.startsWith("apple.")) return "daily_flow";
   return "daily_level";
 }
 

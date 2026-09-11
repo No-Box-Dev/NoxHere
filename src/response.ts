@@ -14,7 +14,7 @@ export interface DisplayMetric {
   key: string;
   label: string;
   kind: "count" | "ratio" | "decimal";
-  group: "Growth" | "Engagement" | "Activity";
+  group: "Growth" | "Engagement" | "App Store" | "Activity";
 }
 
 export const DISPLAY_METRICS: DisplayMetric[] = [
@@ -24,6 +24,13 @@ export const DISPLAY_METRICS: DisplayMetric[] = [
   { key: "users.active.weekly", label: "Weekly active", kind: "count", group: "Engagement" },
   { key: "users.active.monthly", label: "Monthly active", kind: "count", group: "Engagement" },
   { key: "users.stickiness.dau_mau", label: "DAU / MAU", kind: "ratio", group: "Engagement" },
+  { key: "apple.downloads.total", label: "App Store downloads", kind: "count", group: "App Store" },
+  { key: "apple.downloads.first_time", label: "First-time downloads", kind: "count", group: "App Store" },
+  { key: "apple.downloads.redownloads", label: "Redownloads", kind: "count", group: "App Store" },
+  { key: "apple.installations", label: "App installations", kind: "count", group: "App Store" },
+  { key: "apple.deletions", label: "App deletions", kind: "count", group: "App Store" },
+  { key: "apple.sessions", label: "App sessions (opt-in)", kind: "count", group: "App Store" },
+  { key: "apple.crashes", label: "App crashes (opt-in)", kind: "count", group: "App Store" },
 ];
 
 export function displayMetricsFor(metrics: Record<string, number>, labels: Record<string, string> = {}): DisplayMetric[] {
@@ -105,10 +112,10 @@ export function buildDigestResponse(
     });
   }
   if (!chartImageUrl) {
-    for (const group of ["Growth", "Engagement", "Activity"] as const) {
+    for (const group of ["Growth", "Engagement", "App Store", "Activity"] as const) {
       const groupMetrics = visibleMetrics.filter((metric) => metric.group === group);
       if (groupMetrics.length === 0) continue;
-      const groupIcon = group === "Growth" ? "🌱" : group === "Engagement" ? "⚡" : "✍️";
+      const groupIcon = group === "Growth" ? "🌱" : group === "Engagement" ? "⚡" : group === "App Store" ? "🍎" : "✍️";
       blocks.push({ type: "section", text: { type: "mrkdwn", text: `*${groupIcon} ${group}*` } });
       blocks.push({
         type: "section",

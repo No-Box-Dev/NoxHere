@@ -6,6 +6,7 @@ import { buildDigestResponse, buildTestResponse, type MetricComparisons } from "
 import { runEndpointMonitors, testEndpointMonitor } from "./monitor";
 import { NOXCUE_SERVICE_MANIFEST } from "./service-manifest";
 import { buildIncidentPresentation } from "./incident-presentation";
+import { ingestAppleAnalyticsBatch } from "./external-stats";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -49,6 +50,10 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
 
   async testEndpointMonitor(orgId: number, sourceId: string) {
     return testEndpointMonitor(this.env, orgId, sourceId);
+  }
+
+  async ingestAppleAnalyticsBatch(input: unknown) {
+    return ingestAppleAnalyticsBatch(this.env.NOX_DB, input);
   }
 
   async buildDigestResponse(

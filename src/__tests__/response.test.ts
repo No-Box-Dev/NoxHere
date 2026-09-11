@@ -93,6 +93,19 @@ describe("NoxCue response policy", () => {
     expect(rendered).toContain("2.92");
   });
 
+  it("keeps Apple device metrics distinct in the daily fallback", () => {
+    const response = buildDigestResponse("Playnist", "2026-09-09", {
+      "apple.downloads.first_time": 12,
+      "apple.sessions": 90,
+      "apple.crashes": 2,
+    });
+    const rendered = JSON.stringify(response.message.blocks);
+    expect(rendered).toContain("🍎 App Store");
+    expect(rendered).toContain("First-time downloads");
+    expect(rendered).toContain("App sessions (opt-in)");
+    expect(rendered).toContain("App crashes (opt-in)");
+  });
+
   it("places an escaped AI brief above the chart", () => {
     const response = buildDigestResponse("Acme", "2026-08-29", {
       "users.new": 4,
