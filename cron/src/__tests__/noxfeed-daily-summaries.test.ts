@@ -1,20 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  stageSlackDelivery,
-  queueOutboxDelivery,
+  publishSlackTransport,
   getActiveRepoNames,
   completeNarrative,
   resolveLlmConfig,
 } = vi.hoisted(() => ({
-  stageSlackDelivery: vi.fn(),
-  queueOutboxDelivery: vi.fn(),
+  publishSlackTransport: vi.fn(),
   getActiveRepoNames: vi.fn(),
   completeNarrative: vi.fn(),
   resolveLlmConfig: vi.fn(),
 }));
 
-vi.mock("../../../functions/lib/delivery-outbox.js", () => ({ stageSlackDelivery, queueOutboxDelivery }));
+vi.mock("../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
 vi.mock("../../../functions/lib/inactive-repos.js", () => ({ getActiveRepoNames }));
 vi.mock("../../../functions/lib/llm.js", () => ({ completeNarrative }));
 vi.mock("../../../functions/lib/llm-config.js", () => ({ resolveLlmConfig }));
@@ -27,8 +25,7 @@ describe("NoxFeed daily Slack summaries", () => {
     getActiveRepoNames.mockResolvedValue(["api", "web"]);
     resolveLlmConfig.mockResolvedValue({ status: "ready", model: "same-managed-model" });
     completeNarrative.mockResolvedValue("• Shipped checkout improvements.\n• Review is continuing on account settings.");
-    stageSlackDelivery.mockResolvedValue({ id: "delivery-1", status: "pending" });
-    queueOutboxDelivery.mockResolvedValue(true);
+    publishSlackTransport.mockResolvedValue({ outboxId: "delivery-1", status: "queued", queued: true });
   });
 
   it("uses local time and waits until the selected time", () => {
@@ -87,13 +84,10 @@ describe("NoxFeed daily Slack summaries", () => {
     const userPrompt = JSON.parse(completeNarrative.mock.calls[0][2]);
     expect(userPrompt.activity).toHaveLength(2);
     expect(userPrompt.counts).toMatchObject({ pullRequestsMerged: 1, reviews: 1 });
-    expect(stageSlackDelivery).toHaveBeenCalledWith(db, expect.objectContaining({
-      source: "noxfeed_daily_summary",
-      sourceId: "daily-summary:7:project-1:2026-09-01",
-      connectionId: "connection-1",
-      channelId: "C123",
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.objectContaining({ DB: db }), expect.objectContaining({
+      route: "activity_summary",
+      idempotencyKey: "daily-summary:7:project-1:2026-09-01",
     }));
-    expect(queueOutboxDelivery).toHaveBeenCalledWith(expect.anything(), "delivery-1", "acme");
     expect(statements.find(({ sql }) => sql.includes("FROM events"))?.args).toContain("api");
     const orgQuery = statements.find(({ sql }) => sql.includes("FROM projects project"))?.sql ?? "";
     expect(orgQuery).toContain("dailySummaryChannelId");

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { getNoxCueDigestResponse, getNoxCueTestResponse } from "../noxcue-response.js";
 import { generateNoxFeedContent, getNoxFeedGenerationInfo, getNoxFeedSlackResponse } from "../noxfeed-response.js";
-import { buildNoxTicketActivityResponse, buildNoxTicketTestResponse } from "../../products/noxticket/response.js";
+import { buildNoxTicketActivityResponse, buildNoxTicketFeatureAddedResponse, buildNoxTicketTestResponse } from "../../products/noxticket/response.js";
 
 describe("product response boundaries", () => {
   it("keeps product presentation out of shared plumbing", () => {
@@ -33,6 +33,9 @@ describe("product response boundaries", () => {
     expect((await getNoxCueDigestResponse(
       { NOXCUE_RESPONSE: service }, "Acme", "2026-08-29", { "users.new": 4 },
     )).message.text).toBe("Daily");
+    expect(service.buildDigestResponse).toHaveBeenCalledWith(
+      "Acme", "2026-08-29", { "users.new": 4 }, {}, {}, {}, undefined,
+    );
   });
 
   it("validates NoxFeed prompts and Slack responses", async () => {
@@ -61,5 +64,16 @@ describe("product response boundaries", () => {
     expect(activity.message.text).toBe("NoxTicket opened: Fix <button>");
     expect(JSON.stringify(activity.message.blocks)).toContain("Fix &lt;button&gt;");
     expect(buildNoxTicketTestResponse("Acme").message.text).toContain("NoxTicket");
+  });
+
+  it("builds a compact one-line NoxTicket feature-added message", () => {
+    const response = buildNoxTicketFeatureAddedResponse({
+      orgId: 7,
+      projectId: "project-1",
+      actor: "Ada",
+      feature: { number: 4, title: "Sharing <beta>", description: "Share A & B", backlog: true },
+    });
+    expect(response.message.text).toContain("Backlog");
+    expect(response.message.blocks).toEqual([{ type: "section", text: { type: "mrkdwn", text: "*Feature #4 · Sharing &lt;beta&gt;* — Backlog · added by Ada" } }]);
   });
 });

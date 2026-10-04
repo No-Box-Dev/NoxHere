@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  apiTokenProjectResource,
   canReadProjectResource,
   projectScopedApiTokenPathSupported,
 } from "../api-auth.js";
@@ -22,6 +23,27 @@ describe("API authentication primitives", () => {
     expect(canReadProjectResource({ isAdmin: false, auth: { type: "api_token" } })).toBe(true);
     expect(canReadProjectResource({ isAdmin: false, auth: { type: "session" } })).toBe(false);
     expect(canReadProjectResource({ isAdmin: false })).toBe(false);
+  });
+
+  it("resolves duplicate feature numbers inside the selected project", async () => {
+    const prepare = vi.fn();
+
+    await expect(apiTokenProjectResource(
+      { prepare } as never,
+      "/api/v1/features/1",
+      7,
+      new URLSearchParams(),
+      "project-playnist",
+    )).resolves.toEqual({ kind: "resource", projectId: "project-playnist" });
+    expect(prepare).not.toHaveBeenCalled();
+  });
+
+  it("resolves canonical project routing writes to the project rather than the routing segment", async () => {
+    await expect(apiTokenProjectResource(
+      {} as never,
+      "/api/v1/projects/proj_no-box-dev_noxhere/routing",
+      7,
+    )).resolves.toEqual({ kind: "project", projectId: "proj_no-box-dev_noxhere" });
   });
 
 });

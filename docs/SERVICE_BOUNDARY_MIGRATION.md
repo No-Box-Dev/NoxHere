@@ -1,5 +1,10 @@
 # Service Boundary Migration Plan
 
+> **Historical implementation record.** This plan records the former
+> multi-product split and its repository/deployment names. The current public
+> contract is one NoxConnect product with Planning, Activity, Feedback, and
+> Incidents capabilities. See `SERVICE_BOUNDARIES.md` for current guidance.
+
 ## Objective
 
 Make NoxHere the single public platform/API, NoxConnect the only
@@ -289,15 +294,15 @@ and project isolation flows pass.
    product binding.
 2. Enforce project-token scope on reads, writes, queues, provider commands, and
    receipt callbacks.
-3. Standardize disabled services as `409 service_not_enabled` with service and
-   remediation fields; reserve `503 service_unavailable` for binding/runtime
-   failures.
+3. Keep every product capability available in every project; use setup and
+   health states for connection/runtime readiness and reserve
+   `503 service_unavailable` for binding/runtime failures.
 4. Update OpenAPI, developer documentation, deployment documentation, and the
    service capability page to distinguish public APIs from private RPC.
 5. Add static checks preventing product modules from importing provider clients
    and preventing product Workers from declaring provider secrets.
 
-Gate: OpenAPI checks, authorization matrix, disabled/degraded behavior, project
+Gate: OpenAPI checks, authorization matrix, degraded behavior, project
 cross-access denial, documentation tests, and all existing API compatibility
 tests pass.
 
@@ -305,7 +310,7 @@ tests pass.
 
 | Dimension | Result |
 |---|---|
-| Errors | Green: disabled products return `409 service_not_enabled` with enable-service remediation; permission denial stays `403`; reachable-state failure stays `503 service_unavailable`. |
+| Errors | Superseded in 2026-09: product enablement was removed. Permission denial stays `403`; reachable-state failure stays `503 service_unavailable`. |
 | Discovery | Green: bound manifests are authoritative; pinned snapshots remain visible during failure but block setup and capabilities and surface a required runtime health failure. |
 | Documentation | Green: OpenAPI and the light developer page explain public façade vs private RPC, credentials, project scoping, runtime source, safe configuration, and error semantics. |
 | Static boundary | Green: a repeatable scan rejects provider endpoints and GitHub/Slack/Anthropic credential bindings from all four production product Workers. |
@@ -317,7 +322,7 @@ tests pass.
 2. Seed two organizations and multiple projects to test tenant and project
    isolation.
 3. Exercise actual HTTP and RPC calls for every advertised operation, including
-   retries and disabled/unavailable service states.
+   retries and unavailable service states.
 4. Run all repository tests, typechecks, builds, Wrangler type generation, and
    dry-run bundles.
 5. Record the final service health matrix, changes by repository, known risks,
@@ -334,7 +339,7 @@ local migration.
 | Full local stack | Green: NoxConnect, its private capability Worker, all four product Workers, RPC proxy, and cron started together. All 90 HTTP/RPC checks passed. |
 | Authentication | Green: browser sessions, native access/refresh rotation, sign-out revocation, CSRF rejection, automation-token creation/rotation/revocation, and secret non-disclosure passed. |
 | Authorization | Green: organization administration and project tokens remain distinct; cross-project reads, writes, configuration access, and token administration were denied. |
-| Service state | Green: live manifests served setup/health/config; disabled products returned `409 service_not_enabled`; unavailable runtime remains a distinct `503 service_unavailable`. |
+| Service state | Updated in 2026-09: live manifests serve setup/health/config; every capability is available, while an unavailable runtime remains a distinct `503 service_unavailable`. |
 | Data and ingestion | Green: NoxTicket D1/R2 lifecycles, NoxCue ingestion/idempotency/metrics, NoxSpot report capture, and correctly signed versus invalid GitHub webhooks passed through real local calls. |
 | Configuration | Green: revision reads, mandatory `If-Match`, stale-write rejection, compare-and-swap update, restoration, and project discovery passed. |
 | Product boundaries | Green: all eight production product source/config roots passed the provider-client and credential-binding scan. Dependency-aware RPC probes passed for NoxTicket, NoxCue, NoxFeed, and NoxSpot. |

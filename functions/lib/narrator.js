@@ -1,13 +1,13 @@
 // Per-event narrators. Three voices, one PR lifecycle:
-//   - narratePrOpened     → first-person "opened a PR" post (type=pr_narrative, source=pr-opened-narrator)
-//   - narrateEvent        → first-person chat post           (type=narrative,    source=narrator)
+//   - narratePrOpened     → opened post + three-part summary (type=pr_narrative, source=pr-opened-narrator)
+//   - narrateEvent        → lifecycle copy of the opened post (type=narrative,    source=narrator)
 //   - narrateReleaseNotes → structured release note          (type=release_notes, source=release-notes)
 //
 // PR opens → narratePrOpened writes a pr_narrative row → PRs feed.
 // PR merges:
-//   - narrateEvent looks up that pr_narrative row and REUSES its text
-//     (no LLM call) — Posts feed voice matches opened voice, so the reuse
-//     is free and coherent.
+//   - narrateEvent carries the opened post and its three-part summary forward
+//     into the Merged feed. For legacy PRs without opened copy it generates a
+//     conversational fallback at merge time.
 //   - narrateReleaseNotes ALWAYS asks NoxFeed to generate its structured note.
 //     Reuse was attempted here too, but the chat-style opened voice looked
 //     like a Post inside the Release-notes feed (missing the "Change
@@ -21,12 +21,7 @@
 
 import { resolveAiMode } from "./llm-config";
 import { recordFailure } from "./op-failures";
-import {
-  resolveSlackChannels,
-  resolveSlackConnectionId,
-  resolveSlackRoute,
-} from "./slack";
-import { markOutboxBlocked, queueOutboxDelivery, stageSlackDelivery } from "./delivery-outbox.js";
+import { publishSlackTransport } from "./transport-outbox";
 import { isAppEnabledForOwner } from "./apps.js";
 import { generateNoxFeedContent, getNoxFeedSlackResponse } from "./noxfeed-response.js";
 import { resolveNoxFeedDestination } from "./noxfeed-routing.js";
@@ -38,8 +33,7 @@ import { resolveNoxFeedDestination } from "./noxfeed-routing.js";
 export const NARRATABLE_TYPES = ["github:pr:merged"];
 
 // Open-time narration gate — narratePrOpened. Fires the PRs feed. The
-// resulting pr_narrative row is looked up (and its text reused) by the
-// merge-time narrators when the PR eventually merges.
+// resulting pr_narrative row remains the distinct plain-language Opened view.
 export const NARRATABLE_TYPES_OPENED = ["github:pr:opened"];
 
 export async function narrateEvent(env, eventId) {
@@ -82,44 +76,36 @@ export async function narrateEvent(env, eventId) {
   ).bind(row.owner_id, row.repo, prNumber).first();
   if (existing) return;
 
-  // Reuse-text path: if this PR was already narrated at open time, use that
-  // text instead of paying for a second LLM call. See narratePrOpened for how
-  // the pr_narrative row lands. Falls through to a fresh LLM call for PRs that
-  // predate this feature (no pr_narrative row) or where the open-time
-  // narration failed (row missing, or fallback-only).
   const orgId = await resolveOrgId(env.DB, row.owner_id);
-  const reused = await findExistingPrNarrative(env.DB, row.owner_id, row.repo, prNumber);
+  const input = {
+    actorName: actor.name,
+    actorTone: actor.tone,
+    projectName: project.name,
+    event: {
+      type: row.type,
+      summary: row.summary,
+      payload: triggerPayload,
+      created_at: row.created_at,
+    },
+  };
+  const source = "narrator";
   let summary;
   let technicalSummary;
   let model;
-  let source;
-  if (reused) {
-    summary = reused.summary;
-    technicalSummary = reused.technicalSummary || buildFallbackTechnicalSummary({
+  const openedPost = await findExistingPrNarrative(env.DB, row.owner_id, row.repo, prNumber);
+  if (openedPost) {
+    summary = openedPost.summary;
+    technicalSummary = openedPost.technicalSummary || buildFallbackTechnicalSummary({
       projectName: project.name,
       eventSummary: row.summary,
       payload: triggerPayload,
     });
-    model = `reused:${reused.model}`;
-    source = "narrator-reused";
+    model = openedPost.model;
   } else {
-    const input = {
-      actorName: actor.name,
-      actorTone: actor.tone,
-      projectName: project.name,
-      event: {
-        type: row.type,
-        summary: row.summary,
-        payload: triggerPayload,
-        created_at: row.created_at,
-      },
-    };
     const aiMode = await resolveAiMode(env, orgId, row.project_id);
     const generation = aiMode.status === "enabled"
       ? await generateNoxFeedContent(env, "actor", input)
       : unavailableGeneration(aiMode);
-    source = "narrator";
-
     if (generation.status === "generated") {
       summary = generation.output.summary;
       technicalSummary = generation.output.technicalSummary;
@@ -323,15 +309,18 @@ export async function narrateReleaseNotes(env, eventId) {
     project,
     summary,
     postSummary: existingPost?.summary || row.summary,
+    postTechnicalSummary: existingPost?.technicalSummary || buildFallbackTechnicalSummary({
+      projectName: project.name,
+      eventSummary: row.summary,
+      payload: triggerPayload,
+    }),
     rawEvent: row,
   });
 }
 
 // Sibling to narrateEvent, but fires on PR *open* rather than merge. Writes
-// the first-person "just opened a PR" post that shows up in the PRs feed
-// (type='pr_narrative'). The same text is reused by narrateEvent +
-// narrateReleaseNotes when the PR later merges (findExistingPrNarrative
-// below), so ONE LLM call covers the whole PR lifecycle instead of two.
+// the post and three-part summary shown in Opened (type='pr_narrative').
+// Merged carries that same copy forward and adds the release note.
 export async function narratePrOpened(env, eventId) {
   const row = await env.DB.prepare(
     `SELECT id, type, actor_id, project_id, org, repo, owner_id, summary, payload_json, created_at
@@ -445,12 +434,9 @@ export async function narratePrOpened(env, eventId) {
   // staged by narrateEvent only after this PR reaches the merged state.
 }
 
-// Look up the existing pr_narrative row (if any) for this PR. Used by both
-// merge-time narrators to reuse the open-time text instead of paying for a
-// fresh LLM call. Returns null if no row exists OR if the existing row is a
-// 'fallback' (raw summary because LLM was unavailable at open time) — in the
-// latter case the merge-time narrator falls through to a fresh LLM call so
-// the feed doesn't stay stuck on the raw title.
+// Look up the existing Opened post and summary for the next lifecycle stage.
+// Merged and its combined Slack release reuse this text. Returns null for
+// fallback rows so raw PR titles are not presented as generated copy.
 async function findExistingPrNarrative(db, ownerId, repo, prNumber) {
   const row = await db.prepare(
     `SELECT summary, technical_summary, json_extract(payload_json, '$.model') AS model
@@ -541,21 +527,13 @@ function releaseEnvironment(explicit, baseRef) {
 // source of truth; Slack is delivered independently with durable retries and
 // visible blocked state.
 async function maybePostToSlack(env, args) {
-  const { kind, orgId, ownerId, triggerEventId, actor, project, summary, postSummary, rawEvent } = args;
+  const { kind, orgId, ownerId, triggerEventId, actor, project, summary, postSummary, postTechnicalSummary, rawEvent } = args;
   try {
-    const channels = await resolveSlackChannels(env.DB, orgId, rawEvent.project_id);
-    const service = kind === "release_notes" ? "noxfeed_release_notes" : "noxfeed_posts";
     const projectDestination = await resolveNoxFeedDestination(env.DB, orgId, rawEvent.repo, kind);
-    const channelId = projectDestination
-      ? projectDestination.channelId
-      : resolveSlackRoute(channels, service);
-    const connectionId = projectDestination
-      ? projectDestination.connectionId
-      : resolveSlackConnectionId(channels, service);
     // An explicitly empty project route is an intentional opt-out. A missing
     // organization default is different: stage it as blocked so saving a
     // channel later can recover the release instead of losing it forever.
-    if (projectDestination && !channelId) return;
+    if (projectDestination && !projectDestination.channelId) return;
     const payload = safeParseObject(rawEvent.payload_json);
     const pr = payload?.pr && typeof payload.pr === "object" ? payload.pr : null;
     const prNumber = typeof pr?.number === "number" ? pr.number : null;
@@ -573,6 +551,7 @@ async function maybePostToSlack(env, args) {
           actorName: actor.name,
           avatarUrl,
           summary: postSummary || rawEvent.summary,
+          technicalSummary: postTechnicalSummary,
         },
         prUrl,
         prNumber,
@@ -589,39 +568,13 @@ async function maybePostToSlack(env, args) {
         prNumber,
       });
     }
-    const delivery = await stageSlackDelivery(env.DB, {
+    await publishSlackTransport(env, {
       orgId,
       projectId: rawEvent.project_id,
-      source: kind === "release_notes" ? "release_notes" : "posts",
-      sourceId: `${triggerEventId}:${kind}`,
-      siteId: null,
-      connectionId,
-      channelId,
-      payload: {
-        message: {
-          ...response.message,
-          client_msg_id: `noxconnect-${kind}-${triggerEventId}`,
-        },
-        ...(kind === "release_notes" ? { releaseNote: {
-          summary,
-          projectName: projectDestination?.projectName ?? project?.name ?? rawEvent.repo,
-          prUrl,
-          prNumber,
-        } } : {}),
-      },
+      route: kind === "release_notes" ? "activity_release" : "activity",
+      idempotencyKey: `noxfeed:${triggerEventId}:${kind}`,
+      message: response.message,
     });
-    if (delivery?.id && !channelId && delivery.status !== "delivered") {
-      await markOutboxBlocked(
-        env.DB,
-        delivery.id,
-        "alerts_disabled",
-        "No Slack channel is configured for this NoxFeed stream. Choose and save a channel in NoxConnect, then delivery will retry automatically.",
-      );
-      return;
-    }
-    if (delivery?.id && delivery.status !== "delivered") {
-      await queueOutboxDelivery(env, delivery.id, ownerId);
-    }
   } catch (err) {
     await recordFailure(env.DB, {
       ownerId,

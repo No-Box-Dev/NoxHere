@@ -26,6 +26,13 @@ const site: CaptureSite = {
 };
 
 describe("site configuration", () => {
+  it("uses one required description field as the standard form", () => {
+    const config = publicWidgetConfig({ ...site, widget_config: "{}" }, null);
+    expect(config.blocks).toEqual([
+      { id: "default-description", type: "description", label: "Description", required: true },
+    ]);
+  });
+
   it("matches exact hosts and subdomains without matching suffix attacks", () => {
     const config = parseWidgetConfig(site.widget_config);
     expect(environmentForOrigin(config, "https://app.example.com")?.name).toBe("Production");

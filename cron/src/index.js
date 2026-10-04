@@ -17,7 +17,7 @@ import { getInstallationToken } from "../../functions/lib/github-app.js";
 import { recordFailure } from "../../functions/lib/op-failures.js";
 import { runNextStatsAudit } from "./stats-audit.js";
 import { runDatabaseRecoveryStep } from "./database-recovery.js";
-import { createNoxSpotGitHubIssue } from "../../functions/lib/noxspot.js";
+import { createNoxSpotGitHubIssue, finalizeNoxSpotGitHubIssue } from "../../functions/lib/noxspot.js";
 import {
   deliverNoxSpotResolutionEmail,
   prepareNoxSpotResolutionEmail,
@@ -29,10 +29,16 @@ import { checkSlackOrgHealth } from "../../functions/lib/slack.js";
 import { runNoxCueDigests } from "./noxcue-digests.js";
 import { runNoxSpotDailyDigests } from "./noxspot-digests.js";
 import { runNoxFeedDailySummaries } from "./noxfeed-daily-summaries.js";
-import { createOrUpdateNoxCueGitHubIssue, recoverNoxCueGithubIncidents } from "../../functions/lib/noxcue-github.js";
+import { createOrUpdateNoxCueGitHubIssue, finalizeNoxCueGitHubIssue, recoverNoxCueGithubIncidents } from "../../functions/lib/noxcue-github.js";
 import { runOperationalAlerts } from "./operational-alerts.js";
 import { recordHeartbeatAttempt, recordHeartbeatFailure, recordHeartbeatSuccess } from "../../functions/lib/service-heartbeats.js";
 import { isTenantConfigurationFailure, reportNoxCueRuntimeFailure } from "./noxcue-runtime.js";
+import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands } from "../../functions/lib/transport-outbox.ts";
+import { deliverSlackTransport } from "../../functions/lib/transports/slack.ts";
+import { deliverGitHubTransport } from "../../functions/lib/transports/github.ts";
+import { projectPlatformEvent } from "../../functions/lib/platform-event-projector.ts";
+import { recoverPlatformEventProjections } from "../../functions/lib/platform-event-store.ts";
+import { recoverTransportDeliveryEvents } from "../../functions/lib/transport-delivery-events.ts";
 
 // Cap concurrent orgs per tick to keep GitHub API consumption bounded.
 // Tune up once we measure real numbers.
@@ -180,6 +186,18 @@ async function handleTask(env, body) {
       return createOrUpdateNoxCueGitHubIssue(env, body);
     case TASK.DELIVER_SLACK:
       return deliverSlackOutbox(env, body.outboxId);
+    case TASK.DELIVER_TRANSPORT:
+      return executeTransportCommand(env, body.outboxId, {
+        slack: (command) => deliverSlackTransport(env, command),
+        github: (command) => deliverGitHubTransport(env, command),
+      });
+    case TASK.FINALIZE_TRANSPORT:
+      return executeTransportCallback(env.DB, body.outboxId, {
+        noxspot_issue: (input) => finalizeNoxSpotGitHubIssue(env, input),
+        noxcue_incident: (input) => finalizeNoxCueGitHubIssue(env, input),
+      });
+    case TASK.PROJECT_PLATFORM_EVENT:
+      return projectPlatformEvent(env.DB, body.eventId);
     default:
       throw new Error(`unknown task type: ${body?.type}`);
   }
@@ -190,6 +208,10 @@ async function runTick(env, nowMs = Date.now()) {
 
   await recoverNoxSpotResolutionPreparations(env);
   await recoverOutboxDeliveries(env);
+  await recoverTransportCommands(env);
+  await recoverTransportCallbacks(env);
+  await recoverPlatformEventProjections(env);
+  await recoverTransportDeliveryEvents(env);
   await recoverNoxSpotResolutionEmails(env);
   try {
     await recoverNoxCueGithubIncidents(env);
@@ -284,7 +306,12 @@ async function runSlackHealthSweep(env) {
   for (const row of results ?? []) {
     try {
       const health = await checkSlackOrgHealth(env, row.org_id, row.id);
-      if (health.recovered) await requeueBlockedForOrg(env, row.org_id);
+      if (health.recovered) {
+        await Promise.all([
+          requeueBlockedForOrg(env, row.org_id),
+          requeueBlockedTransportCommands(env, { orgId: row.org_id }),
+        ]);
+      }
     } catch (error) {
       console.error(JSON.stringify({
         event: "slack_health_check_failed",

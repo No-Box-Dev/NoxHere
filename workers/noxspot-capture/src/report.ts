@@ -78,15 +78,20 @@ export function validateReportInput(body: unknown): ValidationError | Validation
   if (!plainObject(body)) return { ok: false, error: "Invalid JSON object", status: 400 };
   const { attemptId, siteId, title, description, reporter, reporterEmail, reporterAvatarUrl, notifyOnResolution, environment, screenshot, metadata, elements, context, type, rating, blockValues } = body;
 
-  if (typeof siteId !== "string" || !siteId || typeof title !== "string" || !title) {
-    return { ok: false, error: "Missing required fields: siteId, title", status: 400 };
+  if (typeof siteId !== "string" || !siteId) {
+    return { ok: false, error: "Missing required field: siteId", status: 400 };
   }
-  if (siteId.length > 120 || title.length > 256) return { ok: false, error: "Site ID or title is too long", status: 400 };
+  if (siteId.length > 120) return { ok: false, error: "Site ID is too long", status: 400 };
+  if (title != null && typeof title !== "string") return { ok: false, error: "Invalid title", status: 400 };
+  if (typeof title === "string" && title.length > 256) return { ok: false, error: "Title is too long", status: 400 };
   if (attemptId != null && (typeof attemptId !== "string" || !/^[A-Za-z0-9:_-]{1,100}$/.test(attemptId))) {
     return { ok: false, error: "Invalid attempt ID", status: 400 };
   }
   if (description != null && typeof description !== "string") return { ok: false, error: "Invalid description", status: 400 };
   if (typeof description === "string" && description.length > 10_000) return { ok: false, error: "Description too long", status: 400 };
+  const descriptionValue = typeof description === "string" ? description.trim() : "";
+  const legacyTitle = typeof title === "string" ? title.trim() : "";
+  if (!descriptionValue && !legacyTitle) return { ok: false, error: "Description is required", status: 400 };
   if (screenshot != null && typeof screenshot !== "string") return { ok: false, error: "Invalid screenshot", status: 400 };
   if (typeof screenshot === "string" && (screenshot.length > 7_000_000 || !/^data:image\/(png|jpeg|webp);base64,/.test(screenshot))) {
     return { ok: false, error: "Invalid or oversized screenshot", status: 400 };
@@ -131,8 +136,8 @@ export function validateReportInput(body: unknown): ValidationError | Validation
     params: {
       attemptId: typeof attemptId === "string" ? attemptId : null,
       siteId,
-      title,
-      description: typeof description === "string" ? description : null,
+      title: legacyTitle || titleFromDescription(descriptionValue),
+      description: descriptionValue || null,
       reporter: reporterValue || null,
       reporterEmail: emailValue || null,
       reporterAvatarUrl: avatarUrlValue,
@@ -147,6 +152,11 @@ export function validateReportInput(body: unknown): ValidationError | Validation
       blockValues: plainObject(blockValues) ? blockValues as Record<string, string> : null,
     },
   };
+}
+
+function titleFromDescription(description: string): string {
+  const firstLine = description.split(/\r?\n/, 1)[0]?.replace(/\s+/g, " ").trim() || "Feedback report";
+  return firstLine.slice(0, 256);
 }
 
 interface ScreenshotTarget {

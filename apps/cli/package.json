@@ -1,0 +1,27 @@
+{
+  "name": "noxconnect",
+  "version": "0.1.0",
+  "description": "One NoxConnect login for every organization, project, and service",
+  "type": "module",
+  "bin": {
+    "noxconnect": "noxconnect.mjs"
+  },
+  "files": [
+    "noxconnect.mjs",
+    "lib"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/No-Box-Dev/noxconnect.git",
+    "directory": "apps/cli"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}

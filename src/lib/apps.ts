@@ -1,4 +1,4 @@
-import type { OrgSettings, TabId } from "./types";
+import type { TabId } from "./types";
 
 export type OptionalNoxAppId = "noxticket" | "noxfeed" | "noxspot" | "noxcue";
 export type NoxAppId = "noxconnect" | OptionalNoxAppId;
@@ -20,29 +20,22 @@ export const OPTIONAL_NOX_APP_IDS: readonly OptionalNoxAppId[] = [
   "noxcue",
 ];
 
-export const ADMIN_INTRO = "Use one tab for each Nox app. Turn an app off to pause it. Your saved data and setup stay here.";
-
-export const SERVICE_OFF_TEXT: Record<OptionalNoxAppId, string> = {
-  noxticket: "Feature and spec tools are paused. API calls and Slack posts are blocked.",
-  noxfeed: "Feed views, new posts, notes, history backfills, and Slack posts are paused.",
-  noxspot: "Widgets, site setup, reports, screenshots, and Slack posts are blocked.",
-  noxcue: "Daily user metrics, saved history, keys, and Slack delivery are paused.",
-};
+export const ADMIN_INTRO = "Configure the connections and settings shared by every NoxConnect capability.";
 
 export const NOX_APPS: readonly NoxAppDefinition[] = [
   {
     id: "noxconnect",
-    name: "Nox",
-    shortName: "Nox",
-    description: "Your shared workspace for every Nox app.",
+    name: "NoxConnect",
+    shortName: "Connect",
+    description: "Your shared workspace for every NoxConnect capability.",
     includes: "GitHub and Slack links, people, and shared setup",
     tabs: [{ id: "admin", label: "Admin" }],
     defaultTab: "admin",
   },
   {
     id: "noxticket",
-    name: "NoxTicket",
-    shortName: "Ticket",
+    name: "Planning",
+    shortName: "Planning",
     description: "Plan work and keep GitHub as the source of truth.",
     includes: "Features, backlog, board stages, and specs",
     tabs: [
@@ -53,8 +46,8 @@ export const NOX_APPS: readonly NoxAppDefinition[] = [
   },
   {
     id: "noxfeed",
-    name: "NoxFeed",
-    shortName: "Feed",
+    name: "Activity",
+    shortName: "Activity",
     description: "See your GitHub work in one place.",
     includes: "Current work, team feed, and issues",
     tabs: [
@@ -66,8 +59,8 @@ export const NOX_APPS: readonly NoxAppDefinition[] = [
   },
   {
     id: "noxspot",
-    name: "NoxSpot",
-    shortName: "Spot",
+    name: "Feedback",
+    shortName: "Feedback",
     description: "Get site feedback with the facts you need to fix it.",
     includes: "Issues, widgets, and site delivery rules",
     tabs: [],
@@ -75,8 +68,8 @@ export const NOX_APPS: readonly NoxAppDefinition[] = [
   },
   {
     id: "noxcue",
-    name: "NoxCue",
-    shortName: "Cue",
+    name: "Incidents",
+    shortName: "Incidents",
     description: "Know how your app did today.",
     includes: "Daily user metrics, project controls, history, keys, and Slack delivery",
     tabs: [],
@@ -101,17 +94,7 @@ export function getAppForTab(tab: TabId): NoxAppId | null {
   return APP_BY_TAB.get(tab) ?? null;
 }
 
-// Existing organizations predate app toggles, so an absent value deliberately
-// means enabled. This keeps upgrades non-disruptive while still allowing every
-// optional app to be switched off explicitly.
-export function isNoxAppEnabled(settings: OrgSettings | null | undefined, appId: NoxAppId): boolean {
-  if (appId === "noxconnect") return true;
-  return settings?.apps?.[appId] !== false;
-}
-
-export function getEnabledNoxApps(settings: OrgSettings | null | undefined): NoxAppId[] {
-  return NOX_APPS.filter((app) => isNoxAppEnabled(settings, app.id)).map((app) => app.id);
-}
+export const ALL_NOX_APP_IDS: readonly NoxAppId[] = NOX_APPS.map((app) => app.id);
 
 export function isTabEnabled(tab: TabId, enabledApps: readonly NoxAppId[]): boolean {
   const appId = getAppForTab(tab);
@@ -119,9 +102,5 @@ export function isTabEnabled(tab: TabId, enabledApps: readonly NoxAppId[]): bool
 }
 
 export function getDefaultEnabledTab(enabledApps: readonly NoxAppId[]): TabId {
-  // NoxFeed remains the familiar landing experience when it is enabled.
-  for (const appId of ["noxfeed", "noxticket"] as const) {
-    if (enabledApps.includes(appId)) return getNoxApp(appId).defaultTab;
-  }
-  return "admin";
+  return enabledApps.includes("noxfeed") ? getNoxApp("noxfeed").defaultTab : "admin";
 }

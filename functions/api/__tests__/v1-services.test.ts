@@ -14,7 +14,6 @@ interface CapabilityBody {
     id: string;
     kind: string;
     focus: string;
-    enabled: boolean;
     setup: {
       state: string;
       blockers: Array<{ type: string; provider: string; state: string }>;
@@ -86,7 +85,6 @@ describe("Nox service capabilities API", () => {
     expect(noxconnect).toMatchObject({
       kind: "foundation",
       focus: "Connections and shared workspace control",
-      enabled: true,
       setup: { state: "ready" },
     });
     expect(noxconnect.capabilities.map((capability: { id: string }) => capability.id)).toContain("connections");
@@ -94,8 +92,9 @@ describe("Nox service capabilities API", () => {
     const noxspot = body.services.find((service: { id: string }) => service.id === "noxspot");
     expect(noxspot).toBeDefined();
     if (!noxspot) throw new Error("NoxSpot missing from service catalog");
-    expect(noxspot.setup.state).toBe("disabled");
-    expect(noxspot.capabilities.every((capability: { state: string }) => capability.state === "disabled")).toBe(true);
+    expect(noxspot.setup.state).toBe("needs_setup");
+    expect(noxspot.capabilities.every((capability: { state: string }) => capability.state !== "disabled")).toBe(true);
+    expect(noxspot).not.toHaveProperty("enabled");
 
     const noxcue = body.services.find((service: { id: string }) => service.id === "noxcue");
     expect(noxcue).toBeDefined();

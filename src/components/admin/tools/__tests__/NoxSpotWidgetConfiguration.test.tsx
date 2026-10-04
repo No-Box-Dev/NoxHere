@@ -20,7 +20,7 @@ const site: NoxSpotSite = {
   autoErrorLogging: false,
   environments: [{ name: "Production", url: "app.example.com", enabled: true }],
   blocks: [
-    { id: "title", type: "title", required: true },
+    { id: "description", type: "description", required: true },
     { id: "impact", type: "custom_text", environments: ["Production"] },
   ],
   slackChannelId: null,
@@ -51,15 +51,15 @@ describe("NoxSpotWidgetConfiguration", () => {
       id: "site-1",
       environments: [expect.objectContaining({ name: "Live" })],
       blocks: [
-        expect.objectContaining({ id: "title" }),
+        expect.objectContaining({ id: "description" }),
         expect.objectContaining({ id: "impact", environments: ["Live"] }),
       ],
     }));
   });
 
-  it("prevents saving a custom form without exactly one title", () => {
+  it("prevents saving a custom form without one required description", () => {
     render(<NoxSpotWidgetConfiguration site={{ ...site, blocks: [{ id: "impact", type: "custom_text" }] }} />);
-    expect(screen.getByText("A custom form must contain exactly one title block.")).toBeInTheDocument();
+    expect(screen.getByText("A custom form must contain one required description block and no more than one optional title block.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save environments and form" })).toBeDisabled();
   });
 });

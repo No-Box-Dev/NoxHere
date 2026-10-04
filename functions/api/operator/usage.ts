@@ -1,6 +1,6 @@
 import { getNoxDb, type NoxDatabaseEnv } from "../../lib/nox-db";
 import { jsonResponse } from "../../lib/db";
-import { OPTIONAL_APP_IDS, parseAppSettings } from "../../lib/apps.js";
+import { PRODUCT_APP_IDS } from "../../lib/apps.js";
 
 interface Context {
   env: NoxDatabaseEnv;
@@ -29,13 +29,12 @@ interface OrganizationRow {
   github_login: string;
   created_at: string;
   suspended_at: string | null;
-  settings_data: string | null;
   known_accounts: number;
   active_accounts_30d: number;
   last_active_at: string | null;
 }
 
-const SERVICES = ["noxconnect", ...OPTIONAL_APP_IDS] as const;
+const SERVICES = ["noxconnect", ...PRODUCT_APP_IDS] as const;
 
 export async function onRequestGet(context: Context): Promise<Response> {
   if (!context.data.isPlatformOperator) {
@@ -66,14 +65,12 @@ export async function onRequestGet(context: Context): Promise<Response> {
     ),
     db.prepare(
       `SELECT o.id, o.github_login, o.created_at, o.suspended_at,
-              c.data AS settings_data,
               COUNT(DISTINCT lower(s.github_login)) AS known_accounts,
               COUNT(DISTINCT CASE WHEN s.updated_at >= datetime('now', '-30 days') THEN lower(s.github_login) END) AS active_accounts_30d,
               MAX(s.updated_at) AS last_active_at
          FROM orgs o
          LEFT JOIN sessions s ON s.org_id = o.id
-         LEFT JOIN config c ON c.org_id = o.id AND c.key = 'settings'
-        GROUP BY o.id, o.github_login, o.created_at, o.suspended_at, c.data
+        GROUP BY o.id, o.github_login, o.created_at, o.suspended_at
         ORDER BY last_active_at DESC, o.created_at DESC
         LIMIT 250`,
     ),
@@ -88,7 +85,6 @@ export async function onRequestGet(context: Context): Promise<Response> {
   );
   const organizations = (organizationsResult.results ?? []).map((row) => {
     const typed = row as unknown as OrganizationRow;
-    const optionalApps = parseAppSettings(typed.settings_data);
     return {
       id: typed.id,
       login: typed.github_login,
@@ -97,7 +93,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
       knownAccounts: Number(typed.known_accounts ?? 0),
       activeAccounts30d: Number(typed.active_accounts_30d ?? 0),
       lastActiveAt: typed.last_active_at,
-      enabledServices: SERVICES.filter((service) => service === "noxconnect" || optionalApps[service]),
+      availableServices: [...SERVICES],
     };
   });
 
@@ -114,7 +110,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
       const usage = activity.get(id);
       return {
         id,
-        enabledOrganizations: organizations.filter((org) => org.enabledServices.includes(id)).length,
+        availableOrganizations: organizations.length,
         telemetryConnected: id === "noxconnect" || id === "noxfeed",
         users: usage ? {
           total: Number(usage.total_users ?? 0),

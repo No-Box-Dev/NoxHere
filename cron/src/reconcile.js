@@ -24,6 +24,7 @@ import {
 import { getInstallationToken } from "../../functions/lib/github-app.js";
 import { getInactiveRepoSet } from "../../functions/lib/inactive-repos.js";
 import { reconcileRepoEvents } from "../../functions/lib/event-reconcile.js";
+import { reconcileNoxSpotReportsForRepo } from "../../functions/lib/noxspot-resolution.js";
 
 // Look back this far when hunting for missed event rows (PR opens/closes/
 // merges, issue opens/closes, reviews/pushes/releases). Long enough to
@@ -84,8 +85,13 @@ export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
       }
       try {
         await syncIssues(db, token, orgId, orgLogin, repo, await sinceCursor(db, orgId, `issues:${repo}`));
+        await reconcileNoxSpotReportsForRepo(env, {
+          orgId,
+          ownerId: orgLogin,
+          repo,
+        });
       } catch (err) {
-        console.error(`[noxconnect-cron] org=${orgLogin} repo=${repo} issues failed:`, err?.message ?? err);
+        console.error(`[noxconnect-cron] org=${orgLogin} repo=${repo} issue/report reconciliation failed:`, err?.message ?? err);
       }
       try {
         await reconcileRepoEvents(env, db, {

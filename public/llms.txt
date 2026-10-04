@@ -1,20 +1,22 @@
-# Nox API
+# NoxConnect API
 
-NoxConnect is the shared connection and workspace foundation for every Nox service. It provides one organization-level API for understanding each service's capabilities, connecting GitHub and Slack, and configuring service delivery.
+NoxConnect is the public product, identity, CLI, and API. One account session works across organizations, projects, and the Planning, Activity, Feedback, and Incidents capabilities.
 
 - [Machine-readable API description](/openapi.json)
 - [Developer documentation](/developers)
-- [All Nox services and capabilities](/api/v1/services)
+- [All NoxConnect capabilities](/api/v1/services)
 - [NoxConnect foundation capabilities](/api/v1/services/noxconnect)
-- [NoxTicket capabilities](/api/v1/services/noxticket)
-- [NoxFeed capabilities](/api/v1/services/noxfeed)
-- [NoxSpot capabilities](/api/v1/services/noxspot)
-- [NoxCue capabilities](/api/v1/services/noxcue)
+- [Planning capabilities (`noxticket` compatibility ID)](/api/v1/services/noxticket)
+- [Activity capabilities (`noxfeed` compatibility ID)](/api/v1/services/noxfeed)
+- [Feedback capabilities (`noxspot` compatibility ID)](/api/v1/services/noxspot)
+- [Incidents capabilities (`noxcue` compatibility ID)](/api/v1/services/noxcue)
 - [Per-service setup, config, and health contract](/docs/ai-setup.md#safe-configuration-updates)
 - [Agent setup guide](/docs/ai-setup.md)
 - [Resumable setup state](/api/v1/integrations/setup)
 
-Browser authentication uses GitHub OAuth or an email magic link to create an opaque HttpOnly NoxHere session; browser writes also require CSRF proof. First-party native clients use short-lived `nox_at_…` access tokens with rotating `nox_rt_…` refresh credentials. Browser and native organization requests may omit `X-Project-ID` for organization-wide data or supply it to narrow results. Automation uses an expiring `Authorization: Bearer nox_sk_…` token bound to one organization, one enabled project, and explicit NoxFeed/NoxSpot/NoxCue read/write scopes. Raw GitHub bearer tokens are rejected. Public ingestion keys and private Worker bindings are separate credential classes.
+For a supervised local agent, a human runs `noxconnect login`, completes browser approval, and selects context with `noxconnect use <organization>/<project>`. For a headless agent or CI, inject an expiring `nox_sk_…` token from an approved secret manager. Never copy a browser cookie or provider token into chat or CI. The complete CLI reference is at `/developers#cli`.
+
+Browser authentication creates an opaque HttpOnly NoxConnect session; browser writes also require CSRF proof. CLI and native clients use short-lived `nox_at_…` access tokens with rotating `nox_rt_…` refresh credentials. Automation tokens are bound to one organization, one enabled project, and explicit capability scopes. Compatibility scope IDs remain `noxfeed`, `noxspot`, and `noxcue`. Raw GitHub bearer tokens are rejected. Public ingestion keys and private Worker bindings are separate credential classes.
 
 Every service has `/api/v1/services/{service}/setup`, `/config`, and `/health`. Config updates are service-scoped and require the latest config ETag in `If-Match`; provider credentials are never returned.
 
@@ -22,4 +24,4 @@ Each capability includes an `operations` array with its stable operation ID, HTT
 
 An agent may initiate GitHub or Slack OAuth. Treat the returned `userAction.url` as a temporary secret and have a human open it in a browser; never prefetch or log it. Poll `/api/v1/integrations/setup` no more than once every five seconds after approval. All channel discovery, organization routing, project/repository routing, verification, and disconnect operations are API-callable. Discover shared project routing at `/api/v1/projects/routing`.
 
-Use `x-change-safety` in OpenAPI before writes. Do not blindly retry destructive or non-idempotent operations, honor `Retry-After` on `429`, and require user confirmation for deletes, disconnects, revocations, archives, and restores. NoxCue server applications ingest idempotent lifecycle events through `POST /api/v1/cues/public/events` with `X-Nox-Ingest-Key`.
+Use `x-change-safety` in OpenAPI before writes. Do not blindly retry destructive or non-idempotent operations, honor `Retry-After` on `429`, and require user confirmation for deletes, disconnects, revocations, archives, and restores. Incidents server applications ingest idempotent lifecycle events through `POST /api/v1/cues/public/events` with `X-Nox-Ingest-Key`.

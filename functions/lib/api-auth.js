@@ -7,7 +7,7 @@ export function canReadProjectResource(data) {
   return Boolean(data?.isAdmin || data?.auth?.type === "api_token");
 }
 
-export async function apiTokenProjectResource(db, pathname, orgId, searchParams = new URLSearchParams()) {
+export async function apiTokenProjectResource(db, pathname, orgId, searchParams = new URLSearchParams(), selectedProjectId = /** @type {string | null} */ (null)) {
   pathname = compatibilityApiPath(pathname);
   if (pathname === "/api/cues/metrics" && searchParams.get("sourceId")) {
     const row = await db.prepare(
@@ -15,7 +15,9 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
     ).bind(orgId, searchParams.get("sourceId")).first();
     return { kind: "resource", projectId: row?.project_id ?? null };
   }
-  let match = pathname.match(/^\/api\/projects\/([^/]+)/);
+  let match = pathname.match(/^\/api\/projects\/routing\/([^/]+)$/);
+  if (match) return { kind: "project", projectId: decodeURIComponent(match[1]) };
+  match = pathname.match(/^\/api\/projects\/([^/]+)/);
   if (match) return { kind: "project", projectId: decodeURIComponent(match[1]) };
 
   match = pathname.match(/^\/api\/(?:issues|prs)\/([^/]+)/);
@@ -29,9 +31,14 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
   match = pathname.match(/^\/api\/features\/([^/]+)/);
   if (match) {
     const number = Number.parseInt(decodeURIComponent(match[1]), 10);
-    const row = Number.isInteger(number) ? await db.prepare(
-      "SELECT project_id FROM features WHERE org_id = ? AND number = ?",
-    ).bind(orgId, number).first() : null;
+    if (!Number.isInteger(number)) return { kind: "resource", projectId: null };
+    // Project-scoped Planning records live in the split NoxTicket service.
+    // The local features table is only a compatibility projection and can be
+    // absent or stale, so it cannot authorize or reject the service record.
+    if (selectedProjectId) return { kind: "resource", projectId: selectedProjectId };
+    const row = await db.prepare(
+      "SELECT project_id FROM features WHERE org_id = ? AND number = ? ORDER BY project_id LIMIT 1",
+    ).bind(orgId, number).first();
     return { kind: "resource", projectId: row?.project_id ?? null };
   }
 
@@ -86,6 +93,8 @@ export function projectScopedApiTokenPathSupported(pathname, method) {
   const verb = method.toUpperCase();
   if (verb === "GET" && /^\/api\/v1\/services(?:\/[^/]+(?:\/(?:setup|health))?)?$/.test(pathname)) return true;
   pathname = compatibilityApiPath(pathname);
+  if (verb === "GET" && /^\/api\/projects\/[^/]+\/(?:activity|incidents|issues|feedback)$/.test(pathname)) return true;
+  if (verb === "PATCH" && /^\/api\/projects\/[^/]+\/incidents\/inc_[a-f0-9]{32}$/.test(pathname)) return true;
   if (verb === "GET" && pathname === "/api/v1/feed") return true;
   if (verb === "GET" && /^\/api\/(?:issues|prs)(?:\/|$)/.test(pathname)) return true;
   if (verb === "POST" && /^\/api\/projects\/[^/]+\/backfill-prs$/.test(pathname)) return true;

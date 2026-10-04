@@ -14,7 +14,7 @@ export function NoxFeedProjectDelivery() {
   const projects = routing.data.projects.filter((project) => project.enabled && !project.archived);
   const project = projects.find((candidate) => candidate.id === selectedId) ?? projects[0];
   if (!project) {
-    return <p className="text-xs text-stone-400">Enable a project under NoxConnect → Repositories before assigning a NoxFeed channel.</p>;
+    return <p className="text-xs text-stone-400">Add a project under NoxConnect → Repositories before assigning an Activity channel.</p>;
   }
 
   return <div className="space-y-3">

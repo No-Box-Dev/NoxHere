@@ -375,7 +375,7 @@ function positiveSeconds(value: unknown): boolean {
 function parseDeviceClient(input: unknown): string {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid_device_request");
   const client = (input as Record<string, unknown>).client;
-  if (client !== "noxfeed-mac") throw new Error("invalid_device_client");
+  if (client !== "noxconnect-cli" && client !== "noxfeed-mac") throw new Error("invalid_device_client");
   return client;
 }
 

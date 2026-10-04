@@ -26,8 +26,9 @@ interface ActivityMetricRow {
   period: string;
   metric_key: string;
   label: string;
-  total_events: number;
-  total_users: number;
+  daily_events: number;
+  monthly_events: number;
+  monthly_active: number;
   updated_at: string;
 }
 
@@ -62,8 +63,9 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     ).all<Record<string, unknown>>(),
     context.env.DB.prepare(
       `SELECT period, metric_key, value, origin, updated_at
-         FROM cue_daily_metrics
+       FROM cue_daily_metrics
         WHERE source_id = ?
+          AND metric_key NOT LIKE 'custom.%'
           AND period >= date('now', ?)
         ORDER BY period DESC, metric_key`,
     ).bind(parsed.data.sourceId, `-${parsed.data.days - 1} days`).all<MetricRow>(),
@@ -82,15 +84,19 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
        SELECT periods.period, definitions.metric_key, definitions.label,
          (SELECT COUNT(*) FROM cue_activity_events activity
            WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
-             AND activity.period = periods.period) AS total_events,
-         (SELECT COUNT(*) FROM cue_user_registrations registration
-           WHERE registration.source_id = ? AND registration.period <= periods.period) AS total_users,
+             AND activity.period = periods.period) AS daily_events,
+         (SELECT COUNT(*) FROM cue_activity_events activity
+           WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
+             AND activity.period BETWEEN date(periods.period, '-29 days') AND periods.period) AS monthly_events,
+         (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+           WHERE active.source_id = ?
+             AND active.period BETWEEN date(periods.period, '-29 days') AND periods.period) AS monthly_active,
          COALESCE((SELECT MAX(activity.received_at) FROM cue_activity_events activity
            WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
              AND activity.period = periods.period), '') AS updated_at
        FROM periods CROSS JOIN definitions ORDER BY periods.period DESC, definitions.metric_key`,
     ).bind(`-${parsed.data.days - 1} days`, parsed.data.sourceId, parsed.data.sourceId,
-      parsed.data.sourceId, parsed.data.sourceId).all<ActivityMetricRow>(),
+      parsed.data.sourceId, parsed.data.sourceId, parsed.data.sourceId).all<ActivityMetricRow>(),
     context.env.DB.prepare(
       `SELECT run.period, run.created_at, delivery.status, delivery.delivered_at
          FROM cue_digest_runs run
@@ -99,7 +105,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
         ORDER BY run.period DESC LIMIT ?`,
     ).bind(parsed.data.sourceId, parsed.data.days).all<Record<string, unknown>>(),
     context.env.DB.prepare(
-      `SELECT fingerprint, title, error_code, component, environment,
+      `SELECT id, fingerprint, title, error_code, component, environment,
               first_seen_at, last_seen_at, occurrence_count, last_notified_at,
               grouping_kind, sample_json, first_release, last_release,
               status, acknowledged_at, acknowledged_by, resolved_at, resolved_by,
@@ -121,13 +127,14 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const customCatalog = new Map<string, { key: string; label: string; unit: "count" | "decimal" }>();
   for (const row of activityRows.results ?? []) {
     const values = days.get(row.period) ?? {};
-    const total = Number(row.total_events ?? 0);
-    const users = Number(row.total_users ?? 0);
-    values[row.metric_key] = { value: total, origin: "calculated", updatedAt: row.updated_at };
-    if (users > 0) values[`${row.metric_key}.per_user`] = { value: total / users, origin: "calculated", updatedAt: row.updated_at };
+    const dailyTotal = Number(row.daily_events ?? 0);
+    const monthlyTotal = Number(row.monthly_events ?? 0);
+    const monthlyActive = Number(row.monthly_active ?? 0);
+    values[row.metric_key] = { value: dailyTotal, origin: "calculated", updatedAt: row.updated_at };
+    if (monthlyActive > 0) values[`${row.metric_key}.per_mau`] = { value: monthlyTotal / monthlyActive, origin: "calculated", updatedAt: row.updated_at };
     days.set(row.period, values);
     customCatalog.set(row.metric_key, { key: row.metric_key, label: `${row.label} total`, unit: "count" });
-    customCatalog.set(`${row.metric_key}.per_user`, { key: `${row.metric_key}.per_user`, label: `${row.label} / registered user`, unit: "decimal" });
+    customCatalog.set(`${row.metric_key}.per_mau`, { key: `${row.metric_key}.per_mau`, label: `${row.label} / active user`, unit: "decimal" });
   }
   return jsonResponse({
     catalog: [...(catalog.results ?? []).map((row) => ({
@@ -151,6 +158,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       deliveredAt: row.delivered_at ?? null,
     })),
     errorGroups: (errorGroups.results ?? []).map((row) => ({
+      id: row.id,
       fingerprint: row.fingerprint,
       title: row.title,
       errorCode: row.error_code,

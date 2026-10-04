@@ -19,7 +19,6 @@ const openapi = openapiDocument as unknown as {
 };
 
 const services = buildServiceCatalog({
-  enabledApps: { noxticket: true, noxfeed: true, noxspot: true, noxcue: true },
   runtimeStates: {
     noxconnect: { state: "ready", source: "binding" },
     noxticket: { state: "ready", source: "binding" },
@@ -133,7 +132,6 @@ describe("capability discovery and OpenAPI stay aligned", () => {
     }));
 
     const withoutGitHub = buildServiceCatalog({
-      enabledApps: { noxticket: true, noxfeed: true, noxspot: true, noxcue: true },
       runtimeStates: { noxcue: { state: "ready", source: "binding" } },
       integrations: {
         github: { configured: false, connected: false, bootstrapping: false, health: "unavailable" },

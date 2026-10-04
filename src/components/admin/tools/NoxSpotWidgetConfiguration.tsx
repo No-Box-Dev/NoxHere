@@ -73,7 +73,11 @@ function NoxSpotWidgetConfigurationEditor({ site }: { site: NoxSpotSite }) {
     }
   };
 
-  const formIsValid = blocks.length === 0 || blocks.filter((block) => block.type === "title").length === 1;
+  const descriptionBlocks = blocks.filter((block) => block.type === "description");
+  const formIsValid = blocks.length === 0 || (
+    descriptionBlocks.length === 1 && descriptionBlocks[0].required === true &&
+    blocks.filter((block) => block.type === "title").length <= 1
+  );
   const environmentsValid = environments.every((environment) => environment.name.trim() && environment.url.trim()) &&
     new Set(environments.map((environment) => environment.name.trim().toLowerCase())).size === environments.length;
   const selectsValid = blocks.every((block) => block.type !== "custom_select" || (block.options?.length ?? 0) > 0);
@@ -183,7 +187,7 @@ function NoxSpotWidgetConfigurationEditor({ site }: { site: NoxSpotSite }) {
               ) : null}
             </div>
           ))}
-          {!formIsValid ? <p className="text-xs text-red-600">A custom form must contain exactly one title block.</p> : null}
+          {!formIsValid ? <p className="text-xs text-red-600">A custom form must contain one required description block and no more than one optional title block.</p> : null}
           {!environmentsValid ? <p className="text-xs text-red-600">Environment names and origins are required and names must be unique.</p> : null}
           {!selectsValid ? <p className="text-xs text-red-600">Every select block needs at least one option.</p> : null}
         </section>

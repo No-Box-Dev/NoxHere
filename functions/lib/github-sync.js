@@ -322,15 +322,15 @@ export async function syncPRs(db, token, orgId, orgLogin, repo, since, env = nul
     }
   }
 
-  // Register PR authors as members so they appear in the People page.
-  // Bots (Dependabot, Renovate, etc.) are never GitHub org members,
-  // so this is the only path that adds them.
+  // Cache PR authors for attribution. A repository collaborator is not
+  // necessarily an organization member; syncMembers is the authority that
+  // promotes verified org members to kind='human'.
   const seenAuthorLogins = new Set();
   for (const pr of prs) {
     if (!pr.user?.login || seenAuthorLogins.has(pr.user.login)) continue;
     seenAuthorLogins.add(pr.user.login);
     try {
-      await upsertMember(db, orgId, pr.user, pr.user.type === "Bot" ? "bot" : "human");
+      await upsertMember(db, orgId, pr.user, pr.user.type === "Bot" ? "bot" : "contributor");
     } catch (err) {
       console.error("[noxconnect sync] upsertMember from PR author failed:", err?.message ?? err);
     }
@@ -474,10 +474,11 @@ export async function syncIssues(db, token, orgId, orgLogin, repo, since) {
   }
 
   const stmt = db.prepare(
-    `INSERT INTO issues (org_id, repo, number, title, state, author, author_avatar, created_at, updated_at, closed_at, html_url, assignees_json, labels_json, milestone_title, closed_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO issues (org_id, repo, number, title, body, state, author, author_avatar, created_at, updated_at, closed_at, html_url, assignees_json, labels_json, milestone_title, closed_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(org_id, repo, number) DO UPDATE SET
        title = excluded.title,
+       body = excluded.body,
        state = excluded.state,
        author = excluded.author,
        author_avatar = excluded.author_avatar,
@@ -499,6 +500,7 @@ export async function syncIssues(db, token, orgId, orgLogin, repo, since) {
           repo,
           issue.number,
           issue.title,
+          issue.body ?? null,
           issue.state,
           issue.user?.login ?? null,
           issue.user?.avatar_url ?? null,
@@ -553,10 +555,11 @@ export async function syncIssues(db, token, orgId, orgLogin, repo, since) {
 export async function syncMembers(db, token, orgId, orgLogin) {
   const accountType = await installationAccountType(db, orgId, orgLogin);
   if (accountType === "user") {
+    await db.prepare("UPDATE members SET kind = 'contributor' WHERE org_id = ? AND kind = 'human'").bind(orgId).run();
     await db.prepare(
       `INSERT INTO members (org_id, login, avatar_url, kind)
        VALUES (?, ?, NULL, 'human')
-       ON CONFLICT(org_id, login) DO NOTHING`,
+       ON CONFLICT(org_id, login) DO UPDATE SET kind = 'human'`,
     ).bind(orgId, orgLogin).run();
     await setSyncState(db, orgId, "members");
     return [orgLogin];
@@ -566,11 +569,17 @@ export async function syncMembers(db, token, orgId, orgLogin) {
     `https://api.github.com/orgs/${orgLogin}/members`
   );
 
+  // The organization member API is authoritative. Rows introduced only by
+  // repository activity remain useful for attribution, but must not appear as
+  // organization members in People or access settings.
+  await db.prepare("UPDATE members SET kind = 'contributor' WHERE org_id = ? AND kind = 'human'").bind(orgId).run();
+
   const stmt = db.prepare(
     `INSERT INTO members (org_id, login, avatar_url, kind)
      VALUES (?, ?, ?, 'human')
      ON CONFLICT(org_id, login) DO UPDATE SET
-       avatar_url = excluded.avatar_url`
+       avatar_url = excluded.avatar_url,
+       kind = 'human'`
   );
 
   for (let i = 0; i < members.length; i += 50) {
@@ -1128,10 +1137,11 @@ export async function syncRepo(db, token, orgId, orgLogin, repo, force = false, 
 export async function upsertIssue(db, orgId, repo, issue, closedBy = null) {
   await db
     .prepare(
-      `INSERT INTO issues (org_id, repo, number, title, state, author, author_avatar, created_at, updated_at, closed_at, html_url, assignees_json, labels_json, milestone_title, closed_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO issues (org_id, repo, number, title, body, state, author, author_avatar, created_at, updated_at, closed_at, html_url, assignees_json, labels_json, milestone_title, closed_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(org_id, repo, number) DO UPDATE SET
          title = excluded.title,
+         body = excluded.body,
          state = excluded.state,
          author = excluded.author,
          author_avatar = excluded.author_avatar,
@@ -1148,6 +1158,7 @@ export async function upsertIssue(db, orgId, repo, issue, closedBy = null) {
       repo,
       issue.number,
       issue.title,
+      issue.body ?? null,
       issue.state,
       issue.user?.login ?? null,
       issue.user?.avatar_url ?? null,
@@ -1229,7 +1240,10 @@ export async function upsertMember(db, orgId, member, kind = "human") {
        VALUES (?, ?, ?, ?)
        ON CONFLICT(org_id, login) DO UPDATE SET
          avatar_url = excluded.avatar_url,
-         kind = excluded.kind`
+         kind = CASE
+           WHEN members.kind = 'human' AND excluded.kind = 'contributor' THEN members.kind
+           ELSE excluded.kind
+         END`
     )
     .bind(orgId, member.login, member.avatar_url ?? null, kind)
     .run();

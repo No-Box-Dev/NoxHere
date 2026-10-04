@@ -42,7 +42,7 @@ describe("NoxCue custom activity metrics", () => {
       scope: { type: "project", id: "playnist" },
       metrics: [{
         key: "custom.journals.added", active: true,
-        outputs: [{ key: "custom.journals.added" }, { key: "custom.journals.added.per_user" }],
+        outputs: [{ key: "custom.journals.added" }, { key: "custom.journals.added.per_mau", label: "Journals added / active user" }],
       }],
     });
   });

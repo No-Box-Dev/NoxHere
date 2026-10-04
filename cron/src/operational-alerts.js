@@ -1,12 +1,10 @@
-import { queueOutboxDelivery, stageSlackDelivery } from "../../functions/lib/delivery-outbox.js";
-import { resolveSlackChannels, resolveSlackConnectionId, resolveSlackRoute } from "../../functions/lib/slack.js";
+import { publishSlackTransport } from "../../functions/lib/transport-outbox.ts";
 
 const ALERT_LIMIT = 20;
 const LOOKBACK = "-24 hours";
 
 export async function runOperationalAlerts(env) {
   const candidates = await loadCandidates(env.DB);
-  const routes = new Map();
   let queued = 0;
   let skipped = 0;
 
@@ -15,40 +13,15 @@ export async function runOperationalAlerts(env) {
       skipped += 1;
       continue;
     }
-    const routeKey = `${candidate.org_id}:${candidate.project_id}`;
-    let route = routes.get(routeKey);
-    if (!route) {
-      const channels = await resolveSlackChannels(env.DB, candidate.org_id, candidate.project_id);
-      route = {
-        channelId: resolveSlackRoute(channels, "operations"),
-        connectionId: resolveSlackConnectionId(channels, "operations"),
-      };
-      routes.set(routeKey, route);
-    }
-
-    if (!route.channelId) {
-      skipped += 1;
-      console.warn(JSON.stringify({
-        event: "operational_alert_unroutable",
-        orgId: candidate.org_id,
-        alertKind: candidate.kind,
-        sourceId: candidate.source_id,
-      }));
-      continue;
-    }
-
-    const delivery = await stageSlackDelivery(env.DB, {
+    const delivery = await publishSlackTransport(env, {
       orgId: candidate.org_id,
       projectId: candidate.project_id,
-      source: "operations",
-      sourceId: candidate.source_id,
-      siteId: null,
-      connectionId: route.connectionId,
-      channelId: route.channelId,
-      payload: { message: operationalMessage(candidate) },
+      route: "operations",
+      idempotencyKey: `operations:${candidate.source_id}`,
+      message: operationalMessage(candidate),
     });
     if (delivery?.status === "delivered") continue;
-    if (delivery?.id && await queueOutboxDelivery(env, delivery.id, candidate.org_login)) queued += 1;
+    if (delivery.queued) queued += 1;
   }
 
   if (candidates.length) {
@@ -75,9 +48,9 @@ async function loadCandidates(db) {
         WHERE failure.occurred_at >= datetime('now', ?)
           AND failure.project_id IS NOT NULL
           AND NOT EXISTS (
-            SELECT 1 FROM delivery_outbox alert
-             WHERE alert.source = 'operations'
-               AND alert.source_id = 'op_failure:' || CAST(failure.id AS TEXT)
+            SELECT 1 FROM transport_outbox alert
+             WHERE alert.provider = 'slack'
+               AND alert.idempotency_key = 'operations:op_failure:' || CAST(failure.id AS TEXT)
           )
         ORDER BY failure.occurred_at
         LIMIT ?`,
@@ -96,9 +69,9 @@ async function loadCandidates(db) {
           AND delivery.updated_at >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', ?)
           AND delivery.project_id IS NOT NULL
           AND NOT EXISTS (
-            SELECT 1 FROM delivery_outbox alert
-             WHERE alert.source = 'operations'
-               AND alert.source_id = 'delivery_failure:' || delivery.id
+            SELECT 1 FROM transport_outbox alert
+             WHERE alert.provider = 'slack'
+               AND alert.idempotency_key = 'operations:delivery_failure:' || delivery.id
           )
         ORDER BY delivery.updated_at
         LIMIT ?`,

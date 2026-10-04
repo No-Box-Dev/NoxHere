@@ -5,20 +5,9 @@ import {
   type ConnectionCapabilityReceipt,
 } from "./connection-capabilities";
 import { isAppEnabled } from "./apps.js";
-import { stageSlackDelivery, queueOutboxDelivery } from "./delivery-outbox.js";
-import { getInstallationIdForOrg, getInstallationToken } from "./github-app.js";
-import {
-  createRepositoryIssue,
-  createRepositoryIssueComment,
-  ensureRepositoryLabels,
-  findIssueByBodyMarker,
-  updateRepositoryIssue,
-} from "./github-issues.js";
-import { upsertIssue } from "./github-sync.js";
+import { publishGitHubTransport, publishSlackTransport } from "./transport-outbox";
 import { complete } from "./llm.js";
 import { resolveLlmConfig } from "./llm-config.js";
-import { resolveProjectSlackDestination, type ProjectRouteKey } from "./project-routing";
-import { resolveSlackChannels, resolveSlackConnectionId, resolveSlackRoute } from "./slack.js";
 
 interface CapabilityEnvironment {
   DB: D1Database;
@@ -44,13 +33,6 @@ interface RunRow {
   receipt_json: string | null;
   lease_expires_at: string | null;
 }
-
-const PROJECT_ROUTE_KEYS = new Set<ProjectRouteKey>([
-  "noxfeed_posts",
-  "noxfeed_release_notes",
-  "noxcue",
-  "noxcue_alerts",
-]);
 
 export class CapabilityBusyError extends Error {
   constructor() {
@@ -90,7 +72,7 @@ export async function executeConnectionCapability(
         receipt = await executeGitHub(env, command, project);
         break;
       case "slack.message.deliver":
-        receipt = await executeSlack(env, command, project);
+        receipt = await executeSlack(env, command);
         break;
       case "ai.complete":
         receipt = await executeAi(env, command);
@@ -109,108 +91,53 @@ async function executeGitHub(
   command: Extract<ConnectionCapabilityCommand, { capability: `github.${string}` }>,
   project: ProjectScope,
 ): Promise<ConnectionCapabilityReceipt> {
-  const installationId = await getInstallationIdForOrg(env.DB, command.organizationId);
-  if (!installationId) throw new Error("GitHub App is not installed for this organization");
-  const token = await getInstallationToken(env, installationId);
-  let issue;
-  let created = false;
-
-  if (command.capability === "github.issue.create") {
-    issue = await findIssueByBodyMarker(token, project.ownerId, project.repo, command.input.idempotencyMarker);
-    if (!issue) {
-      await ensureRepositoryLabels(token, project.ownerId, project.repo, command.input.issue.labels);
-      const body = command.input.issue.body.includes(command.input.idempotencyMarker)
-        ? command.input.issue.body
-        : `${command.input.issue.body}\n\n${command.input.idempotencyMarker}`;
-      issue = await createRepositoryIssue(token, project.ownerId, project.repo, {
-        ...command.input.issue,
-        body,
-        labels: command.input.issue.labels.map((label) => label.name),
-      });
-      created = true;
-    }
-  } else if (command.capability === "github.issue.update") {
-    const patch = {
-      ...command.input.issue,
-      ...(command.input.issue.labels
-        ? { labels: command.input.issue.labels.map((label) => label.name) }
-        : {}),
-    };
-    if (command.input.issue.labels) {
-      await ensureRepositoryLabels(token, project.ownerId, project.repo, command.input.issue.labels);
-    }
-    issue = await updateRepositoryIssue(
-      token,
-      project.ownerId,
-      project.repo,
-      command.input.issueNumber,
-      patch,
-    );
-  } else {
-    await createRepositoryIssueComment(
-      token,
-      project.ownerId,
-      project.repo,
-      command.input.issueNumber,
-      command.input.body,
-    );
-    issue = {
-      number: command.input.issueNumber,
-      html_url: `https://github.com/${project.ownerId}/${project.repo}/issues/${command.input.issueNumber}`,
-      state: null,
-    };
-  }
-
-  if (command.capability !== "github.issue.comment") {
-    await upsertIssue(env.DB, command.organizationId, project.repo, issue);
-  }
-  return receipt(command, "github", {
-    issueNumber: Number(issue.number),
-    url: typeof issue.html_url === "string" ? issue.html_url : null,
-    state: typeof issue.state === "string" ? issue.state : null,
-    created,
-  }, "completed");
+  const operation = command.capability;
+  const input = operation === "github.issue.create"
+    ? {
+        issue: command.input.issue,
+        idempotencyMarker: command.input.idempotencyMarker,
+      }
+    : operation === "github.issue.update"
+      ? { issueNumber: command.input.issueNumber, issue: command.input.issue }
+      : { issueNumber: command.input.issueNumber, body: command.input.body };
+  const staged = await publishGitHubTransport(env, {
+    orgId: command.organizationId,
+    projectId: project.id,
+    route: command.service === "noxspot" ? "feedback" : "incidents",
+    idempotencyKey: command.idempotencyKey,
+    operation,
+    input,
+    correlationId: command.commandId,
+  } as Parameters<typeof publishGitHubTransport>[1]);
+  return receipt(command, "github", { deliveryId: staged.outboxId, queued: staged.queued }, "queued");
 }
 
 async function executeSlack(
   env: CapabilityEnvironment,
   command: Extract<ConnectionCapabilityCommand, { capability: "slack.message.deliver" }>,
-  project: ProjectScope,
 ): Promise<ConnectionCapabilityReceipt> {
   const route = command.input.route;
-  const projectDestination = PROJECT_ROUTE_KEYS.has(route as ProjectRouteKey)
-    ? await resolveProjectSlackDestination(
-        env.DB,
-        command.organizationId,
-        route as ProjectRouteKey,
-        { projectId: project.id },
-      )
-    : null;
-  const channels = projectDestination ? null : await resolveSlackChannels(env.DB, command.organizationId);
-  const channelId = projectDestination?.channelId ?? resolveSlackRoute(channels, route);
-  const connectionId = projectDestination?.connectionId ?? resolveSlackConnectionId(channels, route);
-  if (!channelId) throw new Error(`No Slack destination is configured for ${route}`);
-
-  const staged = await stageSlackDelivery(env.DB, {
+  const neutralRoute = ({
+    noxfeed_posts: "activity",
+    noxfeed_release_notes: "activity_release",
+    noxfeed_daily_summary: "activity_summary",
+    noxspot: "feedback",
+    noxcue: "engagement",
+    noxcue_alerts: "incidents",
+    noxticket: "feature_delivery",
+    operations: "operations",
+    fallback: "operations",
+  } as const)[route as "noxfeed_posts" | "noxfeed_release_notes" | "noxfeed_daily_summary" | "noxspot" | "noxcue" | "noxcue_alerts" | "noxticket" | "operations" | "fallback"];
+  if (!neutralRoute) throw new Error(`No neutral Slack route exists for ${route}`);
+  const message = { text: command.input.message.text, blocks: command.input.message.blocks };
+  const staged = await publishSlackTransport(env, {
     orgId: command.organizationId,
     projectId: command.projectId,
-    source: command.service,
-    sourceId: command.idempotencyKey,
-    siteId: null,
-    connectionId,
-    channelId,
-    payload: {
-      message: {
-        ...command.input.message,
-        client_msg_id: command.input.message.client_msg_id ?? command.commandId,
-      },
-    },
+    route: neutralRoute,
+    idempotencyKey: command.idempotencyKey,
+    message,
   });
-  if (!staged?.id) throw new Error("Slack delivery could not be staged");
-  const queued = staged.status === "delivered"
-    ? false
-    : await queueOutboxDelivery(env, staged.id, project.ownerId);
-  return receipt(command, "slack", { deliveryId: staged.id, queued }, "queued");
+  return receipt(command, "slack", { deliveryId: staged.outboxId, queued: staged.queued }, "queued");
 }
 
 async function executeAi(

@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+import { buildChartSvg } from "../chart";
+
+describe("NoxCue chart", () => {
+  it("renders a compact two-column line-chart card", () => {
+    const svg = buildChartSvg({
+      sourceName: "Playnist",
+      period: "2026-08-28",
+      metrics: {
+        "users.new": 4,
+        "users.total": 72,
+        "users.active.daily": 7,
+        "users.active.weekly": 19,
+        "users.active.monthly": 53,
+        "users.stickiness.dau_mau": 0.132,
+      },
+      comparisons: {
+        "users.new": {
+          yesterday: 3,
+          average30d: 1.7,
+          sampleDays: 30,
+          history: [0, 3, 1, 4].map((value, index) => ({ period: `2026-08-${25 + index}`, value })),
+        },
+      },
+    });
+    expect(svg).toContain('width="1000"');
+    expect(svg).toContain(">New users</text>");
+    expect(svg).toContain(">↑ 1 · 33.3% vs yesterday</text>");
+    expect(svg).toContain(">30d avg 1.7</text>");
+    expect(svg).toContain('stroke="#7aa7ff"');
+    expect(svg).toContain('stroke-dasharray="6 7"');
+    expect(svg).not.toContain("No change");
+    expect(svg).not.toContain("#5ee38f");
+    expect(svg).not.toContain("#f6a33a");
+    expect(svg.match(/<path d="M/g)).toHaveLength(1);
+    expect(svg).not.toContain("<script");
+  });
+
+  it("names a flat comparison and keeps it visually neutral", () => {
+    const svg = buildChartSvg({
+      sourceName: "Playnist",
+      period: "2026-08-29",
+      metrics: { "users.active.daily": 7 },
+      comparisons: {
+        "users.active.daily": {
+          yesterday: 7,
+          average30d: 9.1,
+          sampleDays: 30,
+          history: [10, 8, 7, 7].map((value, index) => ({ period: String(index), value })),
+        },
+      },
+    });
+    expect(svg).toContain(">Same as yesterday</text>");
+    expect(svg).toContain('class="delta"');
+    expect(svg).not.toMatch(/class="delta"[^>]+fill=/);
+  });
+
+  it("escapes labels before placing them in SVG", () => {
+    const svg = buildChartSvg({
+      sourceName: "A&B",
+      period: "2026-08-28",
+      metrics: { "users.new": 1 },
+      comparisons: {},
+    });
+    expect(svg).toContain(">New users</text>");
+    expect(svg).not.toContain("A&B");
+  });
+
+  it("renders custom activity totals and per-user values as readable cards", () => {
+    const svg = buildChartSvg({
+      sourceName: "Playnist",
+      period: "2026-08-29",
+      metrics: { "custom.journals.added": 140, "custom.journals.added.per_user": 1.94 },
+      comparisons: {},
+    });
+    expect(svg).toContain(">Journals added</text>");
+    expect(svg).toContain(">Journals added / user</text>");
+    expect(svg).toContain(">1.94</text>");
+    expect(svg).not.toContain("194%");
+  });
+
+  it("explains trailing activity per active user with breadth and depth", () => {
+    const svg = buildChartSvg({
+      sourceName: "Playnist",
+      period: "2026-10-02",
+      metrics: { "custom.comments.written.per_mau": 1.06 },
+      metricLabels: { "custom.comments.written.per_mau": "Comments written / active user" },
+      comparisons: {
+        "custom.comments.written.per_mau": {
+          yesterday: 1.02,
+          average30d: 0.82,
+          sampleDays: 30,
+          history: [0.82, 0.87, 0.9, 0.95, 1, 1.02, 1.06].map((value, index) => ({ period: `2026-09-${String(26 + index).padStart(2, "0")}`, value })),
+        },
+      },
+      activityBreakdowns: {
+        "custom.comments.written.per_mau": {
+          actionLabel: "comments",
+          totalActions: 175,
+          activeUsers: 165,
+          participatingUsers: 30,
+          participationRate: 30 / 165,
+          actionsPerParticipant: 175 / 30,
+          previousActions: 120,
+          previousActiveUsers: 165,
+          previousPerActiveUser: 120 / 165,
+        },
+      },
+    });
+    expect(svg).toContain(">Comments per active user</text>");
+    expect(svg).toContain(">1.06</text>");
+    expect(svg).toContain(">7d avg 0.95</text>");
+    expect(svg).toContain(">↑ 0.04 vs yesterday</text>");
+    expect(svg).toContain(">18.2% participated</text>");
+    expect(svg).toContain(">5.83 per participant</text>");
+    expect(svg).toContain('stroke-dasharray="6 7"');
+    expect(svg).toContain('stroke="#7aa7ff"');
+  });
+});

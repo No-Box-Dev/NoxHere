@@ -11,12 +11,12 @@ interface Ctx {
 }
 
 const ROUTES = {
-  fallback: { field: "fallbackChannelId", kind: "fallback" },
-  noxcue: { field: "noxCueChannelId", kind: "noxcue" },
-  noxticket: { field: "noxTicketChannelId", kind: "noxticket" },
-  noxfeed_posts: { field: "postsChannelId", kind: "noxfeed_posts" },
-  noxfeed_release_notes: { field: "releaseNotesChannelId", kind: "noxfeed_release_notes" },
-  noxfeed_daily_summary: { field: "dailySummaryChannelId", kind: "noxfeed_daily_summary" },
+  fallback: { field: "fallbackChannelId", connectionField: "fallbackConnectionId", kind: "fallback" },
+  noxcue: { field: "noxCueChannelId", connectionField: "noxCueConnectionId", kind: "noxcue" },
+  noxticket: { field: "noxTicketChannelId", connectionField: "noxTicketConnectionId", kind: "noxticket" },
+  noxfeed_posts: { field: "postsChannelId", connectionField: "postsConnectionId", kind: "noxfeed_posts" },
+  noxfeed_release_notes: { field: "releaseNotesChannelId", connectionField: "releaseNotesConnectionId", kind: "noxfeed_release_notes" },
+  noxfeed_daily_summary: { field: "dailySummaryChannelId", connectionField: "dailySummaryConnectionId", kind: "noxfeed_daily_summary" },
 } as const;
 
 const ROUTE_NAMES = Object.keys(ROUTES) as [keyof typeof ROUTES, ...(keyof typeof ROUTES)[]];
@@ -24,6 +24,7 @@ const ROUTE_NAMES = Object.keys(ROUTES) as [keyof typeof ROUTES, ...(keyof typeo
 const RouteTest = z.object({
   route: z.enum(ROUTE_NAMES),
   channelId: z.string().trim().max(80).optional(),
+  connectionId: z.string().trim().max(80).optional(),
 });
 
 // POST /api/integrations/slack/test
@@ -42,12 +43,16 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const route = ROUTES[body.route];
 
   let channelId = typeof body.channelId === "string" ? body.channelId.trim() : "";
-  if (!channelId) {
+  let connectionId = typeof body.connectionId === "string" ? body.connectionId.trim() : "";
+  if (!channelId || !connectionId) {
     try {
       const slack = (await readSlackSettings(context.env.DB, orgId, projectId)).slack;
       channelId = body.route === "noxfeed_daily_summary"
-        ? String(slack[route.field] || "").trim()
-        : resolveSavedSlackChannel(slack, route.field);
+        ? channelId || String(slack[route.field] || "").trim()
+        : channelId || resolveSavedSlackChannel(slack, route.field);
+      connectionId = body.route === "noxfeed_daily_summary"
+        ? connectionId || String(slack[route.connectionField] || "").trim()
+        : connectionId || String(slack[route.connectionField] || slack.fallbackConnectionId || "").trim();
     } catch (error) {
       return errorResponse(error instanceof Error ? error.message : String(error), 500);
     }
@@ -57,7 +62,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const request = new Request(context.request.url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ channelId, kind: route.kind }),
+    body: JSON.stringify({ ...(connectionId ? { connectionId } : {}), channelId, kind: route.kind }),
   });
   return postSlackTest({ ...context, request } as never);
 }

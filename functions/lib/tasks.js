@@ -19,6 +19,9 @@ export const TASK = {
   SPOT_SEND_RESOLUTION_EMAIL: "spot_send_resolution_email", // durable NoxSpot reporter notification
   NOXCUE_GITHUB_ISSUE: "noxcue_github_issue", // durable NoxCue incident → create/update GitHub issue
   DELIVER_SLACK: "deliver_slack",       // { outboxId } → durable delivery_outbox row
+  PROJECT_PLATFORM_EVENT: "project_platform_event", // { eventId } → idempotent read-model projections
+  DELIVER_TRANSPORT: "deliver_transport", // { outboxId } → provider-neutral transport command
+  FINALIZE_TRANSPORT: "finalize_transport", // { outboxId } → receipt-dependent product state
 };
 
 // Enqueue a task. Never throws into the caller: a missing binding or transient

@@ -351,26 +351,7 @@ async function main() {
   }
   await request("project credential cannot select another project", "/api/v1/feed", signedOptions(projectAuth, { headers: { "X-Project-ID": otherProjectId } }), 404);
   await request("project credential cannot read organization-level configuration", "/api/v1/services/noxfeed/config", signedOptions(projectAuth), 403);
-  const serviceSwitchConfig = await request("read service switches before disabled-service check", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth));
-  const disabledServiceConfig = await request("disable NoxSpot for the service gate check", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
-    method: "PATCH",
-    headers: { "If-Match": serviceSwitchConfig.response.headers.get("etag") },
-    body: JSON.stringify({ enabledServices: { noxspot: false, noxfeed: false } }),
-  }));
-  const disabledService = await request("disabled service returns the standard project API error", "/api/spots/sites", signedOptions(projectAuth), 409);
-  if (disabledService.body?.error !== "NoxSpot is not enabled. Enable it in NoxConnect before trying again.") {
-    throw new Error("Disabled service response did not use the standard message");
-  }
-  const disabledV1Service = await request("disabled v1 service returns the coded enablement error", "/api/v1/feed", signedOptions(projectAuth), 409);
-  if (disabledV1Service.body?.error?.code !== "service_not_enabled" || disabledV1Service.body.error.message !== "NoxFeed is not enabled. Enable it in NoxConnect before trying again.") {
-    throw new Error("Disabled v1 service response did not use the standard error contract");
-  }
-  await request("disabled NoxFeed blocks its canonical issue API", "/api/v1/issues", signedOptions(projectAuth), 409);
-  await request("restore NoxSpot after the service gate check", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
-    method: "PATCH",
-    headers: { "If-Match": disabledServiceConfig.response.headers.get("etag") },
-    body: JSON.stringify({ enabledServices: { noxspot: true, noxfeed: true } }),
-  }));
+  await request("all project capabilities remain available", "/api/v1/feed", signedOptions(projectAuth));
   await request("configure project-scoped NoxCue GitHub incident routing", "/api/v1/cues/github-issues", signedOptions(sessionAuth, {
     method: "PUT",
     body: JSON.stringify({

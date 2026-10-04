@@ -169,11 +169,12 @@ export async function updateNoxSpotReport(env, input) {
 
 export async function resolveNoxSpotReportFromIssue(env, input) {
   const report = await env.DB.prepare(
-    `SELECT id, project_id, notification_consent, reporter_email_encrypted FROM spot_reports
+    `SELECT id, project_id, status, notification_consent, reporter_email_encrypted FROM spot_reports
       WHERE org_id = ? AND repo = ? AND issue_number = ?
       LIMIT 1`,
   ).bind(input.orgId, input.repo, input.issueNumber).first();
   if (!report) return { skipped: "not_noxspot_report" };
+  if (report.status === "resolved") return { skipped: "already_resolved" };
   const result = await updateNoxSpotReport(env, {
     reportId: report.id,
     orgId: input.orgId,
@@ -227,6 +228,84 @@ export async function reopenNoxSpotReportFromIssue(env, input) {
       WHERE id = ?`,
   ).bind(report.id).run();
   return result;
+}
+
+// Webhooks are the real-time path, but GitHub deliveries can be delayed,
+// disabled, or missed during a deployment. The scheduled GitHub sync already
+// restores the authoritative issue state in D1; this reconciles the linked
+// NoxSpot record immediately afterward so the two stores cannot drift.
+//
+// The query is bounded because this runs once per active repository on every
+// reconciliation tick. Remaining rows are picked up by the next tick. The
+// underlying resolve/reopen helpers are idempotent, so webhook and cron races
+// do not duplicate report activity or notification work.
+export async function reconcileNoxSpotReportsForRepo(env, input) {
+  const result = await env.DB.prepare(
+    `SELECT report.id, report.status AS report_status,
+            report.resolution_source, issue.state AS issue_state,
+            issue.number AS issue_number, issue.closed_by
+       FROM spot_reports report
+       JOIN issues issue
+         ON issue.org_id = report.org_id
+        AND issue.repo = report.repo
+        AND issue.number = report.issue_number
+      WHERE report.org_id = ? AND report.repo = ?
+        AND (
+          (issue.state = 'closed' AND report.status != 'resolved')
+          OR
+          (issue.state = 'open' AND report.status = 'resolved'
+           AND report.resolution_source = 'github')
+        )
+      ORDER BY issue.updated_at ASC
+      LIMIT 100`,
+  ).bind(input.orgId, input.repo).all();
+
+  let resolved = 0;
+  let reopened = 0;
+  const failures = [];
+  for (const row of result.results ?? []) {
+    try {
+      if (row.issue_state === "closed") {
+        const outcome = await resolveNoxSpotReportFromIssue(env, {
+          orgId: input.orgId,
+          ownerId: input.ownerId,
+          repo: input.repo,
+          issueNumber: Number(row.issue_number),
+          actor: row.closed_by || "github-reconcile",
+          summary: "The linked GitHub issue was closed.",
+        });
+        if (!outcome?.skipped) resolved += 1;
+      } else {
+        const outcome = await reopenNoxSpotReportFromIssue(env, {
+          orgId: input.orgId,
+          ownerId: input.ownerId,
+          repo: input.repo,
+          issueNumber: Number(row.issue_number),
+          actor: "github-reconcile",
+          summary: "The linked GitHub issue was reopened.",
+        });
+        if (!outcome?.skipped) reopened += 1;
+      }
+    } catch (error) {
+      failures.push({
+        reportId: String(row.id),
+        issueNumber: Number(row.issue_number),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  if (failures.length > 0) {
+    console.error(JSON.stringify({
+      event: "noxspot_report_reconcile_failed",
+      orgId: input.orgId,
+      repo: input.repo,
+      failures,
+    }));
+    throw new Error(`Failed to reconcile ${failures.length} NoxSpot report(s) for ${input.repo}`);
+  }
+
+  return { checked: result.results?.length ?? 0, resolved, reopened };
 }
 
 export async function prepareNoxSpotResolutionEmail(env, reportId) {

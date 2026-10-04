@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -54,8 +56,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Verify developer documentation contracts
+      - name: Enforce active platform event milestone
+        run: npm run milestones:verify
+      - name: Verify API docs and complete CLI command reference
         run: npm run docs:check
+      - name: Verify project capabilities through the compiled Pages router
+        run: npm run test:project-router
       - run: npm test
 
   noxspot-capture:

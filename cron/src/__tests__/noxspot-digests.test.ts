@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+const publishSlackTransport = vi.hoisted(() => vi.fn(async () => ({ outboxId: "delivery-1", status: "queued", queued: true })));
+vi.mock("../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
 import { closingIssueNumbers, dailyDigestPeriod, runNoxSpotDailyDigests } from "../noxspot-digests.js";
 
 describe("NoxSpot daily Slack summaries", () => {
@@ -81,8 +83,10 @@ describe("NoxSpot daily Slack summaries", () => {
       [expect.objectContaining({ number: 30, submittedBy: "Lin", resolution: expect.objectContaining({ number: 55 }) })],
       { filed: 1, solved: 1 },
     );
-    expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ outboxId: "delivery-1" }));
-    expect(statements.some(({ sql }) => sql.includes("source_id = ?"))).toBe(true);
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      route: "feedback", routeContext: { kind: "site", id: "site-1" },
+    }));
+    expect(statements.some(({ sql }) => sql.includes("idempotency_key = ?"))).toBe(true);
     const filedQuery = statements.find(({ sql }) => sql.includes("COUNT(DISTINCT"));
     expect(filedQuery?.statement.args).toEqual([
       "site-1", "2026-08-31T00:00:00.000Z", "2026-09-01T00:00:00.000Z",

@@ -3,13 +3,6 @@ import { DEFAULT_BOARD_STAGES } from "./board-stages.js";
 import { normalizeNoxSettings } from "./naming-compat.js";
 import type { ServiceId } from "./service-capabilities";
 
-const ServiceToggles = z.object({
-  noxticket: z.boolean().optional(),
-  noxfeed: z.boolean().optional(),
-  noxspot: z.boolean().optional(),
-  noxcue: z.boolean().optional(),
-}).strict();
-
 const Stage = z.object({
   id: z.string(),
   label: z.string(),
@@ -18,7 +11,6 @@ const Stage = z.object({
 
 const PATCH_SCHEMAS = {
   noxconnect: z.object({
-    enabledServices: ServiceToggles.optional(),
     newRepositoryPolicy: z.enum(["include", "exclude"]).optional(),
   }).strict(),
   noxticket: z.object({
@@ -33,7 +25,6 @@ const PATCH_SCHEMAS = {
 } satisfies Record<ServiceId, z.ZodType>;
 
 export type NoxSettings = Record<string, unknown> & {
-  apps?: Record<string, boolean>;
   newRepoDefault?: "include" | "exclude";
   noxTicketRepo?: string;
   boardStages?: Array<{ id: string; label: string; color: string }>;
@@ -54,12 +45,6 @@ export function serviceConfig(service: ServiceId, settings: NoxSettings) {
   switch (service) {
     case "noxconnect":
       return {
-        enabledServices: {
-          noxticket: settings.apps?.noxticket !== false,
-          noxfeed: settings.apps?.noxfeed !== false,
-          noxspot: settings.apps?.noxspot !== false,
-          noxcue: settings.apps?.noxcue !== false,
-        },
         newRepositoryPolicy: settings.newRepoDefault ?? "include",
       };
     case "noxticket":
@@ -84,7 +69,6 @@ export function parseServiceConfigPatch(service: ServiceId, value: unknown) {
 export function applyServiceConfigPatch(service: ServiceId, current: NoxSettings, patch: Record<string, unknown>): NoxSettings {
   const next: NoxSettings = structuredClone(current);
   if (service === "noxconnect") {
-    if (patch.enabledServices) next.apps = { ...(next.apps ?? {}), ...(patch.enabledServices as Record<string, boolean>) };
     if (patch.newRepositoryPolicy) next.newRepoDefault = patch.newRepositoryPolicy as "include" | "exclude";
   }
   if (service === "noxticket") {
@@ -118,7 +102,7 @@ export function serviceConfigLinks(service: ServiceId) {
 
 export function serviceConfigMetadata(service: ServiceId) {
   const fields: Record<ServiceId, string[]> = {
-    noxconnect: ["enabledServices", "newRepositoryPolicy"],
+    noxconnect: ["newRepositoryPolicy"],
     noxticket: ["featureRepository", "workflow.stages"],
     noxfeed: ["releaseNotesPrompt"],
     noxspot: [],
