@@ -23,16 +23,20 @@ export interface NoxTicketServiceBinding {
   getAttachment(scope: NoxTicketScope, specId: number, attachmentId: number): Promise<Response>;
   deleteAttachment(scope: NoxTicketScope, specId: number, attachmentId: number): Promise<NoxTicketServiceResult>;
   listFeatures(scope: NoxTicketScope, state?: string): Promise<NoxTicketServiceResult>;
-  prepareFeatureCreate(scope: NoxTicketScope, input: unknown): Promise<NoxTicketServiceResult>;
-  prepareFeatureUpdate(scope: NoxTicketScope, number: number, input: unknown): Promise<NoxTicketServiceResult>;
-  prepareFeatureClose(scope: NoxTicketScope, number: number): Promise<NoxTicketServiceResult>;
-  commitFeatureReceipt(scope: NoxTicketScope, projection: Record<string, unknown>, receipt: unknown): Promise<NoxTicketServiceResult>;
+  createFeature(scope: NoxTicketScope, input: unknown): Promise<NoxTicketServiceResult>;
+  updateFeature(scope: NoxTicketScope, number: number, input: unknown): Promise<NoxTicketServiceResult>;
+  listFeatureAttachments(scope: NoxTicketScope, featureId: number): Promise<NoxTicketServiceResult>;
+  putFeatureAttachment(scope: NoxTicketScope, featureId: number, filename: string, bytes: ArrayBuffer): Promise<NoxTicketServiceResult>;
+  getFeatureAttachment(scope: NoxTicketScope, featureId: number, attachmentId: number): Promise<Response>;
+  deleteFeatureAttachment(scope: NoxTicketScope, featureId: number, attachmentId: number): Promise<NoxTicketServiceResult>;
   buildActivityMessage(input: unknown): Promise<{ text: string; blocks: unknown[]; client_msg_id?: string }>;
+  buildFeatureAddedMessage(input: unknown): Promise<{ text: string; blocks: unknown[]; client_msg_id?: string }>;
   buildTestMessage(orgLogin: string): Promise<{ text: string; blocks: unknown[] }>;
 }
 
 export interface NoxTicketEnvironment {
   NOXTICKET_SERVICE?: NoxTicketServiceBinding;
+  NOXHERE_LOCAL_MONOLITH?: string;
 }
 
 export function serviceResultResponse(result: NoxTicketServiceResult): Response {
@@ -45,7 +49,7 @@ export async function callNoxTicket(
   env: NoxTicketEnvironment,
   operation: (binding: NoxTicketServiceBinding) => Promise<NoxTicketServiceResult>,
 ): Promise<Response | null> {
-  if (!env.NOXTICKET_SERVICE) return null;
+  if (env.NOXHERE_LOCAL_MONOLITH === "1" || !env.NOXTICKET_SERVICE) return null;
   try {
     return serviceResultResponse(await operation(env.NOXTICKET_SERVICE));
   } catch (error) {

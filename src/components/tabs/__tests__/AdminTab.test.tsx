@@ -177,7 +177,7 @@ describe("AdminTab", () => {
     expect(screen.getByRole("tab", { name: /Overview/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Everything is connected")).toBeInTheDocument();
     expect(screen.getByText("Tools")).toBeInTheDocument();
-    expect(screen.getByText("4 active")).toBeInTheDocument();
+    expect(screen.getByText("4 available")).toBeInTheDocument();
     expect(screen.getByText("Tracked repositories")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("api")).toBeInTheDocument();
@@ -185,40 +185,24 @@ describe("AdminTab", () => {
     expect(screen.queryByText("Sign out")).not.toBeInTheDocument();
   });
 
-  it("uses the same service warning from Overview and the service page", async () => {
-    mIsAdmin.mockReturnValue(true);
-    const mutate = vi.fn();
-    mSaveSettings.mockReturnValue({ mutate, mutateAsync: vi.fn(), isPending: false });
+  it("shows every service as available with no enablement controls", async () => {
     render(<MemoryRouter><AdminTab /></MemoryRouter>);
 
-    expect(screen.getByRole("switch", { name: "Turn NoxFeed off" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("switch", { name: "Turn NoxFeed off" }));
+    expect(screen.getAllByText("Available")).toHaveLength(4);
+    expect(screen.queryByRole("switch", { name: /Activity/ })).not.toBeInTheDocument();
 
-    const warning = "Feed views, new posts, notes, history backfills, and Slack posts are paused. Saved data and setup are retained for reactivation.";
-    expect(screen.getByRole("dialog", { name: "Turn off NoxFeed?" })).toBeInTheDocument();
-    expect(screen.getByText(warning)).toBeInTheDocument();
-    expect(mutate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-
-    fireEvent.click(serviceButton("NoxFeed"));
-    fireEvent.click(await screen.findByRole("switch", { name: "Turn NoxFeed off" }));
-    expect(screen.getByText(warning)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Turn off NoxFeed" }));
-
-    expect(mutate).toHaveBeenCalledWith({
-      excludedMembers: [],
-      apps: { noxfeed: false },
-    });
+    fireEvent.click(serviceButton("Activity"));
+    expect(await screen.findByText("Always available")).toBeInTheDocument();
   });
 
-  it("names the main and ticket Admin pages Nox and NoxTicket", () => {
+  it("names the main and planning Admin pages NoxConnect and Planning", () => {
     render(
       <MemoryRouter>
         <AdminTab />
       </MemoryRouter>,
     );
-    expect(serviceButton("Nox")).toHaveAttribute("aria-current", "page");
-    expect(serviceButton("NoxTicket")).toBeInTheDocument();
+    expect(serviceButton("NoxConnect")).toHaveAttribute("aria-current", "page");
+    expect(serviceButton("Planning")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "General" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Unticket" })).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Maintenance/ })).toBeInTheDocument();
@@ -259,14 +243,14 @@ describe("AdminTab", () => {
     expect(screen.queryByText("Posts Backfill")).not.toBeInTheDocument();
     expect(screen.queryByText("Full Re-sync")).not.toBeInTheDocument();
 
-    fireEvent.click(serviceButton("NoxFeed"));
+    fireEvent.click(serviceButton("Activity"));
     expect(await screen.findByRole("tab", { name: "Delivery" }, { timeout: 5_000 })).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText("Posts Backfill")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "History" }));
     expect(screen.getByText("Posts Backfill")).toBeInTheDocument();
     expect(screen.queryByText("Full Re-sync")).not.toBeInTheDocument();
 
-    fireEvent.click(serviceButton("Nox"));
+    fireEvent.click(serviceButton("NoxConnect"));
     fireEvent.click(screen.getByRole("tab", { name: /Maintenance/ }));
     expect((await screen.findAllByText("Full Re-sync", {}, { timeout: 5_000 })).length).toBeGreaterThan(0);
     expect(screen.getByText("Live Activity Backfill")).toBeInTheDocument();
@@ -274,10 +258,10 @@ describe("AdminTab", () => {
     expect(screen.getByText("Manual sync")).toBeInTheDocument();
     expect(screen.getByText("Sync features")).toBeInTheDocument();
     expect(screen.getByText("Sync from GitHub")).toBeInTheDocument();
-    fireEvent.click(serviceButton("NoxSpot"));
+    fireEvent.click(serviceButton("Feedback"));
     expect(await screen.findByText("Site setup", {}, { timeout: 5_000 })).toBeInTheDocument();
     expect(screen.getByText("Add site")).toBeInTheDocument();
-    fireEvent.click(serviceButton("NoxCue"));
+    fireEvent.click(serviceButton("Incidents"));
     expect(await screen.findByText("Project metric controls", {}, { timeout: 5_000 })).toBeInTheDocument();
   });
 
@@ -286,7 +270,7 @@ describe("AdminTab", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /Repositories/ }));
     expect(await screen.findByTestId("admin-repositories")).toHaveTextContent("api,web");
-    expect(serviceButton("Nox")).toHaveAttribute("aria-current", "page");
+    expect(serviceButton("NoxConnect")).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("tab", { name: /Repositories/ })).toHaveAttribute("aria-selected", "true");
   });
 
@@ -296,7 +280,7 @@ describe("AdminTab", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /Repositories/ }));
     expect(await screen.findByText("Projects and routing")).toBeInTheDocument();
-    expect(screen.getByText(/Enable only the NoxConnect projects you actually use/i)).toBeInTheDocument();
+    expect(screen.getByText(/Repository membership defines a project everywhere in Nox/i)).toBeInTheDocument();
   });
 
   it("opens legacy repos links on Nox", async () => {
@@ -306,7 +290,7 @@ describe("AdminTab", () => {
       </MemoryRouter>,
     );
 
-    expect(serviceButton("Nox")).toHaveAttribute("aria-current", "page");
+    expect(serviceButton("NoxConnect")).toHaveAttribute("aria-current", "page");
     expect(await screen.findByTestId("admin-repositories")).toHaveTextContent("api");
   });
 
@@ -318,40 +302,33 @@ describe("AdminTab", () => {
         <AdminTab />
       </MemoryRouter>,
     );
-    fireEvent.click(serviceButton("NoxFeed"));
-    await screen.findByRole("heading", { name: "NoxFeed", level: 1 });
-    expect(screen.getAllByText("NoxFeed").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Choose an enabled NoxConnect project and one channel/i)).toBeInTheDocument();
-    expect(screen.getByText(/Enable a project under NoxConnect/i)).toBeInTheDocument();
+    fireEvent.click(serviceButton("Activity"));
+    await screen.findByRole("heading", { name: "Activity", level: 1 });
+    expect(screen.getAllByText("Activity").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Choose an active NoxConnect project and one channel/i)).toBeInTheDocument();
+    expect(screen.getByText(/Add a project under NoxConnect/i)).toBeInTheDocument();
     expect(screen.getByText("Default channel")).toBeInTheDocument();
     expect(screen.queryByText("Default posts")).not.toBeInTheDocument();
     expect(screen.queryByText("Default release notes")).not.toBeInTheDocument();
     expect(screen.queryByText("AI service")).not.toBeInTheDocument();
   });
 
-  it("persists app toggles while preserving other organization settings", async () => {
+  it("shows capabilities as always available without service switches", async () => {
     mIsAdmin.mockReturnValue(true);
-    const mutate = vi.fn();
     mSettings.mockReturnValue({ data: { excludedMembers: ["bot"], apps: { noxfeed: false } } });
-    mSaveSettings.mockReturnValue({ mutate, mutateAsync: vi.fn(), isPending: false });
     render(<MemoryRouter><AdminTab /></MemoryRouter>);
 
-    fireEvent.click(serviceButton("NoxFeed"));
-    fireEvent.click(await screen.findByRole("switch", { name: "Turn NoxFeed on" }));
-    expect(mutate).toHaveBeenCalledWith({
-      excludedMembers: ["bot"],
-      apps: { noxfeed: true },
-    });
+    fireEvent.click(serviceButton("Activity"));
+    expect(await screen.findByText("Always available")).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: /Activity/ })).not.toBeInTheDocument();
   });
 
-  it("does not mount setup for a disabled app", async () => {
+  it("mounts setup even when legacy settings disable an app", async () => {
     mIsAdmin.mockReturnValue(true);
     mSettings.mockReturnValue({ data: { apps: { noxfeed: false } } });
     render(<MemoryRouter><AdminTab /></MemoryRouter>);
-    fireEvent.click(serviceButton("NoxFeed"));
-    expect(await screen.findByRole("switch", { name: "Turn NoxFeed on" })).not.toBeChecked();
-    expect(screen.getByText(/Feed views.*saved data and setup are retained/i)).toBeInTheDocument();
-    expect(screen.queryByText("Posts Backfill")).not.toBeInTheDocument();
+    fireEvent.click(serviceButton("Activity"));
+    expect(await screen.findByText("Always available")).toBeInTheDocument();
   });
 
   it("restores the selected Admin page from the canonical URL", async () => {
@@ -361,7 +338,7 @@ describe("AdminTab", () => {
         <AdminTab />
       </MemoryRouter>,
     );
-    expect(serviceButton("NoxFeed")).toHaveAttribute("aria-current", "page");
+    expect(serviceButton("Activity")).toHaveAttribute("aria-current", "page");
     expect(await screen.findByRole("tab", { name: "Delivery" })).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText("Posts Backfill")).not.toBeInTheDocument();
     expect(screen.queryByText("AI service")).not.toBeInTheDocument();
@@ -374,8 +351,8 @@ describe("AdminTab", () => {
         <AdminTab />
       </MemoryRouter>,
     );
-    expect(serviceButton("NoxCue")).toHaveAttribute("aria-current", "page");
-    expect(await screen.findByRole("heading", { name: "NoxCue", level: 1 })).toBeInTheDocument();
+    expect(serviceButton("Incidents")).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("heading", { name: "Incidents", level: 1 })).toBeInTheDocument();
   });
 
   it("routes AI provider deep links to NoxFeed", async () => {
@@ -385,7 +362,7 @@ describe("AdminTab", () => {
         <AdminTab />
       </MemoryRouter>,
     );
-    expect(serviceButton("NoxFeed")).toHaveAttribute("aria-current", "page");
+    expect(serviceButton("Activity")).toHaveAttribute("aria-current", "page");
     expect(await screen.findByText("AI service")).toBeInTheDocument();
   });
 });

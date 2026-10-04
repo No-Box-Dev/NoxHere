@@ -7,8 +7,21 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api";
 import type { Feature, FeatureStatus, SpecLink, StatusHistoryEntry } from "./types";
 
-// D1-backed row shape returned by /api/v1/features
-interface D1FeatureRow {
+// Native feature shape returned by NoxTicket via /api/v1/features.
+interface NoxTicketFeature {
+  number: number;
+  title: string;
+  status: string;
+  backlog: boolean;
+  state: "open" | "closed";
+  owners: string[];
+  statusHistory: Array<{ status: string; at: string }>;
+  updatedAt: string;
+}
+
+// Compatibility shape returned by the retired GitHub/D1 projection. Keeping
+// this reader makes rolling gateway deployments safe during the transition.
+interface LegacyD1FeatureRow {
   number: number;
   title: string;
   state: string;
@@ -91,7 +104,7 @@ function issueToFeature(issue: any): Feature {
 
 // ---------- D1-backed fetch (no GitHub API calls) ----------
 
-function d1RowToFeature(row: D1FeatureRow): Feature {
+function legacyRowToFeature(row: LegacyD1FeatureRow): Feature {
   const feature = issueToFeature({
     number: row.number,
     title: row.title,
@@ -104,14 +117,36 @@ function d1RowToFeature(row: D1FeatureRow): Feature {
   return feature;
 }
 
+function isNativeFeature(row: NoxTicketFeature | LegacyD1FeatureRow): row is NoxTicketFeature {
+  return typeof (row as NoxTicketFeature).status === "string"
+    && typeof (row as NoxTicketFeature).backlog === "boolean"
+    && Array.isArray((row as NoxTicketFeature).owners);
+}
+
+function nativeRowToFeature(row: NoxTicketFeature): Feature {
+  return {
+    id: row.number,
+    title: row.title,
+    owners: row.owners,
+    status: row.status as FeatureStatus,
+    backlog: row.backlog,
+    updatedAt: row.updatedAt,
+    statusHistory: (row.statusHistory ?? []).map((change) => ({
+      status: change.status as FeatureStatus,
+      timestamp: change.at,
+    })),
+  };
+}
+
 export async function fetchFeaturesFromD1(state: "open" | "closed" = "open"): Promise<Feature[]> {
-  const rows = await apiGet<D1FeatureRow[]>(`/api/v1/features?state=${state}`);
+  const rows = await apiGet<Array<NoxTicketFeature | LegacyD1FeatureRow>>(`/api/v1/features?state=${state}`);
   return rows
     .filter((row) => {
+      if (isNativeFeature(row)) return true;
       const names = new Set(row.labels.map((l) => l.name));
       return (names.has(NOXTICKET_LABEL) || names.has(LEGACY_NOXTICKET_LABEL)) && names.has(FEATURE_LABEL);
     })
-    .map(d1RowToFeature);
+    .map((row) => isNativeFeature(row) ? nativeRowToFeature(row) : legacyRowToFeature(row));
 }
 
 // ---------- CRUD (server-proxied) ----------
@@ -119,7 +154,8 @@ export async function fetchFeaturesFromD1(state: "open" | "closed" = "open"): Pr
 // All writes go through the shared api helpers so failures broadcast `ut:error`
 // (surfaced as a toast) instead of throwing silently. The server response shape
 // from /api/v1/features* is already the Feature shape (ghIssueToFeature on the
-// server). We trust it and return as-is.
+// server). NoxTicket uses `number` and `at`; normalize those fields to the
+// board's `id` and `timestamp` model at this boundary.
 
 export async function createFeature(
   _org: string,
@@ -130,22 +166,21 @@ export async function createFeature(
     backlog?: boolean;
   },
 ): Promise<Feature> {
-  return apiPost<Feature>("/api/v1/features", {
+  return nativeRowToFeature(await apiPost<NoxTicketFeature>("/api/v1/features", {
     title,
     status: opts.status,
     owners: opts.owners ?? [],
-    ...(opts.backlog ? { backlog: true } : {}),
-  });
+    backlog: opts.backlog ?? false,
+  }));
 }
 
 export async function updateFeature(_org: string, updated: Feature): Promise<Feature> {
-  return apiPatch<Feature>(`/api/v1/features/${updated.id}`, {
+  return nativeRowToFeature(await apiPatch<NoxTicketFeature>(`/api/v1/features/${updated.id}`, {
     title: updated.title,
     status: updated.status,
     owners: updated.owners,
     backlog: updated.backlog ?? false,
-    specLinks: updated.specLinks ?? [],
-  });
+  }));
 }
 
 export async function deleteFeature(_org: string, issueNumber: number): Promise<void> {

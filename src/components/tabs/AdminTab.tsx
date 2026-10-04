@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CheckCircle2, PlugZap } from "lucide-react";
 import { useIsAdmin, useOrgMembers } from "@/hooks/useGitHub";
@@ -7,10 +7,7 @@ import { useNoxConnect } from "@/hooks/useNoxConnect";
 import {
   ADMIN_INTRO,
   getNoxApp,
-  isNoxAppEnabled,
   OPTIONAL_NOX_APP_IDS,
-  SERVICE_OFF_TEXT,
-  type OptionalNoxAppId,
 } from "@/lib/apps";
 import { Spinner } from "@/components/Spinner";
 import { PeopleManagement } from "@/components/settings/PeopleManagement";
@@ -24,11 +21,9 @@ import {
   SlackConnectionCard,
   SlackConnectionSummaryCard,
 } from "@/components/admin/slack/SlackConnectionCard";
-import { ServiceToggle } from "@/components/admin/ServiceActivationCard";
 import { NewReposSection } from "@/components/admin/NewReposSection";
 import { TrackedReposSection } from "@/components/admin/TrackedReposSection";
 import { ProjectRoutingSection } from "@/components/admin/ProjectRoutingSection";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const ReposTab = lazy(() => import("@/components/tabs/ReposTab").then((module) => ({ default: module.ReposTab })));
 const MaintenanceSection = lazy(() => import("@/components/admin/MaintenanceSection").then((module) => ({ default: module.MaintenanceSection })));
@@ -39,11 +34,11 @@ const NoxSpotAdminPage = lazy(() => import("@/components/admin/pages/NoxSpotAdmi
 const NoxCueAdminPage = lazy(() => import("@/components/admin/pages/NoxCueAdminPage").then((module) => ({ default: module.NoxCueAdminPage })));
 
 const ADMIN_SERVICES: AdminServiceDef[] = [
-  { id: "noxconnect", label: "Nox" },
-  { id: "noxticket", label: "NoxTicket" },
-  { id: "noxfeed", label: "NoxFeed" },
-  { id: "noxspot", label: "NoxSpot" },
-  { id: "noxcue", label: "NoxCue" },
+  { id: "noxconnect", label: "NoxConnect" },
+  { id: "noxticket", label: "Planning" },
+  { id: "noxfeed", label: "Activity" },
+  { id: "noxspot", label: "Feedback" },
+  { id: "noxcue", label: "Incidents" },
 ];
 
 const NOXCONNECT_PANELS = [
@@ -67,10 +62,6 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
   const isAdmin = useIsAdmin();
   const [searchParams, setSearchParams] = useSearchParams();
   const noxConnect = useNoxConnect();
-  const settingsQuery = useSettings();
-  const settings = settingsQuery.data;
-  const saveSettings = useSaveSettings();
-  const [pendingDisable, setPendingDisable] = useState<OptionalNoxAppId | null>(null);
   const focus = searchParams.get("focus");
   const requestedService = searchParams.get("service");
   const rawRequestedSection = searchParams.get("section");
@@ -81,7 +72,7 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
   const routedService = isLegacyReposLink ? "noxconnect" : isLegacyAiLink ? "noxfeed" : requestedService ?? legacyService;
   const focusedService = focus === "aiProvider"
     ? "noxfeed"
-    : focus === "newRepos" && isNoxAppEnabled(settings, "noxticket")
+    : focus === "newRepos"
       ? "noxticket"
       : "noxconnect";
   const activeService = ADMIN_SERVICES.some((section) => section.id === routedService)
@@ -92,27 +83,6 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
     : isNoxConnectPanel(requestedNoxConnectPanel)
       ? requestedNoxConnectPanel
       : "overview";
-
-  function toggleApp(appId: OptionalNoxAppId, enabled: boolean) {
-    if (!enabled) {
-      setPendingDisable(appId);
-      return;
-    }
-    saveAppState(appId, true);
-  }
-
-  function saveAppState(appId: OptionalNoxAppId, enabled: boolean) {
-    saveSettings.mutate({
-      ...(settings ?? {}),
-      apps: { ...(settings?.apps ?? {}), [appId]: enabled },
-    });
-  }
-
-  function confirmDisable() {
-    if (!pendingDisable) return;
-    saveAppState(pendingDisable, false);
-    setPendingDisable(null);
-  }
 
   function selectService(service: string) {
     const params = new URLSearchParams(searchParams);
@@ -136,11 +106,6 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
   }
 
   const status = noxConnect.data;
-  const settingsReady = settings !== undefined && !settingsQuery.isLoading;
-  const noxTicketEnabled = isNoxAppEnabled(settings, "noxticket");
-  const noxFeedEnabled = isNoxAppEnabled(settings, "noxfeed");
-  const noxSpotEnabled = isNoxAppEnabled(settings, "noxspot");
-  const noxCueEnabled = isNoxAppEnabled(settings, "noxcue");
   const connectionsLoading = (
     <div className="bg-white rounded-xl border border-stone-200 p-5 flex justify-center">
       <Spinner className="h-5 w-5 text-accent" />
@@ -169,7 +134,7 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
       <div className="min-w-0">
           {/* Nox workspace — visible to everyone; controls gated per card */}
           {activeService === "noxconnect" ? <section className="space-y-6">
-            <div><h1 className="text-xl font-semibold text-stone-900">Nox</h1><p className="mt-1 text-sm text-stone-500">{ADMIN_INTRO}</p></div>
+            <div><h1 className="text-xl font-semibold text-stone-900">NoxConnect</h1><p className="mt-1 text-sm text-stone-500">{ADMIN_INTRO}</p></div>
             <div className="grid items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
               <NoxConnectNavigation activeId={activeNoxConnectPanel} onChange={selectNoxConnectPanel} />
 
@@ -193,7 +158,7 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
                             {status.setup.ready ? "Everything is connected" : setupHeading}
                           </h2>
                           <p className={`mt-1 text-xs leading-5 ${status.setup.ready ? "text-green-800" : "text-amber-800"}`}>
-                            GitHub is required. Slack is optional and can serve every enabled Nox app.
+                            GitHub is required. Slack is optional and can serve every NoxConnect capability.
                           </p>
                         </div>
                       </div>
@@ -204,20 +169,19 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h2 className="text-sm font-semibold text-stone-900">Tools</h2>
-                        <p className="mt-1 text-xs text-stone-500">Enabled products using this Nox workspace.</p>
+                        <p className="mt-1 text-xs text-stone-500">Every capability is available in this Nox workspace.</p>
                       </div>
                       <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
-                        {OPTIONAL_NOX_APP_IDS.filter((appId) => isNoxAppEnabled(settings, appId)).length} active
+                        {OPTIONAL_NOX_APP_IDS.length} available
                       </span>
                     </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {OPTIONAL_NOX_APP_IDS.map((appId) => {
                         const app = getNoxApp(appId);
-                        const enabled = isNoxAppEnabled(settings, appId);
                         return (
                           <div
                             key={app.id}
-                            className={`rounded-lg border p-3 transition-colors ${enabled ? "border-stone-200" : "border-stone-200 bg-stone-50"}`}
+                            className="rounded-lg border border-stone-200 p-3"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -229,17 +193,11 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
                                   {app.name}
                                 </button>
                                 <p className="mt-1 text-xs leading-5 text-stone-500">
-                                  {enabled ? app.includes : `${SERVICE_OFF_TEXT[appId]} Saved data and setup are retained.`}
+                                  {app.includes}
                                 </p>
                               </div>
-                              <ServiceToggle
-                                app={app}
-                                enabled={enabled}
-                                disabled={!isAdmin || !settingsReady || saveSettings.isPending}
-                                onToggle={toggleApp}
-                              />
+                              <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-800">Available</span>
                             </div>
-                            {!isAdmin ? <p className="mt-2 text-[11px] text-stone-400">Only an organization admin can change this switch.</p> : null}
                           </div>
                         );
                       })}
@@ -274,7 +232,7 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
                 </> : null}
 
                 {activeNoxConnectPanel === "connections" ? <>
-                  <SectionHeading title="Connections" description="Connect the providers shared by every enabled Nox app." />
+                  <SectionHeading title="Connections" description="Connect the providers shared by every NoxConnect capability." />
                   {noxConnect.isLoading
                     ? connectionsLoading
                     : noxConnect.isError
@@ -321,22 +279,13 @@ export function AdminTab({ repoNames = [] }: { repoNames?: string[] }) {
           </section> : null}
 
           <Suspense fallback={connectionsLoading}>
-            {activeService === "noxticket" ? <NoxTicketAdminPage enabled={noxTicketEnabled} isAdmin={isAdmin} settingsReady={settingsReady} isSaving={saveSettings.isPending} hasError={saveSettings.isError} status={status} loading={connectionsLoading} onToggle={(enabled) => toggleApp("noxticket", enabled)} /> : null}
-            {activeService === "noxfeed" ? <NoxFeedAdminPage enabled={noxFeedEnabled} isAdmin={isAdmin} settingsReady={settingsReady} isSaving={saveSettings.isPending} hasError={saveSettings.isError} status={status} loading={connectionsLoading} onToggle={(enabled) => toggleApp("noxfeed", enabled)} /> : null}
-            {activeService === "noxspot" ? <NoxSpotAdminPage enabled={noxSpotEnabled} isAdmin={isAdmin} settingsReady={settingsReady} isSaving={saveSettings.isPending} hasError={saveSettings.isError} status={status} loading={connectionsLoading} onToggle={(enabled) => toggleApp("noxspot", enabled)} /> : null}
-            {activeService === "noxcue" ? <NoxCueAdminPage enabled={noxCueEnabled} isAdmin={isAdmin} settingsReady={settingsReady} isSaving={saveSettings.isPending} hasError={saveSettings.isError} status={status} loading={connectionsLoading} onToggle={(enabled) => toggleApp("noxcue", enabled)} /> : null}
+            {activeService === "noxticket" ? <NoxTicketAdminPage status={status} loading={connectionsLoading} /> : null}
+            {activeService === "noxfeed" ? <NoxFeedAdminPage status={status} loading={connectionsLoading} /> : null}
+            {activeService === "noxspot" ? <NoxSpotAdminPage status={status} loading={connectionsLoading} /> : null}
+            {activeService === "noxcue" ? <NoxCueAdminPage status={status} loading={connectionsLoading} /> : null}
           </Suspense>
 
       </div>
-      <ConfirmDialog
-        open={pendingDisable !== null}
-        title={pendingDisable ? `Turn off ${getNoxApp(pendingDisable).name}?` : "Turn off service?"}
-        message={pendingDisable ? `${SERVICE_OFF_TEXT[pendingDisable]} Saved data and setup are retained for reactivation.` : undefined}
-        confirmLabel={pendingDisable ? `Turn off ${getNoxApp(pendingDisable).name}` : "Turn off"}
-        variant="danger"
-        onConfirm={confirmDisable}
-        onCancel={() => setPendingDisable(null)}
-      />
     </div>
   );
 }

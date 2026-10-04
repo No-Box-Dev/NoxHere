@@ -18,7 +18,7 @@ describe("capture validation", () => {
   it("normalizes a valid report and preserves custom values", () => {
     const result = validateReportInput({
       siteId: "site-1",
-      title: "Broken button",
+      description: "Broken button on checkout",
       reporter: " Ada ",
       reporterEmail: "ada@example.com",
       notifyOnResolution: true,
@@ -27,23 +27,38 @@ describe("capture validation", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.params.reporter).toBe("Ada");
+    expect(result.params.title).toBe("Broken button on checkout");
     expect(result.params.notifyOnResolution).toBe(true);
     expect(result.params.blockValues).toEqual({ impact: "Checkout blocked" });
   });
 
+  it("keeps an explicitly configured title while requiring the standard description", () => {
+    const result = validateReportInput({ siteId: "site-1", title: "Checkout failure", description: "The checkout button does nothing." });
+    expect(result).toMatchObject({ ok: true, params: { title: "Checkout failure", description: "The checkout button does nothing." } });
+  });
+
+  it("temporarily accepts a legacy title-only client", () => {
+    const result = validateReportInput({ siteId: "site-1", title: "Legacy report" });
+    expect(result).toMatchObject({ ok: true, params: { title: "Legacy report", description: null } });
+  });
+
+  it("rejects a report with neither description nor legacy title", () => {
+    expect(validateReportInput({ siteId: "site-1" })).toMatchObject({ ok: false, error: "Description is required" });
+  });
+
   it("rejects oversized nested context", () => {
-    const result = validateReportInput({ siteId: "site-1", title: "Bug", context: { state: "x".repeat(25_000) } });
+    const result = validateReportInput({ siteId: "site-1", description: "Bug", context: { state: "x".repeat(25_000) } });
     expect(result.ok).toBe(false);
   });
 
   it("requires an email when resolution notifications are requested", () => {
-    expect(validateReportInput({ siteId: "site-1", title: "Broken", notifyOnResolution: true }))
+    expect(validateReportInput({ siteId: "site-1", description: "Broken", notifyOnResolution: true }))
       .toMatchObject({ ok: false, status: 400 });
   });
 
   it("rejects unsafe or oversized attempt IDs", () => {
-    expect(validateReportInput({ siteId: "site-1", title: "Bug", attemptId: "../../shared" }).ok).toBe(false);
-    expect(validateReportInput({ siteId: "site-1", title: "Bug", attemptId: "x".repeat(101) }).ok).toBe(false);
+    expect(validateReportInput({ siteId: "site-1", description: "Bug", attemptId: "../../shared" }).ok).toBe(false);
+    expect(validateReportInput({ siteId: "site-1", description: "Bug", attemptId: "x".repeat(101) }).ok).toBe(false);
   });
 
   it("creates a versioned task with connection routing and idempotency", () => {

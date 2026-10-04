@@ -1,56 +1,33 @@
 import { LEGACY_NOXTICKET_SOURCE } from "./naming-compat.js";
 import { compatibilityApiPath } from "./api-paths.js";
 
-export const OPTIONAL_APP_IDS = ["noxticket", "noxfeed", "noxspot", "noxcue"];
+export const PRODUCT_APP_IDS = ["noxticket", "noxfeed", "noxspot", "noxcue"];
+const ALWAYS_AVAILABLE = Object.freeze(Object.fromEntries(PRODUCT_APP_IDS.map((appId) => [appId, true])));
 
-const APP_SET = new Set(OPTIONAL_APP_IDS);
-
-export function parseAppSettings(rawSettings) {
-  let settings = rawSettings;
-  if (typeof rawSettings === "string") {
-    try { settings = JSON.parse(rawSettings); }
-    catch { settings = null; }
-  }
-  const apps = settings && typeof settings === "object" && !Array.isArray(settings)
-    ? settings.apps
-    : null;
-  return Object.fromEntries(OPTIONAL_APP_IDS.map((appId) => [
-    appId,
-    !(apps && typeof apps === "object" && !Array.isArray(apps) && apps[appId] === false),
-  ]));
+export function parseAppSettings(..._ignored) {
+  return { ...ALWAYS_AVAILABLE };
 }
 
-/** @param {string | null} [projectId] */
-export async function getEnabledApps(db, orgId, projectId = null) {
-  if (projectId) {
-    const projectRow = await db.prepare(
-      "SELECT data FROM project_config WHERE org_id = ? AND project_id = ? AND key = 'settings'",
-    ).bind(orgId, projectId).first();
-    if (projectRow) return parseAppSettings(projectRow.data);
-  }
-  const row = await db.prepare(
-    "SELECT data FROM config WHERE org_id = ? AND key = 'settings'",
-  ).bind(orgId).first();
-  return parseAppSettings(row?.data);
+export async function getEnabledApps(..._ignored) {
+  return { ...ALWAYS_AVAILABLE };
 }
 
-/** @param {string | null} [projectId] */
-export async function isAppEnabled(db, orgId, appId, projectId = null) {
-  if (!APP_SET.has(appId)) return true;
-  const apps = await getEnabledApps(db, orgId, projectId);
-  return apps[appId] !== false;
+export async function isAppEnabled(..._ignored) {
+  return true;
 }
 
-/** @param {string | null} [projectId] */
-export async function isAppEnabledForOwner(db, ownerId, appId, projectId = null) {
-  const org = await db.prepare(
-    "SELECT id FROM orgs WHERE github_login = ? LIMIT 1",
-  ).bind(ownerId).first();
-  return org?.id ? isAppEnabled(db, org.id, appId, projectId) : true;
+export async function isAppEnabledForOwner(..._ignored) {
+  return true;
 }
 
 export function appForApiPath(pathname) {
+  if (/^\/api\/v1\/projects\/[^/]+\/cue(?:\/|$)/.test(pathname)) return "noxcue";
   pathname = compatibilityApiPath(pathname);
+  if (/^\/api\/projects\/[^/]+\/activity$/.test(pathname)) return "noxfeed";
+  if (/^\/api\/projects\/[^/]+\/issues$/.test(pathname)) return "noxfeed";
+  if (/^\/api\/projects\/[^/]+\/incidents$/.test(pathname)) return "noxcue";
+  if (/^\/api\/projects\/[^/]+\/incidents\/[^/]+$/.test(pathname)) return "noxcue";
+  if (/^\/api\/projects\/[^/]+\/feedback$/.test(pathname)) return "noxspot";
   if (/^\/api\/config(?:\/|$)/.test(pathname)) return "noxconnect";
   if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(pathname)) {
     return "noxticket";
@@ -82,18 +59,4 @@ export function appForSlackKind(kind) {
   if (kind === "noxspot") return "noxspot";
   if (kind === "noxcue" || kind === "noxcue_alerts") return "noxcue";
   return null;
-}
-
-export function serviceDisabledResponse(appId) {
-  const names = { noxticket: "NoxTicket", noxfeed: "NoxFeed", noxspot: "NoxSpot", noxcue: "NoxCue" };
-  const name = names[appId] ?? appId;
-  return new Response(JSON.stringify({
-    error: `${name} is not enabled. Enable it in NoxConnect before trying again.`,
-    code: "service_not_enabled",
-    service: appId,
-    remediation: { action: "enable_service", href: `/api/v1/services/${appId}/config` },
-  }), {
-    status: 409,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-  });
 }

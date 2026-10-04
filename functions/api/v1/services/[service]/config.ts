@@ -19,10 +19,8 @@ async function readSettings(context: Ctx) {
   const projectRow = projectId
     ? await db.prepare("SELECT data FROM project_config WHERE org_id = ? AND project_id = ? AND key = 'settings'").bind(orgId, projectId).first<{ data: string }>()
     : null;
-  // A project with no settings row of its own inherits the organization's, which
-  // is the same precedence getEnabledApps() applies. Reading it as empty instead
-  // would report every service as enabled and let the first project-level write
-  // silently re-enable services the organization had turned off.
+  // A project with no settings row of its own inherits the organization's
+  // shared configuration until it writes a project-specific override.
   const orgRow = projectId && projectRow
     ? null
     : await db.prepare("SELECT data FROM config WHERE org_id = ? AND key = 'settings'").bind(orgId).first<{ data: string }>();

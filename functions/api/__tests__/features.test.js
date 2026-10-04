@@ -122,6 +122,13 @@ describe("GET /api/features", () => {
     await onRequestGet(makeCtx({ db, url: "http://x/api/features?state=closed" }));
     expect(db._calls.all[0].binds).toEqual([1, "project-1", "closed"]);
   });
+
+  it("reads open and closed features in one query for state=all", async () => {
+    const db = makeDb({ allResult: { results: [] } });
+    await onRequestGet(makeCtx({ db, url: "http://x/api/features?state=all" }));
+    expect(db._calls.all[0].binds).toEqual([1, "project-1"]);
+    expect(db._calls.all[0].sql).not.toContain("state = ?");
+  });
 });
 
 describe("POST /api/features", () => {

@@ -2,13 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../lib/slack.js", () => ({
   checkSlackOrgHealth: vi.fn(async () => ({ status: "ok", recovered: false })),
+  getSlackChannel: vi.fn(async () => ({ id: "C-ALERT", is_member: true })),
   resolveSlackInstall: vi.fn(async () => ({ id: "conn-2", botToken: "xoxb-test" })),
+  slackInstallNeedsReconnect: vi.fn(() => false),
   postSlackMessage: vi.fn(async () => ({ ok: true, channel: "C-ALERT", ts: "1.2" })),
   actionableSlackError: vi.fn((_error, fallback) => fallback),
 }));
 
 import { onRequestPost } from "../slack/test.js";
-import { checkSlackOrgHealth, postSlackMessage } from "../../lib/slack.js";
+import { actionableSlackError, checkSlackOrgHealth, getSlackChannel, postSlackMessage } from "../../lib/slack.js";
 
 function context(body) {
   const calls = [];
@@ -120,6 +122,17 @@ describe("Slack route tests", () => {
     expect((await onRequestPost(recovered)).status).toBe(200);
     expect(recovered.calls.some((call) => call.sql.includes("INSERT INTO slack_channel_status")
       && call.sql.includes("'verified'"))).toBe(true);
+  });
+
+  it("turns Slack's ambiguous channel-not-found response into invite guidance when the channel is visible", async () => {
+    vi.mocked(postSlackMessage).mockRejectedValueOnce(Object.assign(new Error("channel_not_found"), { code: "channel_not_found" }));
+    vi.mocked(getSlackChannel).mockResolvedValueOnce({ id: "C-ALERT", is_member: false });
+    const response = await onRequestPost(context({ kind: "noxticket", connectionId: "conn-2", channelId: "C-ALERT" }));
+    expect(response.status).toBe(502);
+    expect(actionableSlackError).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "not_in_channel" }),
+      expect.any(String),
+    );
   });
 
   it("does not silently reinterpret an unknown test as NoxFeed", async () => {

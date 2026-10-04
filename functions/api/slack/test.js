@@ -1,7 +1,7 @@
 import { getCtx, jsonResponse, errorResponse } from "../../lib/db";
-import { actionableSlackError, checkSlackOrgHealth, resolveSlackInstall, postSlackMessage } from "../../lib/slack";
+import { actionableSlackError, checkSlackOrgHealth, getSlackChannel, resolveSlackInstall } from "../../lib/slack";
+import { deliverResolvedSlackMessage } from "../../lib/transports/slack";
 import { markSlackChannelIssue, markSlackChannelVerified } from "../../lib/slack-channel-status";
-import { appForSlackKind, isAppEnabled, serviceDisabledResponse } from "../../lib/apps.js";
 import { getNoxCueDigestResponse, getNoxCueTestResponse } from "../../lib/noxcue-response.js";
 import { completedPeriodAt, loadNoxCueDigestData } from "../../lib/noxcue-digest-data.js";
 import { loadEnabledNoxCueMetricKeys, selectNoxCueDigestMetrics } from "../../lib/noxcue-project-metrics.js";
@@ -39,10 +39,6 @@ export async function onRequestPost(context) {
   ]);
   const kind = legacyKinds[body?.kind] ?? (allowedKinds.has(body?.kind) ? body.kind : null);
   if (!kind) return errorResponse("This Slack test type is not supported. Refresh NoxConnect and run the test again.", 400);
-  const appId = appForSlackKind(kind);
-  if (appId && !(await isAppEnabled(context.env.DB, orgId, appId))) {
-    return serviceDisabledResponse(appId);
-  }
   if (kind === "connection") {
     if (!connectionId) return errorResponse("Choose a Slack workspace before sending a connection test.", 400);
     if (!channelId) return errorResponse("Choose a Slack channel before sending a connection test.", 400);
@@ -77,6 +73,7 @@ export async function onRequestPost(context) {
           selected.metrics,
           selected.comparisons,
           selected.metricLabels,
+          selected.activityBreakdowns,
           source.project_id ? { organizationId: orgId, projectId: source.project_id, sourceId } : undefined,
         )).message;
       } else {
@@ -143,12 +140,12 @@ export async function onRequestPost(context) {
       }
       : null;
 
-    const receipt = await postSlackMessage(install.botToken, channelId, payload);
-    if (!receipt?.ts || receipt.channel !== channelId) {
-      throw Object.assign(new Error("Slack returned an invalid or mismatched delivery receipt"), {
-        code: "invalid_slack_receipt",
-      });
-    }
+    const receipt = await deliverResolvedSlackMessage(context.env, {
+      orgId,
+      connectionId,
+      channelId,
+      message: payload,
+    });
     await Promise.all([
       context.env.DB.prepare(
         `UPDATE slack_connections SET health_status = 'ok', last_error = NULL,
@@ -159,18 +156,27 @@ export async function onRequestPost(context) {
     return jsonResponse({
       ok: true,
       connectionId: install.id,
-      channelId: receipt.channel,
-      messageTs: receipt.ts,
+      channelId: receipt.channelId,
+      messageTs: receipt.messageId,
       deliveredAt: new Date().toISOString(),
     });
   } catch (err) {
+    let deliveryError = err;
+    if (err?.code === "channel_not_found") {
+      try {
+        const channel = await getSlackChannel(install.botToken, channelId);
+        if (channel && !channel.is_member) {
+          deliveryError = Object.assign(new Error("NoxConnect is not a member of this channel"), { code: "not_in_channel" });
+        }
+      } catch { /* Keep Slack's original error when the channel is not visible to this workspace token. */ }
+    }
     await Promise.all([
       context.env.DB.prepare(
         `UPDATE slack_connections SET health_status = 'degraded', last_error = ?,
          last_checked_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND id = ?`,
-      ).bind(err instanceof Error ? err.message.slice(0, 1000) : String(err).slice(0, 1000), orgId, install.id).run(),
-      markSlackChannelIssue(context.env.DB, orgId, install.id, channelId, err),
+      ).bind(deliveryError instanceof Error ? deliveryError.message.slice(0, 1000) : String(deliveryError).slice(0, 1000), orgId, install.id).run(),
+      markSlackChannelIssue(context.env.DB, orgId, install.id, channelId, deliveryError),
     ]);
-    return errorResponse(actionableSlackError(err, "Slack did not accept the test message. Review the workspace and channel, then send the test again."), 502);
+    return errorResponse(actionableSlackError(deliveryError, "Slack did not accept the test message. Review the workspace and channel, then send the test again."), 502);
   }
 }

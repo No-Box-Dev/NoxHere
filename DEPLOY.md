@@ -74,21 +74,27 @@ Frontend build var (public) — set in `.env.local` for local builds and as a Pa
 VITE_GITHUB_APP_CLIENT_ID=<your app client id>
 ```
 
-Server-side secrets on the **Pages** project. The canonical hosted project is
-`noxconnect`, which owns `app.noxhere.com`:
+Server-side secrets on the production **API Worker**. NoxHere owns the public
+`app.noxhere.com` route and forwards public provider callbacks to
+`noxconnect-api` through a service binding:
 
 ```bash
-npx wrangler pages secret put GITHUB_APP_ID         --project-name noxconnect
-npx wrangler pages secret put GITHUB_APP_CLIENT_ID  --project-name noxconnect
-npx wrangler pages secret put GITHUB_APP_CLIENT_SECRET --project-name noxconnect
-npx wrangler pages secret put GITHUB_APP_PRIVATE_KEY --project-name noxconnect
-npx wrangler pages secret put GITHUB_WEBHOOK_SECRET --project-name noxconnect
-npx wrangler pages secret put ENCRYPTION_KEY        --project-name noxconnect   # 64-char hex
-npx wrangler pages secret put ANTHROPIC_API_KEY     --project-name noxconnect
-npx wrangler pages secret put SLACK_CLIENT_ID       --project-name noxconnect
-npx wrangler pages secret put SLACK_CLIENT_SECRET   --project-name noxconnect
-npx wrangler pages secret put SLACK_SIGNING_SECRET  --project-name noxconnect
+npx wrangler secret put GITHUB_APP_ID --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put GITHUB_APP_CLIENT_ID --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put GITHUB_APP_CLIENT_SECRET --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put GITHUB_APP_PRIVATE_KEY --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put GITHUB_WEBHOOK_SECRET --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put ENCRYPTION_KEY --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put ANTHROPIC_API_KEY --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put SLACK_CLIENT_ID --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put SLACK_CLIENT_SECRET --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put SLACK_SIGNING_SECRET --config workers/api-gateway/wrangler.jsonc
 ```
+
+After changing `GITHUB_WEBHOOK_SECRET`, update the NoxConnect GitHub App with
+the same value and verify a `ping` delivery receives HTTP 200. Worker and
+GitHub values are write-only; rotate them together instead of attempting to
+compare them later.
 
 Generate `ENCRYPTION_KEY` with `openssl rand -hex 32`. `REVIEW_RUNNER_TOKEN` (generate the same way) authorizes the local noxreview runner against `/api/review/*` — keep it out of any client-visible config:
 
@@ -154,12 +160,12 @@ The staging gate for `0073_api_auth.sql` and `0075_project_scoped_api_tokens.sql
 3. Complete a real GitHub OAuth redirect and confirm that the response creates
    `__Host-nox_session` as `Secure`, `HttpOnly`, and `SameSite=Lax`.
 4. Confirm a browser mutation without `X-CSRF-Token` returns `403`.
-5. In **NoxConnect → API access**, choose one enabled project and create a
+5. In **NoxConnect → API access**, choose one active project and create a
    one-day test token with only `services:read` and one service read scope.
 6. Confirm it cannot access another service, another project's feed, site,
    source, or metrics, organization-level configuration, or API-token management.
-7. Disable its allowed service and confirm operations return
-   `403 service_not_enabled`, then re-enable the service.
+7. Confirm all product capabilities remain reachable and that a missing provider
+   connection or product runtime is reported as readiness, not enablement.
 8. Rotate it, confirm the project is unchanged and the previous value
    immediately returns `401`, then revoke
    the replacement and confirm it also returns `401`.
@@ -167,7 +173,7 @@ The staging gate for `0073_api_auth.sql` and `0075_project_scoped_api_tokens.sql
    delivery. Never borrow production credentials for this gate.
 
 The repository's `npm run e2e:local` performs the same session, CSRF, project
-isolation, disabled-service, rotation, and revocation checks against fresh local D1 state. Staging adds the
+isolation, capability-availability, rotation, and revocation checks against fresh local D1 state. Staging adds the
 real OAuth redirect and disposable provider delivery checks that cannot be
 proved locally.
 

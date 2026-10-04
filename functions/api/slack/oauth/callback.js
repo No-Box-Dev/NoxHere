@@ -6,6 +6,7 @@ import {
   verifyOAuthState,
 } from "../../../lib/slack";
 import { requeueBlockedForOrg } from "../../../lib/delivery-outbox.js";
+import { requeueBlockedTransportCommands } from "../../../lib/transport-outbox";
 
 // GET /api/slack/oauth/callback?code=...&state=...
 //
@@ -85,7 +86,10 @@ export async function onRequestGet(context) {
     // authoritative health instead of the previous install's cached result.
     const health = await checkSlackOrgHealth(context.env, orgId, connectionId);
     if (health.status === "ok") {
-      await requeueBlockedForOrg(context.env, orgId).catch((error) => {
+      await Promise.all([
+        requeueBlockedForOrg(context.env, orgId),
+        requeueBlockedTransportCommands(context.env, { orgId }),
+      ]).catch((error) => {
         console.error("[noxconnect slack oauth] delivery replay failed:", error?.message ?? error);
       });
     }

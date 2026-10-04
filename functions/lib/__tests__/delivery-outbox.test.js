@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../slack.js", () => ({
   resolveSlackInstall: vi.fn(),
+  slackInstallNeedsReconnect: vi.fn(() => false),
   postSlackMessage: vi.fn(),
   actionableSlackError: vi.fn((error, fallback = "Check Slack, then try again.") => {
     const code = String(error?.code ?? error ?? "");

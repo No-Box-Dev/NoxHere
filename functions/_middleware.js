@@ -1,5 +1,5 @@
 import { normalizeLegacyError } from "./lib/api-v1";
-import { appForApiPath, isAppEnabled, serviceDisabledResponse } from "./lib/apps.js";
+import { appForApiPath } from "./lib/apps.js";
 import {
   apiTokenProjectResource,
   projectScopedApiTokenPathSupported,
@@ -155,11 +155,16 @@ export async function onRequest(context) {
     if (serviceProject && project.enabled !== 1) {
       return apiError(url, "project_not_enabled", "The project is not enabled for service operations", 409);
     }
-    const resource = await apiTokenProjectResource(
+    // NoxTicket owns feature identity and project validation. Looking up a
+    // native feature number in NoxConnect's retired projection can reject a
+    // valid item mutation before the NoxTicket handler ever runs.
+    const requestApp = serviceForProjectRequest(url.pathname) || appForApiPath(url.pathname);
+    const resource = requestApp === "noxticket" ? null : await apiTokenProjectResource(
       context.env.DB,
       url.pathname,
       auth.orgId,
       url.searchParams,
+      requestedProject,
     );
     if (resource && resource.projectId !== requestedProject) {
       return apiError(url, "resource_not_found", "The requested resource was not found", 404);
@@ -182,27 +187,26 @@ export async function onRequest(context) {
     }
   }
 
-  // Service switches are an authorization boundary, independent of the
-  // credential type. Keep shared NoxConnect routes available so an admin can
-  // enable a service again, but stop disabled product code before it runs.
-  const appId = serviceForProjectRequest(url.pathname) || appForApiPath(url.pathname);
-  if (appId && !(await isAppEnabled(context.env.DB, org.id, appId, projectId))) {
-    const response = serviceDisabledResponse(appId);
-    if (!url.pathname.startsWith("/api/v1/")) return response;
-    const body = await response.json();
-    return apiError(url, body.code ?? "service_not_enabled", body.error, response.status, {
-      service: body.service,
-      remediation: body.remediation,
-    });
-  }
-
   let providerToken = null;
-  if (auth.connectionId) {
+  if (auth.connectionId && !isProviderIndependentRequest(url.pathname, context.request.method)) {
     const identity = await resolveIdentityConnection(context.env, auth.connectionId);
-    if (!identity || identity.user.login.toLowerCase() !== auth.userLogin.toLowerCase()) {
+    if (identity && identity.user.login.toLowerCase() !== auth.userLogin.toLowerCase()) {
       return apiError(url, "identity_connection_expired", "Connection identity expired; sign in again", 401);
     }
-    providerToken = identity.token;
+    if (identity) {
+      providerToken = identity.token;
+    } else {
+      // NoxHere's signed assertion is the authorization boundary. A provider
+      // token is an optional capability for handlers that call GitHub as the
+      // user; it must not invalidate an otherwise valid NoxHere session or
+      // prevent DB/app-installation-backed views from loading.
+      console.warn(JSON.stringify({
+        event: "github_identity_connection_unavailable",
+        path: url.pathname,
+        orgId: auth.orgId,
+        principalId: auth.principalId,
+      }));
+    }
   }
 
   context.data.orgId = auth.orgId;
@@ -222,6 +226,19 @@ export async function onRequest(context) {
     guestAccess: auth.guestAccess ?? null,
   };
   return nextApiResponse(context, url);
+}
+
+function isProviderIndependentRequest(pathname, method) {
+  const read = ['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase());
+  if (pathname === '/api/projects' || pathname === '/api/v1/projects') return true;
+  if (!read) return false;
+  return pathname === '/api/me'
+    || pathname === '/api/v1/me'
+    || pathname === '/api/actors'
+    || pathname === '/api/v1/actors'
+    || pathname === '/api/v1/services'
+    || pathname === '/api/integrations/connections'
+    || pathname === '/api/v1/integrations/connections';
 }
 
 function guestCanAccess(access, projectId, service) {

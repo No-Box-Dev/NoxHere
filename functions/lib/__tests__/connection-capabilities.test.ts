@@ -16,6 +16,8 @@ const provider = vi.hoisted(() => ({
   upsertIssue: vi.fn(),
   enabled: vi.fn(),
   stageSlack: vi.fn(),
+  publishSlack: vi.fn(),
+  publishGithub: vi.fn(),
   queueSlack: vi.fn(),
   projectRoute: vi.fn(),
   slackChannels: vi.fn(),
@@ -40,6 +42,7 @@ vi.mock("../delivery-outbox.js", () => ({
   stageSlackDelivery: provider.stageSlack,
   queueOutboxDelivery: provider.queueSlack,
 }));
+vi.mock("../transport-outbox", () => ({ publishSlackTransport: provider.publishSlack, publishGitHubTransport: provider.publishGithub }));
 vi.mock("../project-routing", () => ({ resolveProjectSlackDestination: provider.projectRoute }));
 vi.mock("../slack.js", () => ({
   resolveSlackChannels: provider.slackChannels,
@@ -136,6 +139,8 @@ describe("connection capability contracts", () => {
       state: "open",
     });
     provider.stageSlack.mockResolvedValue({ id: "delivery-1", status: "pending" });
+    provider.publishSlack.mockResolvedValue({ outboxId: "delivery-1", status: "queued", queued: true });
+    provider.publishGithub.mockResolvedValue({ outboxId: "github-delivery-1", status: "queued", queued: true });
     provider.queueSlack.mockResolvedValue(true);
     provider.projectRoute.mockResolvedValue(null);
     provider.slackChannels.mockResolvedValue({});
@@ -166,18 +171,16 @@ describe("connection capability contracts", () => {
     })).toThrow("cannot contain credentials");
   });
 
-  it("executes GitHub with the internal token but never returns it", async () => {
+  it("queues GitHub through the unified transport without resolving credentials", async () => {
     const DB = new CapabilityDb();
     const result = await executeConnectionCapability({ DB: DB as unknown as D1Database, TASK_QUEUE: {} as Queue }, githubCreate());
-    expect(provider.installationToken).toHaveBeenCalledOnce();
-    expect(provider.createIssue).toHaveBeenCalledWith(
-      "provider-secret-token",
-      "acme",
-      "checkout",
-      expect.objectContaining({ body: expect.stringContaining("<!-- noxcue:checkout -->") }),
-    );
+    expect(provider.installationToken).not.toHaveBeenCalled();
+    expect(provider.publishGithub).toHaveBeenCalledWith(expect.objectContaining({ DB }), expect.objectContaining({
+      operation: "github.issue.create", idempotencyKey: BASE.idempotencyKey,
+      input: expect.objectContaining({ idempotencyMarker: "<!-- noxcue:checkout -->" }),
+    }));
     expect(JSON.stringify(result)).not.toContain("provider-secret-token");
-    expect(result).toMatchObject({ provider: "github", status: "completed", result: { issueNumber: 42, created: true } });
+    expect(result).toMatchObject({ provider: "github", status: "queued", result: { deliveryId: "github-delivery-1", queued: true } });
   });
 
   it("returns the stored receipt for an identical retry", async () => {
@@ -186,7 +189,7 @@ describe("connection capability contracts", () => {
     const first = await executeConnectionCapability(env, githubCreate());
     const second = await executeConnectionCapability(env, githubCreate());
     expect(second).toEqual(first);
-    expect(provider.createIssue).toHaveBeenCalledOnce();
+    expect(provider.publishGithub).toHaveBeenCalledOnce();
   });
 
   it("denies a repository outside the project before resolving credentials", async () => {
@@ -213,7 +216,10 @@ describe("connection capability contracts", () => {
         input: { route: "noxfeed_release_notes", message: { text: "Released", blocks: [] } },
       },
     );
-    expect(provider.stageSlack).toHaveBeenCalledWith(DB, expect.objectContaining({ channelId: "channel-1" }));
+    expect(provider.publishSlack).toHaveBeenCalledWith(expect.objectContaining({ DB }), expect.objectContaining({
+      route: "activity_release",
+      idempotencyKey: "release:42",
+    }));
     expect(result).toMatchObject({ provider: "slack", status: "queued", result: { deliveryId: "delivery-1", queued: true } });
   });
 

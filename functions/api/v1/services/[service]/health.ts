@@ -14,7 +14,6 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   if (result.response) return result.response;
   const service = result.body!.services.find((item) => item.id === serviceId)!;
   const checks = [
-    { id: "service_enabled", state: service.enabled ? "pass" : "fail", required: true },
     {
       id: "service_runtime",
       state: service.runtime.state === "ready" ? "pass" : "fail",
@@ -28,7 +27,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       detail: connection.state,
     })),
   ];
-  const state = !service.enabled ? "disabled" : checks.some((check) => check.required && check.state === "fail") ? "blocked" : checks.some((check) => check.state === "warn") ? "degraded" : "healthy";
+  const state = checks.some((check) => check.required && check.state === "fail") ? "blocked" : checks.some((check) => check.state === "warn") ? "degraded" : "healthy";
   return v1Response({
     apiVersion: API_VERSION,
     organization: result.body!.organization,

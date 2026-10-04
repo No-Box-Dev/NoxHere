@@ -1,15 +1,4 @@
-import { getInstallationIdForOrg, getInstallationToken } from "./github-app.js";
-import { upsertIssue } from "./github-sync.js";
-import {
-  createRepositoryIssue,
-  ensureRepositoryLabels,
-  findIssueByBodyMarker,
-} from "./github-issues.js";
-import {
-  queueOutboxDelivery,
-  stageSlackDelivery,
-} from "./delivery-outbox.js";
-import { resolveSlackChannels, resolveSlackConnectionId, resolveSlackRoute } from "./slack.js";
+import { publishGitHubTransport, publishSlackTransport } from "./transport-outbox";
 import { getNoxSpotIssueResponse, getNoxSpotSlackResponse } from "./noxspot-response.js";
 import { isAppEnabled } from "./apps.js";
 import { storeNoxSpotReport } from "./noxspot-resolution.js";
@@ -20,52 +9,42 @@ export async function createNoxSpotGitHubIssue(env, capture) {
     return { skipped: "service_disabled", service: "noxspot" };
   }
   const resolvedCapture = await resolveCaptureFromSetup(env.DB, capture);
-  const installationId = await getInstallationIdForOrg(env.DB, resolvedCapture.orgId);
-  if (!installationId) throw new Error(`GitHub App not installed for org ${resolvedCapture.orgId}`);
-  const token = await getInstallationToken(env, installationId);
   const response = await getNoxSpotIssueResponse(env, resolvedCapture);
+  if (!resolvedCapture.projectId) throw new Error(`NoxSpot site ${resolvedCapture.siteId} is not linked to a project`);
+  const staged = await publishGitHubTransport(env, {
+    orgId: resolvedCapture.orgId,
+    projectId: resolvedCapture.projectId,
+    route: "feedback",
+    idempotencyKey: `noxspot:${resolvedCapture.captureId}`,
+    operation: "github.issue.create",
+    input: { issue: response.issue, idempotencyMarker: response.idempotencyMarker },
+    correlationId: resolvedCapture.captureId,
+    callback: { kind: "noxspot_issue", payload: resolvedCapture },
+  });
+  return { outboxId: staged.outboxId, status: staged.status, queued: staged.queued };
+}
 
-  const marker = response.idempotencyMarker;
-  let issue = await findIssueByBodyMarker(token, resolvedCapture.ownerId, resolvedCapture.repo, marker);
-  if (!issue) {
-    await ensureRepositoryLabels(token, resolvedCapture.ownerId, resolvedCapture.repo, response.issue.labels);
-    issue = await createRepositoryIssue(token, resolvedCapture.ownerId, resolvedCapture.repo, {
-      title: response.issue.title,
-      body: response.issue.body,
-      labels: response.issue.labels.map((label) => label.name),
-    });
-  }
-
-  await upsertIssue(env.DB, resolvedCapture.orgId, resolvedCapture.repo, issue);
-  await storeNoxSpotReport(env, resolvedCapture, issue);
-  await storeEvent(env.DB, resolvedCapture, issue);
-  const slackChannels = await resolveSlackChannels(env.DB, resolvedCapture.orgId, resolvedCapture.projectId);
-  const slackChannelId = resolveSlackRoute(
-    slackChannels,
-    "noxspot",
-    resolvedCapture.slackChannelId,
-  );
-  const slackConnectionId = resolveSlackConnectionId(
-    slackChannels,
-    "noxspot",
-    resolvedCapture.slackChannelId ? resolvedCapture.slackConnectionId : "",
-  );
-  if (slackChannelId) {
-    const slackResponse = await getNoxSpotSlackResponse(env, resolvedCapture, issue);
-    const delivery = await stageSlackDelivery(env.DB, {
-      orgId: resolvedCapture.orgId,
-      projectId: resolvedCapture.projectId,
-      source: "noxspot",
-      sourceId: resolvedCapture.captureId,
-      siteId: resolvedCapture.siteId,
-      connectionId: slackConnectionId,
-      channelId: slackChannelId,
-      payload: { message: slackResponse.message },
-    });
-    if (delivery?.id && delivery.status !== "delivered") {
-      await queueOutboxDelivery(env, delivery.id, resolvedCapture.ownerId);
-    }
-  }
+export async function finalizeNoxSpotGitHubIssue(env, { receipt, payload }) {
+  if (receipt.provider !== "github") throw new Error("NoxSpot callback requires a GitHub receipt");
+  if (receipt.status !== "delivered") return { skipped: receipt.status };
+  if (receipt.result?.resourceType !== "issue") throw new Error("NoxSpot callback requires an issue receipt");
+  const issue = {
+    number: Number(receipt.result.resourceId),
+    html_url: receipt.result.url,
+    state: receipt.result.state ?? "open",
+  };
+  if (!Number.isInteger(issue.number) || issue.number <= 0 || !issue.html_url) throw new Error("NoxSpot issue receipt is incomplete");
+  await storeNoxSpotReport(env, payload, issue);
+  await storeEvent(env.DB, payload, issue);
+  const slackResponse = await getNoxSpotSlackResponse(env, payload, issue);
+  await publishSlackTransport(env, {
+    orgId: payload.orgId,
+    projectId: payload.projectId,
+    route: "feedback",
+    routeContext: { kind: "site", id: payload.siteId },
+    idempotencyKey: `noxspot:${payload.captureId}`,
+    message: slackResponse.message,
+  });
   return { number: issue.number, url: issue.html_url };
 }
 

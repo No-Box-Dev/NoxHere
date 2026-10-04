@@ -2,7 +2,7 @@ import { apiGet } from "./api";
 
 export interface OperatorServiceUsage {
   id: "noxconnect" | "noxticket" | "noxfeed" | "noxspot" | "noxcue";
-  enabledOrganizations: number;
+  availableOrganizations: number;
   telemetryConnected: boolean;
   users: { total: number; daily: number; weekly: number; monthly: number } | null;
   lastEventAt: string | null;
@@ -16,7 +16,7 @@ export interface OperatorOrganizationUsage {
   knownAccounts: number;
   activeAccounts30d: number;
   lastActiveAt: string | null;
-  enabledServices: OperatorServiceUsage["id"][];
+  availableServices: OperatorServiceUsage["id"][];
 }
 
 export interface OperatorUsageResponse {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type {
   NoxCueEventsResponse,
@@ -231,15 +231,15 @@ export function useNoxCueMetrics(sourceId: string) {
   });
 }
 
-export function useUpdateNoxCueError(sourceId: string) {
+export function useUpdateNoxCueError(sourceId: string, projectId: string | null) {
   const { selectedOrg } = useAuth();
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ fingerprint, status }: {
-      fingerprint: string;
+    mutationFn: ({ incidentId, status }: {
+      incidentId: string;
       status: "open" | "acknowledged" | "resolved";
-    }) => apiPut<{ status: "open" | "acknowledged" | "resolved"; updatedAt: string }>(
-      `/api/v1/cues/errors/${encodeURIComponent(sourceId)}/${encodeURIComponent(fingerprint)}`,
+    }) => apiPatch<{ incident: { id: string; status: "open" | "acknowledged" | "resolved"; updatedAt: string } }>(
+      `/api/v1/projects/${encodeURIComponent(projectId!)}/incidents/${encodeURIComponent(incidentId)}`,
       { status },
     ),
     onSuccess: () => client.invalidateQueries({ queryKey: ["noxcue-metrics", selectedOrg, sourceId] }),

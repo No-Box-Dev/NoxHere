@@ -18,13 +18,38 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
   delete document.paths[path];
 }
 
-document.servers = [{ url: "https://app.noxhere.com", description: "Hosted NoxConnect API" }];
+// Capabilities are part of every project. The former project/service switch
+// endpoint and its schemas are intentionally absent from the public contract.
+delete document.paths["/api/v1/projects/{projectId}/services/{service}"];
+delete document.components.schemas.ProjectServiceUpdate;
+delete document.components.schemas.ProjectServiceState;
+
+const noxSpotReport = document.components.schemas.NoxSpotReport;
+if (noxSpotReport?.properties) {
+  noxSpotReport.required = ["siteId", "description"];
+  noxSpotReport.properties.description = {
+    type: "string",
+    minLength: 1,
+    maxLength: 10_000,
+    description: "The required feedback description. NoxSpot derives the GitHub issue title from its first line when title is omitted.",
+  };
+  noxSpotReport.properties.title = {
+    type: "string",
+    minLength: 1,
+    maxLength: 256,
+    description: "Optional explicit issue title for customized forms. The standard form omits this field.",
+  };
+}
+
+document.info.title = "NoxConnect API";
+document.info.description = "One public API for NoxConnect identity, projects, activity, incidents, issues, feedback, and integrations.";
+document.servers = [{ url: "https://app.noxhere.com", description: "Hosted NoxConnect API (compatibility domain)" }];
 document.tags = [
   { name: "NoxConnect", description: "Connections, identity, repositories, projects, and shared delivery." },
-  { name: "NoxTicket", description: "Features, workflow, specifications, and attachments." },
-  { name: "NoxFeed", description: "Current work, engineering activity, and narratives." },
-  { name: "NoxSpot", description: "Sites, website feedback capture, and screenshots." },
-  { name: "NoxCue", description: "Event sources, ingest keys, customer-health events, and metrics." },
+  { name: "Planning", description: "Features, workflow, specifications, and attachments." },
+  { name: "Activity", description: "Current work, engineering activity, and narratives." },
+  { name: "Feedback", description: "Sites, website feedback capture, and screenshots." },
+  { name: "Incidents", description: "Event sources, ingest keys, customer-health events, and metrics." },
 ];
 document.components.schemas.JsonValue = {
   description: "Legacy response whose stable typed schema has not yet been promoted into API v1.",
@@ -120,6 +145,16 @@ document.components.schemas.FeatureList = {
   type: "array",
   items: { "$ref": "#/components/schemas/Feature" },
 };
+document.components.schemas.FeatureAttachment = {
+  allOf: [{ "$ref": "#/components/schemas/ApiRecord" }],
+  description: "Metadata for one feature screenshot or attachment.",
+};
+document.components.schemas.FeatureAttachmentList = {
+  type: "object",
+  additionalProperties: false,
+  required: ["attachments"],
+  properties: { attachments: { type: "array", items: { "$ref": "#/components/schemas/FeatureAttachment" } } },
+};
 document.components.schemas.Spec = {
   allOf: [{ "$ref": "#/components/schemas/ApiRecord" }],
   description: "NoxTicket specification with its project, workflow state, content, and archive metadata.",
@@ -198,7 +233,7 @@ document.components.schemas.ApiTokenCreate = {
   properties: {
     name: { type: "string", minLength: 1, maxLength: 80 },
     environment: { type: "string", enum: ["live", "test"], default: "live" },
-    projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxConnect project. The token cannot access resources assigned to another project." },
+    projectId: { type: "string", minLength: 1, maxLength: 240, description: "One active NoxConnect project. The token cannot access resources assigned to another project." },
     scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|(noxfeed|noxspot|noxcue):(read|write))$" } },
     expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
   },
@@ -287,11 +322,11 @@ document.components.securitySchemes.csrfProof = {
 };
 document.components.securitySchemes.noxApiToken = {
   type: "http", scheme: "bearer", bearerFormat: "nox_sk_{environment}_…",
-  description: "Organization- and project-bound, service-scoped NoxHere automation token. Store as a secret; the value is shown only once.",
+  description: "Organization- and project-bound, capability-scoped NoxConnect automation token. Store as a secret; the value is shown only once.",
 };
 document.components.securitySchemes.nativeSession = {
   type: "http", scheme: "bearer", bearerFormat: "nox_at_…",
-  description: "Short-lived first-party native application session issued by NoxHere. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in NoxConnect.",
+  description: "Short-lived NoxConnect CLI or native session. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in the private connectors service.",
 };
 document.components.parameters.projectContext = {
   name: "X-Project-ID",
@@ -317,13 +352,13 @@ for (const pathItem of Object.values(document.paths)) {
 document.paths["/api/v1/auth/native/device/start"] = {
   post: nativeAuthOperation("startNativeDeviceAuthorization", "Start native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client"],
-    properties: { client: { const: "noxfeed-mac" } },
+    properties: { client: { type: "string", enum: ["noxconnect-cli", "noxfeed-mac"] } },
   }, "Returns an opaque NoxConnect device handle plus the GitHub verification URI and user code."),
 };
 document.paths["/api/v1/auth/native/device/poll"] = {
   post: nativeAuthOperation("pollNativeDeviceAuthorization", "Poll native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client", "device_code"],
-    properties: { client: { const: "noxfeed-mac" }, device_code: { type: "string", pattern: "^noxdc_" } },
+    properties: { client: { type: "string", enum: ["noxconnect-cli", "noxfeed-mac"] }, device_code: { type: "string", pattern: "^noxid_" } },
   }, "NoxConnect completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials."),
 };
 document.paths["/api/v1/auth/native/refresh"] = {
@@ -377,6 +412,14 @@ const clientRouteContracts = [
   ["/api/v1/engineer-stats", [["get", "getEngineerStats", "Read current work counts by engineer", "member"]]],
   ["/api/v1/events", [["get", "listFeedEvents", "List detailed NoxFeed events", "member"]]],
   ["/api/v1/events/{id}", [["get", "getFeedEvent", "Read one detailed NoxFeed event", "member"]]],
+  ["/api/v1/features/{number}/attachments", [
+    ["get", "listFeatureAttachments", "List feature screenshots and attachments", "member"],
+    ["post", "uploadFeatureAttachment", "Attach a screenshot or document to a feature", "member"],
+  ]],
+  ["/api/v1/features/{number}/attachments/{attachmentId}", [
+    ["get", "viewFeatureAttachment", "View a feature attachment", "member"],
+    ["delete", "deleteFeatureAttachment", "Delete a feature attachment", "member"],
+  ]],
   ["/api/v1/github/comments", [["get", "getGitHubComments", "Read comments for a tracked pull request", "member"]]],
   ["/api/v1/github/details", [["get", "getGitHubDetails", "Read live details for a tracked issue or pull request", "member"]]],
   ["/api/v1/github/rate-limit", [["get", "getGitHubRateLimit", "Read the connected GitHub installation rate limit", "member"]]],
@@ -410,6 +453,48 @@ for (const [path, methods] of clientRouteContracts) {
   for (const [method, operationId, summary, role, organization = true] of methods) {
     document.paths[path][method] ??= firstPartyClientOperation(operationId, summary, role, organization, method);
   }
+}
+
+const createProject = document.paths["/api/v1/projects"]?.post;
+if (createProject) {
+  createProject.summary = "Create a project and choose its repositories";
+  createProject.description = "Creates an enabled organization project. When repositories are omitted, every active repository not owned by another enabled project is included by default.";
+  createProject.requestBody = {
+    required: true,
+    content: { "application/json": { schema: {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: { type: "string", minLength: 1, maxLength: 100 },
+        repositories: { type: "array", uniqueItems: true, items: { type: "string", minLength: 1 } },
+      },
+      additionalProperties: false,
+    } } },
+  };
+}
+
+const canonicalCapabilities = {
+  activity: { source: "/api/v1/feed", operationId: "getProjectActivity", summary: "Get project activity" },
+  incidents: { source: "/api/v1/cues/project-overview", operationId: "getProjectIncidents", summary: "Get project incidents and health" },
+  issues: { source: "/api/v1/issues", operationId: "getProjectIssues", summary: "Get project issues" },
+  feedback: { source: "/api/v1/spots/project-overview", operationId: "getProjectFeedback", summary: "Get project feedback" },
+};
+for (const [capability, definition] of Object.entries(canonicalCapabilities)) {
+  const source = document.paths[definition.source]?.get;
+  if (!source) throw new Error(`Missing OpenAPI source operation ${definition.source}`);
+  const operation = structuredClone(source);
+  operation.operationId = definition.operationId;
+  operation.summary = definition.summary;
+  operation.parameters = [
+    {
+      name: "id", in: "path", required: true,
+      description: "Stable NoxConnect project identifier",
+      schema: { type: "string", minLength: 1, maxLength: 240 },
+    },
+    ...(operation.parameters ?? []).filter((parameter) => parameter?.$ref !== "#/components/parameters/projectContext"),
+  ];
+  document.paths[`/api/v1/projects/{id}/${capability}`] = { get: operation };
+  source.deprecated = true;
 }
 document.paths["/api/v1/cues/project-overview"].get["x-guest-access"] = "read";
 document.paths["/api/v1/spots/project-overview"].get["x-guest-access"] = "read";
@@ -446,6 +531,7 @@ function automationScope(path, method) {
   if (method === "get" && service) return `${service}:read`;
   if (method === "get" && path === "/api/v1/feed") return "noxfeed:read";
   path = compatibilityApiPath(path);
+  if (method === "patch" && /^\/api\/projects\/[^/]+\/incidents\/[^/]+$/.test(path)) return "noxcue:write";
   if (method === "get" && /^\/api\/(?:issues|prs)(?:\/|$)/.test(path)) return "noxfeed:read";
   if (/^\/api\/spots\/sites(?:\/|$)/.test(path)) return `noxspot:${access}`;
   if (/^\/api\/cues\/sources(?:\/|$)/.test(path)) return `noxcue:${access}`;
@@ -454,11 +540,42 @@ function automationScope(path, method) {
   return null;
 }
 
+document.paths["/api/v1/projects/{id}/incidents/{incidentId}"] = {
+  parameters: [
+    { name: "id", in: "path", required: true, description: "Stable NoxConnect project identifier", schema: { type: "string", minLength: 1 } },
+    { name: "incidentId", in: "path", required: true, description: "Immutable incident identifier returned by an incident read", schema: { type: "string", pattern: "^inc_[a-f0-9]{32}$" } },
+  ],
+  get: {
+    operationId: "getProjectIncident",
+    summary: "Get an incident by its fixed ID",
+    description: "Returns one incident, including acknowledged or resolved incidents, when it belongs to the authenticated project.",
+    responses: { "200": { description: "Incident" }, "404": { description: "Incident not found in the authenticated project" } },
+    "x-required-role": "member",
+    "x-automation-scope": "noxcue:read",
+  },
+  patch: {
+    operationId: "updateProjectIncidentStatus",
+    summary: "Update an incident by its fixed ID",
+    description: "Acknowledge, resolve, or reopen one incident. Fingerprints remain grouping data and are never used as URL identifiers.",
+    requestBody: {
+      required: true,
+      content: { "application/json": { schema: {
+        type: "object", additionalProperties: false, required: ["status"],
+        properties: { status: { type: "string", enum: ["open", "acknowledged", "resolved"] } },
+      } } },
+    },
+    responses: { "200": { description: "Updated incident" }, "404": { description: "Incident not found in the authenticated project" } },
+    "x-required-role": "admin",
+    "x-automation-scope": "noxcue:write",
+  },
+};
+
 document.paths["/api/v1/cues/errors/{sourceId}/{fingerprint}"] = {
   put: {
     operationId: "updateNoxCueErrorStatus",
     summary: "Update an error incident status",
-    description: "Acknowledge, resolve, or reopen one NoxCue error group in the optional project context.",
+    description: "Deprecated compatibility operation. Use PATCH /api/v1/projects/{id}/incidents/{incidentId}; fingerprints can contain reserved URL characters.",
+    deprecated: true,
     parameters: [
       { name: "sourceId", in: "path", required: true, schema: { type: "string" } },
       { name: "fingerprint", in: "path", required: true, schema: { type: "string" } },
@@ -543,6 +660,7 @@ for (const [path, parameters] of Object.entries(queryParameters)) {
 }
 
 delete document.components.schemas.NoxFeedConfigPatch?.properties?.projectScope;
+delete document.components.schemas.NoxConnectConfigPatch?.properties?.enabledServices;
 setJsonSuccessSchema("/api/v1/feed", "get", "FeedPage");
 for (const path of ["/api/v1/issues", "/api/v1/prs"]) setJsonSuccessSchema(path, "get", "RecordCollection");
 for (const path of ["/api/v1/issues/{repo}/{number}", "/api/v1/prs/{repo}/{number}", "/api/v1/engineer-activity", "/api/v1/engineer-stats", "/api/v1/events", "/api/v1/events/{id}", "/api/v1/github/comments", "/api/v1/github/details", "/api/v1/search"]) {
@@ -556,6 +674,9 @@ setJsonSuccessSchema("/api/v1/features", "get", "FeatureList");
 setJsonSuccessSchema("/api/v1/features", "post", "Feature");
 setJsonSuccessSchema("/api/v1/features/{number}", "patch", "Feature");
 setJsonSuccessSchema("/api/v1/features/{number}", "delete", "MutationReceipt");
+setJsonSuccessSchema("/api/v1/features/{number}/attachments", "get", "FeatureAttachmentList");
+setJsonSuccessSchema("/api/v1/features/{number}/attachments", "post", "FeatureAttachment");
+setJsonSuccessSchema("/api/v1/features/{number}/attachments/{attachmentId}", "delete", "MutationReceipt");
 setJsonSuccessSchema("/api/v1/specs", "get", "SpecList");
 setJsonSuccessSchema("/api/v1/specs", "post", "Spec");
 setJsonSuccessSchema("/api/v1/specs/{specId}", "get", "Spec");
@@ -596,9 +717,6 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
     if (!isV1 && ["member", "admin"].includes(operation["x-authentication"])) {
       operation.responses["401"] ??= { description: "Authentication required" };
       operation.responses["403"] ??= { description: "Insufficient access" };
-      if (/^\/api\/(?:features|specs|spots|cues)(?:\/|$)/.test(path) || path === "/api/v1/feed") {
-        operation.responses["409"] ??= { description: "Product service is not enabled" };
-      }
     }
     if (["member", "admin"].includes(operation["x-authentication"])) {
       const organization = operation["x-organization-optional"] ? false : true;
@@ -625,6 +743,8 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
   }
 }
 
+normalizePublicProse(document);
+
 const formatted = `${JSON.stringify(document, null, 2)}\n`;
 if (process.argv.includes("--check")) {
   if (formatted !== original) {
@@ -633,6 +753,22 @@ if (process.argv.includes("--check")) {
   }
 } else {
   await writeFile(target, formatted);
+}
+
+function normalizePublicProse(value) {
+  if (!value || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value)) {
+    if ((key === "summary" || key === "description") && typeof child === "string") {
+      value[key] = child
+        .replaceAll("NoxHere", "NoxConnect")
+        .replaceAll("NoxTicket", "Planning")
+        .replaceAll("NoxFeed", "Activity")
+        .replaceAll("NoxCue", "Incidents")
+        .replaceAll(/NoxSpot(?!\.(?:identify|init)\b)/g, "Feedback");
+      continue;
+    }
+    normalizePublicProse(child);
+  }
 }
 
 function parameter(name, schema, description) {
@@ -705,12 +841,17 @@ function firstPartyClientOperation(operationId, summary, role, organization, met
 
 function serviceTag(path) {
   const compatibilityPath = compatibilityApiPath(path);
-  if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(compatibilityPath)) return "NoxTicket";
+  if (/^\/api\/projects\/[^/]+\/activity$/.test(compatibilityPath)) return "Activity";
+  if (/^\/api\/projects\/[^/]+\/issues$/.test(compatibilityPath)) return "Activity";
+  if (/^\/api\/projects\/[^/]+\/incidents$/.test(compatibilityPath)) return "Incidents";
+  if (/^\/api\/projects\/[^/]+\/incidents\/[^/]+$/.test(compatibilityPath)) return "Incidents";
+  if (/^\/api\/projects\/[^/]+\/feedback$/.test(compatibilityPath)) return "Feedback";
+  if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(compatibilityPath)) return "Planning";
   if (path === "/api/v1/feed"
       || /^\/api\/(?:issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(compatibilityPath)
-      || /^\/api\/github\/(?:comments|details)$/.test(compatibilityPath)) return "NoxFeed";
-  if (compatibilityPath.startsWith("/api/spots")) return "NoxSpot";
-  if (compatibilityPath.startsWith("/api/cues")) return "NoxCue";
+      || /^\/api\/github\/(?:comments|details)$/.test(compatibilityPath)) return "Activity";
+  if (compatibilityPath.startsWith("/api/spots")) return "Feedback";
+  if (compatibilityPath.startsWith("/api/cues")) return "Incidents";
   return "NoxConnect";
 }
 

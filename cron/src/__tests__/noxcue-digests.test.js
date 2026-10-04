@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+const publishSlackTransport = vi.hoisted(() => vi.fn(async () => ({ outboxId: "delivery-1", status: "queued", queued: true })));
+vi.mock("../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
 import {
   localDateTime,
   previousPeriod,
@@ -96,9 +98,12 @@ describe("NoxCue daily digest periods", () => {
         },
       },
       {},
+      {},
       { organizationId: 7, projectId: "playnist", sourceId: "source-1" },
     );
-    expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_slack", outboxId: "delivery-1" }));
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      route: "engagement", routeContext: { kind: "source", id: "source-1" },
+    }));
     expect(statements.find(({ sql }) => sql.includes("FROM cue_sources source"))?.sql).toContain("project_slack_routes");
     expect(statements.find(({ sql }) => sql.includes("FROM cue_sources source"))?.sql).toContain("project_routing_settings");
     expect(statements.some(({ sql }) => sql.includes("INSERT OR IGNORE INTO cue_digest_runs"))).toBe(true);

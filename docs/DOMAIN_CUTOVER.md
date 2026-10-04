@@ -1,5 +1,11 @@
 # Nox domain cutover
 
+> **Superseded historical plan.** Do not create separate capability product
+> sites from this document. NoxConnect is now the single public product, and
+> `app.noxhere.com` remains its compatibility application/API origin until a
+> separately documented host migration. The names below describe the topology
+> considered before consolidation.
+
 `noxhere.com` is the public home for the Nox product family. The product name is
 **Nox**; `noxhere.com` is its address, not another service name.
 

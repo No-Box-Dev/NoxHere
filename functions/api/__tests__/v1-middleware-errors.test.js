@@ -135,6 +135,29 @@ describe("v1 middleware errors", () => {
     expect(handlerProjectId).toBeNull();
   });
 
+  it("does not resolve an optional GitHub connection for provider-independent bootstrap reads", async () => {
+    const signed = await signedRequest("/api/v1/me", { connectionId: "noxic_expired" });
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const middlewareContext = {
+      request: signed.request,
+      env: {
+        NOXHERE_INTERNAL_SECRET: signed.secret,
+        DB: { prepare: () => ({ bind: () => ({ first: async () => ({ id: 7, github_login: "acme", suspended_at: null }) }) }) },
+      },
+      data: {},
+      next() { return Response.json({ login: middlewareContext.data.userLogin }); },
+    };
+    try {
+      const response = await onRequest(middlewareContext);
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({ login: "octocat" });
+      expect(middlewareContext.data.token).toBeNull();
+      expect(warning).not.toHaveBeenCalled();
+    } finally {
+      warning.mockRestore();
+    }
+  });
+
   it("honors an optional project selector for integration status", async () => {
     const signed = await signedRequest(
       "/api/v1/integrations/status",
@@ -163,6 +186,36 @@ describe("v1 middleware errors", () => {
     const response = await onRequest(middlewareContext);
     expect(response.status).toBe(204);
     expect(handlerProjectId).toBe("project-1");
+  });
+
+  it("lets NoxTicket resolve a native feature item instead of the retired projection", async () => {
+    const signed = await signedRequest(
+      "/api/v1/features/3",
+      {},
+      { "X-Project-ID": "project-1" },
+      "PATCH",
+    );
+    const statements = [];
+    let continued = false;
+    const response = await onRequest({
+      request: signed.request,
+      env: {
+        NOXHERE_INTERNAL_SECRET: signed.secret,
+        DB: {
+          prepare(sql) {
+            statements.push(sql);
+            return { bind: () => ({ first: async () => sql.includes("FROM orgs")
+              ? { id: 7, github_login: "acme", suspended_at: null }
+              : { id: "project-1", archived: 0, enabled: 1 } }) };
+          },
+        },
+      },
+      data: {},
+      next() { continued = true; return new Response(null, { status: 204 }); },
+    });
+    expect(response.status).toBe(204);
+    expect(continued).toBe(true);
+    expect(statements.some((sql) => sql.includes("FROM features"))).toBe(false);
   });
 
   for (const pathname of [
@@ -314,8 +367,9 @@ describe("v1 middleware errors", () => {
     await expect(response.json()).resolves.toMatchObject({ error: { code: "guest_scope_forbidden" } });
   });
 
-  it("blocks a disabled product before its handler runs", async () => {
+  it("ignores legacy disabled-product settings", async () => {
     const signed = await signedRequest("/api/v1/spots/sites", {}, { "X-Project-ID": "project-1" });
+    let continued = false;
     const response = await onRequest({
       request: signed.request,
       env: {
@@ -331,20 +385,10 @@ describe("v1 middleware errors", () => {
         },
       },
       data: {},
-      next() { throw new Error("handler should not run"); },
+      next() { continued = true; return new Response(null, { status: 204 }); },
     });
-    expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({
-      apiVersion: 1,
-      error: {
-        code: "service_not_enabled",
-        message: "NoxSpot is not enabled. Enable it in NoxConnect before trying again.",
-        details: {
-          service: "noxspot",
-          remediation: { action: "enable_service", href: "/api/v1/services/noxspot/config" },
-        },
-      },
-    });
+    expect(response.status).toBe(204);
+    expect(continued).toBe(true);
   });
 
   it("lets the source-key-authenticated NoxCue gateway bypass GitHub auth", async () => {

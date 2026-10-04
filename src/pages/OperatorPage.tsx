@@ -8,10 +8,10 @@ import { Spinner } from "@/components/Spinner";
 
 const SERVICE_NAMES: Record<OperatorServiceUsage["id"], string> = {
   noxconnect: "NoxConnect",
-  noxticket: "NoxTicket",
-  noxfeed: "NoxFeed",
-  noxspot: "NoxSpot",
-  noxcue: "NoxCue",
+  noxticket: "Planning",
+  noxfeed: "Activity",
+  noxspot: "Feedback",
+  noxcue: "Incidents",
 };
 
 function formatDate(value: string | null) {
@@ -68,8 +68,8 @@ export default function OperatorPage() {
 
             <section>
               <div className="mb-3">
-                <h2 className="text-base font-semibold">Service adoption</h2>
-                <p className="mt-1 text-sm text-stone-500">Enabled organizations and available lifecycle usage by product.</p>
+                <h2 className="text-base font-semibold">Capability adoption</h2>
+                <p className="mt-1 text-sm text-stone-500">Available organizations and lifecycle usage by capability.</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {usage.data.services.map((service) => <ServiceCard key={service.id} service={service} />)}
@@ -84,7 +84,7 @@ export default function OperatorPage() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[780px] text-left text-sm">
                   <thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-400">
-                    <tr><th className="px-5 py-3">Organization</th><th className="px-4 py-3">Accounts</th><th className="px-4 py-3">30-day active</th><th className="px-4 py-3">Services</th><th className="px-5 py-3">Last activity</th></tr>
+                    <tr><th className="px-5 py-3">Organization</th><th className="px-4 py-3">Accounts</th><th className="px-4 py-3">30-day active</th><th className="px-4 py-3">Capabilities</th><th className="px-5 py-3">Last activity</th></tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100">
                     {usage.data.organizations.map((org) => (
@@ -92,7 +92,7 @@ export default function OperatorPage() {
                         <td className="px-5 py-4 font-medium">{org.login}{org.suspendedAt ? <span className="ml-2 text-xs text-red-600">Suspended</span> : null}</td>
                         <td className="px-4 py-4 tabular-nums">{org.knownAccounts}</td>
                         <td className="px-4 py-4 tabular-nums">{org.activeAccounts30d}</td>
-                        <td className="px-4 py-4"><div className="flex flex-wrap gap-1">{org.enabledServices.map((id) => <span key={id} className="rounded bg-stone-100 px-1.5 py-0.5 text-[11px] text-stone-600">{SERVICE_NAMES[id]}</span>)}</div></td>
+                        <td className="px-4 py-4"><div className="flex flex-wrap gap-1">{org.availableServices.map((id) => <span key={id} className="rounded bg-stone-100 px-1.5 py-0.5 text-[11px] text-stone-600">{SERVICE_NAMES[id]}</span>)}</div></td>
                         <td className="px-5 py-4 text-xs text-stone-500">{formatDate(org.lastActiveAt)}</td>
                       </tr>
                     ))}
@@ -116,9 +116,9 @@ function Metric({ label, value, detail, icon }: { label: string; value: number; 
 function ServiceCard({ service }: { service: OperatorServiceUsage }) {
   return (
     <article className="rounded-xl border border-stone-200 bg-white p-5">
-      <div className="flex items-start justify-between gap-3"><h3 className="font-semibold">{SERVICE_NAMES[service.id]}</h3><span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">{service.enabledOrganizations} orgs</span></div>
-      {service.users ? <div className="mt-5 grid grid-cols-4 gap-2 text-center"><UsageNumber label="Total" value={service.users.total} /><UsageNumber label="DAU" value={service.users.daily} /><UsageNumber label="WAU" value={service.users.weekly} /><UsageNumber label="MAU" value={service.users.monthly} /></div> : <div className="mt-5 rounded-lg border border-dashed border-stone-200 p-4 text-xs text-stone-500">Lifecycle telemetry is not connected for this product yet.</div>}
-      <p className="mt-4 text-xs text-stone-400">{service.telemetryConnected ? `Last signal: ${formatDate(service.lastEventAt)}` : "Adoption is currently based on workspace configuration."}</p>
+      <div className="flex items-start justify-between gap-3"><h3 className="font-semibold">{SERVICE_NAMES[service.id]}</h3><span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">{service.availableOrganizations} orgs</span></div>
+      {service.users ? <div className="mt-5 grid grid-cols-4 gap-2 text-center"><UsageNumber label="Total" value={service.users.total} /><UsageNumber label="DAU" value={service.users.daily} /><UsageNumber label="WAU" value={service.users.weekly} /><UsageNumber label="MAU" value={service.users.monthly} /></div> : <div className="mt-5 rounded-lg border border-dashed border-stone-200 p-4 text-xs text-stone-500">Lifecycle telemetry is not connected for this capability yet.</div>}
+      <p className="mt-4 text-xs text-stone-400">{service.telemetryConnected ? `Last signal: ${formatDate(service.lastEventAt)}` : "Lifecycle telemetry is not connected for this capability yet."}</p>
     </article>
   );
 }

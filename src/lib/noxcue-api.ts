@@ -34,6 +34,7 @@ export interface NoxCueMetricsResponse {
   }>;
   digests: Array<{ period: string; createdAt: string; status: string; deliveredAt: string | null }>;
   errorGroups: Array<{
+    id: string;
     fingerprint: string;
     title: string;
     errorCode: string | null;

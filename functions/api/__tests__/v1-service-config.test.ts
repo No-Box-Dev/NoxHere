@@ -120,8 +120,8 @@ describe("service-scoped configuration API", () => {
   it("accepts the weak ETag Cloudflare hands back for a compressed response", async () => {
     // We emit `"<revision>"`, but Cloudflare rewrites it to `W/"<revision>"`
     // whenever it compresses the JSON, and the browser echoes that back
-    // verbatim. Rejecting it made every production toggle fail with 412.
-    const raw = JSON.stringify({ apps: { noxticket: true } });
+    // verbatim.
+    const raw = JSON.stringify({ newRepoDefault: "include" });
     const initial = context({ service: "noxconnect", raw });
     const etag = (await onRequestGet(initial.ctx as never)).headers.get("ETag")!;
 
@@ -129,12 +129,12 @@ describe("service-scoped configuration API", () => {
       service: "noxconnect",
       raw,
       method: "PATCH",
-      body: { enabledServices: { noxticket: false } },
+      body: { newRepositoryPolicy: "exclude" },
       etag: `W/${etag}`,
     });
     const response = await onRequestPatch(update.ctx as never);
     expect(response.status).toBe(200);
-    expect((await response.json() as any).config.enabledServices.noxticket).toBe(false);
+    expect((await response.json() as any).config.newRepositoryPolicy).toBe("exclude");
   });
 
   it("patches only fields owned by the selected service using compare-and-swap", async () => {
@@ -170,37 +170,36 @@ describe("service-scoped configuration API", () => {
   });
 
   it("inherits organization settings when the project has no settings row of its own", async () => {
-    const orgRaw = JSON.stringify({ apps: { noxfeed: false } });
+    const orgRaw = JSON.stringify({ newRepoDefault: "exclude" });
     const initial = context({ service: "noxconnect", raw: null, orgRaw });
     const getResponse = await onRequestGet(initial.ctx as never);
     const getBody = await getResponse.json() as any;
-    expect(getBody.config.enabledServices).toMatchObject({ noxfeed: false, noxticket: true });
+    expect(getBody.config.newRepositoryPolicy).toBe("exclude");
 
     const update = context({
       service: "noxconnect",
       raw: null,
       orgRaw,
       method: "PATCH",
-      body: { enabledServices: { noxticket: false } },
+      body: { newRepositoryPolicy: "include" },
       etag: getResponse.headers.get("ETag")!,
     });
     const response = await onRequestPatch(update.ctx as never);
     expect(response.status).toBe(200);
     expect(update.db.calls.runs[0].sql).toContain("INSERT OR IGNORE INTO project_config");
 
-    // The new project row must carry the organization's disabled services
-    // forward; seeding it from empty settings would silently re-enable NoxFeed.
+    // The new project row starts from the inherited organization settings.
     const written = JSON.parse(String(update.db.calls.runs[0].binds[2]));
-    expect(written.apps).toMatchObject({ noxfeed: false, noxticket: false });
-    expect((await response.json() as any).config.enabledServices).toMatchObject({ noxfeed: false, noxticket: false });
+    expect(written.newRepoDefault).toBe("include");
+    expect((await response.json() as any).config.newRepositoryPolicy).toBe("include");
   });
 
   it("ignores organization settings once the project owns a settings row", async () => {
-    const orgRaw = JSON.stringify({ apps: { noxfeed: false } });
-    const raw = JSON.stringify({ apps: { noxcue: false } });
+    const orgRaw = JSON.stringify({ newRepoDefault: "exclude" });
+    const raw = JSON.stringify({ newRepoDefault: "include" });
     const initial = context({ service: "noxconnect", raw, orgRaw });
     const getBody = await (await onRequestGet(initial.ctx as never)).json() as any;
-    expect(getBody.config.enabledServices).toMatchObject({ noxcue: false, noxfeed: true });
+    expect(getBody.config.newRepositoryPolicy).toBe("include");
   });
 
   it("rejects the removed nested NoxFeed project selector", async () => {

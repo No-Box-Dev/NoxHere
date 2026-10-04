@@ -1,8 +1,7 @@
-import { stageSlackDelivery, queueOutboxDelivery } from "../../functions/lib/delivery-outbox.js";
+import { publishSlackTransport } from "../../functions/lib/transport-outbox";
 import { isAppEnabled } from "../../functions/lib/apps.js";
 import { getNoxSpotDailyDigestResponse } from "../../functions/lib/noxspot-response.js";
 import { summarizeNoxSpotResolutions } from "../../functions/lib/noxspot-digest-ai.js";
-import { resolveSlackChannels, resolveSlackConnectionId, resolveSlackRoute } from "../../functions/lib/slack.js";
 import { localDateTime, previousPeriod } from "./noxcue-digests.js";
 
 const MAX_SITES_PER_TICK = 100;
@@ -248,18 +247,10 @@ export async function loadNoxSpotDailyDigestData(db: D1Database, site: SpotSite,
 async function createDigest(env: DigestEnv, site: SpotSite, period: string) {
   const sourceId = `daily-digest:${site.id}:${period}`;
   const existing = await env.DB.prepare(
-    "SELECT id FROM delivery_outbox WHERE source = 'noxspot' AND destination = 'slack' AND source_id = ? LIMIT 1",
+    "SELECT id FROM transport_outbox WHERE provider = 'slack' AND operation = 'slack.message.send' AND idempotency_key = ? LIMIT 1",
   ).bind(sourceId).first();
   if (existing) return { skipped: "already_created" };
 
-  const channels = await resolveSlackChannels(env.DB, site.org_id, site.project_id);
-  const channelId = resolveSlackRoute(channels, "noxspot", site.slack_channel_id || "");
-  if (!channelId) return { skipped: "no_destination" };
-  const connectionId = resolveSlackConnectionId(
-    channels,
-    "noxspot",
-    site.slack_channel_id ? site.slack_connection_id || "" : "",
-  );
   const digest = await loadNoxSpotDailyDigestData(env.DB, site, period);
   const solved = await summarizeNoxSpotResolutions(env, site.org_id, site.project_id, digest.solved);
   const response = await getNoxSpotDailyDigestResponse(
@@ -270,19 +261,15 @@ async function createDigest(env: DigestEnv, site: SpotSite, period: string) {
     solved,
     digest.totals,
   );
-  const delivery = await stageSlackDelivery(env.DB, {
+  const delivery = await publishSlackTransport(env, {
     orgId: site.org_id,
     projectId: site.project_id,
-    source: "noxspot",
-    sourceId,
-    siteId: site.id,
-    connectionId,
-    channelId,
-    payload: { message: response.message },
+    route: "feedback",
+    routeContext: { kind: "site", id: site.id },
+    idempotencyKey: sourceId,
+    message: response.message,
   });
-  if (!delivery?.id) throw new Error("NoxSpot daily digest outbox write failed");
-  const queued = delivery.status === "delivered" ? false : await queueOutboxDelivery(env, delivery.id, site.owner_id);
-  return { created: true, queued };
+  return { created: true, queued: delivery.queued };
 }
 
 export async function runNoxSpotDailyDigests(env: DigestEnv, nowMs = Date.now()) {

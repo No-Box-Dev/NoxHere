@@ -4,6 +4,7 @@ import { validate } from "../../../../lib/validate";
 import { getNoxDb, type NoxDatabaseEnv } from "../../../../lib/nox-db";
 import { getSlackChannel, resolveSlackChannels, resolveSlackInstall } from "../../../../lib/slack.js";
 import { requeueBlockedForSite } from "../../../../lib/delivery-outbox.js";
+import { requeueBlockedTransportCommands } from "../../../../lib/transport-outbox";
 import { noxSpotAuditStatement } from "../../../../lib/noxspot-audit";
 
 interface Ctx {
@@ -66,8 +67,12 @@ const UpdateSite = z.object({
       if (ids.has(blocks[index].id)) ctx.addIssue({ code: "custom", message: "Block IDs must be unique", path: [index, "id"] });
       ids.add(blocks[index].id);
     }
-    if (blocks.length > 0 && blocks.filter((block) => block.type === "title").length !== 1) {
-      ctx.addIssue({ code: "custom", message: "A custom form must contain exactly one title block" });
+    const descriptions = blocks.filter((block) => block.type === "description");
+    if (blocks.length > 0 && (descriptions.length !== 1 || descriptions[0].required !== true)) {
+      ctx.addIssue({ code: "custom", message: "A custom form must contain one required description block" });
+    }
+    if (blocks.filter((block) => block.type === "title").length > 1) {
+      ctx.addIssue({ code: "custom", message: "A custom form can contain at most one title block" });
     }
   }).optional(),
 }).refine((value) => Object.keys(value).length > 0, "No changes supplied");
@@ -172,6 +177,12 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
              AND destination = 'slack' AND status != 'delivered'`,
         ).bind(orgId, context.params.id).run();
       }
+    }
+    if (context.env.TASK_QUEUE) {
+      await requeueBlockedTransportCommands(
+        { DB: db, TASK_QUEUE: context.env.TASK_QUEUE },
+        { orgId, projectId: resourceProjectId, routeContext: { kind: "site", id: context.params.id } },
+      );
     }
   }
 

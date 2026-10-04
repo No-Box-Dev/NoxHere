@@ -46,6 +46,8 @@ const CreateFeatureBody = z.object({
   title: z.string().optional(),
   status: z.string().optional(),
   owners: z.array(z.unknown()).optional(),
+  description: z.string().max(20_000).optional(),
+  links: z.array(z.unknown()).optional(),
   // Validated by sanitizeSpecLinks (http/https only) before storage.
   specLinks: z.array(z.unknown()).optional(),
   // Optional — attaches the `backlog` label at create time so a new
@@ -65,6 +67,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const { orgId, projectId } = getCtx(context) as Ctx["data"];
   const url = new URL(context.request.url);
   const state = url.searchParams.get("state") || "open";
+  if (!["open", "closed", "all"].includes(state)) return errorResponse("Invalid feature state", 400);
 
   const delegated = await delegateFeatureList(context.env, {
     orgId,
@@ -74,18 +77,22 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   }, state);
   if (delegated) return delegated;
 
+  const allStates = state === "all";
   const featureRows = await context.env.DB
     .prepare(projectId
-      ? `SELECT ${FEATURE_COLUMNS} FROM features WHERE org_id = ? AND project_id = ? AND state = ? ORDER BY number ASC`
-      : `SELECT ${FEATURE_COLUMNS} FROM features WHERE org_id = ? AND state = ? ORDER BY number ASC`)
-    .bind(...(projectId ? [orgId, projectId, state] : [orgId, state]))
+      ? `SELECT ${FEATURE_COLUMNS} FROM features WHERE org_id = ? AND project_id = ?${allStates ? "" : " AND state = ?"} ORDER BY number ASC`
+      : `SELECT ${FEATURE_COLUMNS} FROM features WHERE org_id = ?${allStates ? "" : " AND state = ?"} ORDER BY number ASC`)
+    .bind(...(projectId ? [orgId, projectId, ...(allStates ? [] : [state])] : [orgId, ...(allStates ? [] : [state])]))
     .all();
 
-  const data = (featureRows.results as Record<string, any>[]).map((row) => ({
-    ...row,
-    assignees: JSON.parse(row.assignees_json || "[]"),
-    labels: JSON.parse(row.labels_json || "[]"),
-  }));
+  const data = (featureRows.results as Record<string, any>[]).map((row) => {
+    const issue = {
+      ...row,
+      assignees: JSON.parse(row.assignees_json || "[]"),
+      labels: JSON.parse(row.labels_json || "[]"),
+    };
+    return { ...issue, ...ghIssueToFeature(issue) };
+  });
 
   return jsonResponse(data);
 }
@@ -115,7 +122,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     projectId,
     userLogin: context.data.userLogin,
     isAdmin: context.data.isAdmin,
-  }, context.request, "create", undefined, rawBody);
+  }, context.request, "create", undefined, rawBody, orgLogin);
   if (delegated) return delegated;
 
   const parsed = validate(CreateFeatureBody, rawBody);
@@ -133,10 +140,8 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const owners = Array.isArray(payload?.owners)
     ? payload.owners.filter((o) => typeof o === "string" && /^[a-zA-Z0-9-]+$/.test(o)) as string[]
     : [];
-  // Features no longer carry a plan/description — all rich content lives
-  // in linked Specs. The issue body is just the metadata block.
-  const plan = "";
-  const specLinks = sanitizeSpecLinks(payload?.specLinks);
+  const description = payload?.description ?? "";
+  const links = sanitizeSpecLinks(payload?.links ?? payload?.specLinks);
 
   const installationId = await getInstallationIdForOrg(context.env.DB, orgId);
   if (!installationId) return errorResponse("GitHub App not installed for this org", 412);
@@ -152,9 +157,9 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   try {
     await ensureNoxTicketRepoLabels(token, orgLogin, stages);
 
-    const body = buildIssueBody(plan, {
+    const body = buildIssueBody(description, {
       statusHistory: [{ status, timestamp: new Date().toISOString() }],
-      ...(specLinks.length > 0 ? { specLinks } : {}),
+      ...(links.length > 0 ? { specLinks: links } : {}),
     });
 
     const backlog = payload?.backlog === true;

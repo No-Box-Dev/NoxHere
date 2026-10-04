@@ -12,8 +12,11 @@ vi.mock("../../lib/inactive-repos.js", () => ({
 import { getInactiveRepoSet } from "../../lib/inactive-repos.js";
 
 function makeDb({ firstResult = null, allResultsBySqlFragment = {} } = {}) {
+  const prepares = [];
   return {
+    _prepares: prepares,
     prepare(sql) {
+      prepares.push(sql);
       return {
         _sql: sql,
         bind() { return this; },
@@ -84,7 +87,7 @@ describe("GET /api/me", () => {
 });
 
 describe("GET /api/members", () => {
-  it("returns member rows from D1", async () => {
+  it("returns only verified organization members from D1", async () => {
     const db = makeDb({
       allResultsBySqlFragment: {
         "FROM members": [{ login: "alice", avatar_url: "a.png", kind: "human" }],
@@ -92,6 +95,7 @@ describe("GET /api/members", () => {
     });
     const res = await membersGet(makeCtx({ db }));
     expect(await res.json()).toEqual([{ login: "alice", avatar_url: "a.png", kind: "human" }]);
+    expect(db._prepares.some((sql) => sql.includes("kind = 'human'"))).toBe(true);
   });
 });
 

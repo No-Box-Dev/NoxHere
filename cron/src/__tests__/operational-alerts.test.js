@@ -1,17 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { stageSlackDelivery, queueOutboxDelivery, resolveSlackChannels } = vi.hoisted(() => ({
-  stageSlackDelivery: vi.fn(),
-  queueOutboxDelivery: vi.fn(),
-  resolveSlackChannels: vi.fn(),
+const { publishSlackTransport } = vi.hoisted(() => ({
+  publishSlackTransport: vi.fn(),
 }));
 
-vi.mock("../../../functions/lib/delivery-outbox.js", () => ({ stageSlackDelivery, queueOutboxDelivery }));
-vi.mock("../../../functions/lib/slack.js", () => ({
-  resolveSlackChannels,
-  resolveSlackRoute: (channels) => channels.fallbackChannelId || "",
-  resolveSlackConnectionId: (channels) => channels.fallbackConnectionId || "",
-}));
+vi.mock("../../../functions/lib/transport-outbox.ts", () => ({ publishSlackTransport }));
 
 import { runOperationalAlerts } from "../operational-alerts.js";
 
@@ -31,9 +24,7 @@ function database({ failures = [], deliveries = [] } = {}) {
 describe("operational Slack alerts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resolveSlackChannels.mockResolvedValue({ fallbackChannelId: "C-OPS", fallbackConnectionId: "conn-1" });
-    stageSlackDelivery.mockResolvedValue({ id: "alert-1", status: "pending" });
-    queueOutboxDelivery.mockResolvedValue(true);
+    publishSlackTransport.mockResolvedValue({ outboxId: "alert-1", status: "queued", queued: true });
   });
 
   it("stages a retry-safe alert without putting credentials or URLs in Slack", async () => {
@@ -49,22 +40,17 @@ describe("operational Slack alerts", () => {
     }] });
 
     expect(await runOperationalAlerts({ DB: db, TASK_QUEUE: {} })).toEqual({ candidates: 1, queued: 1, skipped: 0 });
-    expect(stageSlackDelivery).toHaveBeenCalledWith(db, expect.objectContaining({
-      source: "operations",
-      sourceId: "op_failure:42",
-      connectionId: "conn-1",
-      channelId: "C-OPS",
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.objectContaining({ DB: db }), expect.objectContaining({
+      route: "operations",
+      idempotencyKey: "operations:op_failure:42",
     }));
-    const payload = stageSlackDelivery.mock.calls[0][1].payload;
+    const payload = publishSlackTransport.mock.calls[0][1].message;
     expect(JSON.stringify(payload)).toContain("[credential removed]");
     expect(JSON.stringify(payload)).toContain("[url removed]");
     expect(JSON.stringify(payload)).not.toContain("ghp_secret");
-    expect(queueOutboxDelivery).toHaveBeenCalledWith(expect.anything(), "alert-1", "acme");
   });
 
-  it("records an unroutable alert in structured logs instead of throwing", async () => {
-    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
-    resolveSlackChannels.mockResolvedValue({});
+  it("leaves route resolution to the shared transport", async () => {
     const db = database({ deliveries: [{
       org_id: 7,
       project_id: "project-1",
@@ -76,9 +62,7 @@ describe("operational Slack alerts", () => {
       occurred_at: "2026-09-09T08:00:00Z",
     }] });
 
-    expect(await runOperationalAlerts({ DB: db })).toEqual({ candidates: 1, queued: 0, skipped: 1 });
-    expect(stageSlackDelivery).not.toHaveBeenCalled();
-    expect(JSON.parse(warning.mock.calls[0][0])).toMatchObject({ event: "operational_alert_unroutable", orgId: 7 });
-    warning.mockRestore();
+    expect(await runOperationalAlerts({ DB: db })).toEqual({ candidates: 1, queued: 1, skipped: 0 });
+    expect(publishSlackTransport).toHaveBeenCalledOnce();
   });
 });

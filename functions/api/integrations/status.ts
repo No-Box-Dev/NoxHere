@@ -27,17 +27,25 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     ? db.prepare(
       `SELECT
          SUM(CASE WHEN status IN ('pending','queued','processing','retrying') THEN 1 ELSE 0 END) AS pending_count,
-         SUM(CASE WHEN status IN ('blocked_configuration','failed') THEN 1 ELSE 0 END) AS blocked_count,
+         SUM(CASE WHEN status IN ('blocked_configuration','blocked','failed') THEN 1 ELSE 0 END) AS blocked_count,
          MAX(delivered_at) AS last_delivered_at
-       FROM delivery_outbox WHERE org_id = ? AND project_id = ? AND destination = 'slack'`,
-    ).bind(orgId, projectId)
+       FROM (
+         SELECT status, delivered_at FROM delivery_outbox WHERE org_id = ? AND project_id = ? AND destination = 'slack'
+         UNION ALL
+         SELECT status, delivered_at FROM transport_outbox WHERE org_id = ? AND project_id = ? AND provider = 'slack'
+       )`,
+    ).bind(orgId, projectId, orgId, projectId)
     : db.prepare(
       `SELECT
          SUM(CASE WHEN status IN ('pending','queued','processing','retrying') THEN 1 ELSE 0 END) AS pending_count,
-         SUM(CASE WHEN status IN ('blocked_configuration','failed') THEN 1 ELSE 0 END) AS blocked_count,
+         SUM(CASE WHEN status IN ('blocked_configuration','blocked','failed') THEN 1 ELSE 0 END) AS blocked_count,
          MAX(delivered_at) AS last_delivered_at
-       FROM delivery_outbox WHERE org_id = ? AND destination = 'slack'`,
-    ).bind(orgId);
+       FROM (
+         SELECT status, delivered_at FROM delivery_outbox WHERE org_id = ? AND destination = 'slack'
+         UNION ALL
+         SELECT status, delivered_at FROM transport_outbox WHERE org_id = ? AND provider = 'slack'
+       )`,
+    ).bind(orgId, orgId);
 
   const [org, installation, slackInstall, slackChannels, slackMetadata, slackDeliveries] = await Promise.all([
     db.prepare(

@@ -108,7 +108,7 @@ export async function loadEnabledNoxCueMetricKeys(db, orgId, projectId, sourceId
   ).bind(orgId, projectId, projectId, projectId, sourceId).all();
   const customKeys = (custom.results ?? []).flatMap((row) => {
     const key = String(row.metric_key);
-    return [key, `${key}.per_user`];
+    return [key, `${key}.per_mau`];
   });
   if (!projectId) return new Set([...NOXCUE_USER_METRIC_KEYS, ...customKeys]);
   const result = await db.prepare(
@@ -127,5 +127,6 @@ export function selectNoxCueDigestMetrics(digest, enabledKeys) {
     metrics: Object.fromEntries(Object.entries(digest.metrics).filter(([key]) => enabledKeys.has(key))),
     comparisons: Object.fromEntries(Object.entries(digest.comparisons).filter(([key]) => enabledKeys.has(key))),
     metricLabels: Object.fromEntries(Object.entries(digest.metricLabels ?? {}).filter(([key]) => enabledKeys.has(key))),
+    activityBreakdowns: Object.fromEntries(Object.entries(digest.activityBreakdowns ?? {}).filter(([key]) => enabledKeys.has(key))),
   };
 }

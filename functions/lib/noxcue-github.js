@@ -1,14 +1,10 @@
 import { getInstallationIdForOrg, getInstallationToken } from "./github-app.js";
-import { upsertIssue } from "./github-sync.js";
 import {
-  createRepositoryIssue,
-  createRepositoryIssueComment,
-  ensureRepositoryLabels,
   findIssueByBodyMarker,
   getRepositoryIssue,
-  updateRepositoryIssue,
 } from "./github-issues.js";
 import { isAppEnabled } from "./apps.js";
+import { publishGitHubTransport } from "./transport-outbox";
 
 export async function createOrUpdateNoxCueGitHubIssue(env, task) {
   if (!task?.incidentId) throw new Error("Invalid NoxCue GitHub issue task");
@@ -82,22 +78,35 @@ async function processIncident(env, incidentId) {
   if (!issue) issue = await findIssueByBodyMarker(token, row.github_login, row.repo, marker);
 
   const previous = issue?.state === "closed" ? issue : null;
-  let wroteIssue = false;
   if (issue?.state === "open") {
     const shouldUpdate = updateDue(row.last_github_update_at, row.repeat_interval_minutes)
       || presentation.latestRelease !== (row.last_github_release ?? null);
     if (shouldUpdate) {
-      issue = await updateRepositoryIssue(token, row.github_login, row.repo, issue.number, {
-        body: presentation.body,
+      const staged = await publishGitHubTransport(env, {
+        orgId: row.org_id,
+        projectId: row.project_id,
+        route: "incidents",
+        idempotencyKey: `noxcue:${incidentId}:${row.processing_occurrence_count}:update`,
+        operation: "github.issue.update",
+        input: { issueNumber: issue.number, issue: { body: presentation.body } },
+        correlationId: incidentId,
+        callback: { kind: "noxcue_incident", payload: callbackPayload(row, incidentId, issue, null, presentation.latestRelease, true) },
       });
-      wroteIssue = true;
       if (row.comment_on_repeat) {
-        await createRepositoryIssueComment(
-          token, row.github_login, row.repo, issue.number,
-          presentation.repeatComment,
-        );
+        await publishGitHubTransport(env, {
+          orgId: row.org_id,
+          projectId: row.project_id,
+          route: "incidents",
+          idempotencyKey: `noxcue:${incidentId}:${row.processing_occurrence_count}:comment`,
+          operation: "github.issue.comment",
+          input: { issueNumber: issue.number, body: presentation.repeatComment },
+          correlationId: incidentId,
+        });
       }
+      return { outboxId: staged.outboxId, status: staged.status, queued: staged.queued };
     }
+    await completeIncident(env, callbackPayload(row, incidentId, issue, null, presentation.latestRelease, false), issue);
+    return { number: issue.number, url: issue.html_url, deduplicated: true };
   } else {
     const createPresentation = previous
       ? requirePresentation(await env.NOXCUE_RESPONSE.buildGitHubIncident({
@@ -107,29 +116,69 @@ async function processIncident(env, incidentId) {
           occurrenceCount: row.occurrence_count,
         }, { url: previous.html_url }))
       : presentation;
-    await ensureRepositoryLabels(token, row.github_login, row.repo, createPresentation.labels);
-    issue = await createRepositoryIssue(token, row.github_login, row.repo, {
-      title: createPresentation.title,
-      body: createPresentation.body,
-      labels: createPresentation.labels.map((label) => label.name),
+    const staged = await publishGitHubTransport(env, {
+      orgId: row.org_id,
+      projectId: row.project_id,
+      route: "incidents",
+      idempotencyKey: `noxcue:${incidentId}:${row.processing_occurrence_count}:create`,
+      operation: "github.issue.create",
+      input: {
+        issue: { title: createPresentation.title, body: createPresentation.body, labels: createPresentation.labels },
+        idempotencyMarker: createPresentation.marker,
+      },
+      correlationId: incidentId,
+      callback: { kind: "noxcue_incident", payload: callbackPayload(row, incidentId, null, previous, createPresentation.latestRelease, true) },
     });
-    wroteIssue = true;
+    return { outboxId: staged.outboxId, status: staged.status, queued: staged.queued };
   }
+}
 
-  await upsertIssue(env.DB, row.org_id, row.repo, issue);
+function callbackPayload(row, incidentId, issue, previous, latestRelease, wroteIssue) {
+  return {
+    incidentId,
+    repo: row.repo,
+    issueNumber: issue?.number ?? null,
+    issueUrl: issue?.html_url ?? null,
+    issueCreatedAt: issue?.created_at ?? null,
+    previousIssueNumber: previous?.number ?? row.previous_issue_number ?? null,
+    previousIssueUrl: previous?.html_url ?? row.previous_issue_url ?? null,
+    latestRelease,
+    lastGitHubUpdateAt: row.last_github_update_at ?? null,
+    lastGitHubRelease: row.last_github_release ?? null,
+    wroteIssue,
+  };
+}
+
+export async function finalizeNoxCueGitHubIssue(env, { receipt, payload }) {
+  if (receipt.provider !== "github") throw new Error("NoxCue callback requires a GitHub receipt");
+  if (receipt.status !== "delivered") {
+    await env.DB.prepare(
+      "UPDATE cue_github_incidents SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?",
+    ).bind(receipt.error?.message ?? `GitHub transport ${receipt.status}`, new Date().toISOString(), payload.incidentId).run();
+    return { skipped: receipt.status };
+  }
+  const issue = receipt.result?.resourceType === "issue"
+    ? { number: Number(receipt.result.resourceId), html_url: receipt.result.url, created_at: payload.issueCreatedAt }
+    : { number: Number(payload.issueNumber), html_url: payload.issueUrl, created_at: payload.issueCreatedAt };
+  if (!Number.isInteger(issue.number) || issue.number <= 0 || !issue.html_url) throw new Error("NoxCue issue receipt is incomplete");
+  await completeIncident(env, payload, issue);
+  return { number: issue.number, url: issue.html_url };
+}
+
+async function completeIncident(env, payload, issue) {
   const now = new Date().toISOString();
   await env.DB.batch([
-    ...(previous ? [env.DB.prepare(
+    ...(payload.previousIssueNumber ? [env.DB.prepare(
       `UPDATE cue_github_issue_links SET closed_at = COALESCE(closed_at, ?)
         WHERE incident_id = ? AND repo = ? AND issue_number = ?`,
-    ).bind(now, incidentId, row.repo, previous.number)] : []),
+    ).bind(now, payload.incidentId, payload.repo, payload.previousIssueNumber)] : []),
     env.DB.prepare(
       `INSERT INTO cue_github_issue_links
          (incident_id, repo, issue_number, issue_url, opened_at, closed_at)
        VALUES (?, ?, ?, ?, ?, NULL)
        ON CONFLICT(incident_id, repo, issue_number) DO UPDATE SET
          issue_url = excluded.issue_url, closed_at = NULL`,
-    ).bind(incidentId, row.repo, issue.number, issue.html_url, issue.created_at ?? now),
+    ).bind(payload.incidentId, payload.repo, issue.number, issue.html_url, issue.created_at ?? now),
     env.DB.prepare(
       `UPDATE cue_github_incidents SET
          status = CASE WHEN occurrence_count > processing_occurrence_count THEN 'pending' ELSE 'open' END,
@@ -137,19 +186,18 @@ async function processIncident(env, incidentId) {
          previous_issue_number = ?, previous_issue_url = ?, last_github_update_at = ?,
          last_github_release = ?, last_error = NULL, updated_at = ? WHERE id = ?`,
     ).bind(
-      row.repo, issue.number, issue.html_url, previous?.number ?? row.previous_issue_number ?? null,
-      previous?.html_url ?? row.previous_issue_url ?? null,
-      wroteIssue ? now : row.last_github_update_at,
-      wroteIssue ? presentation.latestRelease : row.last_github_release,
-      now, incidentId,
+      payload.repo, issue.number, issue.html_url, payload.previousIssueNumber,
+      payload.previousIssueUrl,
+      payload.wroteIssue ? now : payload.lastGitHubUpdateAt,
+      payload.wroteIssue ? payload.latestRelease : payload.lastGitHubRelease,
+      now, payload.incidentId,
     ),
   ]);
   const pending = await env.DB.prepare("SELECT status FROM cue_github_incidents WHERE id = ?")
-    .bind(incidentId).first();
+    .bind(payload.incidentId).first();
   if (pending?.status === "pending") {
-    await env.TASK_QUEUE.send({ type: "noxcue_github_issue", incidentId, ownerId: row.github_login, deliveryId: `noxcue:${incidentId}:${now}` });
+    await env.TASK_QUEUE.send({ type: "noxcue_github_issue", incidentId: payload.incidentId, deliveryId: `noxcue:${payload.incidentId}:${now}` });
   }
-  return { number: issue.number, url: issue.html_url, deduplicated: !previous && Boolean(row.github_issue_number) };
 }
 
 export async function recoverNoxCueGithubIncidents(env) {

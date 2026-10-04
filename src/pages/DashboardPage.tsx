@@ -5,7 +5,7 @@ import { useRepos } from "@/hooks/useGitHub";
 import { useSettings } from "@/hooks/useConfigRepo";
 import { useNoxConnect } from "@/hooks/useNoxConnect";
 import { setNoxTicketRepoName } from "@/lib/noxticket-repo-name";
-import { getDefaultEnabledTab, getEnabledNoxApps, isTabEnabled } from "@/lib/apps";
+import { ALL_NOX_APP_IDS, getDefaultEnabledTab, isTabEnabled } from "@/lib/apps";
 import { TopNav } from "@/components/TopNav";
 import { ViewSkeleton } from "@/components/ui/ViewSkeleton";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -51,7 +51,7 @@ export function DashboardPage() {
   const { data: repos } = useRepos();
   const settingsQuery = useSettings();
   const settings = settingsQuery.data;
-  const enabledApps = useMemo(() => getEnabledNoxApps(settings), [settings]);
+  const enabledApps = ALL_NOX_APP_IDS;
   const noxConnect = useNoxConnect();
   const [targetTab, setTargetTab] = useState<TabId | null>(null);
   const [isNavigating, startNavigation] = useTransition();

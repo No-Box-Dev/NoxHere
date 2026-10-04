@@ -10,9 +10,10 @@ describe("NoxCue daily custom metric history", () => {
       async all() {
         if (sql.includes("WITH RECURSIVE periods")) return { results: [{
           period: "2026-09-09", metric_key: "custom.journals.added", label: "Journals added",
-          total_events: 4, total_users: 2, updated_at: "2026-09-09T20:00:00Z",
+          daily_events: 4, monthly_events: 18, monthly_active: 6, updated_at: "2026-09-09T20:00:00Z",
         }] };
         if (sql.includes("FROM cue_error_groups")) return { results: [{
+          id: "inc_0123456789abcdef0123456789abcdef",
           fingerprint: "server:signup:auth_503", title: "Signup failed", occurrence_count: 2,
           first_seen_at: "2026-09-09T18:00:00Z", last_seen_at: "2026-09-09T19:00:00Z",
           status: "acknowledged", acknowledged_at: "2026-09-09T19:30:00Z", acknowledged_by: "jasper",
@@ -27,9 +28,14 @@ describe("NoxCue daily custom metric history", () => {
     const body = await response.json() as { days: Array<{ metrics: Record<string, { value: number }> }>; errorGroups: Array<Record<string, unknown>> };
     const activitySql = queries.find((sql) => sql.includes("WITH RECURSIVE periods")) ?? "";
     expect(activitySql).toContain("activity.period = periods.period");
-    expect(activitySql).not.toContain("activity.period <= periods.period");
+    expect(activitySql).toContain("activity.period BETWEEN date(periods.period, '-29 days') AND periods.period");
+    expect(activitySql).toContain("COUNT(DISTINCT active.subject_hash)");
     expect(body.days[0]?.metrics["custom.journals.added"].value).toBe(4);
-    expect(body.days[0]?.metrics["custom.journals.added.per_user"].value).toBe(2);
-    expect(body.errorGroups[0]).toMatchObject({ status: "acknowledged", acknowledgedBy: "jasper" });
+    expect(body.days[0]?.metrics["custom.journals.added.per_mau"].value).toBe(3);
+    expect(body.errorGroups[0]).toMatchObject({
+      id: "inc_0123456789abcdef0123456789abcdef",
+      status: "acknowledged",
+      acknowledgedBy: "jasper",
+    });
   });
 });

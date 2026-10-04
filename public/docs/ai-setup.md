@@ -1,11 +1,47 @@
-# Nox setup for AI agents
+# NoxConnect setup for AI agents
 
 Use this workflow to configure NoxConnect without relying on the Settings UI. The canonical schema is [`/openapi.json`](/openapi.json), and current progress is always available from `GET /api/v1/integrations/setup`.
 
-## Discover services and capabilities
+## Connect the agent
 
-Start with `GET /api/v1/services`. It explains the role of NoxConnect and lists
-NoxTicket, NoxFeed, NoxSpot, and NoxCue separately. Each service includes:
+Choose the credential flow that matches how the agent runs:
+
+- **Supervised local agent:** a human runs `noxconnect login`, completes GitHub
+  approval in the browser, then runs
+  `noxconnect use <organization>/<project>`. The agent can use the resulting CLI
+  session without seeing its access or refresh credentials. The session is
+  shared by every NoxConnect process for that operating-system user even when
+  agents use different configuration directories; concurrent processes share
+  one login and one refresh-token rotation. Install it with
+  `npm install --global noxconnect`. Repository maintainers may run the same
+  commands as `npm run cli -- login` and
+  `npm run cli -- use <organization>/<project>`.
+- **Headless agent or CI:** create a project-bound `nox_sk_…` automation token
+  in NoxConnect → API access and inject it through the approved runtime secret
+  manager. Do not automate a human login or copy a browser session into CI.
+
+Verify a supervised session with `noxconnect whoami`. Use `noxconnect projects`
+to discover project names, `noxconnect activity`, `incidents`, `issues`, or
+`feedback` for the active project, and `noxconnect api <path>` for another
+documented operation. `noxconnect logout` revokes the shared session for every
+local process using that operating-system account. The
+complete command reference is maintained on [`/developers#cli`](/developers#cli)
+and checked against the CLI command catalog in CI.
+
+Incident responses contain a stable `inc_…` ID. Use that ID for actions, for
+example `noxconnect incidents resolve <incident-id>`. A fingerprint describes
+how occurrences are grouped; it is not an API resource identifier and must not
+be encoded into an action URL.
+
+Never ask a user to paste a token, browser cookie, GitHub credential, or Slack
+credential into chat. Login and provider consent are human browser actions.
+
+## Discover capabilities
+
+Start with `GET /api/v1/services`. The compatibility path returns NoxConnect's
+Planning, Activity, Feedback, and Incidents capabilities. Its stable legacy IDs
+remain `noxticket`, `noxfeed`, `noxspot`, and `noxcue` until a versioned
+replacement is published. Each entry includes:
 
 - its focus and description;
 - the capabilities it provides;
@@ -15,15 +51,15 @@ NoxTicket, NoxFeed, NoxSpot, and NoxCue separately. Each service includes:
 - callable operations with a stable ID, HTTP method, path, authentication mode,
   and purpose.
 
-Use `GET /api/v1/services/{service}` when only one service is relevant. Every
-service exposes the same control-plane shape:
+Use `GET /api/v1/services/{service}` when only one capability is relevant. Every
+entry exposes the same control-plane shape:
 
 - `GET /api/v1/services/{service}/setup` for its sections and blockers;
 - `GET /api/v1/services/{service}/config` for only the settings it owns;
 - `PATCH /api/v1/services/{service}/config` for an admin-only partial update; and
 - `GET /api/v1/services/{service}/health` for readiness checks.
 
-Service discovery is read-only; it never starts OAuth or changes organization settings.
+Capability discovery is read-only; it never starts OAuth or changes organization settings.
 
 ## Safe configuration updates
 
@@ -42,9 +78,9 @@ Content-Type: application/json
 { "featureRepository": "product" }
 ```
 
-NoxConnect owns service toggles and repository-discovery policy. NoxTicket owns
-its feature repository and workflow stages. NoxFeed owns its release-notes
-prompt. NoxSpot site settings and NoxCue source settings stay on
+NoxConnect owns capability toggles and repository-discovery policy. Planning owns
+its feature repository and workflow stages. Activity owns its release-notes
+prompt. Feedback site settings and Incidents source settings stay on
 their dedicated resource APIs, linked from each service config response. Slack
 workspace connections and delivery routes remain shared NoxConnect resources.
 
@@ -82,7 +118,7 @@ that supported clients have migrated.
 
 Use the credential class that matches the client:
 
-- The web app authenticates with an opaque HttpOnly NoxHere session cookie.
+- The web app authenticates with an opaque HttpOnly NoxConnect session cookie.
   Browser mutations also send the matching CSRF proof. JavaScript never reads
   the session or the encrypted GitHub provider token behind it.
 - First-party native apps use a short-lived `nox_at_…` bearer token and rotate it
@@ -91,7 +127,7 @@ Use the credential class that matches the client:
   with explicit service scopes. The token supplies its own organization and
   project context; an optional `X-Org` or `X-Project-ID` may only repeat, never
   override, those bounds.
-- Public NoxCue ingestion uses `X-Nox-Ingest-Key`. It never accepts a browser,
+- Public Incidents ingestion uses `X-Nox-Ingest-Key`. It never accepts a browser,
   native, automation, GitHub, or Slack credential.
 
 A native or automation request uses:
@@ -109,9 +145,9 @@ exception: every `nox_sk_…` token is bound to one project, so any explicit
 selector may only repeat that project. Project-restricted guests must select one
 of their grants; organization-wide guests may omit the selector.
 
-The user must belong to the organization. Setup mutations require a Nox
+The user must belong to the organization. Setup mutations require a NoxConnect
 organization admin browser session. Never place GitHub credentials or Slack bot
-tokens in request bodies; Nox stores provider credentials server-side.
+tokens in request bodies; NoxConnect stores provider credentials server-side.
 
 The hosted API is currently for first-party Nox clients and user-approved
 automation. It does not issue third-party OAuth client credentials. Create an
@@ -164,7 +200,11 @@ Content-Type: application/json
 }
 ```
 
-Use `null` to clear a route. Service routes fall back to `fallback`; NoxSpot first uses its per-site channel and then the organization fallback. For private Slack channels, invite the Nox bot before assigning the channel.
+Use `null` to clear a route. The route keys are stable compatibility identifiers:
+`noxcue` maps to Incidents, `noxticket` maps to Planning, and the `noxfeed_*`
+keys map to Activity. Capability routes fall back to `fallback`; Feedback first
+uses its per-site channel and then the organization fallback. For private Slack
+channels, invite the NoxConnect bot before assigning the channel.
 
 Project routing is owned by NoxConnect. Discover project candidates, their explicit enabled state, installed repositories, and current named destinations with:
 
@@ -172,7 +212,7 @@ Project routing is owned by NoxConnect. Discover project candidates, their expli
 GET /api/v1/projects/routing
 ```
 
-Update one project atomically with `PUT /api/v1/projects/{projectId}/routing`. The body sets `enabled`, assigns its `repositories`, and supplies the `noxfeedPosts`, `noxfeedReleaseNotes`, and `noxCue` workspace/channel pairs. Repository mirror rows never participate until explicitly enabled. A repository belongs to one enabled project; assigning it here moves future traffic from its previous project. Empty destination pairs use the corresponding organization route. A project-assigned Slack workspace cannot be used by another project.
+Update one project atomically with `PUT /api/v1/projects/{projectId}/routing`. The body sets `enabled`, assigns its `repositories`, and supplies the compatibility fields `noxfeedPosts` (Activity posts), `noxfeedReleaseNotes` (Activity release notes), and `noxCue` (Incidents) workspace/channel pairs. Repository mirror rows never participate until explicitly enabled. A repository belongs to one enabled project; assigning it here moves future traffic from its previous project. Empty destination pairs use the corresponding organization route. A project-assigned Slack workspace cannot be used by another project.
 
 Verify a saved route:
 
@@ -189,11 +229,11 @@ An optional `channelId` tests a candidate channel before saving it.
 
 After connections and organization routes are ready, feature-specific resources remain API-first:
 
-- NoxSpot sites: `GET`/`POST /api/v1/spots/sites` and `PATCH /api/v1/spots/sites/{siteId}`. Creating a site returns an anonymous-by-default install snippet; it does not grant NoxSpot access to the host website's login session or signup database. To prefill the signed-in reporter, the website owner must call `NoxSpot.identify({ name, email })` after the widget loads and whenever the account changes, then call `NoxSpot.identify(null)` on sign-out. A manually initialized widget may instead use `NoxSpot.init({ siteId, getReporter: () => ({ name, email }) })`. Set `notifyOnResolution: true` only when the host has already obtained consent; otherwise omit it so the reporter controls the widget checkbox. Reporter email is excluded from GitHub and retained encrypted only with that consent.
-- NoxCue sources: `GET/POST /api/v1/cues/sources`, project metrics: `GET/PUT /api/v1/cues/projects/{projectId}/metrics`, GitHub incident policy: `GET/PUT /api/v1/cues/github-issues`, keys: `POST /api/v1/cues/sources/{sourceId}/keys`, custom feature health under `/features`, and custom activity statistics under `/custom-metrics`. Register every `custom.*` name before ingest; linked staging and production sources share the project catalog, while an unlinked source stays isolated. Feature failures retain their actual technical error. Each custom activity event is idempotent and NoxCue derives total plus total per registered user. Unknown or paused names become bounded unregistered errors instead of creating definitions. GitHub incident routing additionally requires NoxConnect's GitHub connection and a repository linked to the selected project. A source destination overrides its linked project's `noxCue` route; otherwise the organization route is used. A newly created ingest key is returned only once; transfer it securely and never log it.
-- Public NoxCue clients submit events to the stable same-origin gateway `POST /api/v1/cues/public/events`; it forwards to NoxCue through a private service binding. Put the source key in `X-Nox-Ingest-Key`, not the Nox bearer-token headers. Configure each source's workspace, channel, IANA timezone, and local delivery time through its source API. Reusing the same event identity is idempotent.
-- NoxFeed resolves each GitHub repository through NoxConnect project routing before using the organization `noxfeed_posts` or `noxfeed_release_notes` route.
-- NoxTicket uses the `noxticket` route.
+- Feedback sites: `GET`/`POST /api/v1/spots/sites` and `PATCH /api/v1/spots/sites/{siteId}`. Creating a site returns an anonymous-by-default install snippet; it does not grant the widget access to the host website's login session or signup database. The current compatibility JavaScript global is `NoxSpot`: call `NoxSpot.identify({ name, email })` after the widget loads and whenever the account changes, then call `NoxSpot.identify(null)` on sign-out. A manually initialized widget may use `NoxSpot.init({ siteId, getReporter: () => ({ name, email }) })`. Set `notifyOnResolution: true` only when the host has already obtained consent.
+- Incidents sources: `GET/POST /api/v1/cues/sources`, project metrics: `GET/PUT /api/v1/cues/projects/{projectId}/metrics`, GitHub incident policy: `GET/PUT /api/v1/cues/github-issues`, keys: `POST /api/v1/cues/sources/{sourceId}/keys`, custom feature health under `/features`, and custom activity statistics under `/custom-metrics`. Register every `custom.*` name before ingest. Each custom activity event is idempotent. GitHub incident routing additionally requires NoxConnect's GitHub connection and a repository linked to the selected project. A source destination overrides its linked project's compatibility `noxCue` route; otherwise the organization route is used. A newly created ingest key is returned only once; transfer it securely and never log it.
+- Public Incidents clients submit events to the stable same-origin gateway `POST /api/v1/cues/public/events`; the gateway forwards them through a private service binding. Put the source key in `X-Nox-Ingest-Key`, not the NoxConnect bearer-token headers. Configure each source's workspace, channel, IANA timezone, and local delivery time through its source API. Reusing the same event identity is idempotent.
+- Activity resolves each GitHub repository through NoxConnect project routing before using the compatibility `noxfeed_posts` or `noxfeed_release_notes` route.
+- Planning uses the compatibility `noxticket` route.
 
 Read the live endpoint response before acting; action links and state in `/api/v1/integrations/setup` take precedence over this narrative guide.
 
@@ -204,7 +244,7 @@ Do not automatically retry operations marked `write_not_safe_to_retry` or
 `destructive`; read the resulting state first and require explicit user
 confirmation for deletes, disconnects, revocations, archives, and restores.
 Revision-protected config updates are safe only after refetching and reapplying
-the intended patch. NoxCue event ingestion is the exception: duplicate event
+the intended patch. Incidents event ingestion is the exception: duplicate event
 identities are handled idempotently.
 
 On `429`, honor `Retry-After` and stop sending until that delay has elapsed. On

@@ -129,20 +129,19 @@ describe("DashboardPage", () => {
     await waitFor(() => expect(screen.getByTestId("tab-issues")).toBeInTheDocument());
   });
 
-  it("redirects a disabled app deep link to the first enabled app", async () => {
+  it("ignores stale service-disable settings", async () => {
     mAuth.mockReturnValue({ selectedOrg: "acme" });
     mSettings.mockReturnValue({ data: { apps: { noxfeed: false } } });
     renderAt("/?tab=issues");
-    await waitFor(() => expect(screen.getByTestId("tab-sprint")).toBeInTheDocument());
-    expect(screen.queryByTestId("tab-issues")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("tab-issues")).toBeInTheDocument());
   });
 
-  it("keeps the Nox workspace available when every optional app is disabled", async () => {
+  it("keeps all capabilities available when legacy settings disable them", async () => {
     mAuth.mockReturnValue({ selectedOrg: "acme" });
     mSettings.mockReturnValue({
       data: { apps: { noxfeed: false, noxticket: false, noxspot: false, noxcue: false } },
     });
     renderAt("/");
-    await waitFor(() => expect(screen.getByTestId("tab-admin")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("tab-issues")).toBeInTheDocument());
   });
 });

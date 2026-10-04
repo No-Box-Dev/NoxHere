@@ -18,6 +18,24 @@ export function buildNoxTicketActivityResponse({ orgId, repo, action, issue, act
   return { message };
 }
 
+export function buildNoxTicketFeatureAddedResponse({ orgId, projectId, feature, actor }) {
+  const number = Number(feature?.number);
+  const title = String(feature?.title ?? "").trim();
+  const addedBy = String(actor ?? "").trim();
+  if (!Number.isSafeInteger(orgId) || orgId < 1 || !projectId || !Number.isSafeInteger(number) || number < 1 || !title || !addedBy) {
+    throw new Error("Invalid NoxTicket feature-added response input");
+  }
+  const destination = feature.backlog ? "Backlog" : "Features";
+  const line = `*Feature #${number} · ${escapeMrkdwn(title)}* — ${destination} · added by ${escapeMrkdwn(addedBy)}`;
+  const message = {
+    text: `New NoxTicket feature in ${destination}: ${title}`,
+    client_msg_id: `noxticket-${orgId}-${projectId}-${number}-created`,
+    blocks: [{ type: "section", text: { type: "mrkdwn", text: line } }],
+  };
+  requireSlackMessage(message);
+  return { message };
+}
+
 export function buildNoxTicketTestResponse(orgLogin) {
   if (typeof orgLogin !== "string" || !orgLogin.trim() || orgLogin.length > 200) {
     throw new Error("Invalid NoxTicket org login");

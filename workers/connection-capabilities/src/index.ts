@@ -24,28 +24,28 @@ interface Env {
 }
 
 export default class NoxConnectCapabilities extends WorkerEntrypoint<Env> {
-  execute(command: unknown) {
-    return executeConnectionCapability(this.env, command);
+  async execute(command: unknown) {
+    return await executeConnectionCapability(this.env, command);
   }
 
-  exchangeGitHubOAuth(input: unknown) {
-    return exchangeGitHubOAuthIdentity(this.env, input);
+  async exchangeGitHubOAuth(input: unknown) {
+    return await exchangeGitHubOAuthIdentity(this.env, input);
   }
 
-  refreshGitHubIdentity(input: unknown) {
-    return refreshGitHubIdentity(this.env, input);
+  async refreshGitHubIdentity(input: unknown) {
+    return await refreshGitHubIdentity(this.env, input);
   }
 
-  startGitHubDeviceAuth(input: unknown) {
-    return startGitHubDeviceIdentity(this.env, input);
+  async startGitHubDeviceAuth(input: unknown) {
+    return await startGitHubDeviceIdentity(this.env, input);
   }
 
-  pollGitHubDeviceAuth(input: unknown) {
-    return pollGitHubDeviceIdentity(this.env, input);
+  async pollGitHubDeviceAuth(input: unknown) {
+    return await pollGitHubDeviceIdentity(this.env, input);
   }
 
-  sendEmail(input: unknown) {
-    return sendTransactionalEmail(this.env, input);
+  async sendEmail(input: unknown) {
+    return await sendTransactionalEmail(this.env, input);
   }
 
   fetch(): Response {

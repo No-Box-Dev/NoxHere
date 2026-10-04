@@ -64,6 +64,8 @@ const PatchFeatureBody = z.object({
   // to status — the status label stays put so returning to the board
   // lands the feature in the column it left.
   backlog: z.boolean().optional(),
+  description: z.string().max(20_000).optional(),
+  links: z.array(z.unknown()).optional(),
   // Shape is intentionally loose — sanitizeSpecLinks does the real
   // validation (http/https only, drops empty rows) at the storage boundary.
   specLinks: z.array(z.unknown()).optional(),
@@ -158,10 +160,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     ) as string[];
   }
 
-  // Plan is retired — features no longer carry a description of their own,
-  // Specs are the sole content surface. Preserve any legacy content already
-  // in the body so we don't wipe historical plans on the GitHub side.
-  const plan = currentPlan;
+  const description = payload?.description !== undefined ? payload.description : currentPlan;
 
   // Status history: append on transition only. Re-saves with the same status
   // don't duplicate entries.
@@ -173,16 +172,17 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
   // Spec links: replace wholesale when the field is present (the UI always
   // sends the full list), otherwise keep what's stored. Sanitized to http(s)
   // URLs before they're written into the issue body.
-  const specLinks = payload?.specLinks !== undefined
-    ? sanitizeSpecLinks(payload.specLinks)
+  const linksInput = payload?.links ?? payload?.specLinks;
+  const links = linksInput !== undefined
+    ? sanitizeSpecLinks(linksInput)
     : (currentMetadata.specLinks ?? []);
 
   // Spread currentMetadata so any unknown-to-us field survives the
   // round-trip instead of being silently dropped when the body is rebuilt.
-  const body = buildIssueBody(plan, {
+  const body = buildIssueBody(description, {
     ...currentMetadata,
     statusHistory,
-    specLinks,
+    specLinks: links,
   });
 
   const installationId = await getInstallationIdForOrg(context.env.DB, orgId);
@@ -206,9 +206,10 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
   const ownersChanged = payload?.owners !== undefined;
   const statusChanged = status !== currentStatus;
   const backlogChanged = backlog !== currentBacklog;
-  const specLinksChanged = payload?.specLinks !== undefined;
+  const descriptionChanged = payload?.description !== undefined && description !== currentPlan;
+  const linksChanged = linksInput !== undefined;
   const labelsChanged = statusChanged || backlogChanged;
-  const bodyChanged = statusChanged || specLinksChanged;
+  const bodyChanged = statusChanged || descriptionChanged || linksChanged;
 
   const ghPatch: Record<string, unknown> = {};
   if (titleChanged) ghPatch.title = title;

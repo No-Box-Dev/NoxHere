@@ -28,10 +28,8 @@ vi.mock("../noxfeed-response.js", () => ({
   generateNoxFeedContent: vi.fn(),
   getNoxFeedSlackResponse: vi.fn(async (env, kind, input) => ({ message: { text: input.summary, blocks: [kind, input] } })),
 }));
-vi.mock("../delivery-outbox.js", () => ({
-  stageSlackDelivery: vi.fn(async () => ({ id: "delivery-1", status: "pending" })),
-  queueOutboxDelivery: vi.fn(async () => true),
-  markOutboxBlocked: vi.fn(async () => {}),
+vi.mock("../transport-outbox", () => ({
+  publishSlackTransport: vi.fn(async () => ({ outboxId: "delivery-1", status: "queued", queued: true })),
 }));
 vi.mock("../noxfeed-routing.js", () => ({
   resolveNoxFeedDestination: vi.fn(async () => null),
@@ -47,7 +45,7 @@ import {
 import { completeNarrative } from "../llm.js";
 import { recordFailure } from "../op-failures.js";
 import { resolveSlackChannels } from "../slack.js";
-import { markOutboxBlocked, queueOutboxDelivery, stageSlackDelivery } from "../delivery-outbox.js";
+import { publishSlackTransport } from "../transport-outbox";
 import { resolveNoxFeedDestination } from "../noxfeed-routing.js";
 import { generateNoxFeedContent, getNoxFeedSlackResponse } from "../noxfeed-response.js";
 
@@ -61,7 +59,7 @@ function makeDb({
   existingReleaseNote = null,
   existingNarrative = null,
   existingPrNarrative = null,
-  reusablePrNarrative = null, // { summary, technical_summary, model } — reuse SELECT
+  reusablePrNarrative = null, // { summary, technical_summary, model } — opened-note lookup for release delivery
   pullRequest = null,
   org = { id: "org-1" },
 } = {}) {
@@ -123,11 +121,8 @@ beforeEach(() => {
   recordFailure.mockClear();
   resolveSlackChannels.mockReset();
   resolveSlackChannels.mockResolvedValue({ postsChannelId: "", releaseNotesChannelId: "" });
-  stageSlackDelivery.mockReset();
-  stageSlackDelivery.mockResolvedValue({ id: "delivery-1", status: "pending" });
-  queueOutboxDelivery.mockReset();
-  queueOutboxDelivery.mockResolvedValue(true);
-  markOutboxBlocked.mockReset();
+  publishSlackTransport.mockReset();
+  publishSlackTransport.mockResolvedValue({ outboxId: "delivery-1", status: "queued", queued: true });
   resolveNoxFeedDestination.mockReset();
   resolveNoxFeedDestination.mockResolvedValue(null);
 });
@@ -446,7 +441,7 @@ describe("narrateEvent — idempotency", () => {
     resolveSlackChannels.mockResolvedValue({ postsChannelId: "C1", releaseNotesChannelId: "" });
     completeNarrative.mockResolvedValue("ok");
     await narrateEvent(ENV(db), 1);
-    expect(stageSlackDelivery).not.toHaveBeenCalled();
+    expect(publishSlackTransport).not.toHaveBeenCalled();
   });
 });
 
@@ -611,7 +606,7 @@ describe("narrateEvent — app-only merged post", () => {
     await narrateEvent(ENV(db), 1);
 
     expect(db._calls.runs.some((run) => run.sql.includes("INSERT INTO events"))).toBe(true);
-    expect(stageSlackDelivery).not.toHaveBeenCalled();
+    expect(publishSlackTransport).not.toHaveBeenCalled();
   });
 });
 
@@ -629,9 +624,9 @@ describe("narrateReleaseNotes — Slack mirror", () => {
     await narrateEvent(ENV(db), 1);
     await narrateReleaseNotes(ENV(db), 1);
 
-    expect(stageSlackDelivery).toHaveBeenCalledTimes(1);
-    expect(stageSlackDelivery).toHaveBeenCalledWith(db, expect.objectContaining({
-      source: "release_notes", channelId: "C2",
+    expect(publishSlackTransport).toHaveBeenCalledTimes(1);
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.objectContaining({ DB: db }), expect.objectContaining({
+      route: "activity_release",
     }));
     expect(getNoxFeedSlackResponse).toHaveBeenCalledWith(expect.anything(), "release_notes", expect.objectContaining({
       summary: expect.stringContaining("Outcome: shipped"),
@@ -647,9 +642,8 @@ describe("narrateReleaseNotes — Slack mirror", () => {
     completeNarrative.mockResolvedValue("🐛 noxconnect #42 ...");
     resolveSlackChannels.mockResolvedValue({ postsChannelId: "", releaseNotesChannelId: "C2" });
     await narrateReleaseNotes(ENV(db), 1);
-    expect(stageSlackDelivery).toHaveBeenCalledWith(db, expect.objectContaining({
-      source: "release_notes", sourceId: "1:release_notes", channelId: "C2",
-      payload: expect.objectContaining({ releaseNote: expect.objectContaining({ summary: expect.any(String) }) }),
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.objectContaining({ DB: db }), expect.objectContaining({
+      route: "activity_release", idempotencyKey: "noxfeed:1:release_notes",
     }));
   });
 
@@ -661,13 +655,13 @@ describe("narrateReleaseNotes — Slack mirror", () => {
     });
     resolveSlackChannels.mockResolvedValue({ postsChannelId: "C1", releaseNotesChannelId: "C2" });
     await narrateReleaseNotes(ENV(db), 1);
-    expect(stageSlackDelivery).not.toHaveBeenCalled();
+    expect(publishSlackTransport).not.toHaveBeenCalled();
   });
 });
 
 // -------- narratePrOpened --------
 // Sibling of narrateEvent, but fires on PR-open events and writes a
-// pr_narrative row that the merge-time narrators later reuse.
+// separate pr_narrative row for the Opened feed.
 
 const EVENT_ROW_OPENED = {
   ...EVENT_ROW,
@@ -750,7 +744,7 @@ describe("narratePrOpened — happy path", () => {
     resolveSlackChannels.mockResolvedValue({ postsChannelId: "C1", releaseNotesChannelId: "" });
     completeNarrative.mockResolvedValue("Fixing the login redirect.");
     await narratePrOpened(ENV(db), 1);
-    expect(stageSlackDelivery).not.toHaveBeenCalled();
+    expect(publishSlackTransport).not.toHaveBeenCalled();
   });
 
   it("dedups by PR identity — skips when pr_narrative row already exists", async () => {
@@ -779,36 +773,31 @@ describe("narratePrOpened — happy path", () => {
   });
 });
 
-// -------- Reuse-text branch --------
-// The load-bearing invariant of the "Opened feed" feature. When a PR opens,
-// narratePrOpened writes text. When it merges, the merge-time narrators
-// find that text and reuse it verbatim — no fresh LLM call. This drops the
-// per-PR-lifecycle LLM cost from 2 → 1.
+// -------- Opened copy carried into Merged --------
 
-describe("narrateEvent — reuse text from pr_narrative row", () => {
-  it("uses the existing pr_narrative text and does NOT call the LLM", async () => {
+describe("narrateEvent — lifecycle post", () => {
+  it("reuses the opened post and three-part summary after merge", async () => {
     const db = makeDb({
       event: EVENT_ROW,
       project: PROJECT_ROW,
       actor: ACTOR_ROW,
-      reusablePrNarrative: { summary: "Fixing the login redirect.", model: "glm-5" },
+      reusablePrNarrative: { summary: "Login redirects correctly. Sessions remain intact. Sign in stays clear.", technical_summary: "What it does: Keeps login clear\nHow it works: Corrects redirect handling\nWhat it touches: Authentication", model: "glm-5" },
     });
+    completeNarrative.mockResolvedValue("I shipped the corrected login redirect.");
     await narrateEvent(ENV(db), 1);
     expect(completeNarrative).not.toHaveBeenCalled();
     const insert = db._calls.runs.find((r) => r.sql.includes("INSERT INTO events"));
     expect(insert).toBeDefined();
     const [source, type, , , , , summary, technicalSummary, payloadJson] = insert.binds;
-    expect(source).toBe("narrator-reused");
+    expect(source).toBe("narrator");
     expect(type).toBe("narrative");
-    expect(summary).toBe("Fixing the login redirect.");
-    expect(technicalSummary).toContain("What it does:");
+    expect(summary).toBe("Login redirects correctly. Sessions remain intact. Sign in stays clear.");
+    expect(technicalSummary).toContain("What it does: Keeps login clear");
     const payload = JSON.parse(payloadJson);
-    expect(payload.model).toBe("reused:glm-5");
+    expect(payload.model).toBe("glm-5");
   });
 
-  it("falls through to the LLM when the pr_narrative row is a 'fallback' model", async () => {
-    // Reusing a fallback (raw title) row would leave the merged feed stuck on
-    // the PR title — worse than paying for a fresh narration.
+  it("also generates fresh merged copy when the opened row was a fallback", async () => {
     const db = makeDb({
       event: EVENT_ROW,
       project: PROJECT_ROW,
@@ -823,30 +812,30 @@ describe("narrateEvent — reuse text from pr_narrative row", () => {
     expect(insert.binds[6]).toBe("I merged the login button.");
   });
 
-  it("keeps reused Opened-feed copy app-only when the PR merges", async () => {
+  it("keeps merged narration app-only when an opened note exists", async () => {
     const db = makeDb({
       event: EVENT_ROW,
       project: PROJECT_ROW,
       actor: ACTOR_ROW,
       reusablePrNarrative: { summary: "Fixing the login redirect.", model: "glm-5" },
     });
+    completeNarrative.mockResolvedValue("I merged it.");
     await narrateEvent(ENV(db), 1);
-    expect(stageSlackDelivery).not.toHaveBeenCalled();
+    expect(publishSlackTransport).not.toHaveBeenCalled();
   });
 
   it("keeps fresh merged narration app-only too", async () => {
     const db = makeDb({ event: EVENT_ROW, project: PROJECT_ROW, actor: ACTOR_ROW });
     completeNarrative.mockResolvedValue("I merged it.");
     await narrateEvent(ENV(db), 1);
-    expect(stageSlackDelivery).not.toHaveBeenCalled();
+    expect(publishSlackTransport).not.toHaveBeenCalled();
   });
 });
 
 describe("narrateReleaseNotes — always calls the LLM", () => {
   // Release notes need the structured RELEASE_NOTES_SYSTEM format — the
-  // opened-time chat voice we reuse for the Posts feed reads like a Post
-  // in the Release-notes feed. So even when a pr_narrative row exists, we
-  // do NOT reuse it here.
+  // opened-time plain description is not the structured release format.
+  // Even when a pr_narrative row exists, we do NOT reuse it here.
   it("calls the LLM with the release-notes prompt, ignoring any existing pr_narrative", async () => {
     const db = makeDb({
       event: EVENT_ROW,

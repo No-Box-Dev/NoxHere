@@ -40,12 +40,12 @@ describe("GET /api/operator/usage", () => {
     expect(response.status).toBe(200);
     expect(body.totals).toMatchObject({ organizations: 2, knownAccounts: 3, activeAccounts30d: 2 });
     expect(body.services.find((service: { id: string }) => service.id === "noxfeed")).toMatchObject({
-      enabledOrganizations: 1,
+      availableOrganizations: 2,
       telemetryConnected: true,
       users: { total: 2, daily: 1, weekly: 1, monthly: 2 },
     });
     expect(body.services.find((service: { id: string }) => service.id === "noxspot")).toMatchObject({
-      enabledOrganizations: 1,
+      availableOrganizations: 2,
       telemetryConnected: false,
       users: null,
     });

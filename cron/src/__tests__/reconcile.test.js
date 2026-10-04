@@ -18,6 +18,10 @@ vi.mock("../../../functions/lib/event-reconcile.js", () => ({
   reconcileRepoEvents: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("../../../functions/lib/noxspot-resolution.js", () => ({
+  reconcileNoxSpotReportsForRepo: vi.fn().mockResolvedValue({ checked: 0, resolved: 0, reopened: 0 }),
+}));
+
 vi.mock("../../../functions/lib/github-sync.js", () => ({
   syncRepos: vi.fn(),
   syncMembers: vi.fn(),
@@ -41,6 +45,7 @@ import {
   removeMember,
 } from "../../../functions/lib/github-sync.js";
 import { reconcileRepoEvents } from "../../../functions/lib/event-reconcile.js";
+import { reconcileNoxSpotReportsForRepo } from "../../../functions/lib/noxspot-resolution.js";
 
 // ---- D1 stub: small dispatch table mapping SQL pattern → handler.
 // Tests mutate `state` and `match` to control behaviour.
@@ -116,6 +121,7 @@ beforeEach(() => {
   syncPRs.mockResolvedValue(undefined);
   syncIssues.mockResolvedValue(undefined);
   reconcileRepoEvents.mockResolvedValue(undefined);
+  reconcileNoxSpotReportsForRepo.mockResolvedValue({ checked: 0, resolved: 0, reopened: 0 });
 });
 
 describe("reconcileOrg", () => {
@@ -160,6 +166,16 @@ describe("reconcileOrg", () => {
     expect(syncIssues).toHaveBeenCalledWith(db, "install-token", 1, "acme", "app", "2026-05-10T11:00:00Z");
     expect(syncPRs).toHaveBeenCalledWith(db, "install-token", 1, "acme", "core", null, env);
     expect(syncIssues).toHaveBeenCalledWith(db, "install-token", 1, "acme", "core", null);
+    expect(reconcileNoxSpotReportsForRepo).toHaveBeenCalledWith(env, {
+      orgId: 1,
+      ownerId: "acme",
+      repo: "app",
+    });
+    expect(reconcileNoxSpotReportsForRepo).toHaveBeenCalledWith(env, {
+      orgId: 1,
+      ownerId: "acme",
+      repo: "core",
+    });
   });
 
   it("skips the tick when a prior unfinished run is recent", async () => {

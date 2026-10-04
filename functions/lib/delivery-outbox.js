@@ -1,5 +1,6 @@
 import { TASK } from "./tasks.js";
-import { actionableSlackError, postSlackMessage, resolveSlackInstall } from "./slack.js";
+import { actionableSlackError, resolveSlackInstall } from "./slack.js";
+import { deliverResolvedSlackMessage } from "./transports/slack";
 import { markSlackChannelVerified, markSlackDeliveryChannelIssue } from "./slack-channel-status.js";
 import { appForDeliverySource, isAppEnabled } from "./apps.js";
 
@@ -131,17 +132,17 @@ export async function deliverSlackOutbox(env, deliveryId) {
     return { blocked: code };
   }
   try {
-    const receipt = await postSlackMessage(install.botToken, delivery.channel_id, payload.message);
-    if (!receipt?.ts || receipt.channel !== delivery.channel_id) {
-      throw Object.assign(new Error("Slack returned an invalid or mismatched delivery receipt"), {
-        code: "invalid_slack_receipt",
-      });
-    }
+    const receipt = await deliverResolvedSlackMessage(env, {
+      orgId: delivery.org_id,
+      connectionId: delivery.slack_connection_id,
+      channelId: delivery.channel_id,
+      message: payload.message,
+    });
     await Promise.all([
-      markOutboxDelivered(env.DB, deliveryId, receipt.ts),
+      markOutboxDelivered(env.DB, deliveryId, receipt.messageId),
       markSlackChannelVerified(env.DB, delivery.org_id, install.id, delivery.channel_id),
     ]);
-    return { delivered: true, slackMessageTs: receipt.ts };
+    return { delivered: true, slackMessageTs: receipt.messageId };
   } catch (error) {
     const code = error?.code || "slack_delivery_failed";
     if (SLACK_CONFIGURATION_ERRORS.has(code)) {

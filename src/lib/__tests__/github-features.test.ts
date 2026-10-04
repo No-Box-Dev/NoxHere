@@ -49,6 +49,33 @@ describe("withStatusTransition", () => {
 });
 
 describe("fetchFeaturesFromD1", () => {
+  it("preserves statuses and backlog flags from native NoxTicket rows", async () => {
+    mockGet.mockResolvedValue([
+      {
+        number: 58, title: "Production feature", status: "production", backlog: false,
+        state: "open", owners: [], statusHistory: [{ status: "production", at: "2026-09-27T01:00:00Z" }],
+        updatedAt: "2026-09-27T01:00:00Z",
+      },
+      {
+        number: 68, title: "Staging feature", status: "staging", backlog: false,
+        state: "open", owners: ["jasper"], statusHistory: [], updatedAt: "2026-09-27T02:00:00Z",
+      },
+      {
+        number: 25, title: "Backlog feature", status: "todo", backlog: true,
+        state: "open", owners: [], statusHistory: [], updatedAt: "2026-09-27T03:00:00Z",
+      },
+    ]);
+    const result = await fetchFeaturesFromD1();
+    expect(result.map(({ id, status, backlog }) => ({ id, status, backlog }))).toEqual([
+      { id: 58, status: "production", backlog: false },
+      { id: 68, status: "staging", backlog: false },
+      { id: 25, status: "todo", backlog: true },
+    ]);
+    expect(result[0].statusHistory).toEqual([
+      { status: "production", timestamp: "2026-09-27T01:00:00Z" },
+    ]);
+  });
+
   it("filters out rows missing 'noxticket' OR 'feature' labels", async () => {
     mockGet.mockResolvedValue([
       { number: 1, title: "ok", body: "", assignees: [], labels: [{ name: "noxticket" }, { name: "feature" }], html_url: "u" },
@@ -116,21 +143,25 @@ describe("fetchFeaturesFromD1", () => {
 describe("createFeature", () => {
   it("POSTs to /api/v1/features with the requested fields", async () => {
     mockPost.mockResolvedValue({
-      id: 5, title: "Add login", status: "todo", owners: [],
+      number: 5, title: "Add login", status: "todo", backlog: false, state: "open",
+      owners: [], statusHistory: [], updatedAt: "2026-09-27T01:00:00Z",
     });
     const result = await createFeature("org", "Add login", { status: "todo" });
     expect(mockPost).toHaveBeenCalledWith("/api/v1/features", {
-      title: "Add login", status: "todo", owners: [],
+      title: "Add login", status: "todo", owners: [], backlog: false,
     });
     expect(result.id).toBe(5);
     expect(result.title).toBe("Add login");
   });
 
   it("forwards owners when provided (no plan field — retired)", async () => {
-    mockPost.mockResolvedValue({ id: 5, title: "X", status: "staging", owners: ["alice"] });
+    mockPost.mockResolvedValue({
+      number: 5, title: "X", status: "staging", backlog: false, state: "open",
+      owners: ["alice"], statusHistory: [], updatedAt: "2026-09-27T01:00:00Z",
+    });
     await createFeature("org", "X", { status: "staging", owners: ["alice"] });
     expect(mockPost).toHaveBeenCalledWith("/api/v1/features", {
-      title: "X", status: "staging", owners: ["alice"],
+      title: "X", status: "staging", owners: ["alice"], backlog: false,
     });
   });
 
@@ -143,24 +174,26 @@ describe("createFeature", () => {
 describe("updateFeature", () => {
   it("PATCHes /api/v1/features/:id with title, status, owners (no plan)", async () => {
     mockPatch.mockResolvedValue({
-      id: 5, title: "X", status: "ready", owners: ["alice"],
+      number: 5, title: "X", status: "ready", backlog: false, state: "open",
+      owners: ["alice"], statusHistory: [], updatedAt: "2026-09-27T01:00:00Z",
     });
     const result = await updateFeature("org", {
       id: 5, title: "X", status: "ready", owners: ["alice"],
     });
     expect(mockPatch).toHaveBeenCalledWith("/api/v1/features/5", {
       title: "X", status: "ready", owners: ["alice"], backlog: false,
-      specLinks: [],
     });
     expect(result.id).toBe(5);
   });
 
-  it("always sends specLinks so a cleared list patches through", async () => {
-    mockPatch.mockResolvedValue({ id: 5, title: "X", status: "todo", owners: [] });
+  it("sends only fields accepted by the native NoxTicket update contract", async () => {
+    mockPatch.mockResolvedValue({
+      number: 5, title: "X", status: "todo", backlog: false, state: "open",
+      owners: [], statusHistory: [], updatedAt: "2026-09-27T01:00:00Z",
+    });
     await updateFeature("org", { id: 5, title: "X", status: "todo", owners: [] });
     expect(mockPatch).toHaveBeenCalledWith("/api/v1/features/5", {
       title: "X", status: "todo", owners: [], backlog: false,
-      specLinks: [],
     });
   });
 

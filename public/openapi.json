@@ -3,7 +3,7 @@
   "info": {
     "title": "NoxConnect API",
     "version": "1.0.0",
-    "description": "Capability-first API for understanding NoxConnect, discovering each Nox service, connecting providers, and configuring service setup.",
+    "description": "One public API for NoxConnect identity, projects, activity, incidents, issues, feedback, and integrations.",
     "license": {
       "name": "Proprietary",
       "identifier": "LicenseRef-Proprietary"
@@ -12,7 +12,7 @@
   "servers": [
     {
       "url": "https://app.noxhere.com",
-      "description": "Hosted NoxConnect API"
+      "description": "Hosted NoxConnect API (compatibility domain)"
     }
   ],
   "security": [
@@ -26,6 +26,411 @@
     }
   ],
   "paths": {
+    "/api/v1/projects/{id}/cue/actions": {
+      "get": {
+        "operationId": "getProjectCueActions",
+        "summary": "Get the configured engagement actions for a project",
+        "tags": [
+          "NoxConnect"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured engagement actions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      },
+      "put": {
+        "operationId": "updateProjectCueActions",
+        "summary": "Configure engagement actions for a project",
+        "tags": [
+          "NoxConnect"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated engagement actions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/cue/alert-rules": {
+      "get": {
+        "operationId": "listProjectCueAlertRules",
+        "summary": "List configured Incidents alert rules for a project",
+        "tags": [
+          "NoxConnect"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project alert rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/cue/alerts": {
+      "get": {
+        "operationId": "listProjectCueAlerts",
+        "summary": "List triggered Incidents alerts for a project",
+        "tags": [
+          "NoxConnect"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Triggered project alerts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/cue/dashboard": {
+      "get": {
+        "operationId": "getProjectCueDashboard",
+        "summary": "Get the Incidents statistics dashboard for a project",
+        "tags": [
+          "NoxConnect"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "1y"
+              ],
+              "default": "30d"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project statistics dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/cue/stat-events": {
+      "get": {
+        "operationId": "listProjectCueStatEvents",
+        "summary": "List received Incidents statistic events for a project",
+        "tags": [
+          "NoxConnect"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Received statistic events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
     "/api/spots/public/v1/sites/{siteId}/config": {
       "get": {
         "operationId": "getPublicNoxSpotConfig",
@@ -74,7 +479,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
         "x-change-safety": "safe_read"
@@ -83,8 +488,8 @@
     "/api/spots/public/v1/reports": {
       "post": {
         "operationId": "submitPublicNoxSpotReport",
-        "summary": "Submit a public NoxSpot capture",
-        "description": "Submit feedback from an origin-bound widget. NoxSpot cannot inspect a host website's login session: the host must explicitly pass its signed-in user through NoxSpot.identify(...) or NoxSpot.init({ getReporter }). reporterEmail is retained for resolution mail only when notifyOnResolution is true.",
+        "summary": "Submit a public Feedback capture",
+        "description": "Submit feedback from an origin-bound widget. Feedback cannot inspect a host website's login session: the host must explicitly pass its signed-in user through NoxSpot.identify(...) or NoxSpot.init({ getReporter }). reporterEmail is retained for resolution mail only when notifyOnResolution is true.",
         "security": [],
         "servers": [
           {
@@ -164,7 +569,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -243,7 +648,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -253,7 +658,7 @@
       "post": {
         "operationId": "reopenResolvedNoxSpotReport",
         "summary": "Reopen a resolved report with optional reporter context",
-        "description": "Consumes the single-use token from a NoxSpot resolution email, adds an optional response and screenshot to the original GitHub issue, and reopens the issue.",
+        "description": "Consumes the single-use token from a Feedback resolution email, adds an optional response and screenshot to the original GitHub issue, and reopens the issue.",
         "security": [],
         "servers": [
           {
@@ -326,7 +731,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -730,7 +1135,7 @@
         "summary": "Get normalized current work, posts, and release notes",
         "responses": {
           "200": {
-            "description": "NoxFeed response",
+            "description": "Activity response",
             "content": {
               "application/json": {
                 "schema": {
@@ -818,7 +1223,7 @@
           }
         ],
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -835,6 +1240,7 @@
             "noxApiToken": []
           }
         ],
+        "deprecated": true,
         "x-project-scope": "optional",
         "x-automation-scope": "noxfeed:read"
       }
@@ -1605,6 +2011,90 @@
           }
         ],
         "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "createProject",
+        "summary": "Create a project and choose its repositories",
+        "description": "Creates an enabled organization project. When repositories are omitted, every active repository not owned by another enabled project is included by default.",
+        "x-required-role": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "repositories": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "admin",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "x-project-scope": "optional"
       }
     },
     "/api/v1/projects/routing": {
@@ -1738,7 +2228,7 @@
     "/api/v1/spots/sites": {
       "get": {
         "operationId": "listNoxSpotSites",
-        "summary": "List NoxSpot sites",
+        "summary": "List Feedback sites",
         "responses": {
           "200": {
             "description": "Sites",
@@ -1767,7 +2257,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -1794,7 +2284,7 @@
       },
       "post": {
         "operationId": "createNoxSpotSite",
-        "summary": "Create a NoxSpot site",
+        "summary": "Create a Feedback site",
         "requestBody": {
           "required": true,
           "content": {
@@ -1833,7 +2323,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -1863,7 +2353,7 @@
     "/api/v1/spots/sites/{siteId}": {
       "patch": {
         "operationId": "updateNoxSpotSite",
-        "summary": "Update a NoxSpot site including its channel override",
+        "summary": "Update a Feedback site including its channel override",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -1910,7 +2400,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -1933,7 +2423,7 @@
       },
       "delete": {
         "operationId": "deleteNoxSpotSite",
-        "summary": "Delete a NoxSpot site and its screenshots",
+        "summary": "Delete a Feedback site and its screenshots",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -1970,7 +2460,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -1995,7 +2485,7 @@
     "/api/v1/cues/sources": {
       "get": {
         "operationId": "listNoxCueSources",
-        "summary": "List NoxCue sources, linked projects, and ingest keys",
+        "summary": "List Incidents sources, linked projects, and ingest keys",
         "responses": {
           "200": {
             "description": "Sources",
@@ -2024,7 +2514,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -2051,7 +2541,7 @@
       },
       "post": {
         "operationId": "createNoxCueSource",
-        "summary": "Create a NoxCue event source",
+        "summary": "Create a Incidents event source",
         "requestBody": {
           "required": true,
           "content": {
@@ -2090,7 +2580,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2120,7 +2610,7 @@
     "/api/v1/cues/sources/{sourceId}": {
       "put": {
         "operationId": "updateNoxCueSource",
-        "summary": "Update a NoxCue event source",
+        "summary": "Update a Incidents event source",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2167,7 +2657,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2190,7 +2680,7 @@
       },
       "delete": {
         "operationId": "deleteNoxCueSource",
-        "summary": "Delete a NoxCue source and revoke its keys",
+        "summary": "Delete a Incidents source and revoke its keys",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2227,7 +2717,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -2252,7 +2742,7 @@
     "/api/v1/cues/sources/{sourceId}/keys": {
       "post": {
         "operationId": "createNoxCueKey",
-        "summary": "Create a one-time NoxCue browser or server ingest key",
+        "summary": "Create a one-time Incidents browser or server ingest key",
         "description": "The key value is returned once. Do not log it.",
         "parameters": [
           {
@@ -2319,7 +2809,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2344,7 +2834,7 @@
     "/api/v1/cues/sources/{sourceId}/keys/{keyId}": {
       "delete": {
         "operationId": "revokeNoxCueKey",
-        "summary": "Revoke a NoxCue ingest key",
+        "summary": "Revoke a Incidents ingest key",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2384,7 +2874,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -2447,7 +2937,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -2469,7 +2959,7 @@
       },
       "post": {
         "operationId": "createNoxCueCustomFeature",
-        "summary": "Register a custom NoxCue feature before ingest",
+        "summary": "Register a custom Incidents feature before ingest",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2516,7 +3006,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2594,7 +3084,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2660,7 +3150,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -2722,7 +3212,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -2791,7 +3281,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2869,7 +3359,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2935,7 +3425,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -2997,7 +3487,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -3066,7 +3556,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3091,7 +3581,7 @@
     "/api/v1/cues/metrics": {
       "get": {
         "operationId": "getNoxCueDailyHealth",
-        "summary": "Get stored NoxCue-derived user metrics and digest state",
+        "summary": "Get stored Incidents-derived user metrics and digest state",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -3134,7 +3624,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -3672,7 +4162,7 @@
     "/api/v1/features": {
       "get": {
         "operationId": "listFeatures",
-        "summary": "List NoxTicket features",
+        "summary": "List Planning features",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -3714,7 +4204,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -3777,7 +4267,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3856,7 +4346,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3915,7 +4405,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -3936,7 +4426,7 @@
     "/api/v1/specs": {
       "get": {
         "operationId": "listSpecs",
-        "summary": "List NoxTicket specifications",
+        "summary": "List Planning specifications",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -3988,7 +4478,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4048,7 +4538,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4114,7 +4604,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4185,7 +4675,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4244,7 +4734,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -4301,7 +4791,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -4359,7 +4849,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4439,7 +4929,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4504,7 +4994,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4565,7 +5055,7 @@
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -4683,7 +5173,7 @@
           }
         ],
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4700,6 +5190,7 @@
             "noxApiToken": []
           }
         ],
+        "deprecated": true,
         "x-project-scope": "optional",
         "x-automation-scope": "noxfeed:read"
       }
@@ -4750,7 +5241,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4858,7 +5349,7 @@
           }
         ],
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4925,7 +5416,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -5003,7 +5494,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -5079,7 +5570,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -5129,7 +5620,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -5208,7 +5699,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -5234,7 +5725,7 @@
     "/api/v1/spots/sites/{siteId}/retry-deliveries": {
       "post": {
         "operationId": "retryNoxSpotDeliveries",
-        "summary": "Retry blocked deliveries for one NoxSpot site",
+        "summary": "Retry blocked deliveries for one Feedback site",
         "x-required-role": "admin",
         "parameters": [
           {
@@ -5275,7 +5766,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -5300,7 +5791,7 @@
     "/api/v1/cues/events": {
       "get": {
         "operationId": "listNoxCueEvents",
-        "summary": "List recent NoxCue events and Slack delivery state",
+        "summary": "List recent Incidents events and Slack delivery state",
         "responses": {
           "200": {
             "description": "Recent events",
@@ -5356,7 +5847,7 @@
           }
         ],
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -5380,7 +5871,7 @@
     "/api/v1/cues/public/events": {
       "post": {
         "operationId": "ingestNoxCueEvent",
-        "summary": "Submit one standardized NoxCue event through the stable NoxConnect gateway",
+        "summary": "Submit one standardized Incidents event through the stable NoxConnect gateway",
         "security": [
           {
             "noxCueKey": []
@@ -5438,7 +5929,7 @@
         },
         "description": "Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.",
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "ingest_key",
         "x-change-safety": "idempotent_with_event_key",
@@ -5467,7 +5958,11 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "noxfeed-mac"
+                    "type": "string",
+                    "enum": [
+                      "noxconnect-cli",
+                      "noxfeed-mac"
+                    ]
                   }
                 }
               }
@@ -5540,11 +6035,15 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "noxfeed-mac"
+                    "type": "string",
+                    "enum": [
+                      "noxconnect-cli",
+                      "noxfeed-mac"
+                    ]
                   },
                   "device_code": {
                     "type": "string",
-                    "pattern": "^noxdc_"
+                    "pattern": "^noxid_"
                   }
                 }
               }
@@ -5676,7 +6175,7 @@
       "post": {
         "operationId": "exchangeLegacyNativeCredential",
         "summary": "Upgrade a legacy native session",
-        "description": "Temporary one-time migration route for older NoxFeed releases. Normal sign-in uses the brokered device flow.",
+        "description": "Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -5819,7 +6318,7 @@
       "get": {
         "operationId": "getNoxCueGitHubIssueSettings",
         "summary": "List project GitHub-incident settings",
-        "description": "Returns each active project's repository mapping, routing policy, and open NoxCue incident count.",
+        "description": "Returns each active project's repository mapping, routing policy, and open Incidents incident count.",
         "x-required-role": "admin",
         "responses": {
           "200": {
@@ -5849,7 +6348,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -5873,7 +6372,7 @@
       "put": {
         "operationId": "putNoxCueGitHubIssueSettings",
         "summary": "Update project GitHub-incident settings",
-        "description": "Controls whether NoxCue opens or updates a GitHub issue for incidents in the selected project and environments.",
+        "description": "Controls whether Incidents opens or updates a GitHub issue for incidents in the selected project and environments.",
         "x-required-role": "admin",
         "requestBody": {
           "required": true,
@@ -5916,7 +6415,7 @@
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -6104,7 +6603,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "security": [
@@ -6335,7 +6834,7 @@
       ],
       "post": {
         "operationId": "testNoxCueSource",
-        "summary": "Test a NoxCue source destination",
+        "summary": "Test a Incidents source destination",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "requestBody": {
           "required": false,
@@ -6378,7 +6877,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -6441,7 +6940,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6466,7 +6965,7 @@
     "/api/v1/events": {
       "get": {
         "operationId": "listFeedEvents",
-        "summary": "List detailed NoxFeed events",
+        "summary": "List detailed Activity events",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -6499,7 +6998,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6535,7 +7034,7 @@
       ],
       "get": {
         "operationId": "getFeedEvent",
-        "summary": "Read one detailed NoxFeed event",
+        "summary": "Read one detailed Activity event",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -6568,7 +7067,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6626,7 +7125,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6684,7 +7183,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6868,7 +7367,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "security": [
@@ -7010,7 +7509,7 @@
     "/api/v1/noxfeed/release-notes-prompt": {
       "get": {
         "operationId": "getNoxFeedDefaultPrompt",
-        "summary": "Read the server-owned NoxFeed release-notes prompt",
+        "summary": "Read the server-owned Activity release-notes prompt",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -7043,7 +7542,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "security": [
@@ -7187,7 +7686,7 @@
       ],
       "post": {
         "operationId": "backfillProjectPullRequests",
-        "summary": "Queue bounded NoxFeed pull-request history",
+        "summary": "Queue bounded Activity pull-request history",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "requestBody": {
           "required": false,
@@ -7361,7 +7860,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -7928,7 +8427,7 @@
     "/api/v1/cues/project-overview": {
       "get": {
         "operationId": "getNoxCueProjectOverview",
-        "summary": "Read a guest-safe NoxCue project overview",
+        "summary": "Read a guest-safe Incidents project overview",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -7962,7 +8461,7 @@
         "x-organization-optional": false,
         "x-guest-access": "read",
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "parameters": [
@@ -7981,13 +8480,14 @@
           }
         ],
         "x-change-safety": "safe_read",
+        "deprecated": true,
         "x-project-scope": "optional"
       }
     },
     "/api/v1/spots/reports/{reportId}": {
       "patch": {
         "operationId": "updateNoxSpotReport",
-        "summary": "Update a NoxSpot report status",
+        "summary": "Update a Feedback report status",
         "description": "Mark a report open, investigating, or resolved and optionally send or retry the reporter's consented resolution email.",
         "parameters": [
           {
@@ -8070,7 +8570,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-required-role": "admin",
         "x-authentication": "admin",
@@ -8092,7 +8592,7 @@
     "/api/v1/spots/project-overview": {
       "get": {
         "operationId": "getNoxSpotProjectOverview",
-        "summary": "Read a guest-safe NoxSpot project overview",
+        "summary": "Read a guest-safe Feedback project overview",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -8126,7 +8626,7 @@
         "x-organization-optional": false,
         "x-guest-access": "read",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "member",
         "parameters": [
@@ -8145,6 +8645,7 @@
           }
         ],
         "x-change-safety": "safe_read",
+        "deprecated": true,
         "x-project-scope": "optional"
       }
     },
@@ -8152,7 +8653,8 @@
       "put": {
         "operationId": "updateNoxCueErrorStatus",
         "summary": "Update an error incident status",
-        "description": "Acknowledge, resolve, or reopen one NoxCue error group in the optional project context.",
+        "description": "Deprecated compatibility operation. Use PATCH /api/v1/projects/{id}/incidents/{incidentId}; fingerprints can contain reserved URL characters.",
+        "deprecated": true,
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -8230,7 +8732,7 @@
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -8251,7 +8753,7 @@
     "/api/v1/spots/sites/{siteId}/resolution-template": {
       "get": {
         "operationId": "getNoxSpotResolutionTemplate",
-        "summary": "Read the effective NoxSpot resolution email template",
+        "summary": "Read the effective Feedback resolution email template",
         "description": "Returns the site's custom template or the NoxConnect default plus a revision for conditional updates.",
         "parameters": [
           {
@@ -8296,7 +8798,7 @@
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -8318,7 +8820,7 @@
       },
       "patch": {
         "operationId": "updateNoxSpotResolutionTemplate",
-        "summary": "Update or reset a NoxSpot resolution email template",
+        "summary": "Update or reset a Feedback resolution email template",
         "description": "Send the revision returned by GET as If-Match. Set template to null to restore the default. Postmark is transport-only; NoxConnect validates, renders, and snapshots the template used for each resolution.",
         "parameters": [
           {
@@ -8403,7 +8905,7 @@
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -8491,7 +8993,7 @@
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -8589,7 +9091,7 @@
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -8609,6 +9111,839 @@
         ],
         "x-automation-scope": "noxspot:write",
         "x-change-safety": "write_not_safe_to_retry"
+      }
+    },
+    "/api/v1/projects/{id}/activity": {
+      "get": {
+        "operationId": "getProjectActivity",
+        "summary": "Get project activity",
+        "responses": {
+          "200": {
+            "description": "Activity response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Stable NoxConnect project identifier",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "description": "Feed event mode",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "opened",
+                "merged",
+                "release-notes"
+              ],
+              "default": "merged"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "query",
+            "required": false,
+            "description": "Repository name",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
+            "description": "GitHub login",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum events",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 25
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "description": "Composite cursor returned by the previous page",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "tags": [
+          "Activity"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "deprecated": true,
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/incidents": {
+      "get": {
+        "operationId": "getProjectIncidents",
+        "summary": "Get project incidents and health",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "member",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-guest-access": "read",
+        "tags": [
+          "Incidents"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Stable NoxConnect project identifier",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "deprecated": true,
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/issues": {
+      "get": {
+        "operationId": "getProjectIssues",
+        "summary": "Get project issues",
+        "responses": {
+          "200": {
+            "description": "Issues and aggregate metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Stable NoxConnect project identifier",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "Issue state filter",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "query",
+            "required": false,
+            "description": "Repository name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "description": "Results per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5000,
+              "default": 30
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "Sort field",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "tags": [
+          "Activity"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "deprecated": true,
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/feedback": {
+      "get": {
+        "operationId": "getProjectFeedback",
+        "summary": "Get project feedback",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "member",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-guest-access": "read",
+        "tags": [
+          "Feedback"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Stable NoxConnect project identifier",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "deprecated": true,
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{id}/incidents/{incidentId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Stable NoxConnect project identifier",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "name": "incidentId",
+          "in": "path",
+          "required": true,
+          "description": "Immutable incident identifier returned by an incident read",
+          "schema": {
+            "type": "string",
+            "pattern": "^inc_[a-f0-9]{32}$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getProjectIncident",
+        "summary": "Get an incident by its fixed ID",
+        "description": "Returns one incident, including acknowledged or resolved incidents, when it belongs to the authenticated project.",
+        "responses": {
+          "200": {
+            "description": "Incident",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "member",
+        "tags": [
+          "Incidents"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read"
+      },
+      "patch": {
+        "operationId": "updateProjectIncidentStatus",
+        "summary": "Update an incident by its fixed ID",
+        "description": "Acknowledge, resolve, or reopen one incident. Fingerprints remain grouping data and are never used as URL identifiers.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "acknowledged",
+                      "resolved"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated incident",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "admin",
+        "tags": [
+          "Incidents"
+        ],
+        "x-authentication": "admin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-automation-scope": "noxcue:write",
+        "x-change-safety": "write_not_safe_to_retry"
+      }
+    },
+    "/api/v1/features/{number}/attachments": {
+      "parameters": [
+        {
+          "name": "number",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listFeatureAttachments",
+        "summary": "List feature screenshots and attachments",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureAttachmentList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "member",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "Planning"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "uploadFeatureAttachment",
+        "summary": "Attach a screenshot or document to a feature",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureAttachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "member",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "Planning"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/features/{number}/attachments/{attachmentId}": {
+      "parameters": [
+        {
+          "name": "number",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "name": "attachmentId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "viewFeatureAttachment",
+        "summary": "View a feature attachment",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "member",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "Planning"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      },
+      "delete": {
+        "operationId": "deleteFeatureAttachment",
+        "summary": "Delete a feature attachment",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "member",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "Planning"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "destructive",
+        "x-project-scope": "optional"
       }
     }
   },
@@ -8634,13 +9969,13 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "nox_sk_{environment}_…",
-        "description": "Organization- and project-bound, service-scoped NoxHere automation token. Store as a secret; the value is shown only once."
+        "description": "Organization- and project-bound, capability-scoped NoxConnect automation token. Store as a secret; the value is shown only once."
       },
       "nativeSession": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "nox_at_…",
-        "description": "Short-lived first-party native application session issued by NoxHere. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in NoxConnect."
+        "description": "Short-lived NoxConnect CLI or native session. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in the private connectors service."
       },
       "csrfProof": {
         "type": "apiKey",
@@ -9167,7 +10502,7 @@
         "type": "object",
         "required": [
           "siteId",
-          "title"
+          "description"
         ],
         "properties": {
           "siteId": {
@@ -9176,14 +10511,15 @@
           },
           "title": {
             "type": "string",
-            "maxLength": 256
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Optional explicit issue title for customized forms. The standard form omits this field."
           },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 10000
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "description": "The required feedback description. Feedback derives the GitHub issue title from its first line when title is omitted."
           },
           "reporter": {
             "type": [
@@ -9945,7 +11281,7 @@
           },
           "config": {
             "type": "object",
-            "description": "Shape depends on service. NoxSpot and NoxCue configuration is resource-scoped and linked from links.resources."
+            "description": "Shape depends on service. Feedback and Incidents configuration is resource-scoped and linked from links.resources."
           },
           "links": {
             "$ref": "#/components/schemas/ServiceLinks"
@@ -9966,7 +11302,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "description": "NoxSpot and NoxCue have resource-scoped configuration; use links.resources."
+            "description": "Feedback and Incidents have resource-scoped configuration; use links.resources."
           }
         ]
       },
@@ -9974,24 +11310,6 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "enabledServices": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "noxticket": {
-                "type": "boolean"
-              },
-              "noxfeed": {
-                "type": "boolean"
-              },
-              "noxspot": {
-                "type": "boolean"
-              },
-              "noxcue": {
-                "type": "boolean"
-              }
-            }
-          },
           "newRepositoryPolicy": {
             "type": "string",
             "enum": [
@@ -10546,7 +11864,7 @@
               "affectedUser": {
                 "type": "string",
                 "maxLength": 200,
-                "description": "Opaque identifier; NoxCue stores only its SHA-256 hash."
+                "description": "Opaque identifier; Incidents stores only its SHA-256 hash."
               },
               "fatal": {
                 "type": "boolean",
@@ -10583,7 +11901,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 200,
-            "description": "Stable app identifier; NoxCue stores only a source-scoped SHA-256 hash."
+            "description": "Stable app identifier; Incidents stores only a source-scoped SHA-256 hash."
           },
           "occurredAt": {
             "type": "string",
@@ -10802,7 +12120,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 240,
-            "description": "One enabled NoxConnect project. The token cannot access resources assigned to another project."
+            "description": "One active NoxConnect project. The token cannot access resources assigned to another project."
           },
           "scopes": {
             "type": "array",
@@ -11063,7 +12381,7 @@
             "$ref": "#/components/schemas/ApiRecord"
           }
         ],
-        "description": "NoxTicket feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project."
+        "description": "Planning feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project."
       },
       "FeatureList": {
         "type": "array",
@@ -11077,7 +12395,7 @@
             "$ref": "#/components/schemas/ApiRecord"
           }
         ],
-        "description": "NoxTicket specification with its project, workflow state, content, and archive metadata."
+        "description": "Planning specification with its project, workflow state, content, and archive metadata."
       },
       "SpecList": {
         "type": "object",
@@ -11173,7 +12491,7 @@
             "maxLength": 254
           }
         },
-        "description": "Site-level presentation for NoxSpot resolution emails. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxConnect owns the evidence rules, AI safety prompt, HTML rendering, verified sender, and reopen behavior."
+        "description": "Site-level presentation for Feedback resolution emails. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxConnect owns the evidence rules, AI safety prompt, HTML rendering, verified sender, and reopen behavior."
       },
       "NoxSpotResolutionTemplateDocument": {
         "type": "object",
@@ -11197,6 +12515,29 @@
           "revision": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "FeatureAttachment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiRecord"
+          }
+        ],
+        "description": "Metadata for one feature screenshot or attachment."
+      },
+      "FeatureAttachmentList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "attachments"
+        ],
+        "properties": {
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeatureAttachment"
+            }
           }
         }
       }
@@ -11244,19 +12585,19 @@
       "description": "Connections, identity, repositories, projects, and shared delivery."
     },
     {
-      "name": "NoxTicket",
+      "name": "Planning",
       "description": "Features, workflow, specifications, and attachments."
     },
     {
-      "name": "NoxFeed",
+      "name": "Activity",
       "description": "Current work, engineering activity, and narratives."
     },
     {
-      "name": "NoxSpot",
+      "name": "Feedback",
       "description": "Sites, website feedback capture, and screenshots."
     },
     {
-      "name": "NoxCue",
+      "name": "Incidents",
       "description": "Event sources, ingest keys, customer-health events, and metrics."
     }
   ]

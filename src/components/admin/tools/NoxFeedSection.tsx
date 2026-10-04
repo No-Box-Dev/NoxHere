@@ -49,7 +49,7 @@ export function NoxFeedSection({ noxConnect }: { noxConnect: IntegrationsStatus 
                 <div className="space-y-3 border-t border-stone-100 pt-4">
                   <div className="space-y-1">
                     <h3 className="text-xs font-semibold text-stone-700">Project channel</h3>
-                    <p className="text-xs text-stone-400">Choose an enabled NoxConnect project and one channel for its release notes.</p>
+                    <p className="text-xs text-stone-400">Choose an active NoxConnect project and one channel for its release notes.</p>
                   </div>
                   <NoxFeedProjectDelivery />
                   <div className="space-y-1 border-t border-stone-100 pt-4">

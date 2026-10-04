@@ -101,6 +101,18 @@ describe("GET /api/v1/feed", () => {
     expect(e).not.toHaveProperty("actor_id");
   });
 
+  it("carries the Opened post and three-part summary into Merged", async () => {
+    const db = makeDb({ allResult: [row({
+      opened_summary: "the original opened post",
+      opened_technical_summary: "What it does: Same outcome\nHow it works: Same approach\nWhat it touches: Same areas",
+    })] });
+    const body = await (await feed(makeCtx({ db }))).json() as { events: Array<{ summary: string; technicalSummary: string }> };
+    expect(body.events[0]).toMatchObject({
+      summary: "the original opened post",
+      technicalSummary: "What it does: Same outcome\nHow it works: Same approach\nWhat it touches: Same areas",
+    });
+  });
+
   it("computes nextCursor only when a full page came back", async () => {
     // limit defaults to 25 — one row means partial page, so no cursor.
     const dbShort = makeDb({ allResult: [row()] });
@@ -124,6 +136,15 @@ describe("GET /api/v1/feed", () => {
     expect(binds).toContain("github:pr:opened");
   });
 
+  it("limits each cursor page before returning a next cursor", async () => {
+    const db = makeDb();
+    await feed(makeCtx({ db, url: "http://x/api/v1/feed?mode=opened&limit=20&before=2025-01-15T10%3A00%3A00Z%3A200" }));
+    const { sql, binds } = db._calls.all[0];
+    expect(sql).toMatch(/ORDER BY event\.created_at DESC, event\.id DESC\s+LIMIT \?/);
+    expect(binds.at(-1)).toBe(20);
+    expect(binds).toContain(200);
+  });
+
   it("maps mode=release-notes to the release_notes type", async () => {
     const db = makeDb();
     await feed(makeCtx({ db, url: "http://x/api/v1/feed?mode=release-notes" }));
@@ -140,11 +161,13 @@ describe("GET /api/v1/feed", () => {
     expect(binds).toContain("noxconnect");
   });
 
-  it("enforces the API token project in SQL", async () => {
+  it("enforces the selected project through its canonical repository routing", async () => {
     const db = makeDb();
     await feed(makeCtx({ db, projectId: "project_playnist" }));
     const { sql, binds } = db._calls.all[0];
-    expect(sql).toMatch(/project_id = \?/);
+    expect(sql).toMatch(/event\.repo COLLATE NOCASE IN/);
+    expect(sql).toMatch(/FROM project_repositories assignment/);
+    expect(sql).toMatch(/assignment\.project_id = \?/);
     expect(binds).toContain("project_playnist");
   });
 
@@ -152,7 +175,7 @@ describe("GET /api/v1/feed", () => {
     const db = makeDb();
     await feed(makeCtx({ db, url: "http://x/api/v1/feed?actor=Alice" }));
     const { sql, binds } = db._calls.all[0];
-    expect(sql).toMatch(/LOWER\(json_extract\(payload_json, '\$\.pr\.author\.login'\)\) = LOWER\(\?\)/);
+    expect(sql).toMatch(/LOWER\(COALESCE\(json_extract\(event\.payload_json, '\$\.pr\.author\.login'\), pr\.author\)\) = LOWER\(\?\)/);
     expect(binds).toContain("Alice");
   });
 
@@ -160,7 +183,7 @@ describe("GET /api/v1/feed", () => {
     const db = makeDb();
     await feed(makeCtx({ db, url: "http://x/api/v1/feed?before=2025-01-15T09:00:00Z:199" }));
     const { sql, binds } = db._calls.all[0];
-    expect(sql).toMatch(/created_at < \? OR \(created_at = \? AND id < \?\)/);
+    expect(sql).toMatch(/event\.created_at < \? OR \(event\.created_at = \? AND event\.id < \?\)/);
     expect(binds).toContain(199);
     expect(binds).toContain("2025-01-15T09:00:00Z");
   });

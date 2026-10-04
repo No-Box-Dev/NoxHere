@@ -1,0 +1,39 @@
+{
+  "name": "noxcue",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "example:check": "tsc --ignoreConfig --noEmit --strict --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution Bundler examples/browser/noxcue.ts",
+    "sdk:build": "npm run build --workspace @noxcue/sdk",
+    "sdk:check": "npm run check --workspace @noxcue/sdk",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run cf-typegen && npm run typecheck && npm run sdk:build && npm run example:check && npm test && npm run build"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@resvg/resvg-wasm": "^2.6.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.130.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "sharp": "0.35.4"
+  }
+}

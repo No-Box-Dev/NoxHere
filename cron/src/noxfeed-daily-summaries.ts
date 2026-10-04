@@ -1,4 +1,4 @@
-import { stageSlackDelivery, queueOutboxDelivery } from "../../functions/lib/delivery-outbox.js";
+import { publishSlackTransport } from "../../functions/lib/transport-outbox";
 import { getActiveRepoNames } from "../../functions/lib/inactive-repos.js";
 import { completeNarrative } from "../../functions/lib/llm.js";
 import { resolveLlmConfig } from "../../functions/lib/llm-config.js";
@@ -129,7 +129,7 @@ function slackMessage(org: DailySummaryOrg, period: string, text: string, counts
 async function createSummary(env: DailySummaryEnv, org: DailySummaryOrg, period: string, nowMs: number) {
   const sourceId = `daily-summary:${org.id}:${org.project_id}:${period}`;
   const existing = await env.DB.prepare(
-    "SELECT id FROM delivery_outbox WHERE source = 'noxfeed_daily_summary' AND destination = 'slack' AND source_id = ?",
+    "SELECT id FROM transport_outbox WHERE provider = 'slack' AND operation = 'slack.message.send' AND idempotency_key = ?",
   ).bind(sourceId).first();
   if (existing) return { skipped: "already_created" };
 
@@ -163,21 +163,14 @@ async function createSummary(env: DailySummaryEnv, org: DailySummaryOrg, period:
   });
   if (!generated) throw new Error("NoxFeed AI returned no daily summary");
   const text = generated.slice(0, SUMMARY_MAX_CHARS);
-  const delivery = await stageSlackDelivery(env.DB, {
+  const delivery = await publishSlackTransport(env, {
     orgId: org.id,
     projectId: org.project_id,
-    source: "noxfeed_daily_summary",
-    sourceId,
-    siteId: null,
-    connectionId: org.connection_id,
-    channelId: org.channel_id,
-    payload: { message: slackMessage(org, period, text, prompt.counts) },
+    route: "activity_summary",
+    idempotencyKey: sourceId,
+    message: slackMessage(org, period, text, prompt.counts),
   });
-  if (!delivery?.id) throw new Error("NoxFeed daily summary outbox write failed");
-  const queued = delivery.status === "delivered"
-    ? false
-    : await queueOutboxDelivery(env, delivery.id, org.github_login);
-  return { created: true, queued };
+  return { created: true, queued: delivery.queued };
 }
 
 export async function runNoxFeedDailySummaries(env: DailySummaryEnv, nowMs = Date.now()) {

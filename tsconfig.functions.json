@@ -15,5 +15,10 @@
     "noUncheckedSideEffectImports": true,
     "resolveJsonModule": true
   },
-  "include": ["functions/**/*.ts", "cron/**/*.ts"]
+  "include": [
+    "workers/api-gateway/worker-configuration.d.ts",
+    "functions/**/*.ts",
+    "cron/**/*.ts",
+    "shared/**/*.ts"
+  ]
 }

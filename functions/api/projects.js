@@ -1,6 +1,9 @@
 import { getCtx, jsonResponse, errorResponse } from "../lib/db";
 import { getInstallationToken, signAppJwt } from "../lib/github-app";
 import { setInstallationRepos, upsertInstallation } from "../lib/gh-mirror";
+import { getActiveRepoNames } from "../lib/inactive-repos.js";
+
+const MAX_PROJECT_NAME_LENGTH = 100;
 
 // GET /api/projects — list projects (narrator scope) for this org.
 //
@@ -15,15 +18,26 @@ export async function onRequestGet(context) {
   if (!orgLogin) return errorResponse("Missing org context", 400);
 
   const db = context.env.DB;
+  const bootstrapView = new URL(context.request.url).searchParams.get("view") === "bootstrap";
 
-  await ensureInstallationsRow(db, orgLogin, orgId);
-  await discoverInstallationViaApp(context.env, orgLogin);
-  await bootstrapReposIfEmpty(context.env, orgLogin);
-  await syncProjectsFromInstallations(db, orgLogin);
+  // Full project discovery remains available on the canonical collection.
+  // The application shell uses the already-mirrored active projection so a
+  // routine page load never waits on legacy GitHub reconciliation.
+  if (!bootstrapView) {
+    await ensureInstallationsRow(db, orgLogin, orgId);
+    await discoverInstallationViaApp(context.env, orgLogin);
+    await bootstrapReposIfEmpty(context.env, orgLogin);
+    await syncProjectsFromInstallations(db, orgLogin);
+  }
 
   const rows = await db.prepare(
     `SELECT project.id, project.name, project.slug, project.org, project.repo,
             project.description, project.narrator_enabled,
+            COALESCE((
+              SELECT json_group_array(assignment.repo)
+                FROM project_repositories assignment
+               WHERE assignment.org_id = ? AND assignment.project_id = project.id
+            ), '[]') AS repositories_json,
             COALESCE(routing.enabled, 0) AS routing_enabled,
             CASE
               WHEN project.archived = 1
@@ -38,15 +52,104 @@ export async function onRequestGet(context) {
      LEFT JOIN project_routing_settings routing
        ON routing.org_id = ? AND routing.project_id = project.id
      WHERE project.org_id = ?
+       ${bootstrapView ? "AND project.archived = 0 AND COALESCE(routing.enabled, 0) = 1" : ""}
      ORDER BY archived, COALESCE(project.org, ''), project.name`
-  ).bind(orgId, orgId, orgId).all();
+  ).bind(orgId, orgId, orgId, orgId).all();
 
-  const projects = rows.results ?? [];
+  const projects = (rows.results ?? []).map(({ repositories_json, ...project }) => ({
+    ...project,
+    repositories: parseRepositories(repositories_json),
+  }));
   if (auth?.accessLevel !== "guest" || auth.guestAccess?.organizationWide === true) {
     return jsonResponse({ projects });
   }
   const allowed = new Set(Object.keys(auth?.guestAccess?.projects ?? {}));
   return jsonResponse({ projects: projects.filter((project) => allowed.has(project.id)) });
+}
+
+function parseRepositories(value) {
+  if (typeof value !== "string") return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((repo) => typeof repo === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+// POST /api/projects — create a NoxHere project. By default it owns every
+// active repository that is not already assigned to another enabled project.
+// This gives first-run onboarding the useful "all repositories" default while
+// preserving the boundaries of projects an organization already configured.
+export async function onRequestPost(context) {
+  const { orgLogin, orgId, isAdmin } = getCtx(context);
+  if (!orgLogin || !orgId) return errorResponse("Missing organization context", 400);
+  if (!isAdmin) return errorResponse("Admin access required", 403);
+
+  let body;
+  try { body = await context.request.json(); }
+  catch { return errorResponse("Request body must be valid JSON", 400); }
+  const name = typeof body?.name === "string" ? body.name.trim().replace(/\s+/g, " ") : "";
+  if (!name || name.length > MAX_PROJECT_NAME_LENGTH) {
+    return errorResponse(`Project name must be between 1 and ${MAX_PROJECT_NAME_LENGTH} characters`, 422);
+  }
+  if (body?.repositories !== undefined && !Array.isArray(body.repositories)) {
+    return errorResponse("Repositories must be an array", 422);
+  }
+  const requestedRepositories = body?.repositories?.map((repo) => typeof repo === "string" ? repo.trim() : "") ?? null;
+  if (requestedRepositories && (requestedRepositories.some((repo) => !repo) || new Set(requestedRepositories.map((repo) => repo.toLowerCase())).size !== requestedRepositories.length)) {
+    return errorResponse("Repositories must be unique non-empty names", 422);
+  }
+
+  const duplicate = await context.env.DB.prepare(
+    "SELECT id FROM projects WHERE org_id = ? AND name = ? COLLATE NOCASE AND archived = 0 LIMIT 1",
+  ).bind(orgId, name).first();
+  if (duplicate) return errorResponse("A project with this name already exists", 409);
+
+  const activeRepositories = await getActiveRepoNames(context.env.DB, orgId, orgLogin);
+  const activeByName = new Map(activeRepositories.map((repo) => [repo.toLowerCase(), repo]));
+  if (requestedRepositories) {
+    const unknown = requestedRepositories.filter((repo) => !activeByName.has(repo.toLowerCase()));
+    if (unknown.length > 0) return errorResponse(`Repositories are unavailable: ${unknown.join(", ")}`, 422);
+  }
+  const enabledAssignments = requestedRepositories ? [] : (await context.env.DB.prepare(
+    `SELECT assignment.repo
+       FROM project_repositories assignment
+       JOIN project_routing_settings routing
+         ON routing.org_id = assignment.org_id AND routing.project_id = assignment.project_id
+      WHERE assignment.org_id = ? AND routing.enabled = 1`,
+  ).bind(orgId).all()).results ?? [];
+  const owned = new Set(enabledAssignments.map((row) => String(row.repo).toLowerCase()));
+  const repositories = requestedRepositories
+    ? requestedRepositories.map((repo) => activeByName.get(repo.toLowerCase())).filter(Boolean)
+    : activeRepositories.filter((repo) => !owned.has(repo.toLowerCase()));
+
+  const slug = name.toLowerCase().normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "project";
+  const id = `proj_${orgLogin.toLowerCase()}_${slug}_${crypto.randomUUID().slice(0, 8)}`;
+  await context.env.DB.batch([
+    context.env.DB.prepare(
+      `INSERT INTO projects (id, name, slug, org, repo, owner_id, org_id, narrator_enabled, archived, updated_at)
+       VALUES (?, ?, ?, ?, NULL, ?, ?, 1, 0, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))`,
+    ).bind(id, name, slug, orgLogin, orgLogin, orgId),
+    context.env.DB.prepare(
+      `INSERT INTO project_routing_settings (org_id, project_id, enabled, updated_at)
+       VALUES (?, ?, 1, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))`,
+    ).bind(orgId, id),
+    ...repositories.map((repo) => context.env.DB.prepare(
+      `INSERT INTO project_repositories (org_id, repo, project_id, updated_at)
+       VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+       ON CONFLICT(org_id, repo) DO UPDATE SET
+         project_id = excluded.project_id, updated_at = excluded.updated_at`,
+    ).bind(orgId, repo, id)),
+  ]);
+  return jsonResponse({ project: {
+    id, name, slug, org: orgLogin, repo: null, description: null,
+    narrator_enabled: 1, routing_enabled: 1, archived: 0, repositories,
+  } }, 201);
 }
 
 // If `orgs.installation_id` is set but no installations row exists yet
@@ -207,8 +310,14 @@ async function syncProjectsFromInstallations(db, ownerId) {
       upserts.push(
         db.prepare(
           `INSERT OR IGNORE INTO projects (id, name, org, repo, owner_id, org_id, updated_at)
-           VALUES (?, ?, ?, ?, ?, (SELECT id FROM orgs WHERE github_login = ? COLLATE NOCASE), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))`
-        ).bind(projectId, repo, org, repo, ownerId, ownerId)
+           SELECT ?, ?, ?, ?, ?, org.id, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+             FROM orgs org
+            WHERE org.github_login = ? COLLATE NOCASE
+              AND NOT EXISTS (
+                SELECT 1 FROM projects existing
+                 WHERE existing.org_id = org.id AND existing.repo = ?
+              )`
+        ).bind(projectId, repo, org, repo, ownerId, ownerId, repo)
       );
     }
   }

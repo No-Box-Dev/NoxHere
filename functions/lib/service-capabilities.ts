@@ -1,11 +1,10 @@
 export const SERVICE_IDS = ["noxconnect", "noxticket", "noxfeed", "noxspot", "noxcue"] as const;
 
 export type ServiceId = (typeof SERVICE_IDS)[number];
-type OptionalServiceId = Exclude<ServiceId, "noxconnect">;
 type ProviderId = "github" | "slack";
 type CapabilityAccess = "member" | "admin";
-type CapabilityState = "ready" | "blocked" | "disabled";
-type SetupState = "ready" | "needs_setup" | "disabled";
+type CapabilityState = "ready" | "blocked";
+type SetupState = "ready" | "needs_setup";
 type ConnectionState = "ready" | "connecting" | "disconnected" | "degraded" | "unavailable";
 
 interface IntegrationStatus {
@@ -24,7 +23,6 @@ interface IntegrationStatus {
 }
 
 interface CatalogInput {
-  enabledApps: Record<OptionalServiceId, boolean>;
   integrations: IntegrationStatus;
 }
 
@@ -89,6 +87,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
       { id: "repositories", name: "Repositories", description: "Discover repositories and choose which projects Nox tracks.", access: "admin", requires: ["github"], operations: [
         { id: "list_repositories", method: "GET", path: "/api/v1/repos", authentication: "member", description: "List tracked or discovered repositories." },
         { id: "list_projects", method: "GET", path: "/api/v1/projects", authentication: "member", description: "List project scopes backed by GitHub repositories." },
+        { id: "create_project", method: "POST", path: "/api/v1/projects", authentication: "admin", description: "Create a project with all available repositories by default, or choose a repository subset." },
         { id: "acknowledge_repositories", method: "POST", path: "/api/v1/repos/acknowledge", authentication: "admin", description: "Acknowledge newly discovered repositories." },
         { id: "set_project_archived", method: "POST", path: "/api/v1/projects/{projectId}/archive", authentication: "admin", description: "Stop tracking a project without deleting it." },
         { id: "restore_project", method: "DELETE", path: "/api/v1/projects/{projectId}/archive", authentication: "admin", description: "Resume tracking an eligible project." },
@@ -109,7 +108,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
   },
   {
     id: "noxticket",
-    name: "NoxTicket",
+    name: "Planning",
     kind: "product",
     focus: "Plan and organize delivery work",
     description: "Turns GitHub issues into a feature backlog, workflow board, and connected specification system.",
@@ -123,6 +122,10 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "assign_feature", method: "POST", path: "/api/v1/assign", authentication: "member", description: "Assign a feature's backing GitHub issue." },
         { id: "set_feature_state", method: "POST", path: "/api/v1/issue-state", authentication: "member", description: "Open or close a feature's backing GitHub issue." },
         { id: "close_feature", method: "DELETE", path: "/api/v1/features/{number}", authentication: "member", description: "Close a feature." },
+        { id: "list_feature_attachments", method: "GET", path: "/api/v1/features/{number}/attachments", authentication: "member", description: "List feature screenshots and attachments." },
+        { id: "upload_feature_attachment", method: "POST", path: "/api/v1/features/{number}/attachments", authentication: "member", description: "Attach a screenshot or document to a feature." },
+        { id: "view_feature_attachment", method: "GET", path: "/api/v1/features/{number}/attachments/{attachmentId}", authentication: "member", description: "View a feature attachment." },
+        { id: "delete_feature_attachment", method: "DELETE", path: "/api/v1/features/{number}/attachments/{attachmentId}", authentication: "member", description: "Delete a feature attachment." },
       ] },
       { id: "workflow", name: "Workflow", description: "Configure the stages used by the feature board.", access: "admin", requires: ["github"], operations: [
         { id: "get_ticket_config", method: "GET", path: "/api/v1/services/noxticket/config", authentication: "member", description: "Read the feature repository and workflow stages." },
@@ -153,7 +156,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
   },
   {
     id: "noxfeed",
-    name: "NoxFeed",
+    name: "Activity",
     kind: "product",
     focus: "Understand and communicate current work",
     description: "Combines GitHub issues, pull requests, engineering activity, narratives, and release notes into one team feed.",
@@ -198,7 +201,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
   },
   {
     id: "noxspot",
-    name: "NoxSpot",
+    name: "Feedback",
     kind: "product",
     focus: "Capture actionable website feedback",
     description: "Adds a website feedback widget that captures reports, screenshots, page context, and delivery details for the team.",
@@ -239,7 +242,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
   },
   {
     id: "noxcue",
-    name: "NoxCue",
+    name: "Incidents",
     kind: "product",
     focus: "Monitor daily customer health",
     description: "Accepts bounded customer lifecycle and error events, derives daily health metrics, delivers scheduled summaries to Slack, and can route incidents into project GitHub issues.",
@@ -282,7 +285,6 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
 ];
 
 export function buildServiceCatalog({
-  enabledApps,
   integrations,
   definitions = SERVICE_DEFINITIONS,
   runtimeStates = {},
@@ -296,16 +298,13 @@ export function buildServiceCatalog({
   } satisfies Record<ProviderId, ConnectionState>;
 
   return definitions.map((definition) => {
-    const enabled = definition.id === "noxconnect" || enabledApps[definition.id];
     const runtime = runtimeStates[definition.id] ?? {
       state: definition.id === "noxconnect" ? "ready" as const : "unavailable" as const,
       source: definition.id === "noxconnect" ? "binding" as const : "snapshot" as const,
     };
     const runtimeReady = runtime.state === "ready";
     const requiredBlockers = definition.requiredConnections.filter((provider) => connections[provider] !== "ready");
-    const setupState: SetupState = !enabled
-      ? "disabled"
-      : !runtimeReady || requiredBlockers.length > 0
+    const setupState: SetupState = !runtimeReady || requiredBlockers.length > 0
         ? "needs_setup"
         : "ready";
 
@@ -316,7 +315,6 @@ export function buildServiceCatalog({
       focus: definition.focus,
       description: definition.description,
       runtime,
-      enabled,
       setup: {
         state: setupState,
         blockers: [
@@ -343,9 +341,7 @@ export function buildServiceCatalog({
       },
       capabilities: definition.capabilities.map((capability) => {
         const blockers = (capability.requires ?? []).filter((provider) => connections[provider] !== "ready");
-        const state: CapabilityState = !enabled
-          ? "disabled"
-          : !runtimeReady || blockers.length > 0
+        const state: CapabilityState = !runtimeReady || blockers.length > 0
             ? "blocked"
             : "ready";
         return {

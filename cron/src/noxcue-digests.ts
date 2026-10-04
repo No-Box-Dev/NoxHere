@@ -1,4 +1,4 @@
-import { stageSlackDelivery, queueOutboxDelivery } from "../../functions/lib/delivery-outbox.js";
+import { publishSlackTransport } from "../../functions/lib/transport-outbox";
 import { getNoxCueDigestResponse } from "../../functions/lib/noxcue-response.js";
 import { loadNoxCueDigestData, storeNoxCueDerivedMetrics } from "../../functions/lib/noxcue-digest-data.js";
 import { loadEnabledNoxCueMetricKeys, selectNoxCueDigestMetrics } from "../../functions/lib/noxcue-project-metrics.js";
@@ -118,36 +118,31 @@ async function createDigest(
     selected.metrics,
     selected.comparisons,
     selected.metricLabels,
+    selected.activityBreakdowns,
     source.project_id ? { organizationId: source.org_id, projectId: source.project_id, sourceId: source.id } : undefined,
   );
-  const delivery = await stageSlackDelivery(env.DB, {
+  const delivery = await publishSlackTransport(env, {
     orgId: source.org_id,
     projectId: source.project_id,
-    source: "noxcue",
-    sourceId: `digest:${source.id}:${period}`,
-    siteId: null,
-    connectionId: destination.connectionId,
-    channelId: destination.channelId,
-    payload: { message: response.message },
+    route: "engagement",
+    routeContext: { kind: "source", id: source.id },
+    idempotencyKey: `noxcue:digest:${source.id}:${period}`,
+    message: response.message,
   });
-  if (!delivery?.id) throw new Error("NoxCue digest outbox write failed");
   const digestId = crypto.randomUUID();
   await env.DB.prepare(
     `INSERT OR IGNORE INTO cue_digest_runs
-       (id, org_id, source_id, period, outbox_id, metrics_json)
+       (id, org_id, source_id, period, transport_outbox_id, metrics_json)
      VALUES (?, ?, ?, ?, ?, ?)`,
   ).bind(
     digestId,
     source.org_id,
     source.id,
     period,
-    delivery.id,
+    delivery.outboxId,
     JSON.stringify({ metrics: selected.metrics, comparisons: selected.comparisons }),
   ).run();
-  const queued = delivery.status === "delivered"
-    ? false
-    : await queueOutboxDelivery(env, delivery.id, source.owner_id);
-  return { created: true, queued };
+  return { created: true, queued: delivery.queued };
 }
 
 export async function runNoxCueDigests(env: DigestEnv, nowMs = Date.now()) {

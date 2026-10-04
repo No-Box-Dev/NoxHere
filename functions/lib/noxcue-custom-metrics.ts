@@ -35,7 +35,7 @@ export async function loadCueCustomMetrics(db: D1Database, orgId: number, scope:
       lastEventAt: metric.last_event_at,
       outputs: [
         { key: metric.metric_key, label: `${metric.label} total`, unit: "count" as const },
-        { key: `${metric.metric_key}.per_user`, label: `${metric.label} per user`, unit: "decimal" as const },
+        { key: `${metric.metric_key}.per_mau`, label: `${metric.label} / active user`, unit: "decimal" as const },
       ],
     })),
   };
