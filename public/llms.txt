@@ -1,11 +1,11 @@
-# NoxConnect API
+# NoxHere API
 
-NoxConnect is the public product, identity, CLI, and API. One account session works across organizations, projects, and the Planning, Activity, Feedback, and Incidents capabilities.
+NoxHere is the public product, identity, CLI, and API. One account session works across organizations, projects, and the Feed, Ticket, Spot, Cue, and Connect capabilities.
 
 - [Machine-readable API description](/openapi.json)
 - [Developer documentation](/developers)
-- [All NoxConnect capabilities](/api/v1/services)
-- [NoxConnect foundation capabilities](/api/v1/services/noxconnect)
+- [All NoxHere capabilities](/api/v1/services)
+- [Connect capabilities](/api/v1/services/noxconnect)
 - [Planning capabilities (`noxticket` compatibility ID)](/api/v1/services/noxticket)
 - [Activity capabilities (`noxfeed` compatibility ID)](/api/v1/services/noxfeed)
 - [Feedback capabilities (`noxspot` compatibility ID)](/api/v1/services/noxspot)
@@ -16,7 +16,7 @@ NoxConnect is the public product, identity, CLI, and API. One account session wo
 
 For a supervised local agent, a human runs `noxconnect login`, completes browser approval, and selects context with `noxconnect use <organization>/<project>`. For a headless agent or CI, inject an expiring `nox_sk_…` token from an approved secret manager. Never copy a browser cookie or provider token into chat or CI. The complete CLI reference is at `/developers#cli`.
 
-Browser authentication creates an opaque HttpOnly NoxConnect session; browser writes also require CSRF proof. CLI and native clients use short-lived `nox_at_…` access tokens with rotating `nox_rt_…` refresh credentials. Automation tokens are bound to one organization, one enabled project, and explicit capability scopes. Compatibility scope IDs remain `noxfeed`, `noxspot`, and `noxcue`. Raw GitHub bearer tokens are rejected. Public ingestion keys and private Worker bindings are separate credential classes.
+Browser authentication creates an opaque HttpOnly NoxHere session; browser writes also require CSRF proof. CLI and native clients use short-lived `nox_at_…` access tokens with rotating `nox_rt_…` refresh credentials. Automation tokens are bound to one organization, one project, and explicit capability scopes. Compatibility scope IDs remain `noxfeed`, `noxspot`, and `noxcue`. Raw GitHub bearer tokens are rejected. Public ingestion keys and private Worker bindings are separate credential classes.
 
 Every service has `/api/v1/services/{service}/setup`, `/config`, and `/health`. Config updates are service-scoped and require the latest config ETag in `If-Match`; provider credentials are never returned.
 

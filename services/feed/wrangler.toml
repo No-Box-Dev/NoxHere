@@ -13,3 +13,12 @@ binding = "DEMO_DB"
 database_name = "noxfeed-demo"
 database_id = "86e5f900-5f92-469d-bd10-2b05e9e7a9a7"
 migrations_dir = "migrations"
+
+[env.staging]
+name = "noxfeed-response-staging"
+
+[[env.staging.d1_databases]]
+binding = "DEMO_DB"
+database_name = "noxconnect-staging"
+database_id = "3a9d9857-c26d-4421-9fbd-b81f474864d3"
+migrations_dir = "migrations"

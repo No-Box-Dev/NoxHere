@@ -1,6 +1,6 @@
 # Architecture
 
-A high-level map of how noxconnect fits together. For maintainer-level detail (every API route, config key, and convention), see [CLAUDE.md](./CLAUDE.md).
+A high-level map of how NoxHere fits together. For maintainer-level detail (every API route, config key, and convention), see [CLAUDE.md](./CLAUDE.md).
 
 ## Overview
 
@@ -12,16 +12,17 @@ Web / Apple apps / noxconnect CLI
       identity · tenancy · authorization
                   │ private service binding
                   ▼
-        NoxConnect capability modules
- activity · planning · feedback · incidents
+           NoxHere capability services
+   feed · ticket · spot · cue · connect
                   │
                   ▼
-          private connectors service
-           GitHub · Slack · managed AI
+       shared event + transport contracts
+            GitHub · Slack · managed AI
 ```
 
 - **Frontend** — `apps/web/` is the React 19 + TypeScript + Vite NoxHere SPA. TanStack Query reads NoxHere APIs; browser code does not receive GitHub or Slack tokens or call provider APIs directly. Capability pages are route-lazy-loaded.
 - **API** — `services/gateway/` is the only public authority and forwards a short-lived signed assertion over a private binding. Compatibility capability handlers remain under `functions/api/` while traffic moves to the service directories; new code uses zod validation at the boundary and native D1 access (`DB.prepare().bind()`, `DB.batch()`).
+- **Capabilities** — `services/feed/`, `services/ticket/`, `services/spot/`, `services/cue/`, and `services/connect/` own distinct domain behavior while sharing envelopes and transports from `packages/contracts/`.
 - **Database** — Cloudflare D1 (SQLite). Schema in `migrations/`, applied with `wrangler d1 migrations apply`.
 - **Scheduler service** — `services/scheduler/` imports shared platform helpers, reconciles GitHub state every 30 minutes, and consumes the background-work queue.
 - **Queue + R2** — durable background work (narration, bootstrap, repo sync) runs on a Cloudflare Queue with retries and a dead-letter queue; the `events` table is archived to R2 after 90 days.

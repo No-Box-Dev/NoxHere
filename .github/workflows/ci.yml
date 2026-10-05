@@ -114,7 +114,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - name: Verify the unified public API contract
-        run: NOX_OPENAPI_PATH=../../apps/web/public/openapi.json npm run docs:check
+        run: NOX_OPENAPI_PATH=../../public/openapi.json npm run docs:check
       - run: npm run build
 
   noxspot-capture:

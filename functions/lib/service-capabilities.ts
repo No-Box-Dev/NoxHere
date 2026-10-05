@@ -1,11 +1,10 @@
 export const SERVICE_IDS = ["noxconnect", "noxticket", "noxfeed", "noxspot", "noxcue"] as const;
 
 export type ServiceId = (typeof SERVICE_IDS)[number];
-type OptionalServiceId = Exclude<ServiceId, "noxconnect">;
 type ProviderId = "github" | "slack";
 type CapabilityAccess = "member" | "admin";
-type CapabilityState = "ready" | "blocked" | "disabled";
-type SetupState = "ready" | "needs_setup" | "disabled";
+type CapabilityState = "ready" | "blocked";
+type SetupState = "ready" | "needs_setup";
 type ConnectionState = "ready" | "connecting" | "disconnected" | "degraded" | "unavailable";
 
 interface IntegrationStatus {
@@ -24,7 +23,6 @@ interface IntegrationStatus {
 }
 
 interface CatalogInput {
-  enabledApps: Record<OptionalServiceId, boolean>;
   integrations: IntegrationStatus;
 }
 
@@ -123,6 +121,10 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "create_feature", method: "POST", path: "/api/v1/features", authentication: "member", description: "Create a feature." },
         { id: "update_feature", method: "PATCH", path: "/api/v1/features/{number}", authentication: "member", description: "Update, move, close, or reopen a feature." },
         { id: "close_feature", method: "DELETE", path: "/api/v1/features/{number}", authentication: "member", description: "Close a feature." },
+        { id: "list_feature_attachments", method: "GET", path: "/api/v1/features/{number}/attachments", authentication: "member", description: "List feature attachments." },
+        { id: "upload_feature_attachment", method: "POST", path: "/api/v1/features/{number}/attachments", authentication: "member", description: "Attach a bounded document to a feature." },
+        { id: "download_feature_attachment", method: "GET", path: "/api/v1/features/{number}/attachments/{attachmentId}", authentication: "member", description: "Download a feature attachment." },
+        { id: "delete_feature_attachment", method: "DELETE", path: "/api/v1/features/{number}/attachments/{attachmentId}", authentication: "member", description: "Delete a feature attachment." },
       ] },
       { id: "workflow", name: "Workflow", description: "Configure the stages used by the feature board.", access: "admin", operations: [
         { id: "get_ticket_config", method: "GET", path: "/api/v1/services/noxticket/config", authentication: "member", description: "Read the feature repository and workflow stages." },
@@ -288,7 +290,6 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
 ];
 
 export function buildServiceCatalog({
-  enabledApps,
   integrations,
   definitions = SERVICE_DEFINITIONS,
   runtimeStates = {},
@@ -302,16 +303,13 @@ export function buildServiceCatalog({
   } satisfies Record<ProviderId, ConnectionState>;
 
   return definitions.map((definition) => {
-    const enabled = definition.id === "noxconnect" || enabledApps[definition.id];
     const runtime = runtimeStates[definition.id] ?? {
       state: definition.id === "noxconnect" ? "ready" as const : "unavailable" as const,
       source: definition.id === "noxconnect" ? "binding" as const : "snapshot" as const,
     };
     const runtimeReady = runtime.state === "ready";
     const requiredBlockers = definition.requiredConnections.filter((provider) => connections[provider] !== "ready");
-    const setupState: SetupState = !enabled
-      ? "disabled"
-      : !runtimeReady || requiredBlockers.length > 0
+    const setupState: SetupState = !runtimeReady || requiredBlockers.length > 0
         ? "needs_setup"
         : "ready";
 
@@ -322,7 +320,6 @@ export function buildServiceCatalog({
       focus: definition.focus,
       description: definition.description,
       runtime,
-      enabled,
       setup: {
         state: setupState,
         blockers: [
@@ -349,9 +346,7 @@ export function buildServiceCatalog({
       },
       capabilities: definition.capabilities.map((capability) => {
         const blockers = (capability.requires ?? []).filter((provider) => connections[provider] !== "ready");
-        const state: CapabilityState = !enabled
-          ? "disabled"
-          : !runtimeReady || blockers.length > 0
+        const state: CapabilityState = !runtimeReady || blockers.length > 0
             ? "blocked"
             : "ready";
         return {

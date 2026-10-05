@@ -573,6 +573,68 @@ for (const [path, parameters] of Object.entries(queryParameters)) {
 }
 
 delete document.components.schemas.NoxFeedConfigPatch?.properties?.projectScope;
+
+// Feature attachments use the same bounded storage contract as specification
+// attachments, but are addressed by the feature number.
+const featureAttachmentsPath = "/api/v1/features/{number}/attachments";
+const featureAttachmentPath = `${featureAttachmentsPath}/{attachmentId}`;
+document.paths[featureAttachmentsPath] = structuredClone(document.paths["/api/v1/specs/{specId}/attachments"]);
+document.paths[featureAttachmentPath] = structuredClone(document.paths["/api/v1/specs/{specId}/attachments/{attachmentId}"]);
+for (const operation of Object.values(document.paths[featureAttachmentsPath])) {
+  operation.parameters = operation.parameters.map((entry) => entry.$ref === "#/components/parameters/specId"
+    ? { "$ref": "#/components/parameters/number" }
+    : entry);
+}
+for (const operation of Object.values(document.paths[featureAttachmentPath])) {
+  operation.parameters = operation.parameters.map((entry) => entry.$ref === "#/components/parameters/specId"
+    ? { "$ref": "#/components/parameters/number" }
+    : entry);
+}
+document.paths[featureAttachmentsPath].get.operationId = "listFeatureAttachments";
+document.paths[featureAttachmentsPath].get.summary = "List feature attachments";
+document.paths[featureAttachmentsPath].post.operationId = "uploadFeatureAttachment";
+document.paths[featureAttachmentsPath].post.summary = "Upload a bounded feature attachment";
+document.paths[featureAttachmentPath].get.operationId = "downloadFeatureAttachment";
+document.paths[featureAttachmentPath].get.summary = "Download a feature attachment";
+document.paths[featureAttachmentPath].delete.operationId = "deleteFeatureAttachment";
+document.paths[featureAttachmentPath].delete.summary = "Delete a feature attachment";
+
+const projectParameter = { "$ref": "#/components/parameters/projectId" };
+const incidentParameter = { name: "incidentId", in: "path", required: true, schema: { type: "string", pattern: "^inc_[a-f0-9]{32}$" } };
+function projectCapabilityOperation(operationId, summary, { write = false, incident = false } = {}) {
+  return {
+    operationId,
+    summary,
+    parameters: [projectParameter, ...(incident ? [incidentParameter] : [])],
+    ...(write ? { requestBody: { required: true, content: { "application/json": { schema: { "$ref": "#/components/schemas/ApiRecord" } } } } } : {}),
+    responses: {
+      "200": { description: "Capability response", content: { "application/json": { schema: { "$ref": "#/components/schemas/ApiRecord" } } } },
+      "400": { "$ref": "#/components/responses/V1Error" },
+      "401": { "$ref": "#/components/responses/V1Error" },
+      "403": { "$ref": "#/components/responses/V1Error" },
+      "404": { "$ref": "#/components/responses/V1Error" },
+      "409": { "$ref": "#/components/responses/V1Error" },
+    },
+  };
+}
+
+document.paths["/api/v1/projects/{projectId}/activity"] = { get: projectCapabilityOperation("getProjectActivity", "Read project activity") };
+document.paths["/api/v1/projects/{projectId}/issues"] = { get: projectCapabilityOperation("getProjectIssues", "Read project issues") };
+document.paths["/api/v1/projects/{projectId}/feedback"] = { get: projectCapabilityOperation("getProjectFeedback", "Read project feedback") };
+document.paths["/api/v1/projects/{projectId}/incidents"] = { get: projectCapabilityOperation("getProjectIncidents", "Read project incidents") };
+document.paths["/api/v1/projects/{projectId}/incidents/{incidentId}"] = {
+  get: projectCapabilityOperation("getProjectIncident", "Read one project incident", { incident: true }),
+  patch: projectCapabilityOperation("updateProjectIncident", "Update one project incident", { write: true, incident: true }),
+};
+document.paths["/api/v1/projects/{projectId}/cue/dashboard"] = { get: projectCapabilityOperation("getCueProjectDashboard", "Read the project Cue dashboard") };
+document.paths["/api/v1/projects/{projectId}/cue/actions"] = {
+  get: projectCapabilityOperation("getCueProjectActions", "Read project Cue actions"),
+  put: projectCapabilityOperation("updateCueProjectActions", "Update project Cue actions", { write: true }),
+};
+document.paths["/api/v1/projects/{projectId}/cue/alerts"] = { get: projectCapabilityOperation("getCueProjectAlerts", "Read project Cue alerts") };
+document.paths["/api/v1/projects/{projectId}/cue/alert-rules"] = { get: projectCapabilityOperation("getCueProjectAlertRules", "Read project Cue alert rules") };
+document.paths["/api/v1/projects/{projectId}/cue/stat-events"] = { get: projectCapabilityOperation("getCueProjectStatEvents", "Read project Cue statistic events") };
+
 setJsonSuccessSchema("/api/v1/feed", "get", "FeedPage");
 for (const path of ["/api/v1/issues", "/api/v1/prs"]) setJsonSuccessSchema(path, "get", "RecordCollection");
 for (const path of ["/api/v1/issues/{repo}/{number}", "/api/v1/prs/{repo}/{number}", "/api/v1/engineer-activity", "/api/v1/engineer-stats", "/api/v1/events", "/api/v1/events/{id}", "/api/v1/github/comments", "/api/v1/github/details", "/api/v1/search"]) {
@@ -586,6 +648,9 @@ setJsonSuccessSchema("/api/v1/features", "get", "FeatureList");
 setJsonSuccessSchema("/api/v1/features", "post", "Feature");
 setJsonSuccessSchema("/api/v1/features/{number}", "patch", "Feature");
 setJsonSuccessSchema("/api/v1/features/{number}", "delete", "MutationReceipt");
+setJsonSuccessSchema(featureAttachmentsPath, "get", "SpecAttachmentList");
+setJsonSuccessSchema(featureAttachmentsPath, "post", "SpecAttachment");
+setJsonSuccessSchema(featureAttachmentPath, "delete", "MutationReceipt");
 setJsonSuccessSchema("/api/v1/specs", "get", "SpecList");
 setJsonSuccessSchema("/api/v1/specs", "post", "Spec");
 setJsonSuccessSchema("/api/v1/specs/{specId}", "get", "Spec");

@@ -74,15 +74,16 @@ service.
 ## Stack
 
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, TanStack Query, Radix UI, Lucide icons
-- **Backend:** Cloudflare Pages Functions + D1 (SQLite), a sibling cron Worker, Cloudflare Queues + R2
+- **Backend:** Cloudflare Workers + D1 (SQLite), private service bindings, Cloudflare Queues + R2
 - **Testing:** Vitest + Testing Library
 
 ## Scripts
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Vite dev server |
-| `npm run build` | Production build |
+| `npm run dev` | NoxHere web development server |
+| `npm run dev:full` | Build the web app and run the public gateway locally |
+| `npm run build` | Production web and public gateway builds |
 | `npm run e2e:local` | Build and exercise the complete local multi-service stack |
 | `npm run e2e:provider:preflight` | Validate the explicit test repository, project, and Slack destination without writes |
 | `npm run e2e:provider` | Run explicitly confirmed provider writes against those test-only destinations |

@@ -10,7 +10,7 @@ describe("NoxCue daily custom metric history", () => {
       async all() {
         if (sql.includes("WITH RECURSIVE periods")) return { results: [{
           period: "2026-09-09", metric_key: "custom.journals.added", label: "Journals added",
-          total_events: 4, total_users: 2, updated_at: "2026-09-09T20:00:00Z",
+          daily_events: 4, monthly_events: 10, monthly_active: 2, updated_at: "2026-09-09T20:00:00Z",
         }] };
         if (sql.includes("FROM cue_error_groups")) return { results: [{
           fingerprint: "server:signup:auth_503", title: "Signup failed", occurrence_count: 2,
@@ -31,7 +31,7 @@ describe("NoxCue daily custom metric history", () => {
     expect(activitySql).toContain("activity.period = periods.period");
     expect(activitySql).not.toContain("activity.period <= periods.period");
     expect(body.days[0]?.metrics["custom.journals.added"].value).toBe(4);
-    expect(body.days[0]?.metrics["custom.journals.added.per_user"].value).toBe(2);
+    expect(body.days[0]?.metrics["custom.journals.added.per_mau"].value).toBe(5);
     expect(body.errorGroups[0]).toMatchObject({
       status: "acknowledged", acknowledgedBy: "jasper", affectedUserCount: 2,
       groupingKind: "inferred", firstRelease: "release-a", lastRelease: "release-b",

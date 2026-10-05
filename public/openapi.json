@@ -8766,28 +8766,24 @@
       }
     },
     "/api/v1/projects/{projectId}/cue/dashboard": {
-      "parameters": [
-        {
-          "name": "projectId",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      ],
       "get": {
-        "operationId": "getProjectCueDashboard",
-        "summary": "Read the selected project's NoxCue dashboard",
-        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "getCueProjectDashboard",
+        "summary": "Read the project Cue dashboard",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Capability response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JsonValue"
+                  "$ref": "#/components/schemas/ApiRecord"
                 }
               }
             }
@@ -8801,6 +8797,9 @@
           "403": {
             "$ref": "#/components/responses/V1Error"
           },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
           "409": {
             "$ref": "#/components/responses/V1Error"
           },
@@ -8808,18 +8807,11 @@
             "$ref": "#/components/responses/V1Error"
           }
         },
-        "x-required-role": "member",
-        "x-first-party-client": true,
-        "x-organization-optional": false,
         "tags": [
           "NoxCue"
         ],
         "x-authentication": "member",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/projectContext"
-          }
-        ],
+        "x-project-scope": "optional",
         "security": [
           {
             "browserSession": [],
@@ -8830,33 +8822,28 @@
             "organization": []
           }
         ],
-        "x-change-safety": "safe_read",
-        "x-project-scope": "optional"
+        "x-change-safety": "safe_read"
       }
     },
     "/api/v1/projects/{projectId}/cue/stat-events": {
-      "parameters": [
-        {
-          "name": "projectId",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      ],
       "get": {
-        "operationId": "listProjectCueStatEvents",
-        "summary": "List accepted NoxCue events for the selected project",
-        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "getCueProjectStatEvents",
+        "summary": "Read project Cue statistic events",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Capability response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JsonValue"
+                  "$ref": "#/components/schemas/ApiRecord"
                 }
               }
             }
@@ -8870,6 +8857,9 @@
           "403": {
             "$ref": "#/components/responses/V1Error"
           },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
           "409": {
             "$ref": "#/components/responses/V1Error"
           },
@@ -8877,18 +8867,11 @@
             "$ref": "#/components/responses/V1Error"
           }
         },
-        "x-required-role": "member",
-        "x-first-party-client": true,
-        "x-organization-optional": false,
         "tags": [
           "NoxCue"
         ],
         "x-authentication": "member",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/projectContext"
-          }
-        ],
+        "x-project-scope": "optional",
         "security": [
           {
             "browserSession": [],
@@ -8899,33 +8882,28 @@
             "organization": []
           }
         ],
-        "x-change-safety": "safe_read",
-        "x-project-scope": "optional"
+        "x-change-safety": "safe_read"
       }
     },
     "/api/v1/projects/{projectId}/cue/alerts": {
-      "parameters": [
-        {
-          "name": "projectId",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      ],
       "get": {
-        "operationId": "listProjectCueAlerts",
-        "summary": "List NoxCue alerts for the selected project",
-        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "getCueProjectAlerts",
+        "summary": "Read project Cue alerts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Capability response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JsonValue"
+                  "$ref": "#/components/schemas/ApiRecord"
                 }
               }
             }
@@ -8939,6 +8917,9 @@
           "403": {
             "$ref": "#/components/responses/V1Error"
           },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
           "409": {
             "$ref": "#/components/responses/V1Error"
           },
@@ -8946,18 +8927,11 @@
             "$ref": "#/components/responses/V1Error"
           }
         },
-        "x-required-role": "member",
-        "x-first-party-client": true,
-        "x-organization-optional": false,
         "tags": [
           "NoxCue"
         ],
         "x-authentication": "member",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/projectContext"
-          }
-        ],
+        "x-project-scope": "optional",
         "security": [
           {
             "browserSession": [],
@@ -8968,33 +8942,28 @@
             "organization": []
           }
         ],
-        "x-change-safety": "safe_read",
-        "x-project-scope": "optional"
+        "x-change-safety": "safe_read"
       }
     },
     "/api/v1/projects/{projectId}/cue/alert-rules": {
-      "parameters": [
-        {
-          "name": "projectId",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      ],
       "get": {
-        "operationId": "listProjectCueAlertRules",
-        "summary": "List effective NoxCue alert rules for the selected project",
-        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "getCueProjectAlertRules",
+        "summary": "Read project Cue alert rules",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Capability response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JsonValue"
+                  "$ref": "#/components/schemas/ApiRecord"
                 }
               }
             }
@@ -9008,6 +8977,9 @@
           "403": {
             "$ref": "#/components/responses/V1Error"
           },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
           "409": {
             "$ref": "#/components/responses/V1Error"
           },
@@ -9015,18 +8987,11 @@
             "$ref": "#/components/responses/V1Error"
           }
         },
-        "x-required-role": "member",
-        "x-first-party-client": true,
-        "x-organization-optional": false,
         "tags": [
           "NoxCue"
         ],
         "x-authentication": "member",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/projectContext"
-          }
-        ],
+        "x-project-scope": "optional",
         "security": [
           {
             "browserSession": [],
@@ -9037,8 +9002,7 @@
             "organization": []
           }
         ],
-        "x-change-safety": "safe_read",
-        "x-project-scope": "optional"
+        "x-change-safety": "safe_read"
       }
     },
     "/api/v1/feed/current-summary": {
@@ -9156,6 +9120,786 @@
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive"
+      }
+    },
+    "/api/v1/features/{number}/attachments": {
+      "get": {
+        "operationId": "listFeatureAttachments",
+        "summary": "List feature attachments",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecAttachmentList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxTicket"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "uploadFeatureAttachment",
+        "summary": "Upload a bounded feature attachment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/number"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecAttachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxTicket"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/features/{number}/attachments/{attachmentId}": {
+      "get": {
+        "operationId": "downloadFeatureAttachment",
+        "summary": "Download a feature attachment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/number"
+          },
+          {
+            "$ref": "#/components/parameters/attachmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment bytes",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxTicket"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      },
+      "delete": {
+        "operationId": "deleteFeatureAttachment",
+        "summary": "Delete a feature attachment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/number"
+          },
+          {
+            "$ref": "#/components/parameters/attachmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxTicket"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "destructive",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/activity": {
+      "get": {
+        "operationId": "getProjectActivity",
+        "summary": "Read project activity",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read"
+      }
+    },
+    "/api/v1/projects/{projectId}/issues": {
+      "get": {
+        "operationId": "getProjectIssues",
+        "summary": "Read project issues",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read"
+      }
+    },
+    "/api/v1/projects/{projectId}/feedback": {
+      "get": {
+        "operationId": "getProjectFeedback",
+        "summary": "Read project feedback",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read"
+      }
+    },
+    "/api/v1/projects/{projectId}/incidents": {
+      "get": {
+        "operationId": "getProjectIncidents",
+        "summary": "Read project incidents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read"
+      }
+    },
+    "/api/v1/projects/{projectId}/incidents/{incidentId}": {
+      "get": {
+        "operationId": "getProjectIncident",
+        "summary": "Read one project incident",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          },
+          {
+            "name": "incidentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^inc_[a-f0-9]{32}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read"
+      },
+      "patch": {
+        "operationId": "updateProjectIncident",
+        "summary": "Update one project incident",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          },
+          {
+            "name": "incidentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^inc_[a-f0-9]{32}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRecord"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "write_not_safe_to_retry"
+      }
+    },
+    "/api/v1/projects/{projectId}/cue/actions": {
+      "get": {
+        "operationId": "getCueProjectActions",
+        "summary": "Read project Cue actions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read"
+      },
+      "put": {
+        "operationId": "updateCueProjectActions",
+        "summary": "Update project Cue actions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRecord"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "write_not_safe_to_retry"
       }
     }
   },

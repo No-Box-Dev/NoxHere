@@ -1,9 +1,10 @@
 # Service Boundary Migration Plan
 
 > **Historical implementation record.** This plan records the former
-> multi-product split and its repository/deployment names. The current public
-> contract is one NoxConnect product with Planning, Activity, Feedback, and
-> Incidents capabilities. See `SERVICE_BOUNDARIES.md` for current guidance.
+> multi-product split and its repository/deployment names. Those repository
+> boundaries have since been retired: the current product is NoxHere, with
+> Feed, Ticket, Spot, Cue, and Connect as capability services in this
+> monorepo. See `SERVICE_BOUNDARIES.md` for current guidance.
 
 ## Objective
 

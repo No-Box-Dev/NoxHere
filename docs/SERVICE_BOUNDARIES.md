@@ -1,18 +1,17 @@
-# NoxConnect service boundaries
+# NoxHere service boundaries
 
-NoxConnect is the customer-facing product: the web app, public API, CLI,
-sessions, organization/project authorization, capability enablement, and API
-documentation. Its current compatibility origin is `app.noxhere.com`, and the
-gateway is still deployed from the `NoxHere` repository during migration. The
-gateway authenticates and scopes every request before it calls an internal
-module or service.
+NoxHere is the customer-facing product: the web app, public API, CLI, sessions,
+organization/project authorization, capability enablement, and API
+documentation. Feed, Ticket, Spot, Cue, and Connect are capabilities in this
+repository, not separate products. The gateway at `app.noxhere.com`
+authenticates and scopes every request before it calls an internal service.
 
 The private connectors layer owns GitHub and Slack installations, encrypted
 provider tokens, provider clients, connection health, channel routing, the
 durable delivery outbox, retries, and final provider delivery. It does not own
 the public user experience or decide what a capability says or renders.
 
-GitHub is exclusively a NoxConnect capability. NoxConnect owns webhook receipt
+GitHub is exclusively a Connect capability. Connect owns webhook receipt
 and normalization, installation-token minting, repository discovery, issue and
 pull-request synchronization, GitHub reads, and GitHub mutations. Product
 services receive bounded domain records or public GitHub URLs only; they never
@@ -43,7 +42,7 @@ Every adapter validates the contract version, structure, and Slack payload size 
 
 ## Control plane versus product policy
 
-The NoxConnect Admin UI and authenticated `/api/v1` endpoints are the public
+The NoxHere Admin UI and authenticated `/api/v1` endpoints are the public
 control plane. Turning a capability off keeps its data but gates its
 public/runtime paths. Capability modules own execution and presentation policy.
 Private Workers must not receive the gateway database binding.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import openapi from "../../../apps/web/public/openapi.json";
+import openapi from "../../../public/openapi.json";
 
 const methods = new Set(["get", "post", "put", "patch", "delete"]);
 

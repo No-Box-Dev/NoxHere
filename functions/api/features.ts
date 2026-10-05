@@ -2,12 +2,12 @@
 // PATCH and DELETE for a single feature live in features/[number].ts.
 
 import { getCtx, errorResponse } from "../lib/db";
-import { callFeatureService } from "../lib/noxticket-features";
+import { callFeatureService, delegateFeatureMutation } from "../lib/noxticket-features";
 import type { NoxTicketEnvironment } from "../lib/noxticket-service";
 
 interface Ctx {
-  env: NoxTicketEnvironment;
-  data: { orgId: number; projectId?: string | null; userLogin: string; isAdmin?: boolean };
+  env: NoxTicketEnvironment & { DB: D1Database; TASK_QUEUE: Queue };
+  data: { orgId: number; projectId?: string | null; orgLogin: string; userLogin: string; isAdmin?: boolean };
   request: Request;
 }
 
@@ -28,5 +28,14 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     return errorResponse("Invalid JSON body", 400);
   }
   const caller = scope(context);
-  return callFeatureService(context.env, caller, (service) => service.createFeature(caller, body));
+  const delegated = await delegateFeatureMutation(
+    context.env,
+    caller,
+    context.request,
+    "create",
+    undefined,
+    body,
+    context.data.orgLogin,
+  );
+  return delegated ?? callFeatureService(context.env, caller, (service) => service.createFeature(caller, body));
 }

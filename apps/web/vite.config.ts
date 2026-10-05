@@ -53,10 +53,11 @@ function localAuthProfile() {
 }
 
 export default defineConfig({
+  publicDir: "../../public",
   plugins: [react(), localAuthProfile(), {
     name: "noxhere-openapi-contract",
     closeBundle() {
-      copyFileSync(resolve("public/openapi.json"), resolve("dist/openapi.json"));
+      copyFileSync(resolve("../../public/openapi.json"), resolve("dist/openapi.json"));
     },
   }],
   server: {

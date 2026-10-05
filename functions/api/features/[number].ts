@@ -3,7 +3,7 @@
 // DELETE is kept as the close shortcut.
 
 import { getCtx, errorResponse } from "../../lib/db";
-import { callFeatureService } from "../../lib/noxticket-features";
+import { callFeatureService, delegateFeatureMutation } from "../../lib/noxticket-features";
 import type { NoxTicketEnvironment } from "../../lib/noxticket-service";
 
 interface Ctx {
@@ -31,12 +31,14 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     return errorResponse("Invalid JSON body", 400);
   }
   const caller = scope(context);
-  return callFeatureService(context.env, caller, (service) => service.updateFeature(caller, number, body));
+  const delegated = await delegateFeatureMutation(context.env, caller, context.request, "update", number, body);
+  return delegated ?? callFeatureService(context.env, caller, (service) => service.updateFeature(caller, number, body));
 }
 
 export async function onRequestDelete(context: Ctx): Promise<Response> {
   const number = featureNumber(context);
   if (!number) return errorResponse("Invalid feature number", 400);
   const caller = scope(context);
-  return callFeatureService(context.env, caller, (service) => service.updateFeature(caller, number, { state: "closed" }));
+  const delegated = await delegateFeatureMutation(context.env, caller, context.request, "close", number);
+  return delegated ?? callFeatureService(context.env, caller, (service) => service.updateFeature(caller, number, { state: "closed" }));
 }

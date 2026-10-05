@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "wrangler deploy --dry-run",
-    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --env=\"\"",
+    "deploy": "wrangler deploy --env=\"\"",
     "test": "vitest run",
     "types": "wrangler types worker-configuration.d.ts"
   },

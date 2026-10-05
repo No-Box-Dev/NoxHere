@@ -5,7 +5,7 @@ import { onRequestGet as getSetup } from "../v1/services/[service]/setup";
 import { onRequestGet as getHealth } from "../v1/services/[service]/health";
 import { SERVICE_DEFINITIONS } from "../../lib/service-capabilities";
 import { parseServiceManifest } from "../../lib/service-manifests";
-import { NOXSPOT_SERVICE_MANIFEST } from "../../../workers/noxspot-capture/src/service-manifest";
+import { NOXSPOT_SERVICE_MANIFEST } from "../../../services/spot/src/service-manifest";
 
 interface CapabilityBody {
   apiVersion: number;

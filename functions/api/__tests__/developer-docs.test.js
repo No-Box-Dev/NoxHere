@@ -25,12 +25,12 @@ describe("developer documentation", () => {
     expect(script).toContain('operationTotal.textContent = `${operations.length} operations`');
   });
 
-  it("documents the supported NoxConnect auth boundary and stable Incidents gateway", () => {
+  it("documents the supported NoxHere auth boundary and stable Incidents gateway", () => {
     expect(guide).toContain("does not issue third-party OAuth client credentials");
     expect(guide).toContain("POST /api/v1/cues/public/events");
     expect(guide).toContain("honor `Retry-After`");
     expect(guide).toContain("Raw GitHub bearer tokens are rejected");
-    expect(guide).toContain("opaque HttpOnly NoxConnect session cookie");
+    expect(guide).toContain("opaque HttpOnly NoxHere session cookie");
   });
 
   it("gives agents an explicit supervised and headless connection flow", () => {
@@ -44,13 +44,12 @@ describe("developer documentation", () => {
     expect(discovery).toContain("The complete CLI reference is at `/developers#cli`");
   });
 
-  it("uses NoxConnect and capability names as the public vocabulary", () => {
-    expect(html).toContain("NoxConnect API — Developer documentation");
-    expect(html).toContain("Planning, Activity, Feedback, and Incidents");
-    expect(html).not.toContain("NoxHere is the public platform");
-    expect(html).not.toContain("NoxConnect is private connection plumbing");
-    expect(guide).not.toContain("opaque HttpOnly NoxHere session cookie");
-    expect(discovery).not.toContain("NoxConnect is the shared connection");
+  it("uses NoxHere and capability names as the public vocabulary", () => {
+    expect(html).toContain("NoxHere API — Developer documentation");
+    expect(html).toContain("NoxHere is one product");
+    expect(html).not.toContain("NoxConnect is the public product");
+    expect(guide).toContain("opaque HttpOnly NoxHere session cookie");
+    expect(discovery).toContain("NoxHere is the public product");
   });
 
   it("documents the minimal, environment-scoped Incidents SDK compatibility flow", () => {
