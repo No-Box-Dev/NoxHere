@@ -12,15 +12,21 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       WHERE id = ? AND org_id = ? AND COALESCE(archived, 0) = 0`,
   ).bind(projectId, orgId).first<{ id: string; name: string }>() : null;
   if (projectId && !project) return errorResponse("Project not found", 404);
-  const sourceScope = projectId ? " AND project_id = ?" : "";
+  const sourceScope = projectId ? " AND source.project_id = ?" : "";
   const joinedSourceScope = projectId ? " AND source.project_id = ?" : "";
   const scopeBinds = projectId ? [orgId, projectId] : [orgId];
   const [sources, metrics, errors] = await context.env.DB.batch([
     context.env.DB.prepare(
-      `SELECT id, name, environment, last_registration_at, last_activity_at
-         FROM cue_sources
-        WHERE org_id = ?${sourceScope} AND enabled = 1
-        ORDER BY name`,
+      `SELECT source.id, source.name, source.environment,
+              (SELECT MAX(registration.received_at)
+                 FROM cue_user_registrations registration
+                WHERE registration.source_id = source.id) AS last_registration_at,
+              (SELECT MAX(activity.received_at)
+                 FROM cue_user_active_days activity
+                WHERE activity.source_id = source.id) AS last_activity_at
+         FROM cue_sources source
+        WHERE source.org_id = ?${sourceScope} AND source.enabled = 1
+        ORDER BY source.name`,
     ).bind(...scopeBinds),
     context.env.DB.prepare(
       `SELECT metric.source_id, source.name AS source_name, metric.period,
@@ -32,7 +38,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
         ORDER BY metric.period DESC, source.name, metric.metric_key`,
     ).bind(...scopeBinds),
     context.env.DB.prepare(
-      `SELECT error.source_id, source.name AS source_name, error.fingerprint,
+      `SELECT error.id, error.source_id, source.name AS source_name, error.fingerprint,
               error.title, error.environment, error.last_seen_at, error.occurrence_count
          FROM cue_error_groups error
          JOIN cue_sources source ON source.id = error.source_id

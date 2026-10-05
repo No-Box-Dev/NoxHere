@@ -1,0 +1,102 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "noxcue",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "rules": [
+    { "type": "Data", "globs": ["**/*.woff2"], "fallthrough": true }
+  ],
+  "workers_dev": true,
+  "limits": { "cpu_ms": 30000 },
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  },
+  "triggers": { "crons": ["* * * * *"] },
+  "d1_databases": [
+    {
+      "binding": "NOX_DB",
+      "database_name": "noxconnect",
+      "database_id": "c94084e6-d0be-423c-8de6-249e7cf8bf25"
+    }
+  ],
+  "queues": {
+    "producers": [
+      { "binding": "NOX_TASKS", "queue": "noxconnect-tasks" }
+    ]
+  },
+  "ratelimits": [
+    {
+      "name": "CUE_IP_RATE_LIMITER",
+      "namespace_id": "9137001",
+      "simple": { "limit": 1000, "period": 60 }
+    },
+    {
+      "name": "CUE_ERROR_RATE_LIMITER",
+      "namespace_id": "9137002",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "CUE_ORG_RATE_LIMITER",
+      "namespace_id": "9137004",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "CUE_USER_EVENT_RATE_LIMITER",
+      "namespace_id": "9137005",
+      "simple": { "limit": 1000, "period": 60 }
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "PUBLIC_BASE_URL": "https://noxcue.jasper-414.workers.dev",
+    "NARRATION_MODEL": "claude-sonnet-4-6"
+  },
+  "env": {
+    "staging": {
+      "name": "noxcue-staging",
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "PUBLIC_BASE_URL": "https://noxcue-staging.jasper-414.workers.dev",
+        "NARRATION_MODEL": "claude-sonnet-4-6"
+      },
+      "triggers": { "crons": [] },
+      "d1_databases": [
+        {
+          "binding": "NOX_DB",
+          "database_name": "noxconnect-staging",
+          "database_id": "3a9d9857-c26d-4421-9fbd-b81f474864d3"
+        }
+      ],
+      "queues": {
+        "producers": [
+          { "binding": "NOX_TASKS", "queue": "noxconnect-tasks-staging" }
+        ]
+      },
+      "ratelimits": [
+        {
+          "name": "CUE_IP_RATE_LIMITER",
+          "namespace_id": "9137011",
+          "simple": { "limit": 1000, "period": 60 }
+        },
+        {
+          "name": "CUE_ERROR_RATE_LIMITER",
+          "namespace_id": "9137012",
+          "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "CUE_ORG_RATE_LIMITER",
+          "namespace_id": "9137014",
+          "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "CUE_USER_EVENT_RATE_LIMITER",
+          "namespace_id": "9137015",
+          "simple": { "limit": 1000, "period": 60 }
+        }
+      ]
+    }
+  }
+}

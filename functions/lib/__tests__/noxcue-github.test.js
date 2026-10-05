@@ -11,12 +11,14 @@ vi.mock("../github-issues.js", () => ({
   ensureRepositoryLabels: vi.fn(), findIssueByBodyMarker: vi.fn(),
   getRepositoryIssue: vi.fn(), updateRepositoryIssue: vi.fn(),
 }));
+vi.mock("../transport-outbox", () => ({ publishGitHubTransport: vi.fn().mockResolvedValue({ outboxId: "transport-1", status: "queued", queued: true }) }));
 
 import { createOrUpdateNoxCueGitHubIssue } from "../noxcue-github.js";
 import {
   createRepositoryIssue, ensureRepositoryLabels, findIssueByBodyMarker,
   getRepositoryIssue, updateRepositoryIssue,
 } from "../github-issues.js";
+import { publishGitHubTransport } from "../transport-outbox";
 
 const baseRow = {
   id: "incident-1", org_id: 1, project_id: "project-1", source_id: "source-1",
@@ -70,17 +72,15 @@ describe("NoxCue GitHub issue routing", () => {
   it("creates an issue with the readable incident key and detection-only guidance", async () => {
     const { env } = environment(baseRow);
     findIssueByBodyMarker.mockResolvedValue(null);
-    createRepositoryIssue.mockResolvedValue({ number: 12, state: "open", html_url: "https://github.test/12", created_at: "2026-09-05T00:02:00Z" });
     await createOrUpdateNoxCueGitHubIssue(env, { incidentId: "incident-1" });
-    expect(ensureRepositoryLabels).toHaveBeenCalled();
-    expect(createRepositoryIssue).toHaveBeenCalledWith(
-      "installation-token", "acme", "playnist",
-      expect.objectContaining({
+    expect(publishGitHubTransport).toHaveBeenCalledWith(env, expect.objectContaining({
+      operation: "github.issue.create",
+      input: expect.objectContaining({ issue: expect.objectContaining({
         title: "[NoxCue] Sign up is unavailable",
         body: expect.stringContaining("Incident key: `auth.signup/dependency_unavailable/auth/auth_503/createaccount`"),
-      }),
-    );
-    expect(createRepositoryIssue.mock.calls[0][3].body).toContain("has not changed the application or attempted a fix");
+      }) }),
+    }));
+    expect(publishGitHubTransport.mock.calls[0][1].input.issue.body).toContain("has not changed the application or attempted a fix");
   });
 
   it("deduplicates against the mapped open issue without a noisy update inside the interval", async () => {
@@ -96,9 +96,8 @@ describe("NoxCue GitHub issue routing", () => {
     const row = { ...baseRow, github_issue_number: 12, github_repo: "playnist" };
     const { env } = environment(row);
     getRepositoryIssue.mockResolvedValue({ number: 12, state: "closed", html_url: "https://github.test/12" });
-    createRepositoryIssue.mockResolvedValue({ number: 19, state: "open", html_url: "https://github.test/19", created_at: "2026-09-05T01:00:00Z" });
     await createOrUpdateNoxCueGitHubIssue(env, { incidentId: "incident-1" });
-    expect(createRepositoryIssue).toHaveBeenCalled();
-    expect(createRepositoryIssue.mock.calls[0][3].body).toContain("Previous occurrence: https://github.test/12");
+    expect(publishGitHubTransport).toHaveBeenCalledWith(env, expect.objectContaining({ operation: "github.issue.create" }));
+    expect(publishGitHubTransport.mock.calls[0][1].input.issue.body).toContain("Previous occurrence: https://github.test/12");
   });
 });

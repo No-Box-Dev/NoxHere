@@ -21,8 +21,8 @@ export function ProjectRoutingSection() {
     <div>
       <h3 className="text-sm font-semibold text-stone-900">Projects and routing</h3>
       <p className="mt-1 text-xs leading-5 text-stone-500">
-        Enable only the NoxConnect projects you actually use. A repository stays a repository until you assign it
-        to an enabled project; each enabled project can own several repositories. Product channels are configured in their product tabs.
+        Repository membership defines a project everywhere in Nox—not only in Activity. Each project can contain several
+        repositories, and Planning, Activity, Feedback, Incidents, API access, and Slack all use this same scope.
       </p>
     </div>
     {projects.length > 0 ? projects.map((project) => (
@@ -104,7 +104,7 @@ function ProjectCard({
         onChange={(value) => { setSaved(false); setRoutes((current) => ({ ...current, [field]: value })); }}
       />)}
     </div>
-    </> : <p className="border-t border-stone-100 pt-4 text-xs text-stone-400">This repository mirror is not treated as a project by NoxFeed, NoxCue, or Slack routing.</p>}
+    </> : <p className="border-t border-stone-100 pt-4 text-xs text-stone-400">This repository mirror is not treated as a project anywhere in Nox.</p>}
     {save.isError ? <p className="text-xs text-red-500">{save.error instanceof Error ? save.error.message : "Project routing could not be saved."}</p> : null}
   </Panel>;
 }

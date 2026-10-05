@@ -11,6 +11,16 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     globals: true,
-    exclude: [...configDefaults.exclude, "workers/**"],
+    exclude: [
+      ...configDefaults.exclude,
+      "apps/web/**",
+      "workers/**",
+      "services/cue/**",
+      "services/feed/**",
+      "services/gateway/**",
+      "services/spot/**",
+      "services/ticket/**",
+      "apps/cli/test/**",
+    ],
   },
 });

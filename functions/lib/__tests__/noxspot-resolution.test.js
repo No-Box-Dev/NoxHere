@@ -3,7 +3,13 @@ vi.mock("../noxspot-resolution-ai.js", () => ({
   generateNoxSpotResolutionSummary: vi.fn(),
 }));
 
-import { deliverNoxSpotResolutionEmail, prepareNoxSpotResolutionEmail, storeNoxSpotReport, updateNoxSpotReport } from "../noxspot-resolution.js";
+import {
+  deliverNoxSpotResolutionEmail,
+  prepareNoxSpotResolutionEmail,
+  reconcileNoxSpotReportsForRepo,
+  storeNoxSpotReport,
+  updateNoxSpotReport,
+} from "../noxspot-resolution.js";
 import { generateNoxSpotResolutionSummary } from "../noxspot-resolution-ai.js";
 import { encryptToken } from "../crypto.js";
 
@@ -18,6 +24,55 @@ function statement(sql, firstValue, runValue = { success: true, meta: { changes:
 }
 
 describe("NoxSpot report resolution", () => {
+  it("reconciles linked reports from the GitHub issue state", async () => {
+    const statements = [];
+    const reports = {
+      "capture-closed": {
+        id: "capture-closed", org_id: 7, project_id: "project-1", site_id: "site-1",
+        repo: "web", issue_number: 42, title: "Closed report", status: "open",
+        notification_consent: 0, reporter_email_encrypted: null,
+        notification_status: "not_requested", site_name: "Website",
+      },
+      "capture-reopened": {
+        id: "capture-reopened", org_id: 7, project_id: "project-1", site_id: "site-1",
+        repo: "web", issue_number: 43, title: "Reopened report", status: "resolved",
+        notification_consent: 0, reporter_email_encrypted: null,
+        notification_status: "not_requested", site_name: "Website",
+      },
+    };
+    const env = {
+      DB: {
+        prepare(sql) {
+          const value = statement(sql, null);
+          value.all = async () => ({
+            results: [
+              { id: "capture-closed", report_status: "open", issue_state: "closed", issue_number: 42, closed_by: "alice" },
+              { id: "capture-reopened", report_status: "resolved", resolution_source: "github", issue_state: "open", issue_number: 43 },
+            ],
+          });
+          value.first = async function first() {
+            if (sql.includes("SELECT id, project_id, status")) return { ...reports["capture-closed"], status: "open" };
+            if (sql.includes("SELECT id, project_id FROM spot_reports")) return reports["capture-reopened"];
+            if (sql.includes("SELECT report.id")) return reports[this.binds[0]];
+            return null;
+          };
+          statements.push(value);
+          return value;
+        },
+        async batch(items) { return Promise.all(items.map((item) => item.run())); },
+      },
+    };
+
+    await expect(reconcileNoxSpotReportsForRepo(env, {
+      orgId: 7,
+      ownerId: "acme",
+      repo: "web",
+    })).resolves.toEqual({ checked: 2, resolved: 1, reopened: 1 });
+
+    const statusUpdates = statements.filter((item) => item.sql.includes("UPDATE spot_reports") && item.sql.includes("SET status = ?"));
+    expect(statusUpdates.map((item) => item.binds[0])).toEqual(["resolved", "open"]);
+  });
+
   it("encrypts an opted-in reporter email before storing it", async () => {
     const statements = [];
     const env = {

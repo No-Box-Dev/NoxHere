@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fbfaf8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>NoxHere</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      (function () {
+        function loadNoxSpot() {
+          if (document.querySelector('script[data-noxspot-loader]')) return;
+          var script = document.createElement('script');
+          script.src = 'https://api.noxspot.dev/widget/8970ca4d-75ad-41d0-a5fa-e4e62e658635.js';
+          script.async = true;
+          script.dataset.noxspotLoader = 'true';
+          document.head.appendChild(script);
+        }
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(loadNoxSpot, { timeout: 2000 });
+        } else {
+          window.setTimeout(loadNoxSpot, 1000);
+        }
+      })();
+    </script>
+  </body>
+</html>

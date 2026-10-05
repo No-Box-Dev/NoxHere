@@ -166,8 +166,8 @@ export async function onRequestPost(context) {
         // the work survives a failed attempt (retried, then dead-lettered).
         // Three narrators, one PR lifecycle:
         //   - github:pr:opened  → NARRATE_PR_OPENED  (writes pr_narrative for the PRs feed)
-        //   - github:pr:merged  → NARRATE + RELEASE_NOTES  (reuse pr_narrative text if any,
-        //     else fresh LLM call; writes narrative + release_notes rows)
+        //   - github:pr:merged  → NARRATE + RELEASE_NOTES  (fresh merge post plus
+        //     structured release note; writes narrative + release_notes rows)
         // Enqueueing both merged tasks even when the trigger is `pr:opened` would
         // be wasteful — narrateEvent short-circuits on non-merged types — but we
         // could also just gate here. Gating here is cheaper (fewer queue msgs).
@@ -262,10 +262,11 @@ export async function onRequestPost(context) {
         await reportWebhookFailure(db, orgLogin, "noxconnect_slack", deliveryId, err, { repo, number: payload.issue?.number });
       }
 
-      // Auto-register issue author as member so they appear in People page.
+      // Cache issue authors for attribution without granting them organization
+      // member status. Repository collaborators can author issues too.
       if (payload.issue?.user?.login) {
         try {
-          await upsertMember(db, orgId, payload.issue.user, payload.issue.user.type === "Bot" ? "bot" : "human");
+          await upsertMember(db, orgId, payload.issue.user, payload.issue.user.type === "Bot" ? "bot" : "contributor");
         } catch (err) {
           await reportWebhookFailure(db, orgLogin, "upsertMember_from_issue", deliveryId, err, { login: payload.issue?.user?.login });
         }
@@ -297,10 +298,11 @@ export async function onRequestPost(context) {
         await reportWebhookFailure(db, orgLogin, "review_job", deliveryId, err, { repo, action });
       }
 
-      // Auto-register PR author as member so they appear in People page.
+      // Cache PR authors for attribution without treating repository-scoped
+      // collaborators as organization members.
       if (pr.user?.login) {
         try {
-          await upsertMember(db, orgId, pr.user, pr.user.type === "Bot" ? "bot" : "human");
+          await upsertMember(db, orgId, pr.user, pr.user.type === "Bot" ? "bot" : "contributor");
         } catch (err) {
           await reportWebhookFailure(db, orgLogin, "upsertMember_from_pr", deliveryId, err, { login: pr.user?.login });
         }
@@ -314,10 +316,14 @@ export async function onRequestPost(context) {
       if (!member?.login) {
         return jsonResponse({ ok: true, skipped: "no member in payload" });
       }
+      // GitHub's `member` event is repository-scoped collaborator activity,
+      // not organization membership. Removing a collaborator must not revoke
+      // an actual organization member, and adding one must not grant org-wide
+      // visibility in NoxHere.
       if (action === "removed") {
-        await removeMember(db, orgId, member.login);
+        return jsonResponse({ ok: true, event, action, login: member.login, skipped: "repository collaborator removed" });
       } else {
-        await upsertMember(db, orgId, member);
+        await upsertMember(db, orgId, member, member.type === "Bot" ? "bot" : "contributor");
       }
       return jsonResponse({ ok: true, event, action, login: member.login });
     }

@@ -112,40 +112,77 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const filter = MODE_FILTER[mode];
 
   const conds: string[] = [
-    "owner_id = ?",
-    "type = ?",
-    "json_extract(payload_json, '$.trigger_type') = ?",
+    "event.owner_id = ?",
+    // This explicit invariant also lets SQLite prove that the routed-feed
+    // partial index applies when the specific event type is parameterized.
+    "event.type IN ('narrative', 'pr_narrative', 'release_notes')",
+    "event.type = ?",
+    "json_extract(event.payload_json, '$.trigger_type') = ?",
   ];
   const binds: (string | number)[] = [orgLogin, filter.eventType, filter.triggerType];
 
   if (projectId) {
-    conds.push("project_id = ?");
+    // Repository routing is the canonical project boundary. Historical feed
+    // events retain the repository-shaped project id they were written with,
+    // while an umbrella project can own many repositories. Filtering only on
+    // events.project_id therefore makes routed projects appear empty.
+    conds.push(`event.repo COLLATE NOCASE IN (
+      SELECT assignment.repo
+        FROM project_repositories assignment
+       WHERE assignment.project_id = ?
+    )`);
     binds.push(projectId);
   }
 
   if (repo) {
-    conds.push("repo = ?");
+    conds.push("event.repo = ?");
     binds.push(repo);
   }
   if (actor) {
     // Filter on the denormalized author login in the PR payload. Case-
     // insensitive because GitHub logins normalize that way and users type
     // them however they remember.
-    conds.push("LOWER(json_extract(payload_json, '$.pr.author.login')) = LOWER(?)");
+    conds.push("LOWER(COALESCE(json_extract(event.payload_json, '$.pr.author.login'), pr.author)) = LOWER(?)");
     binds.push(actor);
   }
 
   const cursor = parseCursor(before);
   if (cursor) {
-    conds.push("(created_at < ? OR (created_at = ? AND id < ?))");
+    conds.push("(event.created_at < ? OR (event.created_at = ? AND event.id < ?))");
     binds.push(cursor.createdAt, cursor.createdAt, cursor.id);
   }
 
   const sql = `
-    SELECT id, type, created_at, repo, summary, technical_summary, payload_json
-    FROM events
+    SELECT event.id, event.type, event.created_at, event.repo, event.summary,
+           event.technical_summary, event.payload_json,
+           (SELECT opened.summary FROM events opened
+             WHERE opened.owner_id = event.owner_id AND opened.repo = event.repo
+               AND opened.type = 'pr_narrative'
+               AND CAST(json_extract(opened.payload_json, '$.pr_number') AS INTEGER) = COALESCE(
+                 CAST(json_extract(event.payload_json, '$.pr_number') AS INTEGER),
+                 CAST(json_extract(event.payload_json, '$.pr.number') AS INTEGER)
+               )
+             LIMIT 1) AS opened_summary,
+           (SELECT opened.technical_summary FROM events opened
+             WHERE opened.owner_id = event.owner_id AND opened.repo = event.repo
+               AND opened.type = 'pr_narrative'
+               AND CAST(json_extract(opened.payload_json, '$.pr_number') AS INTEGER) = COALESCE(
+                 CAST(json_extract(event.payload_json, '$.pr_number') AS INTEGER),
+                 CAST(json_extract(event.payload_json, '$.pr.number') AS INTEGER)
+               )
+             LIMIT 1) AS opened_technical_summary,
+           pr.number AS pr_number, pr.title AS pr_title, pr.html_url AS pr_html_url,
+           pr.author AS pr_author, pr.author_avatar AS pr_author_avatar
+    FROM events event
+    LEFT JOIN pull_requests pr
+      ON pr.project_id = event.project_id
+     AND pr.repo = event.repo
+     AND pr.number = COALESCE(
+       CAST(json_extract(event.payload_json, '$.pr_number') AS INTEGER),
+       CAST(json_extract(event.payload_json, '$.pr.number') AS INTEGER)
+     )
     WHERE ${conds.join(" AND ")}
-    ORDER BY created_at DESC, id DESC
+    ORDER BY event.created_at DESC, event.id DESC
     LIMIT ?
   `;
   binds.push(limit);
@@ -170,7 +207,14 @@ interface RawRow {
   repo: string | null;
   summary: string | null;
   technical_summary: string | null;
+  opened_summary: string | null;
+  opened_technical_summary: string | null;
   payload_json: string | null;
+  pr_number: number | null;
+  pr_title: string | null;
+  pr_html_url: string | null;
+  pr_author: string | null;
+  pr_author_avatar: string | null;
 }
 
 function mapRow(row: unknown, mode: PublicType): FeedEvent {
@@ -178,24 +222,26 @@ function mapRow(row: unknown, mode: PublicType): FeedEvent {
   const payload = parsePayload(r.payload_json);
   const author = payload?.pr?.author ?? null;
   const pr = payload?.pr ?? null;
+  const prNumber = Number(pr?.number ?? r.pr_number ?? 0);
+  const hasPR = prNumber > 0;
 
   return {
     id: String(r.id),
     type: mode,
     createdAt: r.created_at,
     actor: {
-      login: (author?.login as string | undefined) ?? "unknown",
+      login: (author?.login as string | undefined) ?? r.pr_author ?? "unknown",
       name: (author?.name as string | undefined) ?? null,
-      avatarUrl: (author?.avatar_url as string | undefined) ?? null,
+      avatarUrl: (author?.avatar_url as string | undefined) ?? r.pr_author_avatar ?? null,
     },
     repo: r.repo ?? "",
-    summary: r.summary ?? "",
-    technicalSummary: r.technical_summary ?? "",
-    pr: pr
+    summary: (mode === "merged" ? r.opened_summary : null) ?? r.summary ?? "",
+    technicalSummary: (mode === "merged" ? r.opened_technical_summary : null) ?? r.technical_summary ?? "",
+    pr: hasPR
       ? {
-          number: Number(pr.number ?? 0),
-          title: String(pr.title ?? ""),
-          url: String(pr.html_url ?? ""),
+          number: prNumber,
+          title: String(pr?.title ?? r.pr_title ?? ""),
+          url: String(pr?.html_url ?? r.pr_html_url ?? ""),
         }
       : null,
   };

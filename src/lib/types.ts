@@ -281,14 +281,6 @@ export interface Spec {
 }
 
 export interface OrgSettings {
-  // NoxConnect is always enabled and is therefore not stored here. Missing
-  // optional-app values default to true for backwards compatibility.
-  apps?: {
-    noxticket?: boolean;
-    noxfeed?: boolean;
-    noxspot?: boolean;
-    noxcue?: boolean;
-  };
   excludedMembers?: string[];
   noxTicketRepo?: string;
   boardStages?: BoardStage[];

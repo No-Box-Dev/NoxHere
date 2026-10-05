@@ -289,7 +289,7 @@ export async function upsertFeatureRow(db, orgId, ghIssue, opts = {}) {
 // wire response — Specs are the sole content surface. parseFeatureMetadata
 // still runs so the metadata block behind it comes through.
 export function ghIssueToFeature(ghIssue) {
-  const { metadata } = parseFeatureMetadata(ghIssue.body ?? "");
+  const { content, metadata } = parseFeatureMetadata(ghIssue.body ?? "");
   return {
     id: ghIssue.number,
     title: ghIssue.title,
@@ -299,6 +299,7 @@ export function ghIssueToFeature(ghIssue) {
     url: ghIssue.html_url ?? undefined,
     updatedAt: ghIssue.updated_at,
     statusHistory: metadata.statusHistory,
-    specLinks: metadata.specLinks,
+    description: content.trim(),
+    links: metadata.specLinks ?? [],
   };
 }

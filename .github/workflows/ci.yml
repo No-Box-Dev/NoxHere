@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -42,8 +44,8 @@ jobs:
       - run: npm run build:api-gateway
       - name: Dry-run private Workers
         run: |
-          npx wrangler deploy --dry-run --config workers/connection-capabilities/wrangler.jsonc --env="" --outdir "$RUNNER_TEMP/capabilities"
-          npx wrangler deploy --dry-run --config cron/wrangler.toml --env="" --outdir "$RUNNER_TEMP/orchestrator"
+          npx wrangler deploy --dry-run --config services/connect/wrangler.jsonc --env="" --outdir "$RUNNER_TEMP/capabilities"
+          npx wrangler deploy --dry-run --config services/scheduler/wrangler.toml --env="" --outdir "$RUNNER_TEMP/orchestrator"
 
   test:
     runs-on: ubuntu-latest
@@ -54,24 +56,108 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Verify developer documentation contracts
+      - name: Enforce active platform event milestone
+        run: npm run milestones:verify
+      - name: Verify API docs and complete CLI command reference
         run: npm run docs:check
+      - name: Verify project capabilities through the compiled Pages router
+        run: npm run test:project-router
       - run: npm test
 
-  noxspot-capture:
+  noxhere-app:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: workers/noxspot-capture
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: workers/noxspot-capture/package-lock.json
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            services/gateway/package-lock.json
+      - run: npm ci --prefix apps/web
+      - run: npm ci --prefix services/gateway
+      - name: Verify NoxHere web application
+        run: npm --prefix apps/web run check
+      - name: Verify NoxHere gateway
+        run: npm --prefix services/gateway test && npm --prefix services/gateway run typecheck && npm --prefix services/gateway run build
+
+  ticket:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ticket
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/ticket/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+
+  feed:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/feed
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/feed/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Verify the unified public API contract
+        run: NOX_OPENAPI_PATH=../../public/openapi.json npm run docs:check
+      - run: npm run build
+
+  noxspot-capture:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/spot
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/spot/package-lock.json
       - run: npm ci
       - run: npm run types
       - run: npx tsc --noEmit
       - run: npm test
       - run: npm run build
+
+  cue:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/cue
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            services/cue/package-lock.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - name: Install shared contract dependencies
+        run: npm ci --prefix ../..
+      - run: npm ci
+      - name: Verify Cue Worker, contracts, and build
+        run: npm run check
+      - name: Verify TypeScript/Python SDK parity
+        run: npm run sdk:parity
+      - name: Build Python distribution
+        run: python -m pip install build && python -m build packages/python-sdk

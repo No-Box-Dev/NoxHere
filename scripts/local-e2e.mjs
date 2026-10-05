@@ -9,12 +9,11 @@ import { spawn, spawnSync } from "node:child_process";
 import { encryptToken } from "../functions/lib/crypto.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const codebase = resolve(root, "..");
-const noxCueDir = resolve(process.env.NOXCUE_DIR || join(codebase, "NoxAlert"));
-const noxFeedDir = resolve(process.env.NOXFEED_SERVICE_DIR || join(codebase, "noxfeed-mac/service"));
-const noxSpotDir = resolve(process.env.NOXSPOT_CAPTURE_DIR || join(root, "workers/noxspot-capture"));
-const noxTicketDir = resolve(process.env.NOXTICKET_SERVICE_DIR || join(codebase, "noxticket-service"));
-const capabilityDir = join(root, "workers/connection-capabilities");
+const noxCueDir = resolve(process.env.NOXCUE_DIR || join(root, "services/cue"));
+const noxFeedDir = resolve(process.env.NOXFEED_SERVICE_DIR || join(root, "services/feed"));
+const noxSpotDir = resolve(process.env.NOXSPOT_CAPTURE_DIR || join(root, "services/spot"));
+const noxTicketDir = resolve(process.env.NOXTICKET_SERVICE_DIR || join(root, "services/ticket"));
+const capabilityDir = join(root, "services/connect");
 const wrangler = join(root, "node_modules/.bin/wrangler");
 const keepState = process.argv.includes("--keep-state");
 const allowAuthSkip = process.argv.includes("--allow-auth-skip");
@@ -60,12 +59,12 @@ function checkPrerequisites() {
   const required = [
     [wrangler, "Run npm install in NoxConnect"],
     [join(root, "dist/index.html"), "Run npm run build in NoxConnect"],
-    [join(noxCueDir, "wrangler.jsonc"), "Set NOXCUE_DIR to the NoxCue checkout"],
-    [join(noxCueDir, "node_modules"), "Run npm ci in the NoxCue checkout"],
-    [join(noxFeedDir, "wrangler.toml"), "Set NOXFEED_SERVICE_DIR to the NoxFeed service checkout"],
-    [join(noxFeedDir, "node_modules"), "Run npm ci in the NoxFeed service checkout"],
-    [join(noxSpotDir, "node_modules"), "Run npm ci in workers/noxspot-capture"],
-    [join(noxTicketDir, "node_modules"), "Set NOXTICKET_SERVICE_DIR to the NoxTicket service checkout"],
+    [join(noxCueDir, "wrangler.jsonc"), "Run npm ci in services/cue"],
+    [join(noxCueDir, "node_modules"), "Run npm ci in services/cue"],
+    [join(noxFeedDir, "wrangler.toml"), "Run npm ci in services/feed"],
+    [join(noxFeedDir, "node_modules"), "Run npm ci in services/feed"],
+    [join(noxSpotDir, "node_modules"), "Run npm ci in services/spot"],
+    [join(noxTicketDir, "node_modules"), "Run npm ci in services/ticket"],
   ];
   const missing = required.filter(([path]) => !existsSync(path));
   if (missing.length) {
@@ -240,13 +239,16 @@ async function main() {
   run("apply all NoxConnect migrations to a fresh local D1", wrangler, [
     "d1", "migrations", "apply", "noxconnect", "--local", "--persist-to", persistence,
   ]);
+  run("apply Ticket migrations to its fresh local D1", wrangler, [
+    "d1", "migrations", "apply", "DB", "--local", "--persist-to", persistence,
+  ], { cwd: noxTicketDir });
   const fixtureSql = [
     `INSERT INTO orgs (id, github_login) VALUES (910004, '${org.replaceAll("'", "''")}');`,
     `INSERT INTO installations (installation_id, owner_id, account_login, account_type, repos_json, installed_at, updated_at) VALUES (910004, '${org.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', 'Organization', '["${org.replaceAll('"', '\\"')}/${repo.replaceAll('"', '\\"')}"]', unixepoch(), unixepoch());`,
-    `INSERT INTO projects (id, name, org, repo, owner_id) VALUES ('${projectId.replaceAll("'", "''")}', '${repo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', '${repo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}');`,
+    `INSERT INTO projects (id, name, org, repo, owner_id, org_id) VALUES ('${projectId.replaceAll("'", "''")}', '${repo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', '${repo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', 910004);`,
     `INSERT INTO project_routing_settings (org_id, project_id, enabled) VALUES (910004, '${projectId.replaceAll("'", "''")}', 1);`,
     `INSERT INTO project_repositories (org_id, repo, project_id) VALUES (910004, '${repo.replaceAll("'", "''")}', '${projectId.replaceAll("'", "''")}');`,
-    `INSERT INTO projects (id, name, org, repo, owner_id) VALUES ('${otherProjectId.replaceAll("'", "''")}', '${otherRepo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', '${otherRepo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}');`,
+    `INSERT INTO projects (id, name, org, repo, owner_id, org_id) VALUES ('${otherProjectId.replaceAll("'", "''")}', '${otherRepo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', '${otherRepo.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', 910004);`,
     `INSERT INTO project_routing_settings (org_id, project_id, enabled) VALUES (910004, '${otherProjectId.replaceAll("'", "''")}', 1);`,
     `INSERT INTO project_repositories (org_id, repo, project_id) VALUES (910004, '${otherRepo.replaceAll("'", "''")}', '${otherProjectId.replaceAll("'", "''")}');`,
     `INSERT INTO events (delivery_id, source, type, project_id, org, repo, summary, technical_summary, payload_json, owner_id) VALUES ('local-feed-allowed', 'github', 'narrative', '${projectId.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', '${repo.replaceAll("'", "''")}', 'allowed project event', 'allowed', '{"trigger_type":"github:pr:merged","pr":{"number":1,"title":"Allowed","html_url":"https://example.test/allowed","author":{"login":"local"}}}', '${org.replaceAll("'", "''")}');`,
@@ -268,7 +270,7 @@ async function main() {
   start("noxticket", noxTicketDir, ["dev", "--name", serviceNames.ticket, "--port", String(port(8795)), "--inspector-port", String(port(9235)), ...commonDev]);
   await waitFor("noxticket", `http://127.0.0.1:${port(8795)}/health`);
 
-  start("cron", root, ["dev", "-c", "cron/wrangler.toml", "--name", serviceNames.cron, "--port", String(port(8794)), "--inspector-port", String(port(9234)), ...commonDev]);
+  start("cron", root, ["dev", "-c", "services/scheduler/wrangler.toml", "--name", serviceNames.cron, "--port", String(port(8794)), "--inspector-port", String(port(9234)), ...commonDev]);
   makeRpcSmokeWorker();
   start("rpc", rpcDir, ["dev", "-c", "wrangler.jsonc", "--port", String(port(8793)), "--inspector-port", String(port(9233)), ...commonDev]);
 
@@ -351,26 +353,7 @@ async function main() {
   }
   await request("project credential cannot select another project", "/api/v1/feed", signedOptions(projectAuth, { headers: { "X-Project-ID": otherProjectId } }), 404);
   await request("project credential cannot read organization-level configuration", "/api/v1/services/noxfeed/config", signedOptions(projectAuth), 403);
-  const serviceSwitchConfig = await request("read service switches before disabled-service check", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth));
-  const disabledServiceConfig = await request("disable NoxSpot for the service gate check", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
-    method: "PATCH",
-    headers: { "If-Match": serviceSwitchConfig.response.headers.get("etag") },
-    body: JSON.stringify({ enabledServices: { noxspot: false, noxfeed: false } }),
-  }));
-  const disabledService = await request("disabled service returns the standard project API error", "/api/spots/sites", signedOptions(projectAuth), 409);
-  if (disabledService.body?.error !== "NoxSpot is not enabled. Enable it in NoxConnect before trying again.") {
-    throw new Error("Disabled service response did not use the standard message");
-  }
-  const disabledV1Service = await request("disabled v1 service returns the coded enablement error", "/api/v1/feed", signedOptions(projectAuth), 409);
-  if (disabledV1Service.body?.error?.code !== "service_not_enabled" || disabledV1Service.body.error.message !== "NoxFeed is not enabled. Enable it in NoxConnect before trying again.") {
-    throw new Error("Disabled v1 service response did not use the standard error contract");
-  }
-  await request("disabled NoxFeed blocks its canonical issue API", "/api/v1/issues", signedOptions(projectAuth), 409);
-  await request("restore NoxSpot after the service gate check", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
-    method: "PATCH",
-    headers: { "If-Match": disabledServiceConfig.response.headers.get("etag") },
-    body: JSON.stringify({ enabledServices: { noxspot: true, noxfeed: true } }),
-  }));
+  await request("all project capabilities remain available", "/api/v1/feed", signedOptions(projectAuth));
   await request("configure project-scoped NoxCue GitHub incident routing", "/api/v1/cues/github-issues", signedOptions(sessionAuth, {
     method: "PUT",
     body: JSON.stringify({

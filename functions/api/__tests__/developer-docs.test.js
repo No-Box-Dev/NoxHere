@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const html = readFileSync(resolve("public/developers.html"), "utf8");
 const script = readFileSync(resolve("public/developers.js"), "utf8");
 const guide = readFileSync(resolve("public/docs/ai-setup.md"), "utf8");
+const discovery = readFileSync(resolve("public/llms.txt"), "utf8");
 
 describe("developer documentation", () => {
   it("treats project selection as optional request context", () => {
@@ -24,7 +25,7 @@ describe("developer documentation", () => {
     expect(script).toContain('operationTotal.textContent = `${operations.length} operations`');
   });
 
-  it("documents the supported auth boundary and stable NoxCue gateway", () => {
+  it("documents the supported NoxHere auth boundary and stable Incidents gateway", () => {
     expect(guide).toContain("does not issue third-party OAuth client credentials");
     expect(guide).toContain("POST /api/v1/cues/public/events");
     expect(guide).toContain("honor `Retry-After`");
@@ -32,7 +33,26 @@ describe("developer documentation", () => {
     expect(guide).toContain("opaque HttpOnly NoxHere session cookie");
   });
 
-  it("documents the minimal, environment-scoped NoxCue SDK flow", () => {
+  it("gives agents an explicit supervised and headless connection flow", () => {
+    expect(html).toContain('id="cli"');
+    expect(html).toContain("npm install --global noxconnect");
+    expect(html).toContain("noxconnect use YOUR_ORGANIZATION/YOUR_PROJECT");
+    expect(html).toContain("Do not automate the human login");
+    expect(guide).toContain("Supervised local agent");
+    expect(guide).toContain("Headless agent or CI");
+    expect(guide).toContain("Never ask a user to paste a token");
+    expect(discovery).toContain("The complete CLI reference is at `/developers#cli`");
+  });
+
+  it("uses NoxHere and capability names as the public vocabulary", () => {
+    expect(html).toContain("NoxHere API — Developer documentation");
+    expect(html).toContain("NoxHere is one product");
+    expect(html).not.toContain("NoxConnect is the public product");
+    expect(guide).toContain("opaque HttpOnly NoxHere session cookie");
+    expect(discovery).toContain("NoxHere is the public product");
+  });
+
+  it("documents the minimal, environment-scoped Incidents SDK compatibility flow", () => {
     expect(html).toContain('id="noxcue-sdk"');
     expect(html).toContain("npm install @noxcue/sdk");
     expect(html).toContain('from <span class="token-string">"@noxcue/sdk/browser"</span>');

@@ -6,6 +6,7 @@ vi.mock("../../lib/slack.js", () => ({
   getSlackChannel: vi.fn(),
 }));
 vi.mock("../../lib/delivery-outbox.js", () => ({ requeueBlockedForSite: vi.fn(async () => ({ queued: 1 })) }));
+vi.mock("../../lib/transport-outbox", () => ({ requeueBlockedTransportCommands: vi.fn(async () => ({ found: 1, queued: 1 })) }));
 
 import { onRequestPatch } from "../spots/sites/[id]/index";
 import { getSlackChannel, resolveSlackChannels, resolveSlackInstall } from "../../lib/slack.js";
@@ -85,6 +86,21 @@ describe("NoxSpot Slack site settings", () => {
 });
 
 describe("NoxSpot widget configuration", () => {
+  it("requires one mandatory description and allows an optional title", async () => {
+    const valid = await onRequestPatch(context(database(), {
+      blocks: [
+        { id: "description", type: "description", required: true },
+        { id: "title", type: "title", required: false },
+      ],
+    }) as never);
+    expect(valid.status).toBe(200);
+
+    const optionalDescription = await onRequestPatch(context(database(), {
+      blocks: [{ id: "description", type: "description", required: false }],
+    }) as never);
+    expect(optionalDescription.status).toBe(400);
+  });
+
   it("rejects duplicate environment names", async () => {
     const response = await onRequestPatch(context(database(), {
       environments: [
@@ -99,7 +115,7 @@ describe("NoxSpot widget configuration", () => {
     const response = await onRequestPatch(context(database(), {
       environments: [{ name: "Production", url: "app.example.com" }],
       blocks: [
-        { id: "title", type: "title", required: true },
+        { id: "description", type: "description", required: true },
         { id: "impact", type: "custom_text", environments: ["Staging"] },
       ],
     }) as never);
@@ -112,7 +128,7 @@ describe("NoxSpot widget configuration", () => {
     const response = await onRequestPatch(context(db, {
       environments: [{ name: "Production", url: "app.example.com", enabled: true }],
       blocks: [
-        { id: "title", type: "title", required: true },
+        { id: "description", type: "description", required: true },
         { id: "impact", type: "custom_select", label: "Impact", options: ["Low", "High"], environments: ["Production"] },
       ],
     }) as never);
@@ -120,7 +136,7 @@ describe("NoxSpot widget configuration", () => {
     const update = db.runs.find((run) => run.sql.includes("UPDATE spot_sites SET"));
     expect(JSON.parse(String(update?.binds[2]))).toMatchObject({
       environments: [{ name: "Production" }],
-      blocks: [{ id: "title" }, { id: "impact", options: ["Low", "High"] }],
+      blocks: [{ id: "description" }, { id: "impact", options: ["Low", "High"] }],
     });
   });
 });

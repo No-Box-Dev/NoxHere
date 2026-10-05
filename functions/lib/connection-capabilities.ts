@@ -130,12 +130,15 @@ const ReceiptBase = z.object({
 export const ConnectionCapabilityReceiptSchema = z.discriminatedUnion("provider", [
   ReceiptBase.extend({
     provider: z.literal("github"),
-    result: z.object({
-      issueNumber: z.number().int().positive(),
-      url: HttpUrl.nullable(),
-      state: z.string().max(40).nullable(),
-      created: z.boolean(),
-    }).strict(),
+    result: z.union([
+      z.object({
+        issueNumber: z.number().int().positive(),
+        url: HttpUrl.nullable(),
+        state: z.string().max(40).nullable(),
+        created: z.boolean(),
+      }).strict(),
+      z.object({ deliveryId: Identifier, queued: z.boolean() }).strict(),
+    ]),
   }).strict(),
   ReceiptBase.extend({
     provider: z.literal("slack"),

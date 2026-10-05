@@ -1,0 +1,47 @@
+{
+  "contractVersion": 1,
+  "sdkVersion": "0.1.7",
+  "defaultEndpoint": "https://app.noxhere.com/api/v1/cues/public/events",
+  "authFeatures": [
+    "auth.signup",
+    "auth.login",
+    "auth.password_reset",
+    "auth.email_verification",
+    "auth.oauth",
+    "auth.mfa",
+    "auth.session_refresh",
+    "auth.logout"
+  ],
+  "environments": ["production", "staging", "development", "preview", "test", "local"],
+  "outcomes": ["success", "rejected", "failure"],
+  "reasons": [
+    "invalid_input",
+    "invalid_credentials",
+    "account_exists",
+    "account_unverified",
+    "account_locked",
+    "verification_expired",
+    "mfa_required",
+    "rate_limited",
+    "policy_rejected",
+    "dependency_unavailable",
+    "database_unavailable",
+    "email_delivery_failed",
+    "oauth_failed",
+    "session_failed",
+    "configuration_error",
+    "timeout",
+    "network_error",
+    "internal_error",
+    "unknown"
+  ],
+  "deliveryErrors": ["invalid_configuration", "payload_too_large", "timeout", "network_error", "rejected"],
+  "limits": {
+    "defaultTimeoutMs": 3000,
+    "maxTimeoutMs": 10000,
+    "maxBodyBytes": 32768,
+    "maxResponseBytes": 4096,
+    "retryDelayMs": 250,
+    "maxRetryAfterMs": 1000
+  }
+}

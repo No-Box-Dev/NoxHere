@@ -5,9 +5,9 @@ vi.mock("../github-app.js", () => ({
   getInstallationToken: vi.fn(async () => "token"),
 }));
 vi.mock("../github-sync.js", () => ({ upsertIssue: vi.fn(async () => undefined) }));
-vi.mock("../delivery-outbox.js", () => ({
-  queueOutboxDelivery: vi.fn(async () => true),
-  stageSlackDelivery: vi.fn(async () => ({ id: "delivery-1", status: "pending" })),
+vi.mock("../transport-outbox", () => ({
+  publishGitHubTransport: vi.fn(async () => ({ outboxId: "github-delivery-1", status: "queued", queued: true })),
+  publishSlackTransport: vi.fn(async () => ({ outboxId: "delivery-1", status: "queued", queued: true })),
 }));
 vi.mock("../noxspot-response.js", () => ({
   getNoxSpotIssueResponse: vi.fn(async (_env, capture) => {
@@ -62,9 +62,8 @@ vi.mock("../slack.js", () => ({
   }),
 }));
 
-import { createNoxSpotGitHubIssue } from "../noxspot.js";
-import { upsertIssue } from "../github-sync.js";
-import { queueOutboxDelivery, stageSlackDelivery } from "../delivery-outbox.js";
+import { createNoxSpotGitHubIssue, finalizeNoxSpotGitHubIssue } from "../noxspot.js";
+import { publishGitHubTransport, publishSlackTransport } from "../transport-outbox";
 import { resolveSlackChannels } from "../slack.js";
 
 function db(site = {}) {
@@ -110,6 +109,17 @@ const capture = {
   metadata: { url: "https://app.example.com/checkout?cart=1", browser: "Chrome" },
 };
 
+async function finalizeLast(env, number = 12) {
+  const payload = vi.mocked(publishGitHubTransport).mock.calls.at(-1)[1].callback.payload;
+  return finalizeNoxSpotGitHubIssue(env, {
+    payload,
+    receipt: {
+      provider: "github", status: "delivered",
+      result: { resourceType: "issue", resourceId: String(number), url: `https://github.com/acme/web/issues/${number}`, state: "open" },
+    },
+  });
+}
+
 describe("createNoxSpotGitHubIssue", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -124,26 +134,16 @@ describe("createNoxSpotGitHubIssue", () => {
   });
 
   it("creates one labeled GitHub issue, mirrors it, and emits the feed event", async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          number: 12, title: capture.title, state: "open", body: "body",
-          user: { login: "noxspot", avatar_url: null }, assignees: [], labels: [{ name: "noxspot" }],
-          created_at: "2026-08-14T00:00:00Z", updated_at: "2026-08-14T00:00:00Z",
-          html_url: "https://github.com/acme/web/issues/12",
-        }),
-      });
     const database = db();
-    const result = await createNoxSpotGitHubIssue({ DB: database }, capture);
+    const env = { DB: database, TASK_QUEUE: { send: vi.fn() } };
+    const result = await createNoxSpotGitHubIssue(env, capture);
 
-    expect(result).toEqual({ number: 12, url: "https://github.com/acme/web/issues/12" });
-    expect(upsertIssue).toHaveBeenCalledWith(database, 7, "web", expect.objectContaining({ number: 12 }));
-    const createCall = globalThis.fetch.mock.calls.find(([, init]) => init?.method === "POST" && String(init.body).includes("Checkout is broken"));
-    expect(JSON.parse(createCall[1].body)).toMatchObject({ labels: ["noxspot", "bug"] });
+    expect(result).toEqual({ outboxId: "github-delivery-1", status: "queued", queued: true });
+    expect(publishGitHubTransport).toHaveBeenCalledWith(env, expect.objectContaining({
+      operation: "github.issue.create", route: "feedback", idempotencyKey: "noxspot:cap-1",
+      input: expect.objectContaining({ issue: expect.objectContaining({ title: capture.title }) }),
+    }));
+    await finalizeLast(env);
     const eventCall = database._calls.find((call) => call.sql.includes("INSERT INTO events"));
     expect(eventCall.sql).toContain("INSERT INTO events");
     expect(JSON.parse(eventCall.binds[6])).toMatchObject({
@@ -157,16 +157,11 @@ describe("createNoxSpotGitHubIssue", () => {
   });
 
   it("reuses an existing issue with the capture marker on a retry", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => [{
-        number: 12, title: capture.title, body: "<!-- noxspot:cap-1 -->",
-        state: "open", user: null, assignees: [], labels: [],
-        created_at: "x", updated_at: "x", html_url: "https://github.com/acme/web/issues/12",
-      }],
-    });
     await createNoxSpotGitHubIssue({ DB: db() }, capture);
-    expect(globalThis.fetch).toHaveBeenCalledOnce();
+    expect(publishGitHubTransport).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      idempotencyKey: "noxspot:cap-1",
+      input: expect.objectContaining({ idempotencyMarker: "<!-- noxspot:cap-1 -->" }),
+    }));
   });
 
   it("turns a tenant member selected as reporter into a GitHub mention", async () => {
@@ -177,25 +172,11 @@ describe("createNoxSpotGitHubIssue", () => {
       if (sql.includes("FROM members")) statement.first = async () => ({ login: "Ada-Lovelace" });
       return statement;
     };
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          number: 13, title: capture.title, state: "open", body: "body",
-          user: null, assignees: [], labels: [], created_at: "x", updated_at: "x",
-          html_url: "https://github.com/acme/web/issues/13",
-        }),
-      });
-
     await createNoxSpotGitHubIssue({ DB: database }, { ...capture, reporter: "@ada-lovelace" });
 
-    const createCall = globalThis.fetch.mock.calls.find(([, init]) => init?.method === "POST" && String(init.body).includes("Checkout is broken"));
-    expect(JSON.parse(createCall[1].body).body).toContain("**Reporter:** @Ada-Lovelace");
-    const eventCall = database._calls.find((call) => call.sql.includes("INSERT INTO events"));
-    expect(eventCall.binds[1]).toBe("Ada-Lovelace");
+    const staged = vi.mocked(publishGitHubTransport).mock.calls.at(-1)[1];
+    expect(staged.input.issue.body).toContain("**Reporter:** @Ada-Lovelace");
+    expect(staged.callback.payload.reporterGithubLogin).toBe("Ada-Lovelace");
   });
 
   it("stages Slack separately after GitHub succeeds", async () => {
@@ -212,14 +193,16 @@ describe("createNoxSpotGitHubIssue", () => {
         }),
       });
     const database = db({ slack_channel_id: "C123", slack_connection_id: "conn-2" });
+    const env = { DB: database, TASK_QUEUE: { send: vi.fn() } };
     await createNoxSpotGitHubIssue(
-      { DB: database, TASK_QUEUE: { send: vi.fn() } },
+      env,
       { ...capture, ownerId: "stale-owner", repo: "stale-repo", slackChannelId: "C-STALE", slackConnectionId: "conn-stale" },
     );
-    expect(stageSlackDelivery).toHaveBeenCalledWith(database, expect.objectContaining({
-      source: "noxspot", sourceId: "cap-1", connectionId: "conn-2", channelId: "C123",
+    await finalizeLast(env, 14);
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.objectContaining({ DB: database }), expect.objectContaining({
+      route: "feedback", routeContext: { kind: "site", id: "site-1" }, idempotencyKey: "noxspot:cap-1",
     }));
-    const stagedMessage = vi.mocked(stageSlackDelivery).mock.calls.at(-1)[1].payload.message;
+    const stagedMessage = vi.mocked(publishSlackTransport).mock.calls.at(-1)[1].message;
     expect(stagedMessage.blocks).toEqual(expect.arrayContaining([
       expect.objectContaining({
         type: "section",
@@ -234,9 +217,7 @@ describe("createNoxSpotGitHubIssue", () => {
         ]),
       }),
     ]));
-    expect(globalThis.fetch.mock.calls.some(([url]) => String(url).includes("/repos/acme/web/"))).toBe(true);
-    expect(globalThis.fetch.mock.calls.some(([url]) => String(url).includes("stale-owner"))).toBe(false);
-    expect(queueOutboxDelivery).toHaveBeenCalledWith(expect.objectContaining({ DB: database }), "delivery-1", "acme");
+    expect(vi.mocked(publishGitHubTransport).mock.calls.at(-1)[1].callback.payload.ownerId).toBe("acme");
   });
 
   it("keeps automatic errors on the configured NoxSpot site channel", async () => {
@@ -257,13 +238,15 @@ describe("createNoxSpotGitHubIssue", () => {
       noxFeedChannelId: "", noxTicketChannelId: "",
     });
 
+    const env = { DB: db({ slack_channel_id: "C-SPOT" }), TASK_QUEUE: { send: vi.fn() } };
     await createNoxSpotGitHubIssue(
-      { DB: db({ slack_channel_id: "C-SPOT" }), TASK_QUEUE: { send: vi.fn() } },
+      env,
       { ...capture, issueType: "error", slackChannelId: "C-SPOT" },
     );
+    await finalizeLast(env, 15);
 
-    expect(stageSlackDelivery).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-      source: "noxspot", channelId: "C-SPOT",
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      route: "feedback", routeContext: { kind: "site", id: "site-1" },
     }));
   });
 
@@ -285,13 +268,15 @@ describe("createNoxSpotGitHubIssue", () => {
       noxFeedChannelId: "", noxTicketChannelId: "",
     });
 
+    const env = { DB: db(), TASK_QUEUE: { send: vi.fn() } };
     await createNoxSpotGitHubIssue(
-      { DB: db(), TASK_QUEUE: { send: vi.fn() } },
+      env,
       { ...capture, slackChannelId: null },
     );
+    await finalizeLast(env, 16);
 
-    expect(stageSlackDelivery).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-      source: "noxspot", channelId: "C-FALLBACK",
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      route: "feedback", routeContext: { kind: "site", id: "site-1" },
     }));
   });
 });

@@ -1,5 +1,10 @@
 # NoxConnect API standardization
 
+> **Compatibility record.** Capitalized legacy product names in this document
+> describe implementation modules and stable API identifiers, not separate
+> public products. Current developer-facing names are Planning, Activity,
+> Feedback, and Incidents.
+
 This document tracks the eight local standardization gates for the API served by
 `app.noxhere.com`. NoxConnect remains the shared foundation; the product services
 remain bounded by capability and storage ownership.
@@ -24,7 +29,7 @@ Last integrated verification: **2026-09-09**, based on `origin/main` at
 
 | Service | Focus | Service-level config | Resource-owned config |
 |---|---|---|---|
-| NoxConnect | Connections and shared workspace control | service toggles, new-repository policy | GitHub/Slack connections, people, projects, Slack routing |
+| NoxConnect | Connections and shared workspace control | new-repository policy | GitHub/Slack connections, people, projects, Slack routing |
 | NoxTicket | Planning and delivery workflow | feature repository, board stages | features, specifications, attachments |
 | NoxFeed | Current work and communication | project scope, release-notes prompt | feed data and organization AI settings |
 | NoxSpot | Website feedback capture | none | sites, widget environments/fields, per-site delivery |
@@ -106,17 +111,16 @@ The narrowly scoped native migration exchange remains only for already-installed
 NoxFeed clients and is not a general authentication mode. Unknown bearer formats
 fail with `unsupported_credential` before any provider request is made.
 
-Each automation token belongs to exactly one enabled project. Collection reads
+Each automation token belongs to exactly one active project. Collection reads
 are filtered to that project, direct references outside it return
-`resource_not_found`, and disabled services return `service_not_enabled` before
-product code runs. Automation currently covers project-owned NoxFeed, NoxSpot,
+`resource_not_found`. Every product capability is available in every project;
+connection or runtime readiness is reported separately. Automation currently covers project-owned NoxFeed, NoxSpot,
 and NoxCue operations. Organization-wide NoxConnect configuration and the
 organization-owned NoxTicket feature repository require a human session rather
 than pretending they can be safely project-scoped.
 
 Delivery history distinguishes actionable configuration failures from terminal
-outcomes. `blocked_service_disabled` records that a product was switched off;
-`superseded` records that an obsolete route was intentionally not replayed.
+outcomes. `superseded` records that an obsolete route was intentionally not replayed.
 
 ### 6. Safe writes and errors
 

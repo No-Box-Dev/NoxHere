@@ -50,6 +50,7 @@ describe("NoxCue digest history", () => {
     const db = {
       prepare: () => ({
         bind() { return this; },
+        async first() { return null; },
         async all() { return { results: periods }; },
       }),
     };
@@ -76,16 +77,17 @@ describe("NoxCue digest history", () => {
     });
   });
 
-  it("derives daily custom activity counts and daily counts per registered user", async () => {
+  it("derives daily custom activity counts and rolling weekly activity per active user", async () => {
     const db = {
       prepare(sql) {
         return {
           bind() { return this; },
+          async first() { return sql.includes("cue_engagement_settings") ? { window_days: 14 } : null; },
           async all() {
             if (sql.includes("cue_custom_metrics")) return { results: [
-              { period: "2026-08-27", metric_key: "custom.journals.added", label: "Journals added", daily_events: 2, total_users: 70 },
-              { period: "2026-08-28", metric_key: "custom.journals.added", label: "Journals added", daily_events: 4, total_users: 72 },
-              { period: "2026-08-29", metric_key: "custom.journals.added", label: "Journals added", daily_events: 6, total_users: 74 },
+              { period: "2026-08-27", metric_key: "custom.journals.added", label: "Journals added", daily_events: 2, weekly_events: 40, weekly_active: 20, weekly_participants: 8, previous_weekly_events: 20, previous_weekly_active: 10 },
+              { period: "2026-08-28", metric_key: "custom.journals.added", label: "Journals added", daily_events: 4, weekly_events: 44, weekly_active: 20, weekly_participants: 9, previous_weekly_events: 20, previous_weekly_active: 10 },
+              { period: "2026-08-29", metric_key: "custom.journals.added", label: "Journals added", daily_events: 6, weekly_events: 50, weekly_active: 20, weekly_participants: 10, previous_weekly_events: 20, previous_weekly_active: 10 },
             ] };
             return { results: [
               { period: "2026-08-27", new_users: 1, total_users: 70, daily_active: 1, weekly_active: 1, monthly_active: 1 },
@@ -99,10 +101,22 @@ describe("NoxCue digest history", () => {
     const { loadNoxCueDigestData } = await import("../noxcue-digest-data.js");
     const summary = await loadNoxCueDigestData(db, "source-1", "2026-08-29");
     expect(summary.metrics["custom.journals.added"]).toBe(6);
-    expect(summary.metrics["custom.journals.added.per_user"]).toBeCloseTo(6 / 74);
+    expect(summary.metrics["custom.journals.added.per_mau"]).toBeCloseTo(50 / 20);
     expect(summary.metricLabels).toEqual({
       "custom.journals.added": "Journals added",
-      "custom.journals.added.per_user": "Journals added / registered user",
+      "custom.journals.added.per_mau": "Journals added / active user",
+    });
+    expect(summary.activityBreakdowns["custom.journals.added.per_mau"]).toEqual({
+      actionLabel: "journals",
+      windowDays: 14,
+      totalActions: 50,
+      activeUsers: 20,
+      participatingUsers: 10,
+      participationRate: 0.5,
+      actionsPerParticipant: 5,
+      previousActions: 20,
+      previousActiveUsers: 10,
+      previousPerActiveUser: 2,
     });
     expect(summary.comparisons["custom.journals.added"]).toMatchObject({ yesterday: 4, average30d: 3 });
   });

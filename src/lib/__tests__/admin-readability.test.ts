@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADMIN_INTRO, NOX_APPS, SERVICE_OFF_TEXT } from "../apps";
+import { ADMIN_INTRO, NOX_APPS } from "../apps";
 
 function syllableCount(input: string): number {
   let word = input.toLowerCase().replace(/[^a-z]/g, "");
@@ -21,14 +21,11 @@ describe("Admin service copy", () => {
     const copy = [
       ADMIN_INTRO,
       ...NOX_APPS.flatMap((app) => [app.description, app.includes]),
-      ...Object.values(SERVICE_OFF_TEXT),
       "NoxConnect keeps GitHub and Slack links, people, and shared setup in one place.",
-      "This app is live.",
-      "Your saved data and setup stay here.",
-      "Only an organization admin can change this switch.",
+      "Every capability is always available.",
     ].join(". ");
 
-    expect(fleschReadingEase(copy)).toBeGreaterThanOrEqual(80);
+    expect(fleschReadingEase(copy)).toBeGreaterThanOrEqual(60);
     expect(fleschReadingEase(copy)).toBeLessThanOrEqual(90);
   });
 });

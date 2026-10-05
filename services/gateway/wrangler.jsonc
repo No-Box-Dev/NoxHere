@@ -1,0 +1,81 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "noxhere",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "app.noxhere.com/*",
+      "zone_name": "noxhere.com"
+    }
+  ],
+  "assets": {
+    "directory": "../../apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/auth/github/callback", "/auth/email/*", "/__noxhere/*"]
+  },
+  "services": [
+    {
+      "binding": "NOXCONNECT",
+      "service": "noxconnect-api"
+    },
+    {
+      "binding": "NOXCONNECT_IDENTITY",
+      "service": "noxconnect-capabilities"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "CONTROL_DB",
+      "database_name": "noxhere-control",
+      "database_id": "b4e665cf-6fc9-4547-9f5d-2851d1163703",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "PUBLIC_APP_ORIGIN": "https://app.noxhere.com"
+  },
+  "observability": {
+    "enabled": true,
+    "redact_query_string": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.05
+    }
+  },
+  "env": {
+    "staging": {
+      "name": "noxhere-staging",
+      "workers_dev": true,
+      "routes": [],
+      "vars": {
+        "PUBLIC_APP_ORIGIN": "https://noxhere-staging.jasper-414.workers.dev"
+      },
+      "services": [
+        {
+          "binding": "NOXCONNECT",
+          "service": "noxconnect-staging"
+        },
+        {
+          "binding": "NOXCONNECT_IDENTITY",
+          "service": "noxconnect-capabilities-staging"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "CONTROL_DB",
+          "database_name": "noxhere-control-staging",
+          "database_id": "a0b6bb26-5f7a-4b00-8acc-e1210f3ec82e",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
+}

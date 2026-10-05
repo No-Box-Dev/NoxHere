@@ -18,7 +18,7 @@ In scope:
 
 - The noxconnect web app (`src/`)
 - The Cloudflare Pages Functions API (`functions/`)
-- The sibling cron Worker (`cron/`)
+- The scheduler service (`services/scheduler/`)
 
 Out of scope: vulnerabilities in third-party platforms (GitHub, Cloudflare) themselves — report those to the respective vendor.
 

@@ -1,0 +1,38 @@
+{
+  "name": "@noxcue/sdk",
+  "version": "0.1.7",
+  "description": "Detection-first browser and server SDK for NoxCue",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/No-Box-Dev/NoxCue.git",
+    "directory": "packages/sdk"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0"
+}

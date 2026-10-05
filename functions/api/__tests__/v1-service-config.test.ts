@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { onRequestGet, onRequestPatch } from "../v1/services/[service]/config";
 
-function makeDb(raw: string | null, changes = 1, projectFound = true) {
+function makeDb(raw: string | null, changes = 1, projectFound = true, orgRaw?: string | null) {
   const calls = { runs: [] as Array<{ sql: string; binds: unknown[] }> };
   return {
     prepare(sql: string) {
@@ -10,6 +10,9 @@ function makeDb(raw: string | null, changes = 1, projectFound = true) {
         bind(...binds: unknown[]) { statement.binds = binds; return statement; },
         async first() {
           if (sql.includes("FROM projects")) return projectFound ? { found: 1 } : null;
+          // Only the inheritance tests distinguish the two settings tables; the
+          // rest keep the original behaviour of answering both from `raw`.
+          if (orgRaw !== undefined && sql.includes("FROM config")) return orgRaw == null ? null : { data: orgRaw };
           return raw == null ? null : { data: raw };
         },
         async run() { calls.runs.push({ sql, binds: statement.binds }); return { meta: { changes } }; },
@@ -34,11 +37,12 @@ interface ContextOptions {
   changes?: number;
   projectFound?: boolean;
   projectId?: string | null;
+  orgRaw?: string | null;
   noxFeedService?: { validateConfigPatch(current: unknown, patch: unknown): Promise<unknown> };
 }
 
-function context({ service = "noxticket", raw = null, method = "GET", body, etag, isAdmin = true, changes = 1, projectFound = true, projectId = "project-1", noxFeedService }: ContextOptions = {}) {
-  const db = makeDb(raw, changes, projectFound);
+function context({ service = "noxticket", raw = null, method = "GET", body, etag, isAdmin = true, changes = 1, projectFound = true, projectId = "project-1", orgRaw, noxFeedService }: ContextOptions = {}) {
+  const db = makeDb(raw, changes, projectFound, orgRaw);
   const headers = new Headers();
   if (body !== undefined) headers.set("Content-Type", "application/json");
   if (etag) headers.set("If-Match", etag);
@@ -113,6 +117,26 @@ describe("service-scoped configuration API", () => {
     expect((await onRequestPatch(invalid.ctx as never)).status).toBe(422);
   });
 
+  it("accepts the weak ETag Cloudflare hands back for a compressed response", async () => {
+    // We emit `"<revision>"`, but Cloudflare rewrites it to `W/"<revision>"`
+    // whenever it compresses the JSON, and the browser echoes that back
+    // verbatim.
+    const raw = JSON.stringify({ newRepoDefault: "include" });
+    const initial = context({ service: "noxconnect", raw });
+    const etag = (await onRequestGet(initial.ctx as never)).headers.get("ETag")!;
+
+    const update = context({
+      service: "noxconnect",
+      raw,
+      method: "PATCH",
+      body: { newRepositoryPolicy: "exclude" },
+      etag: `W/${etag}`,
+    });
+    const response = await onRequestPatch(update.ctx as never);
+    expect(response.status).toBe(200);
+    expect((await response.json() as any).config.newRepositoryPolicy).toBe("exclude");
+  });
+
   it("patches only fields owned by the selected service using compare-and-swap", async () => {
     const raw = JSON.stringify({ noxTicketRepo: "old", releaseNotesPrompt: "keep me", custom: { retained: true } });
     const initial = context({ raw });
@@ -143,6 +167,39 @@ describe("service-scoped configuration API", () => {
         message: "Settings changed concurrently; fetch config and retry",
       },
     });
+  });
+
+  it("inherits organization settings when the project has no settings row of its own", async () => {
+    const orgRaw = JSON.stringify({ newRepoDefault: "exclude" });
+    const initial = context({ service: "noxconnect", raw: null, orgRaw });
+    const getResponse = await onRequestGet(initial.ctx as never);
+    const getBody = await getResponse.json() as any;
+    expect(getBody.config.newRepositoryPolicy).toBe("exclude");
+
+    const update = context({
+      service: "noxconnect",
+      raw: null,
+      orgRaw,
+      method: "PATCH",
+      body: { newRepositoryPolicy: "include" },
+      etag: getResponse.headers.get("ETag")!,
+    });
+    const response = await onRequestPatch(update.ctx as never);
+    expect(response.status).toBe(200);
+    expect(update.db.calls.runs[0].sql).toContain("INSERT OR IGNORE INTO project_config");
+
+    // The new project row starts from the inherited organization settings.
+    const written = JSON.parse(String(update.db.calls.runs[0].binds[2]));
+    expect(written.newRepoDefault).toBe("include");
+    expect((await response.json() as any).config.newRepositoryPolicy).toBe("include");
+  });
+
+  it("ignores organization settings once the project owns a settings row", async () => {
+    const orgRaw = JSON.stringify({ newRepoDefault: "exclude" });
+    const raw = JSON.stringify({ newRepoDefault: "include" });
+    const initial = context({ service: "noxconnect", raw, orgRaw });
+    const getBody = await (await onRequestGet(initial.ctx as never)).json() as any;
+    expect(getBody.config.newRepositoryPolicy).toBe("include");
   });
 
   it("rejects the removed nested NoxFeed project selector", async () => {

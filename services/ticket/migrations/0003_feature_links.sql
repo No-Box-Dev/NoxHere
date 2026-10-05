@@ -1,0 +1,1 @@
+ALTER TABLE features ADD COLUMN links_json TEXT NOT NULL DEFAULT '[]';

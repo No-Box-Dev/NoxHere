@@ -318,14 +318,26 @@ describe("POST /api/webhook — event routing", () => {
     expect(enqueuedTypes).not.toContain("narrate_pr_opened");
   });
 
-  it("routes member.removed to removeMember", async () => {
+  it("does not treat a removed repository collaborator as an organization removal", async () => {
     const db = makeDb({ firstByFragment: { "SELECT id FROM orgs": { id: 7 } } });
     const req = await makeRequest({
       event: "member",
       payload: { action: "removed", organization: { login: "acme" }, member: { login: "alice" } },
     });
+    const response = await onRequestPost(makeCtx({ db, request: req }));
+    expect(removeMember).not.toHaveBeenCalled();
+    expect(await response.json()).toEqual(expect.objectContaining({ skipped: "repository collaborator removed" }));
+  });
+
+  it("classifies an added repository collaborator as a contributor", async () => {
+    const db = makeDb({ firstByFragment: { "SELECT id FROM orgs": { id: 7 } } });
+    const member = { login: "alice", type: "User", avatar_url: "https://example.com/alice.png" };
+    const req = await makeRequest({
+      event: "member",
+      payload: { action: "added", organization: { login: "acme" }, member },
+    });
     await onRequestPost(makeCtx({ db, request: req }));
-    expect(removeMember).toHaveBeenCalledWith(expect.any(Object), 7, "alice");
+    expect(upsertMember).toHaveBeenCalledWith(expect.any(Object), 7, member, "contributor");
   });
 
   it("routes push to touchRepoPushed", async () => {

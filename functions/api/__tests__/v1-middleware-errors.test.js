@@ -352,8 +352,9 @@ describe("v1 middleware errors", () => {
     await expect(response.json()).resolves.toMatchObject({ error: { code: "guest_scope_forbidden" } });
   });
 
-  it("blocks a disabled product before its handler runs", async () => {
+  it("does not gate a NoxHere capability with a legacy product toggle", async () => {
     const signed = await signedRequest("/api/v1/spots/sites", {}, { "X-Project-ID": "project-1" });
+    let continued = false;
     const response = await onRequest({
       request: signed.request,
       env: {
@@ -369,20 +370,10 @@ describe("v1 middleware errors", () => {
         },
       },
       data: {},
-      next() { throw new Error("handler should not run"); },
+      next() { continued = true; return Response.json({ ok: true }); },
     });
-    expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({
-      apiVersion: 1,
-      error: {
-        code: "service_not_enabled",
-        message: "NoxSpot is not enabled. Enable it in NoxConnect before trying again.",
-        details: {
-          service: "noxspot",
-          remediation: { action: "enable_service", href: "/api/v1/services/noxspot/config" },
-        },
-      },
-    });
+    expect(response.status).toBe(200);
+    expect(continued).toBe(true);
   });
 
   it("lets the source-key-authenticated NoxCue gateway bypass GitHub auth", async () => {

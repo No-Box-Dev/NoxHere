@@ -47,7 +47,7 @@ describe("project creation", () => {
       org: "acme",
       repo: null,
       routing_enabled: 1,
-      enabled_services: ["noxticket", "noxfeed", "noxcue"],
+      enabled_services: ["noxticket", "noxfeed", "noxspot", "noxcue"],
     });
     expect(body.project.id).toMatch(/^proj_acme_client-portal_[a-f0-9-]{8}$/);
     expect(state.db.batch).toHaveBeenCalledTimes(1);

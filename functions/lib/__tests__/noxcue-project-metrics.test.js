@@ -52,7 +52,7 @@ describe("NoxCue project metric settings", () => {
     }) }) };
     const enabled = await loadEnabledNoxCueMetricKeys(db, 2, "playnist", "source-1");
     expect(enabled).toContain("custom.journals.added");
-    expect(enabled).toContain("custom.journals.added.per_user");
+    expect(enabled).toContain("custom.journals.added.per_mau");
   });
 
   it("writes an explicit row for every supported metric", async () => {

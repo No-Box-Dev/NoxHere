@@ -2,7 +2,7 @@
 //
 // Producer: functions/api/webhook.js enqueues instead of running work in
 // `context.waitUntil` (which has no retry and is lost on failure/eviction).
-// Consumer: the cron Worker's `queue()` handler (cron/src/index.js) drains it
+// Consumer: the cron Worker's `queue()` handler (services/scheduler/src/index.js) drains it
 // with retries + a dead-letter queue.
 //
 // Kept as plain JS because it's imported by both the JS webhook (Pages) and the
@@ -19,6 +19,9 @@ export const TASK = {
   SPOT_SEND_RESOLUTION_EMAIL: "spot_send_resolution_email", // durable NoxSpot reporter notification
   NOXCUE_GITHUB_ISSUE: "noxcue_github_issue", // durable NoxCue incident → create/update GitHub issue
   DELIVER_SLACK: "deliver_slack",       // { outboxId } → durable delivery_outbox row
+  PROJECT_PLATFORM_EVENT: "project_platform_event", // { eventId } → idempotent read-model projections
+  DELIVER_TRANSPORT: "deliver_transport", // { outboxId } → provider-neutral transport command
+  FINALIZE_TRANSPORT: "finalize_transport", // { outboxId } → receipt-dependent product state
 };
 
 // Enqueue a task. Never throws into the caller: a missing binding or transient

@@ -1,8 +1,7 @@
 import { getCtx } from "../../../lib/db";
-import { getEnabledApps } from "../../../lib/apps.js";
 import { buildServiceCatalog } from "../../../lib/service-capabilities";
 import { loadServiceManifests, type ProductServiceEnvironment } from "../../../lib/service-manifests";
-import { getNoxDb, type NoxDatabaseEnv } from "../../../lib/nox-db";
+import type { NoxDatabaseEnv } from "../../../lib/nox-db";
 import { API_VERSION, normalizeLegacyError, v1Error, v1Response } from "../../../lib/api-v1";
 import { onRequestGet as getIntegrationStatus } from "../../integrations/status";
 
@@ -37,22 +36,13 @@ interface IntegrationStatus {
 export async function loadServiceCatalog(context: ServiceCatalogContext) {
   const { orgId, projectId, orgLogin, isAdmin } = getCtx(context) as ServiceCatalogContext["data"];
   if (!orgId || !orgLogin) return { response: v1Error("missing_org_context", "Missing organization context", 400) };
-  const db = getNoxDb(context.env);
-
-  const [rawEnabledApps, statusResponse, serviceManifests] = await Promise.all([
-    getEnabledApps(db, orgId, projectId),
+  const [statusResponse, serviceManifests] = await Promise.all([
     getIntegrationStatus(context as never),
     loadServiceManifests(context.env),
   ]);
   if (!statusResponse.ok) return { response: await normalizeLegacyError(statusResponse) };
 
   const integrations = await statusResponse.json() as IntegrationStatus;
-  const enabledApps = {
-    noxticket: rawEnabledApps.noxticket !== false,
-    noxfeed: rawEnabledApps.noxfeed !== false,
-    noxspot: rawEnabledApps.noxspot !== false,
-    noxcue: rawEnabledApps.noxcue !== false,
-  };
   return {
     body: {
       apiVersion: API_VERSION,
@@ -60,7 +50,6 @@ export async function loadServiceCatalog(context: ServiceCatalogContext) {
       project: projectId ? { id: projectId } : null,
       canConfigure: Boolean(isAdmin),
       services: buildServiceCatalog({
-        enabledApps,
         integrations,
         definitions: serviceManifests.definitions,
         runtimeStates: serviceManifests.runtimeStates,

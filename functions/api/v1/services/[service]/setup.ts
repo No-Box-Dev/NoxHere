@@ -16,7 +16,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const capabilities = new Map(service.capabilities.map((capability) => [capability.id, capability]));
   const sections = service.setup.sections.map((section) => {
     const states = section.capabilityIds.map((id) => capabilities.get(id)?.state);
-    const state = states.every((item) => item === "disabled") ? "disabled" : states.some((item) => item === "blocked") ? "blocked" : "ready";
+    const state = states.some((item) => item === "blocked") ? "blocked" : "ready";
     return { ...section, state };
   });
   return v1Response({

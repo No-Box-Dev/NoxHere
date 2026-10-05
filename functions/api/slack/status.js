@@ -18,10 +18,14 @@ export async function onRequestGet(context) {
     context.env.DB.prepare(
       `SELECT
          SUM(CASE WHEN status IN ('pending','queued','processing','retrying') THEN 1 ELSE 0 END) AS pending_count,
-         SUM(CASE WHEN status IN ('blocked_configuration','failed') THEN 1 ELSE 0 END) AS blocked_count,
+         SUM(CASE WHEN status IN ('blocked_configuration','blocked','failed') THEN 1 ELSE 0 END) AS blocked_count,
          MAX(delivered_at) AS last_delivered_at
-       FROM delivery_outbox WHERE org_id = ? AND destination = 'slack'`,
-    ).bind(orgId).first(),
+       FROM (
+         SELECT status, delivered_at FROM delivery_outbox WHERE org_id = ? AND destination = 'slack'
+         UNION ALL
+         SELECT status, delivered_at FROM transport_outbox WHERE org_id = ? AND provider = 'slack'
+       )`,
+    ).bind(orgId, orgId).first(),
     listSlackChannelStatuses(context.env.DB, orgId),
   ]);
 

@@ -113,22 +113,23 @@ describe("upsertIssue", () => {
     await upsertIssue(db, "org", "api", baseIssue);
     expect(db._calls.runs).toHaveLength(1);
     expect(db._calls.runs[0].sql).toContain("INSERT INTO issues");
-    expect(db._calls.runs[0].binds[14]).toBeNull();  // closed_by
+    expect(db._calls.runs[0].binds[4]).toBeNull();   // body
+    expect(db._calls.runs[0].binds[15]).toBeNull();  // closed_by
   });
 
   it("passes closedBy through when provided", async () => {
     const db = makeDb();
     await upsertIssue(db, "org", "api", { ...baseIssue, state: "closed" }, "alice");
-    expect(db._calls.runs[0].binds[14]).toBe("alice");
+    expect(db._calls.runs[0].binds[15]).toBe("alice");
   });
 
   it("tolerates missing user/assignees/labels arrays", async () => {
     const db = makeDb();
     await upsertIssue(db, "org", "api", { ...baseIssue, user: null, assignees: null, labels: null });
     const r = db._calls.runs[0];
-    expect(r.binds[5]).toBeNull();  // author
-    expect(r.binds[11]).toBe("[]");  // assignees_json
-    expect(r.binds[12]).toBe("[]");  // labels_json
+    expect(r.binds[6]).toBeNull();   // author
+    expect(r.binds[12]).toBe("[]"); // assignees_json
+    expect(r.binds[13]).toBe("[]"); // labels_json
   });
 });
 
@@ -238,6 +239,13 @@ describe("upsertMember + removeMember", () => {
     const db = makeDb();
     await upsertMember(db, "org", { login: "dep", avatar_url: null }, "bot");
     expect(db._calls.runs[0].binds[3]).toBe("bot");
+  });
+
+  it("keeps a verified organization member human when repository activity is cached", async () => {
+    const db = makeDb();
+    await upsertMember(db, "org", { login: "guest", avatar_url: "a" }, "contributor");
+    expect(db._calls.runs[0].binds[3]).toBe("contributor");
+    expect(db._calls.runs[0].sql).toContain("members.kind = 'human'");
   });
 
   it("removeMember runs DELETE", async () => {
@@ -605,8 +613,10 @@ describe("syncMembers", () => {
     const db = makeDb();
     const result = await syncMembers(db, "tok", "org-1", "x");
     expect(result).toEqual(["alice"]);
+    expect(db._calls.runs.some((call) => call.sql.includes("SET kind = 'contributor'") && call.binds[0] === "org-1")).toBe(true);
     // The INSERT SQL hardcodes 'human' as the kind.
     expect(db._calls.batches[0][0].sql).toContain("'human'");
+    expect(db._calls.batches[0][0].sql).toContain("kind = 'human'");
   });
 
   it("uses the owner as the sole member for a personal installation", async () => {

@@ -9,6 +9,27 @@ export async function onRequestGet(context) {
   const { orgLogin } = getCtx(context);
   if (!orgLogin) return errorResponse("Missing org context", 400);
 
+  if (new URL(context.request.url).searchParams.get("view") === "bootstrap") {
+    const rows = await context.env.DB.prepare(
+      `SELECT u.login AS github_login, COALESCE(actor.avatar_url, u.avatar_url) AS avatar_url
+         FROM gh_users u
+         LEFT JOIN actors actor ON actor.owner_id = ? AND actor.github_user_id = CAST(u.id AS TEXT)
+        WHERE u.id IN (
+          SELECT member.gh_user_id
+            FROM gh_members member
+            JOIN installations installation ON installation.installation_id = member.installation_id
+           WHERE installation.owner_id = ?
+        )
+        UNION
+       SELECT u.login AS github_login, COALESCE(actor.avatar_url, u.avatar_url) AS avatar_url
+         FROM actors actor
+         LEFT JOIN gh_users u ON CAST(u.id AS TEXT) = actor.github_user_id
+        WHERE actor.owner_id = ?
+        ORDER BY github_login`,
+    ).bind(orgLogin, orgLogin, orgLogin).all();
+    return jsonResponse({ actors: rows.results ?? [] });
+  }
+
   const rows = await context.env.DB.prepare(
     `SELECT
         COALESCE(a.id, 'actor_' || u.login)             AS id,

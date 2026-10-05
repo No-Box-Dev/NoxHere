@@ -12,9 +12,9 @@ explicitly test-only:
   `test`, or `cert`;
 - the repository is private and not archived on GitHub;
 - the Slack channel name contains the same kind of test marker;
-- the selected NoxSpot site and NoxCue source resolve to that exact channel;
-- a short-lived NoxHere API token and explicit write confirmation are present;
-- NoxHere and NoxSpot hosts match the small built-in allowlist.
+- the selected Feedback site and Incidents source resolve to that exact channel;
+- a short-lived NoxConnect API token and explicit write confirmation are present;
+- the NoxConnect gateway and Feedback capture hosts match the built-in allowlist.
 
 `No-Box-Dev/test` and a channel such as `#nox-acceptance` are the default
 destinations. Production product repositories and ordinary Slack channels are
@@ -30,8 +30,8 @@ explicit parameter:
 | GitHub | Existing App installation → private `No-Box-Dev/test` repository |
 | Slack | Existing App installation → selected connection and `#nox-acceptance` channel |
 | Nox project | Dedicated project linked only to the test repository |
-| NoxSpot | Dedicated site with a test-labelled origin and the acceptance channel |
-| NoxCue | Dedicated source, `staging` environment, acceptance channel, and source-only ingest key |
+| Feedback | Dedicated site with a test-labelled origin and the acceptance channel |
+| Incidents | Dedicated source, `staging` environment, acceptance channel, and source-only ingest key |
 
 The separate Cloudflare staging Workers and databases remain useful for
 deployment/readiness smoke tests. They are not a reason to duplicate provider
@@ -46,15 +46,15 @@ apps or workspaces.
 3. Create `#nox-acceptance` (or another explicitly test-labelled channel) in
    the existing Slack workspace and invite the NoxConnect bot.
 4. Configure the test project:
-   - NoxTicket feature repository → `test`;
-   - NoxFeed release notes → the acceptance Slack connection/channel;
-   - NoxSpot site → the test project/repository, test-labelled allowed origin,
+   - Planning feature repository → `test`;
+   - Activity release notes → the acceptance Slack connection/channel;
+   - Feedback site → the test project/repository, test-labelled allowed origin,
      and acceptance Slack connection/channel;
-   - NoxCue source → the test project, environment `staging`, alerts enabled,
+   - Incidents source → the test project, environment `staging`, alerts enabled,
      and acceptance Slack connection/channel;
-   - NoxCue GitHub incidents → enabled only for the test project and
+   - Incidents GitHub issue creation → enabled only for the test project and
      `staging` environment.
-5. Create a source-only NoxCue ingest key and a short-lived `nox_at_...`
+5. Create a source-only Incidents ingest key and a short-lived `nox_at_...`
    session with the required project/service scopes.
 
 No provider secret needs to be copied into the acceptance file. Existing
@@ -64,7 +64,8 @@ GitHub and Slack credentials stay encrypted inside NoxConnect.
 
 Copy `.env.staging-acceptance.example` to the ignored
 `.env.staging-acceptance`, then fill the project/site/source IDs, Slack
-connection/channel IDs, NoxHere access token, and NoxCue ingest key.
+connection/channel IDs, NoxConnect access token, and Incidents ingest key. The
+environment-variable names retain their compatibility spelling.
 
 Run the read-only preflight first:
 
@@ -80,11 +81,11 @@ npm run e2e:provider
 
 The live run:
 
-- sends NoxTicket, NoxFeed, and NoxCue test messages to the exact channel ID;
-- creates and closes a NoxTicket feature issue;
-- opens and merges a disposable PR and waits for its NoxFeed release note;
-- ingests a NoxCue staging error and waits for its Slack/GitHub receipts;
-- submits NoxSpot feedback and waits for its Slack/GitHub receipts.
+- sends Planning, Activity, and Incidents test messages to the exact channel ID;
+- creates and closes a Planning feature issue;
+- opens and merges a disposable PR and waits for its Activity release note;
+- ingests an Incidents staging error and waits for its Slack/GitHub receipts;
+- submits Feedback and waits for its Slack/GitHub receipts.
 
 Unique run markers prevent stale data from passing. Created issues are closed
 during cleanup; the merged fixture PR and release-note record remain as the

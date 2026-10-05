@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Nox — Homepage Messaging</title>
+    <style>
+      @font-face { font-family: Aeonik; src: url("../public/fonts/Aeonik-regular.ttf") format("truetype"); font-display: swap; }
+      @font-face { font-family: Arbeit; src: url("../public/fonts/Arbeit-Regular.otf") format("opentype"); font-display: swap; }
+      @font-face { font-family: Arbeit; src: url("../public/fonts/Arbeit-Bold.otf") format("opentype"); font-weight: 700; font-display: swap; }
+      :root { --paper:#f5f2ec; --ink:#171614; --body:#4c4943; --muted:#7b776f; --line:rgba(23,22,20,.14); --white:#fffefb; --coral:#ff765f; --violet:#8d6ee8; --green:#167148; --green-soft:#dff0e6; --shadow:0 22px 60px rgba(41,33,23,.09); }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; background: var(--paper); }
+      body { margin:0; color:var(--body); background:radial-gradient(circle at 96% 1%,rgba(141,110,232,.13),transparent 26rem),radial-gradient(circle at 5% 35%,rgba(255,118,95,.08),transparent 30rem),var(--paper); font-family:Arbeit,ui-sans-serif,system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+      h1,h2,h3,h4,strong { color:var(--ink); font-family:Aeonik,ui-sans-serif,system-ui,sans-serif; }
+      p { line-height:1.65; }
+      a { color:inherit; }
+      .shell { width:min(1120px,calc(100% - 48px)); margin:0 auto; }
+      .topbar { position:sticky; z-index:10; top:0; min-height:66px; border-bottom:1px solid var(--line); background:rgba(245,242,236,.88); backdrop-filter:blur(18px); }
+      .topbar .shell { display:flex; min-height:66px; align-items:center; justify-content:space-between; gap:22px; }
+      .brand { display:flex; align-items:center; gap:11px; font-weight:700; }
+      .mark { display:grid; width:33px; height:33px; place-items:center; border-radius:10px; color:white; background:linear-gradient(145deg,var(--coral),var(--violet)); }
+      .internal { padding:6px 9px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:10px; letter-spacing:.09em; text-transform:uppercase; }
+      .workspace-tabs { display:flex; gap:3px; padding:3px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.5); }
+      .workspace-tabs a { padding:7px 10px; border-radius:7px; color:var(--muted); font-size:11px; text-decoration:none; }
+      .workspace-tabs a.active { color:white; background:var(--ink); }
+      main { padding:78px 0 90px; }
+      .eyebrow,.section-label { color:var(--green); font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+      h1 { max-width:900px; margin:18px 0 22px; font-size:clamp(52px,8vw,94px); font-weight:500; letter-spacing:-.06em; line-height:.91; }
+      h1 span { color:var(--violet); }
+      .intro { max-width:760px; margin:0 0 72px; color:var(--muted); font-size:18px; }
+      .section { margin-top:72px; padding-top:62px; border-top:1px solid var(--line); }
+      .section-head { display:grid; grid-template-columns:160px 1fr; gap:42px; margin-bottom:28px; }
+      .section-head h2 { max-width:780px; margin:-7px 0 12px; font-size:clamp(34px,5vw,58px); font-weight:500; letter-spacing:-.045em; line-height:1.02; }
+      .section-head p { max-width:720px; margin:0; color:var(--muted); font-size:13px; }
+      .panel { overflow:hidden; border:1px solid var(--line); border-radius:22px; background:var(--white); box-shadow:var(--shadow); }
+      .block { padding:36px; border-bottom:1px solid var(--line); }
+      .block:last-child { border-bottom:0; }
+      .block small { color:var(--green); font:10px ui-monospace,SFMono-Regular,monospace; text-transform:uppercase; }
+      .block h3 { max-width:850px; margin:14px 0 13px; font-size:clamp(28px,4vw,46px); font-weight:500; letter-spacing:-.04em; line-height:1.04; }
+      .block > p { max-width:790px; margin:0; color:var(--muted); font-size:14px; }
+      .dark { color:#aaa9a3; background:#1d1d1c; }
+      .dark small { color:#37b85c; }
+      .dark h3 { color:white; }
+      .dark > p { color:#999993; }
+      .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:26px; }
+      .cards.two { grid-template-columns:repeat(2,1fr); }
+      .card { padding:22px; border:1px solid var(--line); border-radius:13px; background:rgba(245,242,236,.55); }
+      .card small { color:var(--green); font:10px ui-monospace,SFMono-Regular,monospace; text-transform:uppercase; }
+      .card h4 { margin:22px 0 9px; font-size:20px; font-weight:500; }
+      .card p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+      .dark .card { border-color:#393936; background:#242422; }
+      .dark .card h4 { color:white; }
+      .dark .card p { color:#999993; }
+      .rows { overflow:hidden; border:1px solid var(--line); border-radius:17px; background:var(--white); }
+      .row { display:grid; grid-template-columns:150px 1fr auto; gap:18px; align-items:center; padding:19px; border-bottom:1px solid var(--line); }
+      .row:last-child { border-bottom:0; }
+      .row strong { font-size:13px; }
+      .row span { color:var(--muted); font-size:12px; }
+      .tag { padding:5px 8px; border-radius:999px; color:var(--green)!important; background:var(--green-soft); font-size:9px!important; font-weight:700; text-transform:uppercase; }
+      .decision { display:grid; grid-template-columns:150px 1fr; gap:24px; margin-top:16px; padding:26px; border:1px solid rgba(141,110,232,.28); border-radius:16px; background:rgba(245,241,255,.7); }
+      .decision span { color:#684eb6; font:10px ui-monospace,SFMono-Regular,monospace; text-transform:uppercase; }
+      .decision strong { display:block; margin-bottom:7px; font-size:16px; }
+      .decision p { margin:0; color:var(--muted); font-size:12px; }
+      .footer { display:flex; justify-content:space-between; margin-top:70px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:10px; }
+      @media (max-width:760px) { .shell{width:min(100% - 28px,1120px)} .internal{display:none} main{padding-top:55px} .section-head,.cards,.cards.two,.decision{grid-template-columns:1fr} .row{grid-template-columns:1fr auto}.row>span:nth-child(2){grid-column:1/-1;grid-row:2} }
+      html,body { background:#fff; }
+      .copy { width:min(780px,calc(100% - 48px)); padding:96px 0 120px; }
+      .copy h1 { max-width:760px; margin:16px 0 22px; font-size:clamp(48px,7vw,78px); line-height:.98; }
+      .copy h2 { max-width:730px; margin:12px 0 18px; font-size:clamp(34px,5vw,54px); font-weight:500; letter-spacing:-.045em; line-height:1.02; }
+      .copy h3,.copy h4 { max-width:720px; margin:12px 0 8px; font-size:24px; font-weight:500; letter-spacing:-.025em; line-height:1.15; }
+      .copy p { max-width:700px; margin:0; color:var(--body); font-size:17px; }
+      .copy small,.copy .section-label { display:block; color:var(--green); font:700 10px Arbeit,ui-sans-serif,system-ui,sans-serif; letter-spacing:.12em; text-transform:uppercase; }
+      .copy .panel,.copy .block,.copy .dark,.copy .card,.copy .decision { overflow:visible; padding:0; border:0; border-radius:0; color:inherit; background:none; box-shadow:none; }
+      .copy .dark h1,.copy .dark h3,.copy .dark h4 { color:var(--ink); }
+      .copy .dark > p,.copy .card p,.copy .decision p { color:var(--body); font-size:17px; }
+      .copy .section { margin-top:92px; padding-top:0; border:0; }
+      .copy .section-head { display:block; margin:0; }
+      .copy .section-head h2 { margin-top:12px; }
+      .copy .section-head p { max-width:700px; color:var(--body); font-size:17px; }
+      .copy .cards,.copy .cards.two { display:block; margin-top:38px; }
+      .copy .card { margin-top:32px; }
+      .copy .card:first-child { margin-top:0; }
+      .copy .card small { font-family:Arbeit,ui-sans-serif,system-ui,sans-serif; }
+      .copy .decision { margin-top:32px; }
+      .copy .decision strong { margin:10px 0 4px; font-size:24px; font-weight:500; }
+      @media (max-width:760px) { .copy{width:min(100% - 28px,780px);padding-top:64px}.copy .section{margin-top:72px} }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="shell">
+        <div class="brand"><span class="mark">N</span><span>Nox</span></div>
+        <nav class="workspace-tabs" aria-label="Strategy document tabs">
+          <a href="./nox-brand-positioning.html">Positioning</a>
+          <a href="./nox-brand-copy.html">Messaging</a>
+          <a class="active" href="./nox-homepage-messaging.html" aria-current="page">Homepage</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="shell copy">
+      <section class="panel" aria-labelledby="hero-title">
+        <div class="block dark">
+          <small>For small development teams building real software with AI</small>
+          <h1 id="hero-title">Keep shipping without losing the plot.</h1>
+          <p>Nox brings together what users are saying, what everyone shipped, and what needs your attention next.</p>
+          <div class="decision"><span>Get started</span><div><strong>Start free</strong><p>Free at launch.</p></div></div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="entry-title">
+        <div class="section-head"><span class="section-label">Two ways in</span><div><h2 id="entry-title">You’re shipping fast. Keeping track shouldn’t become the slow part.</h2></div></div>
+        <div class="cards two">
+          <article class="card"><small>Activity</small><h4>What did everyone and their agents build, what changed, and what needs attention?</h4><p>Activity is not another GitHub notification inbox. Its job is to create shared product awareness from development activity.</p></article>
+          <article class="card"><small>Feedback</small><h4>What are testers telling us, and which signals should change what we do next?</h4><p>Feedback turns scattered tester conversations, bugs, and requests into product signals the team can understand and act on.</p></article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="mechanism-title">
+        <div class="section-head"><span class="section-label">Nox</span><div><h2 id="mechanism-title">As you build the product, Nox builds the overview.</h2></div></div>
+        <div class="decision"><span>Shared job</span><div><strong>Know what users are telling you. Know what your team and agents shipped. Decide what matters next.</strong></div></div>
+        <div class="cards">
+          <article class="card"><small>Users</small><h4>Here is what users think.</h4><p>Bring feedback, bugs, tester experiences, and recurring signals into the same product context.</p></article>
+          <article class="card"><small>Shipping</small><h4>Here is where everything stands.</h4><p>Understand what people and agents changed, what shipped, what remains open, and where the live product needs attention.</p></article>
+          <article class="card"><small>Next</small><h4>Here is what matters next.</h4><p>Use the current state of the product to make the next decision and keep moving.</p></article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="product-title">
+        <div class="section-head"><span class="section-label">Inside Nox</span><div><h2 id="product-title">One product. Four capabilities.</h2></div></div>
+        <div class="cards two">
+          <article class="card"><small>Primary entry</small><h4>Feedback</h4><p>Capture what users experience with enough context to understand and act.</p></article>
+          <article class="card"><small>Primary entry</small><h4>Activity</h4><p>Understand what people and agents changed, merged, and shipped.</p></article>
+          <article class="card"><small>Decision layer</small><h4>Planning</h4><p>Turn current signals into immediate priorities, specifications, and next steps.</p></article>
+          <article class="card"><small>Safety layer</small><h4>Incidents</h4><p>See when production needs attention and keep live-product health in the picture.</p></article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="proof-title">
+        <div class="section-head"><span class="section-label">Why Nox</span><div><h2 id="proof-title">Shared understanding that keeps up with the product.</h2></div></div>
+        <div class="cards two">
+          <article class="card"><small>One shared project context</small><h4>Project-centered, not repository-centered.</h4><p>Feedback, plans, development activity, and incidents live within the same software-project boundary. A project can span several repositories and connected tools.</p></article>
+          <article class="card"><small>Ready from the first signal</small><h4>Useful immediately.</h4><p>Widgets, templates, alerts, and Slack routing work immediately but remain configurable without building and maintaining custom connectors.</p></article>
+          <article class="card"><small>Primary and connected</small><h4>The primary system for development context and coordination.</h4><p>Feedback, immediate priorities, activity, and incidents live in Nox. GitHub, Slack, and other services remain deeply connected execution and communication surfaces.</p></article>
+          <article class="card"><small>People, guests, and agents</small><h4>The right context for the right people.</h4><p>Invite teammates, clients, or external developers to the right project scope, share selected pages, and give authorized AI full API access to the same work. Clear boundaries make multiple products and client projects manageable from one account.</p></article>
+          <article class="card"><small>One low-cost product</small><h4>Launch free; built for small-team economics.</h4><p>A single package replaces several subscriptions and internal tools. GitHub login, one-click Slack setup, and native Mac and iPhone access reduce adoption friction.</p></article>
+          <article class="card"><small>Several projects</small><h4>One cross-project view.</h4><p>Several projects, scoped access, external collaboration, and one cross-project view express the same core job in a multi-client environment.</p></article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="lifecycle-title">
+        <div class="section-head"><span class="section-label">Small team. Full product loop.</span><div><h2 id="lifecycle-title">Often discovered early; useful well beyond launch.</h2><p>Preparing for users, active testing, and early rollout create natural reasons to adopt Nox, but they do not define an expiry point. Nox remains a strong fit for established live products while teams stay relatively small, roles overlap, and decision-makers remain close to users and delivery.</p></div></div>
+      </section>
+
+      <section class="section" aria-labelledby="ai-title">
+        <div class="section-head"><span class="section-label">AI-native product rule</span><div><h2 id="ai-title">Agent-compatible and quietly AI-assisted.</h2><p>Authorized external agents are first-class operators through the complete API. Nox’s own AI stays in the background, summarizing, explaining, and collating information rather than appearing as an autonomous agent.</p></div></div>
+        <div class="cards">
+          <article class="card"><small>Access</small><h4>Complete API context and action.</h4><p>External authorized agents can understand feedback, plans, delivery activity, incidents, projects, and relationships—and operate the same workflows people can.</p></article>
+          <article class="card"><small>Assist</small><h4>Invisible interpretation.</h4><p>Nox summarizes, explains, connects, and collates information where that saves attention.</p></article>
+          <article class="card"><small>Control</small><h4>No autonomous Nox agents.</h4><p>Permissions, scoped credentials, and attributable actions keep people in control of external-agent access.</p></article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="close-title">
+        <div class="section-head"><span class="section-label">Nox</span><div><h2 id="close-title">We need Nox.</h2><p>Keep building.</p></div></div>
+        <div class="decision"><span>Get started</span><div><strong>Start free</strong><p>Free at launch.</p></div></div>
+      </section>
+
+    </main>
+  </body>
+</html>

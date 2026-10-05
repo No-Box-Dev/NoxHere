@@ -3,6 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("../slack/test.js", () => ({
   onRequestPost: vi.fn(async (context) => Response.json(await context.request.json())),
 }));
+vi.mock("../../lib/slack.js", async (importOriginal) => ({
+  ...(await importOriginal()),
+  resolveSlackInstall: vi.fn(async (_env, _orgId, connectionId) => ({ id: connectionId ?? "conn-default", botToken: "xoxb-test" })),
+  getSlackChannel: vi.fn(async (_token, channelId) => ({ id: channelId, is_archived: false, is_private: false, is_member: true })),
+}));
 
 import { signOAuthState } from "../../lib/slack.js";
 import { onRequestGet as slackHandoff } from "../slack/oauth/handoff.ts";
@@ -14,9 +19,14 @@ function dbWithSettings(settings = {}, options = {}) {
   const db = {
     prepare: vi.fn((sql) => {
       const statement = {
-        bind: vi.fn(() => statement),
+        bind: vi.fn((...binds) => {
+          statement._binds = binds;
+          return statement;
+        }),
         first: vi.fn(async () => sql.includes("SELECT data FROM") ? (configRows.shift() ?? null) : null),
-        all: vi.fn(async () => ({ results: [] })),
+        all: vi.fn(async () => ({
+          results: sql.includes("FROM slack_connections connection") ? (options.connectionRows ?? []) : [],
+        })),
         run: vi.fn(async () => ({ success: true, meta: { changes: options.changes ?? 1 } })),
       };
       return statement;
@@ -56,10 +66,93 @@ describe("agent setup APIs", () => {
 
   it("reads canonical Slack routes", async () => {
     const response = await getRouting({
-      env: { DB: dbWithSettings({ slack: { fallbackChannelId: "C1", postsChannelId: "C2" } }) },
+      env: { DB: dbWithSettings({ slack: { fallbackChannelId: "C1", postsChannelId: "C2", noxTicketChannelId: "CT", noxTicketConnectionId: "conn-playnist" } }) },
       data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
     });
-    expect(await response.json()).toMatchObject({ routes: { fallback: "C1", noxfeed_posts: "C2", noxcue: null } });
+    expect(await response.json()).toMatchObject({
+      routes: { fallback: "C1", noxfeed_posts: "C2", noxticket: "CT", noxcue: null },
+      connections: { noxticket: "conn-playnist" },
+    });
+  });
+
+  it("reports a stored channel whose workspace connection is missing", async () => {
+    const response = await getRouting({
+      env: { DB: dbWithSettings({ slack: { noxTicketChannelId: "CT" } }) },
+      data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
+    });
+    expect(await response.json()).toMatchObject({
+      integrity: {
+        valid: false,
+        issues: [{ route: "noxticket", code: "missing_workspace" }],
+      },
+    });
+  });
+
+  it("saves the NoxTicket channel together with its Slack workspace", async () => {
+    const DB = dbWithSettings({ slack: {} });
+    const response = await patchRouting({
+      request: new Request("https://app.noxhere.com/api/integrations/slack/routing", {
+        method: "PATCH",
+        body: JSON.stringify({ routes: { noxticket: "C-TICKET" }, connections: { noxticket: "conn-playnist" } }),
+      }),
+      env: { DB },
+      data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
+      params: {},
+    });
+    expect(response.status).toBe(200);
+    const updateCall = DB.prepare.mock.calls.find(([sql]) => sql.includes("WHERE org_id = ? AND project_id = ? AND key = ? AND data = ?"));
+    const updateStatement = DB.prepare.mock.results[DB.prepare.mock.calls.indexOf(updateCall)].value;
+    expect(JSON.parse(updateStatement.bind.mock.calls[0][0])).toEqual({
+      slack: { noxTicketChannelId: "C-TICKET", noxTicketConnectionId: "conn-playnist" },
+    });
+  });
+
+  it("infers a legacy client's workspace from a verified channel pair", async () => {
+    const DB = dbWithSettings({ slack: {} }, {
+      connectionRows: [
+        { id: "conn-default", project_id: null, is_default: 1, channel_status: null },
+        { id: "conn-playnist", project_id: "project-1", is_default: 0, channel_status: "verified" },
+      ],
+    });
+    const response = await patchRouting({
+      request: new Request("https://app.noxhere.com/api/integrations/slack/routing", {
+        method: "PATCH",
+        body: JSON.stringify({ routes: { noxticket: "C-TICKET" } }),
+      }),
+      env: { DB },
+      data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
+      params: {},
+    });
+    expect(response.status).toBe(200);
+    const updateCall = DB.prepare.mock.calls.find(([sql]) => sql.includes("WHERE org_id = ? AND project_id = ? AND key = ? AND data = ?"));
+    const updateStatement = DB.prepare.mock.results[DB.prepare.mock.calls.indexOf(updateCall)].value;
+    expect(JSON.parse(updateStatement.bind.mock.calls[0][0]).slack).toEqual({
+      noxTicketChannelId: "C-TICKET",
+      noxTicketConnectionId: "conn-playnist",
+    });
+  });
+
+  it("rejects an ambiguous legacy channel save instead of selecting the wrong workspace", async () => {
+    const DB = dbWithSettings({ slack: {} }, {
+      connectionRows: [
+        { id: "conn-one", project_id: null, is_default: 1, channel_status: null },
+        { id: "conn-two", project_id: null, is_default: 0, channel_status: null },
+      ],
+    });
+    const response = await patchRouting({
+      request: new Request("https://app.noxhere.com/api/integrations/slack/routing", {
+        method: "PATCH",
+        body: JSON.stringify({ routes: { noxticket: "C-TICKET" } }),
+      }),
+      env: { DB },
+      data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
+      params: {},
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Choose a Slack workspace for the noxticket channel. This organization has multiple Slack workspaces, so the channel alone is ambiguous.",
+    });
+    expect(DB.batch).not.toHaveBeenCalled();
   });
 
   it("reads organization-wide Slack routes when no project is selected", async () => {
@@ -124,12 +217,12 @@ describe("agent setup APIs", () => {
     expect(dependentSql.every((sql) => sql.includes("config_guard.key = ?") && sql.includes("config_guard.data = ?"))).toBe(true);
     const updateStatement = DB.prepare.mock.results[DB.prepare.mock.calls.indexOf(updateCall)].value;
     const serialized = updateStatement.bind.mock.calls[0][0];
-    expect(JSON.parse(serialized)).toEqual({ theme: "dark", slack: { postsChannelId: "" } });
+    expect(JSON.parse(serialized)).toEqual({ theme: "dark", slack: { postsChannelId: "", postsConnectionId: "" } });
   });
 
   it("treats an identical compare-and-swap race as idempotent success", async () => {
     const oldSettings = { theme: "dark", slack: {} };
-    const desiredSettings = { theme: "dark", slack: { postsChannelId: "" } };
+    const desiredSettings = { theme: "dark", slack: { postsChannelId: "", postsConnectionId: "" } };
     const DB = dbWithSettings(oldSettings, {
       changes: 0,
       configRows: [{ data: JSON.stringify(oldSettings) }, { data: JSON.stringify(desiredSettings) }],
@@ -176,5 +269,17 @@ describe("agent setup APIs", () => {
     });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ channelId: "C1", kind });
+  });
+
+  it("tests a saved NoxTicket route with its saved workspace connection", async () => {
+    const response = await testRoute({
+      request: new Request("https://app.noxhere.com/api/integrations/slack/test", {
+        method: "POST", body: JSON.stringify({ route: "noxticket" }),
+      }),
+      env: { DB: dbWithSettings({ slack: { noxTicketChannelId: "C1", noxTicketConnectionId: "conn-playnist" } }) },
+      data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ connectionId: "conn-playnist", channelId: "C1", kind: "noxticket" });
   });
 });

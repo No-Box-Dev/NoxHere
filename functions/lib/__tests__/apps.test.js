@@ -1,34 +1,24 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   appForApiPath,
   appForDeliverySource,
   appForSlackKind,
   getEnabledApps,
+  isAppEnabled,
   parseAppSettings,
-  serviceDisabledResponse,
 } from "../apps.js";
 
-describe("server app state", () => {
-  it("keeps optional apps enabled when settings are absent or old", () => {
+describe("server capability routing", () => {
+  it("keeps product capabilities available regardless of legacy settings", async () => {
     expect(parseAppSettings(null)).toEqual({ noxticket: true, noxfeed: true, noxspot: true, noxcue: true });
     expect(parseAppSettings('{"apps":{"noxspot":false}}')).toEqual({
       noxticket: true,
       noxfeed: true,
-      noxspot: false,
+      noxspot: true,
       noxcue: true,
     });
-  });
-
-  it("fails open for corrupt settings so a bad row does not disable every service", () => {
-    expect(parseAppSettings("not json").noxspot).toBe(true);
-  });
-
-  it("reads app state from the organization settings row", async () => {
-    const first = vi.fn().mockResolvedValue({ data: '{"apps":{"noxfeed":false}}' });
-    const bind = vi.fn(() => ({ first }));
-    const prepare = vi.fn(() => ({ bind }));
-    await expect(getEnabledApps({ prepare }, 7)).resolves.toMatchObject({ noxfeed: false, noxspot: true });
-    expect(bind).toHaveBeenCalledWith(7);
+    await expect(getEnabledApps()).resolves.toEqual({ noxticket: true, noxfeed: true, noxspot: true, noxcue: true });
+    await expect(isAppEnabled({}, 7, "noxfeed", "project-a")).resolves.toBe(true);
   });
 
   it("maps only service-owned entry points and delivery work", () => {
@@ -56,14 +46,4 @@ describe("server app state", () => {
     expect(appForSlackKind("noxfeed_daily_summary")).toBe("noxfeed");
   });
 
-  it("returns a clear conflict with remediation when a service is not enabled", async () => {
-    const response = serviceDisabledResponse("noxfeed");
-    expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({
-      error: "NoxFeed is not enabled. Enable it in NoxConnect before trying again.",
-      code: "service_not_enabled",
-      service: "noxfeed",
-      remediation: { action: "enable_service", href: "/api/v1/services/noxfeed/config" },
-    });
-  });
 });

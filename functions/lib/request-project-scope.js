@@ -18,6 +18,8 @@ export function projectIdInPath(pathname) {
   const patterns = [
     /^\/api\/(?:v1\/)?projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval)$/,
     /^\/api\/(?:v1\/)?projects\/([^/]+)\/cue(?:\/|$)/,
+    /^\/api\/v1\/projects\/([^/]+)\/(?:activity|incidents|issues|feedback)$/,
+    /^\/api\/v1\/projects\/([^/]+)\/incidents\/[^/]+$/,
     /^\/api\/(?:v1\/)?projects\/routing\/([^/]+)$/,
     /^\/api\/(?:v1\/)?cues\/projects\/([^/]+)(?:\/|$)/,
   ];

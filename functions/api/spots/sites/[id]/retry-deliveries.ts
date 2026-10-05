@@ -1,6 +1,7 @@
 import { getCtx, jsonResponse, errorResponse } from "../../../../lib/db";
 import { getNoxDb, type NoxDatabaseEnv } from "../../../../lib/nox-db";
 import { requeueBlockedForSite } from "../../../../lib/delivery-outbox.js";
+import { requeueBlockedTransportCommands } from "../../../../lib/transport-outbox";
 import { resolveSlackChannels } from "../../../../lib/slack.js";
 
 interface Ctx {
@@ -24,5 +25,11 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     return errorResponse("Configure a NoxSpot site channel or organization fallback first", 409);
   }
   const result = await requeueBlockedForSite({ ...context.env, DB: db }, orgId, context.params.id);
-  return jsonResponse({ ok: true, queued: result.queued });
+  const transport = context.env.TASK_QUEUE
+    ? await requeueBlockedTransportCommands(
+        { DB: db, TASK_QUEUE: context.env.TASK_QUEUE },
+        { orgId, projectId: site.project_id, routeContext: { kind: "site", id: context.params.id } },
+      )
+    : { queued: 0 };
+  return jsonResponse({ ok: true, queued: result.queued + transport.queued });
 }

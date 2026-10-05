@@ -2,6 +2,16 @@
 
 Use this workflow to configure NoxConnect without relying on the Settings UI. The canonical schema is [`/openapi.json`](/openapi.json), and current progress is always available from `GET /api/v1/integrations/setup`.
 
+## Connect the agent
+
+- **Supervised local agent:** a human runs `noxconnect login`, completes browser
+  approval, and selects context with `noxconnect use <organization>/<project>`.
+- **Headless agent or CI:** inject a project-bound `nox_sk_…` automation token
+  through the approved runtime secret manager. Do not automate human login.
+
+Never ask a user to paste a token, browser cookie, GitHub credential, or Slack
+credential into chat. Provider consent remains a human browser action.
+
 ## Discover services and capabilities
 
 Start with `GET /api/v1/services`. It explains the role of NoxConnect and lists
