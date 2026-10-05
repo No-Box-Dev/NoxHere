@@ -13,6 +13,8 @@ export default defineConfig({
       "services/gateway/**",
       "services/spot/**",
       "services/ticket/**",
+      "packages/sdk/**",
+      "packages/spot-widget/**",
       "apps/cli/test/**",
     ],
   },

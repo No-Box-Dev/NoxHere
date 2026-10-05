@@ -21,7 +21,7 @@ The retired `app.unticket.ai` host is a redirect-only deployment maintained in
 
 **Hosted (free):** [app.noxhere.com](https://app.noxhere.com) · **Self-host:** see [DEPLOY.md](./DEPLOY.md) · **Architecture:** see [ARCHITECTURE.md](./ARCHITECTURE.md) · **Local E2E:** see [docs/LOCAL_E2E.md](./docs/LOCAL_E2E.md) · **Staging provider gate:** see [docs/STAGING_ACCEPTANCE.md](./docs/STAGING_ACCEPTANCE.md)
 
-> **License:** NoxConnect is **source-available** under the [PolyForm Noncommercial License 1.0.0](./LICENSE) — free for any non-commercial use, modify and self-host freely, but **commercial use is not permitted**. It is not an OSI "open source" license. See [LICENSE](./LICENSE).
+> **License:** NoxHere is **source-available** under the [PolyForm Noncommercial License 1.0.0](./LICENSE) — free for any non-commercial use, modify and self-host freely, but **commercial use is not permitted**. It is not an OSI "open source" license. See [LICENSE](./LICENSE).
 
 ## Quick start (local dev)
 
@@ -52,6 +52,16 @@ npm install --global noxconnect
 
 Incident actions use immutable `inc_…` IDs returned by incident reads. Error
 fingerprints remain internal grouping data and are not resource URLs.
+
+## SDKs
+
+The generated SDKs cover every operation in [`public/openapi.json`](./public/openapi.json):
+
+- TypeScript: [`@noxhere/sdk`](./packages/sdk) with focused `feedback` and `incidents` entry points.
+- Python: [`noxhere`](./packages/python-sdk) with matching resource namespaces.
+
+Both expose `workspace`, `activity`, `planning`, `feedback`, and `incidents`.
+The former product names remain as compatibility aliases only.
 
 Set `VITE_API_TARGET` in `.env.local` to point the dev proxy at your own deployment. See [.env.example](./.env.example) for all configuration.
 
@@ -91,6 +101,9 @@ service.
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Active NoxHere frontend type-check |
 | `npm run typecheck:functions` | Backend (Functions + cron) type-check |
+| `npm run test:sdk` | Unified TypeScript and Python SDK tests |
+| `npm run build:sdk` | Verify and build the unified SDK contract |
+| `npm run test:spot-widget` | Migrated Spot capture-widget suite |
 
 ## Contributing
 

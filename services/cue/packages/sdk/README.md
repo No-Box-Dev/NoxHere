@@ -53,7 +53,7 @@ value or error. Call `await noxcue.flush()` in tests or long-running processes
 when you want to wait for background feature reports.
 
 Licensed under PolyForm Noncommercial 1.0.0.
-Required Notice: Copyright © 2026 No-Box-Dev (https://github.com/No-Box-Dev/NoxCue)
+Required Notice: Copyright © 2026 No-Box-Dev (https://github.com/No-Box-Dev/noxconnect)
 
 ## Python parity
 

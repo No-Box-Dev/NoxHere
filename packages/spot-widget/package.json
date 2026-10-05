@@ -1,0 +1,30 @@
+{
+  "name": "@noxhere/spot-widget",
+  "version": "0.1.0",
+  "description": "NoxHere feedback capture widget",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/No-Box-Dev/noxconnect.git",
+    "directory": "packages/spot-widget"
+  },
+  "scripts": {
+    "build": "npm run build:loader && npm run build:legacy && npm run build:core",
+    "build:loader": "esbuild src/loader.js --bundle --minify --outfile=dist/noxspot.min.js --format=iife --global-name=NoxSpot",
+    "build:legacy": "esbuild src/loader.js --bundle --minify --outfile=dist/blindspot.min.js --format=iife --global-name=Blindspot",
+    "build:core": "esbuild src/core-entry.js --bundle --minify --outfile=dist/noxspot-core.min.js --format=iife",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "jsdom": "26.1.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "vitest": "4.1.11"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0"
+}

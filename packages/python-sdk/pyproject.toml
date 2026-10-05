@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "noxhere"
+version = "0.1.0"
+description = "Unified Python SDK for every NoxHere resource"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "PolyForm-Noncommercial-1.0.0" }
+authors = [{ name = "No Box Dev" }]
+keywords = ["noxhere", "activity", "planning", "feedback", "incidents"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://app.noxhere.com"
+Repository = "https://github.com/No-Box-Dev/noxconnect"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/noxhere"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/noxhere", "tests", "scripts", "README.md", "pyproject.toml"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"
