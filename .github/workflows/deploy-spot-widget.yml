@@ -35,8 +35,8 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Publish loader
-        run: npx wrangler r2 object put blindspot-assets/noxspot.min.js --file dist/noxspot.min.js --remote --content-type application/javascript --cache-control 'public, max-age=300'
+        run: npx wrangler r2 object put blindspot-assets/noxspot.min.js --file dist/noxspot.min.js --remote --force --content-type application/javascript --cache-control 'public, max-age=300'
       - name: Publish legacy loader
-        run: npx wrangler r2 object put blindspot-assets/blindspot.min.js --file dist/blindspot.min.js --remote --content-type application/javascript --cache-control 'public, max-age=300'
+        run: npx wrangler r2 object put blindspot-assets/blindspot.min.js --file dist/blindspot.min.js --remote --force --content-type application/javascript --cache-control 'public, max-age=300'
       - name: Publish widget core
-        run: npx wrangler r2 object put blindspot-assets/noxspot-core.min.js --file dist/noxspot-core.min.js --remote --content-type application/javascript --cache-control 'public, max-age=300'
+        run: npx wrangler r2 object put blindspot-assets/noxspot-core.min.js --file dist/noxspot-core.min.js --remote --force --content-type application/javascript --cache-control 'public, max-age=300'
