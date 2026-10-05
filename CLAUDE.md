@@ -15,6 +15,8 @@ Spot, Cue, and Connect are not separate products or browser applications.
 - `services/cue/` — event ingestion, product metrics, health, and incidents.
 - `services/scheduler/` — scheduled reconciliation and queue consumption.
 - `packages/contracts/` — neutral platform-event and outbound-transport contracts.
+- `packages/sdk/` and `packages/python-sdk/` — generated unified public API clients.
+- `packages/spot-widget/` — feedback capture widget source, tests, and R2 bundles.
 - `functions/` — compatibility and private API routes served by
   `workers/api-gateway/`; these remain live while handlers move to capability
   services.

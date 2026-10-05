@@ -109,5 +109,5 @@ jobs:
           GH_TOKEN: ${{ secrets.NOXHERE_DISPATCH_TOKEN }}
         run: |
           if [ -n "$GH_TOKEN" ]; then
-            gh api repos/No-Box-Dev/NoxHere/dispatches --method POST -f event_type=nox-service-deployed -f 'client_payload[service]=noxhere' -f "client_payload[sha]=$DEPLOY_SHA"
+            gh api repos/No-Box-Dev/noxconnect/dispatches --method POST -f event_type=nox-service-deployed -f 'client_payload[service]=noxhere' -f "client_payload[sha]=$DEPLOY_SHA"
           fi

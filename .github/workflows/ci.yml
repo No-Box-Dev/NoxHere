@@ -135,6 +135,43 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  spot-widget:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/spot-widget
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/spot-widget/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  unified-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/sdk/package-lock.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - run: npm ci --prefix packages/sdk
+      - run: npm --prefix packages/sdk test
+      - run: npm --prefix packages/sdk run check
+      - run: npm --prefix packages/sdk run build
+      - run: python3 packages/python-sdk/scripts/generate_operations.py --check
+      - run: PYTHONPATH=packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v
+      - run: cd packages/python-sdk && ../sdk/node_modules/.bin/pyright
+      - run: python3 -m pip install build && python3 -m build packages/python-sdk
+
   cue:
     runs-on: ubuntu-latest
     defaults:

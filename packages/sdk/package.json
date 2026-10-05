@@ -1,0 +1,40 @@
+{
+  "name": "@noxhere/sdk",
+  "version": "0.1.0",
+  "description": "Unified TypeScript SDK for every NoxHere resource",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/No-Box-Dev/noxconnect.git",
+    "directory": "packages/sdk"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "files": ["dist", "README.md"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./feedback": { "types": "./dist/feedback.d.ts", "import": "./dist/feedback.js" },
+    "./incidents": { "types": "./dist/incidents.d.ts", "import": "./dist/incidents.js" }
+  },
+  "scripts": {
+    "generate": "node scripts/generate-operations.mjs",
+    "generate:check": "node scripts/generate-operations.mjs --check",
+    "build": "npm run generate:check && tsc -p tsconfig.json",
+    "check": "npm run generate:check && tsc -p tsconfig.json --noEmit",
+    "test": "npm run generate:check && vitest run"
+  },
+  "dependencies": {
+    "@noxcue/sdk": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "pyright": "1.1.414",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.11"
+  },
+  "engines": { "node": ">=18" },
+  "license": "PolyForm-Noncommercial-1.0.0"
+}

@@ -1,0 +1,48 @@
+name: Publish unified SDK
+
+on:
+  push:
+    tags: ["sdk-v*"]
+
+concurrency:
+  group: publish-unified-sdk
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    environment: sdk-release
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: packages/sdk/package-lock.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - name: Verify tag and package versions
+        run: |
+          node_version="$(node -p "require('./packages/sdk/package.json').version")"
+          python_version="$(python3 -c "import tomllib; print(tomllib.load(open('packages/python-sdk/pyproject.toml', 'rb'))['project']['version'])")"
+          test "$node_version" = "$python_version"
+          test "$GITHUB_REF_NAME" = "sdk-v$node_version"
+      - run: npm ci --prefix packages/sdk
+      - run: npm --prefix packages/sdk test && npm --prefix packages/sdk run check && npm --prefix packages/sdk run build
+      - run: python3 packages/python-sdk/scripts/generate_operations.py --check
+      - run: PYTHONPATH=packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v
+      - run: cd packages/python-sdk && ../sdk/node_modules/.bin/pyright
+      - run: python3 -m pip install build && python3 -m build packages/python-sdk
+      - name: Publish @noxhere/sdk to npm
+        working-directory: packages/sdk
+        run: npm publish --access public --provenance
+      - name: Publish noxhere to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/python-sdk/dist/

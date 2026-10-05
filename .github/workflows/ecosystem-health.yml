@@ -1,0 +1,32 @@
+name: Ecosystem health
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  repository_dispatch:
+    types: [nox-service-deployed]
+  workflow_dispatch:
+
+concurrency:
+  group: ecosystem-health
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Verify staging ecosystem
+        run: node scripts/check-ecosystem-health.mjs https://noxhere-staging.jasper-414.workers.dev
+      - name: Verify production ecosystem and deployed SHA
+        env:
+          EXPECTED_SERVICE: ${{ github.event.client_payload.service }}
+          EXPECTED_SHA: ${{ github.event.client_payload.sha }}
+        run: node scripts/check-ecosystem-health.mjs https://app.noxhere.com "$EXPECTED_SERVICE" "$EXPECTED_SHA"
