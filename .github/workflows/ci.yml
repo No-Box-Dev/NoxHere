@@ -146,10 +146,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: services/cue/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            services/cue/package-lock.json
       - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
+      - name: Install shared contract dependencies
+        run: npm ci --prefix ../..
       - run: npm ci
       - name: Verify Cue Worker, contracts, and build
         run: npm run check

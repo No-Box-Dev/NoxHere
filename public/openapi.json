@@ -818,7 +818,7 @@
           }
         ],
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4762,7 +4762,7 @@
           }
         ],
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4829,7 +4829,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4937,7 +4937,7 @@
           }
         ],
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -5004,7 +5004,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -5082,7 +5082,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -5158,7 +5158,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -5208,7 +5208,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -5287,7 +5287,7 @@
           }
         },
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -6526,7 +6526,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6584,7 +6584,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6653,7 +6653,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6711,7 +6711,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -6769,7 +6769,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -7128,7 +7128,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "admin",
         "security": [
@@ -7446,7 +7446,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "security": [
@@ -9041,7 +9041,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxFeed"
+          "Activity"
         ],
         "x-authentication": "member",
         "parameters": [
@@ -12733,7 +12733,7 @@
       "description": "Features, workflow, specifications, and attachments."
     },
     {
-      "name": "NoxFeed",
+      "name": "Activity",
       "description": "Current work, engineering activity, and narratives."
     },
     {

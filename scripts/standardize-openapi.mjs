@@ -22,7 +22,7 @@ document.servers = [{ url: "https://app.noxhere.com", description: "Hosted NoxCo
 document.tags = [
   { name: "NoxConnect", description: "Connections, identity, repositories, projects, and shared delivery." },
   { name: "NoxTicket", description: "Features, workflow, specifications, and attachments." },
-  { name: "NoxFeed", description: "Current work, engineering activity, and narratives." },
+  { name: "Activity", description: "Current work, engineering activity, and narratives." },
   { name: "NoxSpot", description: "Sites, website feedback capture, and screenshots." },
   { name: "NoxCue", description: "Event sources, ingest keys, customer-health events, and metrics." },
 ];
@@ -439,7 +439,7 @@ document.paths["/api/v1/auth/logout"].post["x-browser-session-only"] = true;
 document.paths["/api/v1/projects"].post.requestBody.required = true;
 document.paths["/api/v1/projects"].post.responses["201"] ??= document.paths["/api/v1/projects"].post.responses["200"];
 delete document.paths["/api/v1/projects"].post.responses["200"];
-document.paths["/api/v1/feed/current-summary"].get.tags = ["NoxFeed"];
+document.paths["/api/v1/feed/current-summary"].get.tags = ["Activity"];
 for (const path of ["dashboard", "stat-events", "alerts", "alert-rules"]) {
   document.paths[`/api/v1/projects/{projectId}/cue/${path}`].get.tags = ["NoxCue"];
 }
@@ -803,7 +803,7 @@ function serviceTag(path) {
   if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(compatibilityPath)) return "NoxTicket";
   if (/^\/api\/v1\/feed(?:\/|$)/.test(path)
       || /^\/api\/(?:issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(compatibilityPath)
-      || /^\/api\/github\/(?:comments|details)$/.test(compatibilityPath)) return "NoxFeed";
+      || /^\/api\/github\/(?:comments|details)$/.test(compatibilityPath)) return "Activity";
   if (compatibilityPath.startsWith("/api/spots")) return "NoxSpot";
   if (compatibilityPath.startsWith("/api/cues") || /^\/api\/v1\/projects\/[^/]+\/cue(?:\/|$)/.test(path)) return "NoxCue";
   return "NoxConnect";
