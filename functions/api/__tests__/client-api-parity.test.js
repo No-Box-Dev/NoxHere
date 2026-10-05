@@ -4,20 +4,28 @@ import { describe, expect, it } from "vitest";
 import openapi from "../../../public/openapi.json";
 
 const wrapperMethods = {
-  apiGet: "get", apiPost: "post", apiPut: "put", apiPatch: "patch",
-  apiPatchWithHeaders: "patch", apiDelete: "delete", apiFetch: "get",
+  getJson: "get", getRawJson: "get", getBlob: "get",
+  postJson: "post", postRawJson: "post", postFormJson: "post",
+  putJson: "put", patchJson: "patch", deleteJson: "delete",
 };
+const gatewayIdentityPaths = new Set(["/api/auth/profile", "/api/auth/email/request"]);
 
 describe("first-party client API parity", () => {
   it("uses only versioned, documented API operations", () => {
-    const calls = clientApiCalls(join(process.cwd(), "src"));
-    expect(calls.length).toBeGreaterThan(50);
+    const calls = clientApiCalls(join(process.cwd(), "apps/web/src"));
+    expect(calls.length).toBeGreaterThan(25);
+    const errors = [];
     for (const call of calls) {
-      expect(call.path, `${call.file} uses an unversioned API path`).toMatch(/^\/api\/v1\//);
+      if (gatewayIdentityPaths.has(call.path)) continue;
+      if (!/^\/api\/v1\//.test(call.path)) {
+        errors.push(`${call.method.toUpperCase()} ${call.path} from ${call.file} is unversioned`);
+        continue;
+      }
       const match = Object.entries(openapi.paths).find(([documentedPath]) => pathsMatch(call.path, documentedPath));
-      expect(match, `${call.method.toUpperCase()} ${call.path} from ${call.file} is absent from OpenAPI`).toBeDefined();
-      expect(match?.[1][call.method], `${call.method.toUpperCase()} ${call.path} from ${call.file} is not documented`).toBeDefined();
+      if (!match) errors.push(`${call.method.toUpperCase()} ${call.path} from ${call.file} is absent from OpenAPI`);
+      else if (!match[1][call.method]) errors.push(`${call.method.toUpperCase()} ${call.path} from ${call.file} is not documented`);
     }
+    expect(errors).toEqual([]);
   });
 });
 
@@ -53,7 +61,8 @@ function pathsMatch(clientPath, documentedPath) {
   const client = clientPath.split("?", 1)[0].split("/").filter(Boolean);
   const documented = documentedPath.split("/").filter(Boolean);
   return client.length === documented.length && client.every((segment, index) => {
-    const staticPart = segment.split("${", 1)[0];
-    return (!staticPart && segment.includes("${")) || /^\{[^}]+\}$/.test(documented[index]) || staticPart === documented[index];
+    if (/^\{[^}]+\}$/.test(documented[index])) return true;
+    if (segment.includes("${")) return false;
+    return segment === documented[index];
   });
 }

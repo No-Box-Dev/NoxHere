@@ -3,13 +3,17 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const backend = path.resolve(here, "../../../noxconnect");
-const runner = process.platform === "win32" ? "npx.cmd" : "npx";
+const backend = path.resolve(here, "../../..");
+const ticket = path.join(backend, "services/ticket");
+const persistence = path.join(backend, ".wrangler/state");
+const ticketServiceName = "noxticket-web-dev";
+const runner = path.join(backend, "node_modules", ".bin", process.platform === "win32" ? "wrangler.cmd" : "wrangler");
 
-for (const args of [
-  ["wrangler", "d1", "migrations", "apply", "noxconnect", "--local"],
+for (const [cwd, args] of [
+  [backend, ["d1", "migrations", "apply", "noxconnect", "--local", "--persist-to", persistence]],
+  [ticket, ["d1", "migrations", "apply", "DB", "--local", "--persist-to", persistence]],
 ]) {
-  const result = spawnSync(runner, args, { cwd: backend, stdio: "inherit", env: { ...process.env, CI: "1" } });
+  const result = spawnSync(runner, args, { cwd, stdio: "inherit", env: { ...process.env, CI: "1" } });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
@@ -21,7 +25,7 @@ if (!Number.isInteger(orgId) || orgId <= 0) {
   process.exit(1);
 }
 
-const catalog = spawnSync(runner, ["wrangler", "d1", "execute", "noxconnect", "--local", "--command", `SELECT COUNT(*) AS count FROM projects WHERE org_id = ${orgId} AND archived = 0`, "--json"], {
+const catalog = spawnSync(runner, ["d1", "execute", "noxconnect", "--local", "--command", `SELECT COUNT(*) AS count FROM projects WHERE org_id = ${orgId} AND archived = 0`, "--json"], {
   cwd: backend,
   encoding: "utf8",
   env: process.env,
@@ -42,11 +46,41 @@ if (projectCount === 0) {
   console.log(`Using ${projectCount} projects already present in local NoxConnect for org ${orgId}.`);
 }
 
+const ticketServer = spawn(runner, [
+  "dev", "--name", ticketServiceName, "--port", "8795", "--inspector-port", "9235",
+  "--local", "--persist-to", persistence, "--show-interactive-dev-session=false",
+], { cwd: ticket, stdio: "inherit", env: process.env });
+
+const ticketReadyBy = Date.now() + 30_000;
+while (Date.now() < ticketReadyBy) {
+  if (ticketServer.exitCode !== null) process.exit(ticketServer.exitCode ?? 1);
+  try {
+    const response = await fetch("http://127.0.0.1:8795/health");
+    if (response.ok) break;
+  } catch { /* wait for the local service registry */ }
+  await new Promise((resolve) => setTimeout(resolve, 250));
+}
+if (Date.now() >= ticketReadyBy) {
+  ticketServer.kill("SIGTERM");
+  throw new Error("Local NoxTicket service did not become ready");
+}
+
 const server = spawn(runner, [
-  "wrangler", "pages", "dev", "dist", "--port", "8788",
+  "pages", "dev", "dist", "--port", "8788",
+  "--persist-to", persistence,
   "--binding", "NOXHERE_INTERNAL_SECRET=noxhere-local-development-only-secret",
-  "--binding", "NOXHERE_LOCAL_MONOLITH=1",
+  "--service", `NOXTICKET_SERVICE=${ticketServiceName}`,
 ], { cwd: backend, stdio: "inherit", env: process.env });
 
-for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.kill(signal));
-server.on("exit", (code) => process.exit(code ?? 0));
+for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => {
+  ticketServer.kill(signal);
+  server.kill(signal);
+});
+ticketServer.on("exit", (code) => {
+  if (server.exitCode === null) server.kill("SIGTERM");
+  process.exit(code ?? 0);
+});
+server.on("exit", (code) => {
+  if (ticketServer.exitCode === null) ticketServer.kill("SIGTERM");
+  process.exit(code ?? 0);
+});

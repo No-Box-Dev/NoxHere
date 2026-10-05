@@ -16,12 +16,6 @@ import {
   type TicketScope,
 } from "./specs";
 
-interface Env {
-  DB: D1Database;
-  SPEC_ATTACHMENTS: R2Bucket;
-  BUILD_SHA?: string;
-}
-
 export default class NoxTicketService extends WorkerEntrypoint<Env> {
   describe() { return NOXTICKET_MANIFEST; }
 

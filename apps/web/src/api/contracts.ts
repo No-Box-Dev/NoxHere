@@ -1,15 +1,15 @@
 import { z } from "zod";
 
-export const serviceIdSchema = z.enum(["connect", "ticket", "feed", "spot", "cue", "mail", "key"]);
+const serviceIdSchema = z.enum(["connect", "ticket", "feed", "spot", "cue", "mail", "key"]);
 
-export const projectConnectionSchema = z.object({
+const projectConnectionSchema = z.object({
   id: z.string(),
   provider: z.enum(["github", "slack"]),
   label: z.string(),
   status: z.enum(["connected", "attention"]),
 });
 
-export const projectMemberSchema = z.object({
+const projectMemberSchema = z.object({
   login: z.string(),
   avatarUrl: z.string().url(),
   role: z.enum(["admin", "member"]),
@@ -64,7 +64,7 @@ export const slackChannelsSchema = z.object({
   })),
 });
 
-export const guestInviteSchema = z.object({
+const guestInviteSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   scopeType: z.enum(["organization", "project", "tool"]),
@@ -75,7 +75,7 @@ export const guestInviteSchema = z.object({
   createdAt: z.string().optional(),
 });
 
-export const guestGrantSchema = guestInviteSchema.omit({ expiresAt: true }).extend({ createdAt: z.string() });
+const guestGrantSchema = guestInviteSchema.omit({ expiresAt: true }).extend({ createdAt: z.string() });
 export const guestInviteResponseSchema = z.object({ invitation: guestInviteSchema });
 
 export const guestAccessSchema = z.object({
@@ -83,7 +83,7 @@ export const guestAccessSchema = z.object({
   invitations: z.array(guestInviteSchema),
 });
 
-export const projectSchema = z.object({
+const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
   organizationId: z.string(),
@@ -93,7 +93,7 @@ export const projectSchema = z.object({
 });
 
 const projectDestinationSchema = z.object({ connectionId: z.string(), channelId: z.string() });
-export const projectRoutingSchema = z.object({
+const projectRoutingSchema = z.object({
   id: z.string(),
   name: z.string(),
   archived: z.boolean(),
@@ -117,7 +117,7 @@ export const bootstrapSchema = z.object({
   projects: z.array(projectSchema),
 });
 
-export const cueStatSchema = z.object({
+const cueStatSchema = z.object({
   id: z.string(),
   name: z.string(),
   value: z.string(),
@@ -143,7 +143,7 @@ export const cueDashboardSchema = z.object({
   stats: z.array(cueStatSchema),
 });
 
-export const cueActionSchema = z.object({
+const cueActionSchema = z.object({
   slot: z.number().int().min(1).max(3),
   key: z.string(),
   label: z.string(),
@@ -195,7 +195,7 @@ export const retrievalResultSchema = z.object({
   href: z.string().startsWith("/"),
 });
 
-export const featureLinkSchema = z.object({
+const featureLinkSchema = z.object({
   url: z.string(),
   label: z.string().optional(),
   primary: z.boolean().optional(),
@@ -238,7 +238,6 @@ export type Bootstrap = z.infer<typeof bootstrapSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type ProjectRouting = z.infer<typeof projectRoutingSchema>;
 export type ProjectRoutingResponse = z.infer<typeof projectRoutingResponseSchema>;
-export type ProjectMember = z.infer<typeof projectMemberSchema>;
 export type GuestInvite = z.infer<typeof guestInviteSchema>;
 export type GuestAccess = z.infer<typeof guestAccessSchema>;
 export type GithubMember = z.infer<typeof githubMemberSchema>;

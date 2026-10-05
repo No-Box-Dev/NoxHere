@@ -9,6 +9,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { encryptToken } from "../functions/lib/crypto.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const webDist = join(root, "apps/web/dist");
 const noxCueDir = resolve(process.env.NOXCUE_DIR || join(root, "services/cue"));
 const noxFeedDir = resolve(process.env.NOXFEED_SERVICE_DIR || join(root, "services/feed"));
 const noxSpotDir = resolve(process.env.NOXSPOT_CAPTURE_DIR || join(root, "services/spot"));
@@ -58,7 +59,7 @@ function print(message) {
 function checkPrerequisites() {
   const required = [
     [wrangler, "Run npm install in NoxConnect"],
-    [join(root, "dist/index.html"), "Run npm run build in NoxConnect"],
+    [join(webDist, "index.html"), "Run npm run build:web in NoxHere"],
     [join(noxCueDir, "wrangler.jsonc"), "Run npm ci in services/cue"],
     [join(noxCueDir, "node_modules"), "Run npm ci in services/cue"],
     [join(noxFeedDir, "wrangler.toml"), "Run npm ci in services/feed"],
@@ -96,8 +97,10 @@ function start(name, cwd, args) {
     env: { ...process.env, CI: "1", NO_COLOR: "1" },
     stdio: ["ignore", "pipe", "pipe"],
   });
-  child.stdout.pipe(log);
-  child.stderr.pipe(log);
+  // Both streams share one file. Neither may close it while the other can
+  // still emit teardown output; stopChildren owns the final close.
+  child.stdout.pipe(log, { end: false });
+  child.stderr.pipe(log, { end: false });
   children.push({ name, child, log, logPath });
   child.on("exit", (code, signal) => {
     if (!stopping && !failed && code !== null && code !== 0) {
@@ -277,7 +280,7 @@ async function main() {
   const encryptionKey = randomBytes(32).toString("hex");
   const webhookSecret = randomBytes(32).toString("hex");
   start("noxconnect", root, [
-    "pages", "dev", "dist", "--port", String(port(8788)), "--inspector-port", String(port(9231)),
+    "pages", "dev", webDist, "--port", String(port(8788)), "--inspector-port", String(port(9231)),
     "--persist-to", persistence, "--log-level", "warn", "--show-interactive-dev-session=false",
     "--binding", `ENCRYPTION_KEY=${encryptionKey}`,
     "--binding", `GITHUB_WEBHOOK_SECRET=${webhookSecret}`,

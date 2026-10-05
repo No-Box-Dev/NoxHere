@@ -89,7 +89,7 @@ service.
 | `npm run e2e:provider` | Run explicitly confirmed provider writes against those test-only destinations |
 | `npm test` | Run the Vitest suite |
 | `npm run lint` | ESLint |
-| `npm run typecheck` | Frontend type-check |
+| `npm run typecheck` | Active NoxHere frontend type-check |
 | `npm run typecheck:functions` | Backend (Functions + cron) type-check |
 
 ## Contributing

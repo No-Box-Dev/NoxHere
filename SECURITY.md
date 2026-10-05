@@ -16,9 +16,9 @@ We will acknowledge your report within **3 business days** and keep you updated 
 
 In scope:
 
-- The noxconnect web app (`src/`)
+- The NoxHere web app (`apps/web/src/`)
 - The Cloudflare Pages Functions API (`functions/`)
-- The scheduler service (`services/scheduler/`)
+- The public gateway and capability services (`services/`)
 
 Out of scope: vulnerabilities in third-party platforms (GitHub, Cloudflare) themselves — report those to the respective vendor.
 

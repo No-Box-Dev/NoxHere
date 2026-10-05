@@ -9901,6 +9901,273 @@
         ],
         "x-change-safety": "write_not_safe_to_retry"
       }
+    },
+    "/api/v1/guests": {
+      "get": {
+        "operationId": "listGuestAccess",
+        "summary": "List guest invitations and active grants",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "admin",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "admin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/guests/invites": {
+      "post": {
+        "operationId": "createGuestInvitation",
+        "summary": "Invite a guest to an organization, project, or capability",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "admin",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "admin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/guests/invites/{inviteId}": {
+      "parameters": [
+        {
+          "name": "inviteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "revokeGuestInvitation",
+        "summary": "Revoke a pending guest invitation",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "admin",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "admin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "destructive",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/guests/grants/{grantId}": {
+      "parameters": [
+        {
+          "name": "grantId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "revokeGuestGrant",
+        "summary": "Revoke active guest access",
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "x-required-role": "admin",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "admin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "destructive",
+        "x-project-scope": "optional"
+      }
     }
   },
   "components": {

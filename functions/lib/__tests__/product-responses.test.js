@@ -11,7 +11,7 @@ describe("product response boundaries", () => {
     expect(read("../narrator.js")).not.toMatch(/ACTOR_SYSTEM|PR_OPENED_SYSTEM|RELEASE_NOTES_SYSTEM/);
     expect(read("../noxspot.js")).not.toMatch(/api\.github\.com|Authorization:\s*`Bearer/);
     expect(read("../../api/slack/test.js")).not.toMatch(/Nox(Cue|Spot|Feed|Ticket) delivery test/);
-    expect(read("../../../src/lib/github.ts")).not.toMatch(/@octokit|api\.github\.com|\.rest\.(issues|pulls)/);
+    expect(read("../../../apps/web/src/api/platform.ts")).not.toMatch(/@octokit|api\.github\.com|\.rest\.(issues|pulls)/);
     expect(read("../github-issues.js")).toContain("NoxConnect's GitHub issue transport");
   });
 

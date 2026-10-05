@@ -10,7 +10,7 @@ interface MetricComparison {
 
 export type MetricComparisons = Record<string, MetricComparison>;
 
-export interface ActivityBreakdown {
+interface ActivityBreakdown {
   actionLabel: string;
   windowDays?: number;
   totalActions: number;
@@ -209,7 +209,7 @@ function chartAltText(
   return `${sourceName} 30-day product statistics chart. ${summary}`.slice(0, 2000);
 }
 
-export function formatPeriodDelta(value: number, previous: number | null | undefined): string {
+function formatPeriodDelta(value: number, previous: number | null | undefined): string {
   if (!validComparisonValue(previous)) return "No previous 7d period";
   if (previous === 0) return value === 0 ? "Same as previous 7d" : "New vs previous 7d";
   const percent = Math.abs((value - previous) / previous * 100);
