@@ -2,7 +2,7 @@
 
 This package owns the browser capture widget served by the NoxHere Spot
 capability. The production service loads `noxspot.min.js` and
-`noxspot-core.min.js` from the `blindspot-assets` R2 bucket. The
+`noxspot-core.min.js` from the `noxspot-assets` R2 bucket. The
 `blindspot.min.js` build is retained only for legacy embed compatibility.
 
 Run `npm test` and `npm run build` before publishing the three generated files.
