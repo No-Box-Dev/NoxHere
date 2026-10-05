@@ -49,6 +49,8 @@ jobs:
         env:
           VITE_GITHUB_APP_CLIENT_ID: ${{ vars.VITE_GITHUB_CLIENT_ID }}
 
+      - name: Resolve dedicated staging Feed database
+        run: node scripts/prepare-staging-feed-database.mjs
       - name: Migrate staging platform database
         run: npx wrangler d1 migrations apply DB --config workers/api-gateway/wrangler.jsonc --env staging --remote
       - name: Migrate staging Feed database

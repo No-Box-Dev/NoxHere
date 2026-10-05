@@ -19,6 +19,8 @@ name = "noxfeed-response-staging"
 
 [[env.staging.d1_databases]]
 binding = "DEMO_DB"
-database_name = "noxconnect-staging"
-database_id = "3a9d9857-c26d-4421-9fbd-b81f474864d3"
+database_name = "noxfeed-demo-staging"
+# Resolved to the dedicated database by scripts/prepare-staging-feed-database.mjs
+# before any remote staging migration or deploy.
+database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
