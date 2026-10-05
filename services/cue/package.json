@@ -1,5 +1,5 @@
 {
-  "name": "noxcue",
+  "name": "@noxhere/cue",
   "version": "0.1.0",
   "private": true,
   "type": "module",
