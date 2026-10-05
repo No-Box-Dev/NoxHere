@@ -1,4 +1,4 @@
-import { parsePlatformEvent, type PlatformEvent } from "../../shared/platform-events";
+import { parsePlatformEvent, type PlatformEvent } from "../../packages/contracts/platform-events";
 
 interface EventRow {
   id: string;

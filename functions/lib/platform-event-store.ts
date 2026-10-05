@@ -1,4 +1,4 @@
-import { parsePlatformEvent, type PlatformEvent } from "../../shared/platform-events";
+import { parsePlatformEvent, type PlatformEvent } from "../../packages/contracts/platform-events";
 import { TASK } from "./tasks.js";
 
 type PlatformEventStoreBindings = Pick<Env, "DB" | "TASK_QUEUE">;

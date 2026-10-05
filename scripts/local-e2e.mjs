@@ -9,11 +9,10 @@ import { spawn, spawnSync } from "node:child_process";
 import { encryptToken } from "../functions/lib/crypto.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const codebase = resolve(root, "..");
-const noxCueDir = resolve(process.env.NOXCUE_DIR || join(codebase, "NoxAlert"));
-const noxFeedDir = resolve(process.env.NOXFEED_SERVICE_DIR || join(codebase, "noxfeed-mac/service"));
+const noxCueDir = resolve(process.env.NOXCUE_DIR || join(root, "services/cue"));
+const noxFeedDir = resolve(process.env.NOXFEED_SERVICE_DIR || join(root, "services/feed"));
 const noxSpotDir = resolve(process.env.NOXSPOT_CAPTURE_DIR || join(root, "services/spot"));
-const noxTicketDir = resolve(process.env.NOXTICKET_SERVICE_DIR || join(codebase, "noxticket-service"));
+const noxTicketDir = resolve(process.env.NOXTICKET_SERVICE_DIR || join(root, "services/ticket"));
 const capabilityDir = join(root, "services/connect");
 const wrangler = join(root, "node_modules/.bin/wrangler");
 const keepState = process.argv.includes("--keep-state");
@@ -60,12 +59,12 @@ function checkPrerequisites() {
   const required = [
     [wrangler, "Run npm install in NoxConnect"],
     [join(root, "dist/index.html"), "Run npm run build in NoxConnect"],
-    [join(noxCueDir, "wrangler.jsonc"), "Set NOXCUE_DIR to the NoxCue checkout"],
-    [join(noxCueDir, "node_modules"), "Run npm ci in the NoxCue checkout"],
-    [join(noxFeedDir, "wrangler.toml"), "Set NOXFEED_SERVICE_DIR to the NoxFeed service checkout"],
-    [join(noxFeedDir, "node_modules"), "Run npm ci in the NoxFeed service checkout"],
+    [join(noxCueDir, "wrangler.jsonc"), "Run npm ci in services/cue"],
+    [join(noxCueDir, "node_modules"), "Run npm ci in services/cue"],
+    [join(noxFeedDir, "wrangler.toml"), "Run npm ci in services/feed"],
+    [join(noxFeedDir, "node_modules"), "Run npm ci in services/feed"],
     [join(noxSpotDir, "node_modules"), "Run npm ci in services/spot"],
-    [join(noxTicketDir, "node_modules"), "Set NOXTICKET_SERVICE_DIR to the NoxTicket service checkout"],
+    [join(noxTicketDir, "node_modules"), "Run npm ci in services/ticket"],
   ];
   const missing = required.filter(([path]) => !existsSync(path));
   if (missing.length) {

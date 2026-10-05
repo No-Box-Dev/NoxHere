@@ -69,12 +69,12 @@ describe("platform milestone runner", () => {
 
   it("runs all gates and milestones when every gate passes", () => {
     const root = mkdtempSync(join(tmpdir(), "nox-milestone-test-"));
-    const nested = join(root, "shared", "contract.ts");
-    mkdirSync(join(root, "shared"), { recursive: true });
+    const nested = join(root, "packages", "contracts", "contract.ts");
+    mkdirSync(join(root, "packages", "contracts"), { recursive: true });
     writeFileSync(nested, "export {};\n");
     const calls = [];
     try {
-      runMilestones([milestone("M0"), milestone("M1", ["shared/contract.ts"])], {
+      runMilestones([milestone("M0"), milestone("M1", ["packages/contracts/contract.ts"])], {
         root,
         write: () => undefined,
         runGate(gate, { milestone: current }) {

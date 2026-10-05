@@ -315,7 +315,7 @@ describe("public capture Worker", () => {
     }
   });
 
-  it("stops automatic error intake while NoxAlert is off", async () => {
+  it("stops automatic error intake while Cue is off", async () => {
     await env.DB.prepare(
       "INSERT INTO config (org_id, key, data) VALUES (1, 'settings', ?) ON CONFLICT(org_id, key) DO UPDATE SET data = excluded.data",
     ).bind('{"apps":{"noxalert":false}}').run();

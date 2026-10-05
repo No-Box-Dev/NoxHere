@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "noxticket",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-06",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": { "BUILD_SHA": "development" },
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "noxticket",
+      "database_id": "b2506cb3-c7e5-4178-8f9d-f828c1791851",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SPEC_ATTACHMENTS",
+      "bucket_name": "noxticket-spec-attachments"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "noxticket-staging",
+      "vars": { "BUILD_SHA": "development" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "noxticket-staging",
+          "database_id": "6bcdb912-5d76-4099-824a-6cf4277ab2f9",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SPEC_ATTACHMENTS",
+          "bucket_name": "noxticket-spec-attachments-staging"
+        }
+      ]
+    }
+  }
+}

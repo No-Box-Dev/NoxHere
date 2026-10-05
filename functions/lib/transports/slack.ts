@@ -1,4 +1,4 @@
-import type { TransportCommand } from "../../../shared/transport-commands";
+import type { TransportCommand } from "../../../packages/contracts/transport-commands";
 import { TransportExecutionError } from "../transport-outbox";
 import { resolveProjectSlackDestination, type ProjectRouteKey } from "../project-routing";
 import {

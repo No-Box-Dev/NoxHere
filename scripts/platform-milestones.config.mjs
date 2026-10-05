@@ -42,15 +42,15 @@ export const milestones = [
     name: "Unified event envelope",
     objective: "Introduce the neutral PlatformEventV1 envelope, domain catalog, runtime validation, and privacy rules.",
     requiredPaths: [
-      "shared/platform-events.ts",
-      "shared/__tests__/platform-events.test.ts",
+      "packages/contracts/platform-events.ts",
+      "packages/contracts/__tests__/platform-events.test.ts",
       "docs/PLATFORM_EVENT_CATALOG.md",
     ],
     gates: [
       {
         name: "Envelope contract tests",
         command: "npx",
-        args: ["vitest", "run", "shared/__tests__/platform-events.test.ts"],
+        args: ["vitest", "run", "packages/contracts/__tests__/platform-events.test.ts"],
       },
       {
         name: "Functions typecheck",
@@ -103,8 +103,8 @@ export const milestones = [
     name: "Unified outbound transport",
     objective: "Introduce one transport command, provider-neutral outbox, receipt contract, retry model, and Queue consumer.",
     requiredPaths: [
-      "shared/transport-commands.ts",
-      "shared/__tests__/transport-commands.test.ts",
+      "packages/contracts/transport-commands.ts",
+      "packages/contracts/__tests__/transport-commands.test.ts",
       "migrations/0101_transport_outbox.sql",
       "functions/lib/transport-outbox.ts",
       "functions/lib/__tests__/transport-outbox.test.ts",
@@ -133,7 +133,7 @@ export const milestones = [
         args: [
           "vitest",
           "run",
-          "shared/__tests__/transport-commands.test.ts",
+          "packages/contracts/__tests__/transport-commands.test.ts",
           "functions/lib/__tests__/transport-outbox.test.ts",
         ],
       },

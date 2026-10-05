@@ -1,4 +1,4 @@
-import { DEFAULT_NOXSPOT_BLOCKS } from "../../../shared/noxspot-defaults";
+import { DEFAULT_NOXSPOT_BLOCKS } from "../../../packages/contracts/noxspot-defaults";
 
 export type WidgetMode = "development" | "release";
 

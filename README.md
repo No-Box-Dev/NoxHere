@@ -1,12 +1,11 @@
-# NoxConnect
+# NoxHere
 
-NoxConnect is the public product, identity, API, web application, and CLI. A
+NoxHere is the public product, identity, API, and web application. A
 person signs in once and uses the same account session across every
 organization, project, and enabled capability.
 
-The former NoxHere, NoxFeed, NoxTicket, NoxSpot, and NoxCue product names are
-compatibility names during migration. Their capabilities now appear as
-NoxConnect areas:
+Feed, Ticket, Spot, Cue, and Connect are capability areas inside NoxHere rather
+than separate products:
 
 The separate one-page product site for [noxhere.com](https://noxhere.com) lives
 in [`nox-site/`](./nox-site/) and deploys to its own static Cloudflare Pages
@@ -31,7 +30,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 only when maintaining the compatibility UI. The production public application and all user authentication belong to the NoxConnect gateway (currently deployed from the `NoxHere` compatibility repository). Authenticated connector requests arrive only through the gateway's private service binding with a signed internal assertion; GitHub provider tokens are never public API credentials.
+Open http://127.0.0.1:4180. The production application and all user authentication belong to the NoxHere gateway in `services/gateway/`. Authenticated connector requests arrive only through the gateway's private service binding with a signed internal assertion; GitHub provider tokens are never public API credentials.
 
 ## CLI
 
@@ -58,9 +57,8 @@ Set `VITE_API_TARGET` in `.env.local` to point the dev proxy at your own deploym
 
 ## Authentication boundary
 
-- **NoxConnect gateway** owns GitHub sign-in, browser/CLI sessions, CSRF,
-  tenant authorization, and project-scoped automation tokens. The gateway is
-  still deployed from the `NoxHere` compatibility repository during cutover.
+- **NoxHere Gateway** owns GitHub sign-in, browser/CLI sessions, CSRF,
+  tenant authorization, and project-scoped automation tokens.
 - **Connectors** completes private provider exchanges, encrypts provider
   credentials, and resolves only opaque connection IDs carried in verified
   gateway assertions.

@@ -19,6 +19,6 @@
     "workers/api-gateway/worker-configuration.d.ts",
     "functions/**/*.ts",
     "services/scheduler/**/*.ts",
-    "shared/**/*.ts"
+    "packages/contracts/**/*.ts"
   ]
 }

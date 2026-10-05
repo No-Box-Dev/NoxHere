@@ -1,4 +1,4 @@
-import type { TransportCommand } from "../../../shared/transport-commands";
+import type { TransportCommand } from "../../../packages/contracts/transport-commands";
 import { getInstallationIdForOrg, getInstallationToken } from "../github-app.js";
 import { upsertIssue } from "../github-sync.js";
 import { createRepositoryIssue, createRepositoryIssueComment, ensureRepositoryLabels, findIssueByBodyMarker, updateRepositoryIssue } from "../github-issues.js";

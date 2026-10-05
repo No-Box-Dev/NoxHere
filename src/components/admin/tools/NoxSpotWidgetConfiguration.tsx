@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useUpdateNoxSpotSite } from "@/hooks/useNoxSpot";
 import type { NoxSpotBlock, NoxSpotEnvironment, NoxSpotSite } from "@/lib/types";
-import { DEFAULT_NOXSPOT_BLOCKS } from "../../../../shared/noxspot-defaults";
+import { DEFAULT_NOXSPOT_BLOCKS } from "../../../../packages/contracts/noxspot-defaults";
 
 
 const BLOCK_TYPES: Array<{ value: NoxSpotBlock["type"]; label: string }> = [

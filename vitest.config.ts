@@ -13,9 +13,13 @@ export default defineConfig({
     globals: true,
     exclude: [
       ...configDefaults.exclude,
+      "apps/web/**",
       "workers/**",
       "services/cue/**",
+      "services/feed/**",
+      "services/gateway/**",
       "services/spot/**",
+      "services/ticket/**",
       "apps/cli/test/**",
     ],
   },

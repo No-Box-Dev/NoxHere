@@ -5,7 +5,7 @@ import {
   type TransportCommand,
   type TransportProvider,
   type TransportReceipt,
-} from "../../shared/transport-commands";
+} from "../../packages/contracts/transport-commands";
 interface TransportBindings {
   DB: D1Database;
   TASK_QUEUE: Pick<Queue, "send">;

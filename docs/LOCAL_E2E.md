@@ -26,17 +26,17 @@ the NoxConnect gateway.
 ## Prerequisites
 
 - Node.js and dependencies installed in this repository.
-- The NoxCue checkout at `../NoxAlert`, with `npm ci` completed.
-- The NoxFeed Worker at `../noxfeed-mac/service`, with `npm ci` completed.
-- NoxSpot Worker dependencies installed at `services/spot`.
+- Dependencies installed in `services/cue`, `services/feed`, `services/spot`,
+  and `services/ticket`.
 - GitHub CLI authenticated as a member of the test organization. This performs
   a real identity and organization-membership check, but makes no provider
   writes.
 
-Override sibling locations or the fixture scope when necessary:
+Override service locations or the fixture scope when testing an external
+checkout:
 
 ```bash
-NOXCUE_DIR=/absolute/path/to/NoxAlert \
+NOXCUE_DIR=/absolute/path/to/cue-service \
 NOXFEED_SERVICE_DIR=/absolute/path/to/noxfeed/service \
 NOXCONNECT_E2E_ORG=My-GitHub-Org \
 NOXCONNECT_E2E_REPO=my-repository \

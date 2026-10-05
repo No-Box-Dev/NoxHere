@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { parseTransportCommand } from "../../../shared/transport-commands";
+import { parseTransportCommand } from "../../../packages/contracts/transport-commands";
 const provider = vi.hoisted(() => ({ installationId: vi.fn(), token: vi.fn(), labels: vi.fn(), find: vi.fn(), create: vi.fn(), update: vi.fn(), comment: vi.fn(), upsert: vi.fn() }));
 vi.mock("../github-app.js", () => ({ getInstallationIdForOrg: provider.installationId, getInstallationToken: provider.token }));
 vi.mock("../github-issues.js", () => ({ ensureRepositoryLabels: provider.labels, findIssueByBodyMarker: provider.find, createRepositoryIssue: provider.create, updateRepositoryIssue: provider.update, createRepositoryIssueComment: provider.comment }));

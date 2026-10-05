@@ -2,7 +2,7 @@
 
 `PlatformEventV1` is the application-wide domain-event envelope. Activity, feedback, reliability, engagement, capability, and delivery functionality use the same top-level JSON. Only `type` and the validated fields inside `data` vary.
 
-The executable contract lives in `shared/platform-events.ts`. Documentation does not override that schema.
+The executable contract lives in `packages/contracts/platform-events.ts`. Documentation does not override that schema.
 
 ## Envelope
 

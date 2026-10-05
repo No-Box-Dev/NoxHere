@@ -8,7 +8,7 @@ A high-level map of how noxconnect fits together. For maintainer-level detail (e
 Web / Apple apps / noxconnect CLI
                   │
                   ▼
-        NoxConnect public gateway
+          NoxHere public gateway
       identity · tenancy · authorization
                   │ private service binding
                   ▼
@@ -20,8 +20,8 @@ Web / Apple apps / noxconnect CLI
            GitHub · Slack · managed AI
 ```
 
-- **Frontend** — React 19 + TypeScript + Vite SPA. TanStack Query reads NoxConnect APIs; browser code does not receive GitHub or Slack tokens or call provider APIs directly. Tailwind provides styling and product/admin views are lazy-loaded.
-- **API** — the NoxConnect gateway is the only public authority and forwards a short-lived signed assertion over a private binding. During cutover its deployable source remains in the `NoxHere` compatibility repository. Capability handlers live under `functions/api/`; new code is TypeScript with zod validation at the boundary and native D1 access (`DB.prepare().bind()`, `DB.batch()`).
+- **Frontend** — `apps/web/` is the React 19 + TypeScript + Vite NoxHere SPA. TanStack Query reads NoxHere APIs; browser code does not receive GitHub or Slack tokens or call provider APIs directly. Capability pages are route-lazy-loaded.
+- **API** — `services/gateway/` is the only public authority and forwards a short-lived signed assertion over a private binding. Compatibility capability handlers remain under `functions/api/` while traffic moves to the service directories; new code uses zod validation at the boundary and native D1 access (`DB.prepare().bind()`, `DB.batch()`).
 - **Database** — Cloudflare D1 (SQLite). Schema in `migrations/`, applied with `wrangler d1 migrations apply`.
 - **Scheduler service** — `services/scheduler/` imports shared platform helpers, reconciles GitHub state every 30 minutes, and consumes the background-work queue.
 - **Queue + R2** — durable background work (narration, bootstrap, repo sync) runs on a Cloudflare Queue with retries and a dead-letter queue; the `events` table is archived to R2 after 90 days.
@@ -66,8 +66,9 @@ A bounded server-side Anthropic integration narrates pull-request activity. NoxC
 
 | Concern | Path |
 |---|---|
-| Tabs / pages | `src/pages/`, `src/components/tabs/` |
-| GitHub data hooks | `src/hooks/useGitHub.ts` |
+| Web application | `apps/web/src/` |
+| Public gateway | `services/gateway/src/` |
+| Service ownership | `services/` |
 | API routes | `functions/api/` |
 | Shared server helpers | `functions/lib/` |
 | Project routing core | `functions/lib/project-routing.ts`, `functions/api/projects/routing*` |

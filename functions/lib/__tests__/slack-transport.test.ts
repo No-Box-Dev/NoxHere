@@ -29,7 +29,7 @@ vi.mock("../slack-channel-status.js", () => ({
 }));
 
 import { deliverSlackTransport } from "../transports/slack";
-import { parseTransportCommand } from "../../../shared/transport-commands";
+import { parseTransportCommand } from "../../../packages/contracts/transport-commands";
 
 function command(operation: "slack.message.send" | "slack.message.update" = "slack.message.send", clientMessageId?: string) {
   return parseTransportCommand({

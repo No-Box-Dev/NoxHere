@@ -64,6 +64,59 @@ jobs:
         run: npm run test:project-router
       - run: npm test
 
+  noxhere-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            services/gateway/package-lock.json
+      - run: npm ci --prefix apps/web
+      - run: npm ci --prefix services/gateway
+      - name: Verify NoxHere web application
+        run: npm --prefix apps/web run check
+      - name: Verify NoxHere gateway
+        run: npm --prefix services/gateway test && npm --prefix services/gateway run typecheck && npm --prefix services/gateway run build
+
+  ticket:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ticket
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/ticket/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+
+  feed:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/feed
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/feed/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Verify the unified public API contract
+        run: NOX_OPENAPI_PATH=../../apps/web/public/openapi.json npm run docs:check
+      - run: npm run build
+
   noxspot-capture:
     runs-on: ubuntu-latest
     defaults:

@@ -8,11 +8,13 @@ implementation.
 
 | Service | Product area | Responsibility |
 | --- | --- | --- |
+| `gateway` | Public platform | Authentication, authorization, control plane, and private routing |
 | `connect` | Connections | Provider identity, credentials, email, GitHub and Slack execution |
+| `feed` | Activity | Activity projections, summaries, narration, and release notes |
+| `ticket` | Planning | Features, specifications, priority, links, and attachments |
 | `cue` | Incidents | Telemetry, feature health, incidents, metrics, and SDKs |
 | `scheduler` | Platform operations | Queue consumption, reconciliation, recovery, and scheduled jobs |
 | `spot` | Feedback | Public capture, screenshots, feedback rendering, and resolution responses |
 
-`feed`, `gateway`, and `ticket` join this directory as their standalone code is
-imported. Provider credentials remain exclusive to Connect and the platform
-transport executors.
+Provider credentials remain exclusive to Connect and the platform transport
+executors.

@@ -1,4 +1,4 @@
-import { parseTransportCommand, parseTransportReceipt, type TransportReceipt } from "../../shared/transport-commands";
+import { parseTransportCommand, parseTransportReceipt, type TransportReceipt } from "../../packages/contracts/transport-commands";
 import { publishPlatformEvent } from "./platform-event-store";
 
 interface DeliveryRow {

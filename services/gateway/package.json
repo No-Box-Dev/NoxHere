@@ -1,0 +1,23 @@
+{
+  "name": "@noxhere/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wrangler deploy --dry-run --outdir dist --env=\"\"",
+    "cf-typegen": "wrangler types worker-configuration.d.ts",
+    "deploy:production": "wrangler deploy --env=\"\"",
+    "deploy:staging": "wrangler deploy --env=staging",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260905.1",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.129.0"
+  }
+}
