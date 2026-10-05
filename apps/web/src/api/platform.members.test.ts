@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { httpPlatformApi } from "./platform";
+import { platformApi } from "./platform";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -23,7 +23,7 @@ describe("platform membership bootstrap", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await httpPlatformApi.bootstrap("acme", "project-1");
+    const result = await platformApi.bootstrap("acme", "project-1");
 
     expect(result.projects[0]?.members).toEqual([
       { login: "owner", avatarUrl: "https://example.com/owner.png", role: "admin" },

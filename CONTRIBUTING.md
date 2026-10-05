@@ -27,14 +27,14 @@ CI runs the same checks. PRs that fail any of them will not be merged.
 - **Backend is TypeScript.** New Pages Functions and cron code are written in TypeScript, not JS. Existing hand-rolled `.js` endpoints migrate to this pattern opportunistically.
 - **Validate at the boundary.** External request input must be validated with `validate(schema, input)` from `functions/lib/validate.ts` (zod). See `functions/api/assign.ts` for a validated write and `functions/api/engineer-stats.ts` for an aggregation read.
 - **Use the D1 native binding** (`context.env.DB.prepare(...).bind(...)`, `DB.batch([...])`) and parameterized queries only — never string-concatenate SQL.
-- **Surface errors.** Frontend writes go through the shared `apiGet/apiPut/apiPost/apiPatch/apiDelete` helpers in `src/lib/api.ts` so failures reach the user via the `ut:error` toast bus. Don't bypass them with raw `fetch` for mutations.
+- **Surface errors.** Frontend requests go through the validated helpers in `apps/web/src/api/`; do not add ad-hoc provider calls or bypass the shared error handling.
 - Code should be obvious, boring, and correct. No dead code, no commented-out blocks, no `TODO` comments on `main` (open an issue instead).
 
 ## Update the docs
 
 When you change the system surface, update the relevant docs in the same PR:
 
-- **New tab** → `TabId` union in `src/lib/types.ts`, plus the Tab System and Features notes in `CLAUDE.md`.
+- **New capability route** → `apps/web/src/app/App.tsx`, the owning `apps/web/src/features/` directory, and the relevant service manifest.
 - **New config key** → `VALID_KEYS`/`DEFAULTS` in `functions/api/config/[key].js`, plus the Config System notes.
 - **New API route** → the API Routes list in `CLAUDE.md`.
 

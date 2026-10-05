@@ -50,7 +50,7 @@ beforeEach(() => {
       }],
       repositories: ["api", "nox-test-sandbox"],
     });
-    if (url === `/api/v1/projects/routing/${project.id}` && init?.method === "PUT") return json({ ok: true });
+    if (url === `/api/v1/projects/${project.id}/routing` && init?.method === "PUT") return json({ ok: true });
     if (url === "/api/v1/projects" && init?.method === "POST") {
       const input = JSON.parse(String(init.body));
       return json({ project: { id: "proj_created", name: input.name, repositories: input.repositories ?? [] } }, 201);
@@ -607,6 +607,40 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.getAllByText("GitHub").length).toBeGreaterThan(0);
   });
 
+  it("renders rich Feedback capture details when the API supplies them", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).startsWith("/api/v1/spots/project-overview")) return json({ issues: [{
+        id: "report-rich",
+        number: 2000,
+        repo: "playnist",
+        title: "Rich feedback report",
+        description: "The cover is not visible.",
+        submittedBy: "Alex",
+        internalReporter: { login: "alex", name: "Alex", avatarUrl: "https://avatars.githubusercontent.com/u/1" },
+        reportStatus: "open",
+        screenshotUrl: "https://cdn.noxspot.dev/screenshots/report-rich.png",
+        contextSections: [{ title: "Browser context", value: { browser: "Chromium" } }],
+        author: null,
+        labels: [],
+        source: "noxspot",
+        activity: [],
+        notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null },
+        url: "https://github.com/No-Box-Dev/playnist/issues/2000",
+      }] });
+      return baseFetch(input, init);
+    });
+
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/issues");
+    const title = await screen.findByText("Rich feedback report");
+    const report = title.closest("details");
+    expect(report).not.toBeNull();
+    expect(within(report!).getByRole("img", { name: "Screenshot attached to Rich feedback report" })).toHaveAttribute("src", "https://cdn.noxspot.dev/screenshots/report-rich.png");
+    expect(report!.querySelector(".spot-report-avatar img")).toHaveAttribute("src", "https://avatars.githubusercontent.com/u/1");
+    expect(within(report!).getByText("Browser context")).toBeInTheDocument();
+    expect(within(report!).getByRole("link", { name: "Open GitHub issue ↗" })).toHaveAttribute("href", "https://github.com/No-Box-Dev/playnist/issues/2000");
+  });
+
   it("loads Feedback in cursor pages on demand", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -772,7 +806,7 @@ describe("NoxConnect API-backed platform", () => {
     await user.click(await screen.findByRole("checkbox", { name: /^api/ }));
     await user.click(screen.getByRole("button", { name: "Save repositories" }));
 
-    expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/routing/${project.id}`, expect.objectContaining({
+    expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/${project.id}/routing`, expect.objectContaining({
       method: "PUT",
       body: JSON.stringify({
         enabled: true,

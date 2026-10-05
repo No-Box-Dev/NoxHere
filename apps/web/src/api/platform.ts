@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, projectRoutingResponseSchema, projectSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackRoutingSchema, slackStatusSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
+import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackRoutingSchema, slackStatusSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
 import type { Bootstrap, CueAction, CueActions, CueAlert, CueAlertRule, CueDashboard, CueStatEvent, GithubMember, GuestAccess, GuestInvite, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackRouting, SlackStatus, TicketFeatureAttachment, TicketFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
@@ -23,7 +23,6 @@ export interface PlatformApi {
   cueAlerts(organizationId: string, projectId: string, signal?: AbortSignal): Promise<CueAlert[]>;
   cueAlertRules(organizationId: string, projectId: string, signal?: AbortSignal): Promise<CueAlertRule[]>;
   retrieve(projectId: string, query: string, signal?: AbortSignal): Promise<RetrievalResult[]>;
-  renameProject(projectId: string, name: string): Promise<Project>;
   guestAccess(organizationId: string, signal?: AbortSignal): Promise<GuestAccess>;
   inviteGuest(organizationId: string, projectId: string, email: string, serviceId: "all" | "ticket" | "feed" | "spot" | "cue"): Promise<GuestInvite>;
   members(organizationId: string, signal?: AbortSignal): Promise<GithubMember[]>;
@@ -38,7 +37,7 @@ export interface PlatformApi {
 
 export const projectSettingsQueryKey = (organizationId: string, projectId: string) => ["platform", "project-settings", organizationId, projectId] as const;
 
-export const httpPlatformApi: PlatformApi = {
+export const platformApi: PlatformApi = {
   bootstrap: async (organizationId, projectId, signal) => {
     const scope = { organizationId, projectId };
     const [profileRaw, projectsRaw, membersRaw, connectionsRaw] = await Promise.all([
@@ -84,7 +83,7 @@ export const httpPlatformApi: PlatformApi = {
   },
   projectRouting: (organizationId, signal) => getJson("/api/v1/projects/routing", projectRoutingResponseSchema, signal, { organizationId }),
   setProjectRouting: async (organizationId, project) => {
-    await putJson(`/api/v1/projects/routing/${encodeURIComponent(project.id)}`, { enabled: project.enabled, repositories: project.repositories, routes: project.routes }, z.object({ ok: z.literal(true) }).passthrough(), { organizationId, projectId: project.id });
+    await putJson(`/api/v1/projects/${encodeURIComponent(project.id)}/routing`, { enabled: project.enabled, repositories: project.repositories, routes: project.routes }, z.object({ ok: z.literal(true) }).passthrough(), { organizationId, projectId: project.id });
   },
   ticketFeatures: async (organizationId, projectId, signal) => {
     return getJson("/api/v1/features?state=all", ticketFeatureSchema.array(), signal, { organizationId, projectId });
@@ -114,7 +113,6 @@ export const httpPlatformApi: PlatformApi = {
   cueAlerts: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/cue/alerts`, cueAlertSchema.array(), signal, { organizationId, projectId }),
   cueAlertRules: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/cue/alert-rules`, cueAlertRuleSchema.array(), signal, { organizationId, projectId }),
   retrieve: (projectId, query, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/retrieval?q=${encodeURIComponent(query)}`, retrievalResultSchema.array(), signal, { projectId }),
-  renameProject: (projectId, name) => patchJson(`/api/v1/projects/${encodeURIComponent(projectId)}`, { name }, projectSchema),
   guestAccess: (organizationId, signal) => getJson("/api/v1/guests", guestAccessSchema, signal, { organizationId }),
   inviteGuest: async (organizationId, projectId, email, serviceId) => {
     const service = serviceId === "all" ? null : ({ ticket: "noxticket", feed: "noxfeed", spot: "noxspot", cue: "noxcue" } as const)[serviceId];
@@ -135,5 +133,3 @@ export const httpPlatformApi: PlatformApi = {
     await postJson("/api/v1/slack/test", { connectionId, channelId, kind: "noxticket" }, z.object({ ok: z.literal(true) }).loose(), { organizationId, projectId });
   },
 };
-
-export const platformApi = httpPlatformApi;

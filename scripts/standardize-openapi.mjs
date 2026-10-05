@@ -395,6 +395,10 @@ const clientRouteContracts = [
   ["/api/v1/github/comments", [["get", "getGitHubComments", "Read comments for a tracked pull request", "member"]]],
   ["/api/v1/github/details", [["get", "getGitHubDetails", "Read live details for a tracked issue or pull request", "member"]]],
   ["/api/v1/github/rate-limit", [["get", "getGitHubRateLimit", "Read the connected GitHub installation rate limit", "member"]]],
+  ["/api/v1/guests", [["get", "listGuestAccess", "List guest invitations and active grants", "admin"]]],
+  ["/api/v1/guests/invites", [["post", "createGuestInvitation", "Invite a guest to an organization, project, or capability", "admin"]]],
+  ["/api/v1/guests/invites/{inviteId}", [["delete", "revokeGuestInvitation", "Revoke a pending guest invitation", "admin"]]],
+  ["/api/v1/guests/grants/{grantId}", [["delete", "revokeGuestGrant", "Revoke active guest access", "admin"]]],
   ["/api/v1/integrations/status", [["get", "getIntegrationStatus", "Read credential-free integration readiness", "member"]]],
   ["/api/v1/issue-state", [["post", "setIssueState", "Open or close a tracked GitHub issue", "member"]]],
   ["/api/v1/me", [["get", "getCurrentMember", "Read membership and NoxConnect role for the current organization", "member"]]],
@@ -423,6 +427,7 @@ const clientRouteContracts = [
   ["/api/v1/sync-events", [["post", "syncGitHubEvents", "Backfill bounded GitHub activity events", "admin"]]],
   ["/api/v1/teams", [["get", "listGitHubTeams", "List teams visible through the connected GitHub organization", "member"]]],
 ];
+delete document.paths["/api/v1/projects/{projectId}"];
 for (const [path, methods] of clientRouteContracts) {
   document.paths[path] ??= {};
   const pathParameters = [...path.matchAll(/\{([^}]+)\}/g)].map(([, name]) => ({

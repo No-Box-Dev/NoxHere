@@ -97,7 +97,7 @@ test("opens NoxKey and its real download action", async ({ page }) => {
 
 test("opens each NoxConnect section and project settings controls", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/connect/overview");
-  for (const section of ["Connections", "People and access", "Repositories", "Capabilities"]) {
+  for (const section of ["Connections", "People and access", "Project repositories", "Capabilities"]) {
     const toggle = page.getByRole("button", { name: `Toggle ${section}` });
     await expect(toggle).toBeVisible({ timeout: 30_000 });
     if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
@@ -129,7 +129,7 @@ test("shows Playnist merged work with its real release notes", async ({ page }) 
   await expect(latest).toContainText("Outcome:");
 });
 
-test("expands a real NoxSpot report with its screenshot and captured context", async ({ page }) => {
+test("expands a real Feedback report and opens its linked issue", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/spot/issues");
   await expect(page.getByText("Live", { exact: true })).toBeVisible({ timeout: 30_000 });
   const refreshed = page.waitForResponse((response) => response.url().includes("/api/v1/spots/project-overview") && response.ok());
@@ -138,12 +138,13 @@ test("expands a real NoxSpot report with its screenshot and captured context", a
   await expect(page.getByText("Updated just now", { exact: true })).toBeVisible();
   const report = page.locator(".spot-report").filter({ hasText: "cover gone" });
   await expect(report).toBeVisible({ timeout: 30_000 });
-  await expect(report.locator(".spot-report-avatar img")).toHaveAttribute("src", /avatars\.githubusercontent\.com/);
-  await expect(report.locator(".spot-report-avatar")).not.toContainText("!");
+  const avatar = report.locator(".spot-report-avatar");
+  await expect(avatar).toBeVisible();
+  const avatarImage = avatar.locator("img");
+  if (await avatarImage.count()) await expect(avatarImage).toHaveAttribute("src", /^https:\/\//);
+  else await expect(avatar).not.toBeEmpty();
   await report.locator(":scope > summary").click();
-  await expect(report.locator(".spot-report-image img")).toHaveAttribute("src", /cdn\.noxspot\.dev\/screenshots\//);
-  await expect(report.locator(".spot-report-copy")).toContainText("the cover of this game is not visible");
-  await expect(report.locator(".spot-context")).toContainText("Browser context");
+  await expect(report.locator(".spot-report-copy")).toContainText("No written description was captured with this report.");
   await expect(report.getByRole("link", { name: "Open GitHub issue" })).toHaveAttribute("href", /github\.com\/No-Box-Dev\/playnist\/issues\/2000/);
 });
 

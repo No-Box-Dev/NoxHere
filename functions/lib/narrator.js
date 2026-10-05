@@ -26,10 +26,8 @@ import { isAppEnabledForOwner } from "./apps.js";
 import { generateNoxFeedContent, getNoxFeedSlackResponse } from "./noxfeed-response.js";
 import { resolveNoxFeedDestination } from "./noxfeed-routing.js";
 
-// Merge-time narration gate — narrateEvent + narrateReleaseNotes. Keep in
-// sync with POST_TRIGGER_TYPES in src/hooks/useNoxlink.ts (the client-side
-// filter that must match this list so we don't render narratives triggered
-// by types the server also skips).
+// Merge-time narration gate — narrateEvent + narrateReleaseNotes. Keep this
+// list aligned with the canonical event contract.
 export const NARRATABLE_TYPES = ["github:pr:merged"];
 
 // Open-time narration gate — narratePrOpened. Fires the PRs feed. The
