@@ -10,7 +10,7 @@ import { summarizeNoxSpotResolutions } from "../../lib/noxspot-digest-ai.js";
 import {
   completedDailyDigestPeriod,
   loadNoxSpotDailyDigestData,
-} from "../../../cron/src/noxspot-digests.js";
+} from "../../../services/scheduler/src/noxspot-digests.js";
 import { getNoxFeedTestResponse } from "../../lib/noxfeed-response.js";
 import { buildNoxTicketTestResponse } from "../../products/noxticket/response.js";
 

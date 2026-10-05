@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock the cross-package imports so reconcile.js loads cleanly without
 // pulling real DB SQL or App JWT signing into the test.
-vi.mock("../../../functions/lib/github-app.js", () => ({
+vi.mock("../../../../functions/lib/github-app.js", () => ({
   getInstallationToken: vi.fn().mockResolvedValue("install-token"),
 }));
 
-vi.mock("../../../functions/lib/inactive-repos.js", () => ({
+vi.mock("../../../../functions/lib/inactive-repos.js", () => ({
   getInactiveRepoSet: vi.fn().mockResolvedValue(new Set()),
 }));
 
@@ -14,15 +14,15 @@ vi.mock("../../../functions/lib/inactive-repos.js", () => ({
 // GitHub `fetch` for repo events. Left unmocked it hits the network on every
 // run — slow and flaky (it intermittently blew past the 5s test timeout).
 // No test asserts on it, so stub it to a no-op.
-vi.mock("../../../functions/lib/event-reconcile.js", () => ({
+vi.mock("../../../../functions/lib/event-reconcile.js", () => ({
   reconcileRepoEvents: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("../../../functions/lib/noxspot-resolution.js", () => ({
+vi.mock("../../../../functions/lib/noxspot-resolution.js", () => ({
   reconcileNoxSpotReportsForRepo: vi.fn().mockResolvedValue({ checked: 0, resolved: 0, reopened: 0 }),
 }));
 
-vi.mock("../../../functions/lib/github-sync.js", () => ({
+vi.mock("../../../../functions/lib/github-sync.js", () => ({
   syncRepos: vi.fn(),
   syncMembers: vi.fn(),
   syncTeams: vi.fn(),
@@ -43,9 +43,9 @@ import {
   syncIssues,
   removeRepo,
   removeMember,
-} from "../../../functions/lib/github-sync.js";
-import { reconcileRepoEvents } from "../../../functions/lib/event-reconcile.js";
-import { reconcileNoxSpotReportsForRepo } from "../../../functions/lib/noxspot-resolution.js";
+} from "../../../../functions/lib/github-sync.js";
+import { reconcileRepoEvents } from "../../../../functions/lib/event-reconcile.js";
+import { reconcileNoxSpotReportsForRepo } from "../../../../functions/lib/noxspot-resolution.js";
 
 // ---- D1 stub: small dispatch table mapping SQL pattern → handler.
 // Tests mutate `state` and `match` to control behaviour.

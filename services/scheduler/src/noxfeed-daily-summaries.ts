@@ -1,7 +1,7 @@
-import { publishSlackTransport } from "../../functions/lib/transport-outbox";
-import { getActiveRepoNames } from "../../functions/lib/inactive-repos.js";
-import { completeNarrative } from "../../functions/lib/llm.js";
-import { resolveLlmConfig } from "../../functions/lib/llm-config.js";
+import { publishSlackTransport } from "../../../functions/lib/transport-outbox";
+import { getActiveRepoNames } from "../../../functions/lib/inactive-repos.js";
+import { completeNarrative } from "../../../functions/lib/llm.js";
+import { resolveLlmConfig } from "../../../functions/lib/llm-config.js";
 import { localDateTime } from "./noxcue-digests.js";
 
 const MAX_ORGS_PER_TICK = 100;

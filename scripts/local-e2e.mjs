@@ -12,9 +12,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const codebase = resolve(root, "..");
 const noxCueDir = resolve(process.env.NOXCUE_DIR || join(codebase, "NoxAlert"));
 const noxFeedDir = resolve(process.env.NOXFEED_SERVICE_DIR || join(codebase, "noxfeed-mac/service"));
-const noxSpotDir = resolve(process.env.NOXSPOT_CAPTURE_DIR || join(root, "workers/noxspot-capture"));
+const noxSpotDir = resolve(process.env.NOXSPOT_CAPTURE_DIR || join(root, "services/spot"));
 const noxTicketDir = resolve(process.env.NOXTICKET_SERVICE_DIR || join(codebase, "noxticket-service"));
-const capabilityDir = join(root, "workers/connection-capabilities");
+const capabilityDir = join(root, "services/connect");
 const wrangler = join(root, "node_modules/.bin/wrangler");
 const keepState = process.argv.includes("--keep-state");
 const allowAuthSkip = process.argv.includes("--allow-auth-skip");
@@ -64,7 +64,7 @@ function checkPrerequisites() {
     [join(noxCueDir, "node_modules"), "Run npm ci in the NoxCue checkout"],
     [join(noxFeedDir, "wrangler.toml"), "Set NOXFEED_SERVICE_DIR to the NoxFeed service checkout"],
     [join(noxFeedDir, "node_modules"), "Run npm ci in the NoxFeed service checkout"],
-    [join(noxSpotDir, "node_modules"), "Run npm ci in workers/noxspot-capture"],
+    [join(noxSpotDir, "node_modules"), "Run npm ci in services/spot"],
     [join(noxTicketDir, "node_modules"), "Set NOXTICKET_SERVICE_DIR to the NoxTicket service checkout"],
   ];
   const missing = required.filter(([path]) => !existsSync(path));
@@ -268,7 +268,7 @@ async function main() {
   start("noxticket", noxTicketDir, ["dev", "--name", serviceNames.ticket, "--port", String(port(8795)), "--inspector-port", String(port(9235)), ...commonDev]);
   await waitFor("noxticket", `http://127.0.0.1:${port(8795)}/health`);
 
-  start("cron", root, ["dev", "-c", "cron/wrangler.toml", "--name", serviceNames.cron, "--port", String(port(8794)), "--inspector-port", String(port(9234)), ...commonDev]);
+  start("cron", root, ["dev", "-c", "services/scheduler/wrangler.toml", "--name", serviceNames.cron, "--port", String(port(8794)), "--inspector-port", String(port(9234)), ...commonDev]);
   makeRpcSmokeWorker();
   start("rpc", rpcDir, ["dev", "-c", "wrangler.jsonc", "--port", String(port(8793)), "--inspector-port", String(port(9233)), ...commonDev]);
 

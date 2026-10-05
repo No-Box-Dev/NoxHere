@@ -1,5 +1,5 @@
-import { getInstallationToken } from "../../functions/lib/github-app.js";
-import { syncRepo } from "../../functions/lib/github-sync.js";
+import { getInstallationToken } from "../../../functions/lib/github-app.js";
+import { syncRepo } from "../../../functions/lib/github-sync.js";
 
 const GITHUB_HEADERS = (token) => ({
   Authorization: `Bearer ${token}`,

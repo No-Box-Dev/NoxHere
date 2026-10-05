@@ -34,7 +34,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install NoxSpot dependencies
-        working-directory: workers/noxspot-capture
+        working-directory: services/spot
         run: npm ci
       - name: Build frontend and private gateway
         run: |
@@ -46,28 +46,28 @@ jobs:
       - name: Migrate staging
         run: npx wrangler d1 migrations apply DB --config workers/api-gateway/wrangler.jsonc --env staging --remote
       - name: Deploy staging capabilities
-        run: npx wrangler deploy --config workers/connection-capabilities/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/connect/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
       - name: Deploy staging API gateway
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging orchestrator
-        run: npx wrangler deploy --config cron/wrangler.toml --env staging --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/scheduler/wrangler.toml --env staging --message "$DEPLOY_SHA"
       - name: Deploy staging NoxSpot
-        run: npx wrangler deploy --config workers/noxspot-capture/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/spot/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Smoke staging release
         run: node scripts/smoke-deployment.mjs https://noxhere-staging.jasper-414.workers.dev https://noxspot-api-staging.jasper-414.workers.dev "$DEPLOY_SHA"
 
       - name: Migrate production
         run: npx wrangler d1 migrations apply DB --config workers/api-gateway/wrangler.jsonc --env="" --remote
       - name: Deploy production capabilities
-        run: npx wrangler deploy --config workers/connection-capabilities/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/connect/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
       - name: Deploy production API gateway
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy legacy Pages surface
         run: npx wrangler pages deploy dist --project-name=noxconnect --branch=main
       - name: Deploy production orchestrator
-        run: npx wrangler deploy --config cron/wrangler.toml --env="" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/scheduler/wrangler.toml --env="" --message "$DEPLOY_SHA"
       - name: Deploy production NoxSpot
-        run: npx wrangler deploy --config workers/noxspot-capture/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/spot/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Smoke production release
         run: node scripts/smoke-deployment.mjs https://app.noxhere.com https://api.noxspot.dev "$DEPLOY_SHA"
       - name: Notify ecosystem verification

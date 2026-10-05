@@ -35,7 +35,7 @@ async function sourceFiles(directory) {
   return files;
 }
 
-export async function findTransportBoundaryViolations({ root, provider, roots = ["functions", "cron/src", "workers"] }) {
+export async function findTransportBoundaryViolations({ root, provider, roots = ["functions", "services", "workers"] }) {
   const rule = PROVIDERS[provider];
   if (!rule) throw new Error(`Unknown provider: ${provider}`);
   const violations = [];

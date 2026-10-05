@@ -4,7 +4,7 @@ const { publishSlackTransport } = vi.hoisted(() => ({
   publishSlackTransport: vi.fn(),
 }));
 
-vi.mock("../../../functions/lib/transport-outbox.ts", () => ({ publishSlackTransport }));
+vi.mock("../../../../functions/lib/transport-outbox.ts", () => ({ publishSlackTransport }));
 
 import { runOperationalAlerts } from "../operational-alerts.js";
 

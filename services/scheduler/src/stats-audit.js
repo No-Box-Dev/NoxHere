@@ -1,4 +1,4 @@
-import { getInstallationToken } from "../../functions/lib/github-app.js";
+import { getInstallationToken } from "../../../functions/lib/github-app.js";
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 

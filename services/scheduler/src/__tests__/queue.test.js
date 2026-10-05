@@ -2,41 +2,41 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock the cross-package helpers the queue consumer dispatches to.
 vi.mock("../reconcile.js", () => ({ reconcileOrg: vi.fn() }));
-vi.mock("../../../functions/lib/narrator.js", () => ({ narrateEvent: vi.fn() }));
-vi.mock("../../../functions/lib/github-sync.js", () => ({
+vi.mock("../../../../functions/lib/narrator.js", () => ({ narrateEvent: vi.fn() }));
+vi.mock("../../../../functions/lib/github-sync.js", () => ({
   bootstrapInstallation: vi.fn(),
   syncRepo: vi.fn(),
 }));
-vi.mock("../../../functions/lib/github-app.js", () => ({
+vi.mock("../../../../functions/lib/github-app.js", () => ({
   getInstallationToken: vi.fn().mockResolvedValue("install-token"),
 }));
-vi.mock("../../../functions/lib/op-failures.js", () => ({ recordFailure: vi.fn() }));
-vi.mock("../../../functions/lib/noxspot.js", () => ({
+vi.mock("../../../../functions/lib/op-failures.js", () => ({ recordFailure: vi.fn() }));
+vi.mock("../../../../functions/lib/noxspot.js", () => ({
   createNoxSpotGitHubIssue: vi.fn(),
 }));
-vi.mock("../../../functions/lib/noxspot-resolution.js", () => ({
+vi.mock("../../../../functions/lib/noxspot-resolution.js", () => ({
   deliverNoxSpotResolutionEmail: vi.fn(),
   prepareNoxSpotResolutionEmail: vi.fn(),
   recoverNoxSpotResolutionPreparations: vi.fn(),
   recoverNoxSpotResolutionEmails: vi.fn(),
 }));
-vi.mock("../../../functions/lib/noxcue-github.js", () => ({
+vi.mock("../../../../functions/lib/noxcue-github.js", () => ({
   createOrUpdateNoxCueGitHubIssue: vi.fn(), recoverNoxCueGithubIncidents: vi.fn(),
 }));
-vi.mock("../../../functions/lib/delivery-outbox.js", () => ({
+vi.mock("../../../../functions/lib/delivery-outbox.js", () => ({
   deliverSlackOutbox: vi.fn(), markOutboxFailed: vi.fn(), recoverOutboxDeliveries: vi.fn(), requeueBlockedForOrg: vi.fn(),
 }));
-vi.mock("../../../functions/lib/slack.js", () => ({ checkSlackOrgHealth: vi.fn() }));
+vi.mock("../../../../functions/lib/slack.js", () => ({ checkSlackOrgHealth: vi.fn() }));
 
 import worker from "../index.js";
-import { narrateEvent } from "../../../functions/lib/narrator.js";
-import { syncRepo } from "../../../functions/lib/github-sync.js";
-import { getInstallationToken } from "../../../functions/lib/github-app.js";
-import { recordFailure } from "../../../functions/lib/op-failures.js";
-import { createNoxSpotGitHubIssue } from "../../../functions/lib/noxspot.js";
-import { prepareNoxSpotResolutionEmail } from "../../../functions/lib/noxspot-resolution.js";
-import { createOrUpdateNoxCueGitHubIssue } from "../../../functions/lib/noxcue-github.js";
-import { deliverSlackOutbox, markOutboxFailed } from "../../../functions/lib/delivery-outbox.js";
+import { narrateEvent } from "../../../../functions/lib/narrator.js";
+import { syncRepo } from "../../../../functions/lib/github-sync.js";
+import { getInstallationToken } from "../../../../functions/lib/github-app.js";
+import { recordFailure } from "../../../../functions/lib/op-failures.js";
+import { createNoxSpotGitHubIssue } from "../../../../functions/lib/noxspot.js";
+import { prepareNoxSpotResolutionEmail } from "../../../../functions/lib/noxspot-resolution.js";
+import { createOrUpdateNoxCueGitHubIssue } from "../../../../functions/lib/noxcue-github.js";
+import { deliverSlackOutbox, markOutboxFailed } from "../../../../functions/lib/delivery-outbox.js";
 
 const env = { DB: {} };
 

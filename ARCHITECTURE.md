@@ -23,7 +23,7 @@ Web / Apple apps / noxconnect CLI
 - **Frontend** — React 19 + TypeScript + Vite SPA. TanStack Query reads NoxConnect APIs; browser code does not receive GitHub or Slack tokens or call provider APIs directly. Tailwind provides styling and product/admin views are lazy-loaded.
 - **API** — the NoxConnect gateway is the only public authority and forwards a short-lived signed assertion over a private binding. During cutover its deployable source remains in the `NoxHere` compatibility repository. Capability handlers live under `functions/api/`; new code is TypeScript with zod validation at the boundary and native D1 access (`DB.prepare().bind()`, `DB.batch()`).
 - **Database** — Cloudflare D1 (SQLite). Schema in `migrations/`, applied with `wrangler d1 migrations apply`.
-- **Cron Worker** — a sibling Worker in `cron/` that imports shared helpers from `functions/lib/`. It reconciles GitHub state every 30 minutes and consumes the background-work queue.
+- **Scheduler service** — `services/scheduler/` imports shared platform helpers, reconciles GitHub state every 30 minutes, and consumes the background-work queue.
 - **Queue + R2** — durable background work (narration, bootstrap, repo sync) runs on a Cloudflare Queue with retries and a dead-letter queue; the `events` table is archived to R2 after 90 days.
 
 ## Multi-tenancy
@@ -72,4 +72,4 @@ A bounded server-side Anthropic integration narrates pull-request activity. NoxC
 | Shared server helpers | `functions/lib/` |
 | Project routing core | `functions/lib/project-routing.ts`, `functions/api/projects/routing*` |
 | DB schema | `migrations/` |
-| Cron + queue consumer | `cron/src/` |
+| Cron + queue consumer | `services/scheduler/src/` |

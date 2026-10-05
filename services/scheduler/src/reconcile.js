@@ -20,11 +20,11 @@ import {
   syncIssues,
   removeRepo,
   removeMember,
-} from "../../functions/lib/github-sync.js";
-import { getInstallationToken } from "../../functions/lib/github-app.js";
-import { getInactiveRepoSet } from "../../functions/lib/inactive-repos.js";
-import { reconcileRepoEvents } from "../../functions/lib/event-reconcile.js";
-import { reconcileNoxSpotReportsForRepo } from "../../functions/lib/noxspot-resolution.js";
+} from "../../../functions/lib/github-sync.js";
+import { getInstallationToken } from "../../../functions/lib/github-app.js";
+import { getInactiveRepoSet } from "../../../functions/lib/inactive-repos.js";
+import { reconcileRepoEvents } from "../../../functions/lib/event-reconcile.js";
+import { reconcileNoxSpotReportsForRepo } from "../../../functions/lib/noxspot-resolution.js";
 
 // Look back this far when hunting for missed event rows (PR opens/closes/
 // merges, issue opens/closes, reviews/pushes/releases). Long enough to

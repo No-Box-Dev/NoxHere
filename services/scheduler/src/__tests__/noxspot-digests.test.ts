@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 const publishSlackTransport = vi.hoisted(() => vi.fn(async () => ({ outboxId: "delivery-1", status: "queued", queued: true })));
-vi.mock("../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
+vi.mock("../../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
 import { closingIssueNumbers, dailyDigestPeriod, runNoxSpotDailyDigests } from "../noxspot-digests.js";
 
 describe("NoxSpot daily Slack summaries", () => {

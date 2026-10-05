@@ -30,10 +30,10 @@
     "test:incident-router": "npm run test:project-router",
     "deploy:api-gateway": "npm run build:api-gateway && wrangler deploy --config workers/api-gateway/wrangler.jsonc --env=\"\"",
     "deploy:api-gateway:staging": "npm run build:api-gateway && wrangler deploy --config workers/api-gateway/wrangler.jsonc --env=staging",
-    "deploy:capabilities": "wrangler deploy --config workers/connection-capabilities/wrangler.jsonc --env=\"\"",
-    "deploy:capabilities:staging": "wrangler deploy --config workers/connection-capabilities/wrangler.jsonc --env=staging",
-    "deploy:cron:staging": "wrangler deploy --config cron/wrangler.toml --env=staging",
-    "deploy:noxspot:staging": "npm --prefix workers/noxspot-capture run types -- --env staging && wrangler deploy --config workers/noxspot-capture/wrangler.jsonc --env=staging",
+    "deploy:capabilities": "wrangler deploy --config services/connect/wrangler.jsonc --env=\"\"",
+    "deploy:capabilities:staging": "wrangler deploy --config services/connect/wrangler.jsonc --env=staging",
+    "deploy:cron:staging": "wrangler deploy --config services/scheduler/wrangler.toml --env=staging",
+    "deploy:noxspot:staging": "npm --prefix services/spot run types -- --env staging && wrangler deploy --config services/spot/wrangler.jsonc --env=staging",
     "deploy:legacy-bridge": "wrangler deploy --config workers/legacy-bridge/wrangler.jsonc",
     "test:legacy-bridge": "vitest run --config workers/legacy-bridge/vitest.config.ts",
     "openapi:standardize": "node scripts/standardize-openapi.mjs",
@@ -50,9 +50,9 @@
     "migrate:noxspot": "node scripts/migrate-noxspot.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:noxspot-capture": "npm --prefix workers/noxspot-capture test",
-    "typecheck:noxspot-capture": "npm --prefix workers/noxspot-capture exec tsc -- --noEmit",
-    "build:noxspot-capture": "npm --prefix workers/noxspot-capture run build"
+    "test:noxspot-capture": "npm --prefix services/spot test",
+    "typecheck:noxspot-capture": "npm --prefix services/spot exec tsc -- --noEmit",
+    "build:noxspot-capture": "npm --prefix services/spot run build"
   },
   "dependencies": {
     "@noxcue/sdk": "0.1.7",

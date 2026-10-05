@@ -12,10 +12,10 @@ const {
   resolveLlmConfig: vi.fn(),
 }));
 
-vi.mock("../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
-vi.mock("../../../functions/lib/inactive-repos.js", () => ({ getActiveRepoNames }));
-vi.mock("../../../functions/lib/llm.js", () => ({ completeNarrative }));
-vi.mock("../../../functions/lib/llm-config.js", () => ({ resolveLlmConfig }));
+vi.mock("../../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
+vi.mock("../../../../functions/lib/inactive-repos.js", () => ({ getActiveRepoNames }));
+vi.mock("../../../../functions/lib/llm.js", () => ({ completeNarrative }));
+vi.mock("../../../../functions/lib/llm-config.js", () => ({ resolveLlmConfig }));
 
 import { configuredMinutes, isSummaryDue, runNoxFeedDailySummaries } from "../noxfeed-daily-summaries.js";
 

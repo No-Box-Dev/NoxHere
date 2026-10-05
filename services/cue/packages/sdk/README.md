@@ -60,5 +60,5 @@ Required Notice: Copyright © 2026 No-Box-Dev (https://github.com/No-Box-Dev/Nox
 The sibling `packages/python-sdk` mirrors this package's server API and wire
 format. Both SDKs consume generated constants from
 `packages/sdk-contract/contract.json` and execute the same wire fixtures in CI.
-Run `npm run sdk:parity` from `workers/noxcue` before changing the public SDK
+Run `npm run sdk:parity` from `services/cue` before changing the public SDK
 contract.

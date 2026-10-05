@@ -1,4 +1,4 @@
-import { publishSlackTransport } from "../../functions/lib/transport-outbox.ts";
+import { publishSlackTransport } from "../../../functions/lib/transport-outbox.ts";
 
 const ALERT_LIMIT = 20;
 const LOOKBACK = "-24 hours";

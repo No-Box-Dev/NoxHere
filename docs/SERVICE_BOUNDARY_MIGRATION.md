@@ -264,7 +264,7 @@ daily summary, fallback, duplicate webhook, and separate Slack route flows pass.
 
 ## Milestone 6 — NoxSpot service extraction
 
-1. Move the embedded `workers/noxspot-capture` runtime into the NoxSpot
+1. Move the embedded `services/spot` runtime into the NoxSpot
    repository without changing its public capture URLs.
 2. Move site configuration, report validation, screenshot retention, telemetry,
    digest aggregation, resolution summaries, share projection, and product audit

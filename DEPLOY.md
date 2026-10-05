@@ -22,7 +22,7 @@ npm ci
 cp .env.example .env.local
 ```
 
-Edit `wrangler.toml` and `cron/wrangler.toml`: replace `database_id` (and, if you like, the `*-noxconnect*` resource names) with your own — the committed IDs point at the canonical hosted instance and you cannot deploy to them.
+Edit `wrangler.toml` and `services/scheduler/wrangler.toml`: replace `database_id` (and, if you like, the `*-noxconnect*` resource names) with your own — the committed IDs point at the canonical hosted instance and you cannot deploy to them.
 
 `PLATFORM_ADMIN_GITHUB_IDS` in `wrangler.toml` is a comma-separated allowlist
 of verified numeric GitHub user ids. Those users can open the internal,
@@ -181,7 +181,7 @@ proved locally.
 npm run build
 npx wrangler pages deploy dist --project-name noxconnect --branch main
 cd cron && npx wrangler deploy && cd ..
-cd workers/noxspot-capture && npm ci && npm run types && npm test && npx wrangler deploy && cd ../..
+cd services/spot && npm ci && npm run types && npm test && npx wrangler deploy && cd ../..
 ```
 
 Or wire up CI: `.github/workflows/ci.yml` runs lint/typecheck/tests for Pages and
@@ -232,7 +232,7 @@ for operator diagnostics only; it is not part of the public contract.
 ## Operations
 
 - **Cron:** reconciles every 30 min (catches missed webhooks, deletes, label changes) and archives `events` older than 90 days to R2 at the 03:00 UTC tick.
-- **NoxSpot capture:** `workers/noxspot-capture` owns the anonymous config,
+- **NoxSpot capture:** `services/spot` owns the anonymous config,
   report, error, widget-asset, screenshot, abuse-control, and 90-day screenshot
   retention surface. It deliberately does not share Pages bearer middleware.
 - **Background failures:** terminal queue failures land in the `op_failures` table; view them in Settings → Background failures (admin-only).

@@ -10,35 +10,35 @@
 
 import { reconcileOrg } from "./reconcile.js";
 import { archiveOldEvents } from "./archive-events.js";
-import { TASK } from "../../functions/lib/tasks.js";
-import { narrateEvent, narrateReleaseNotes, narratePrOpened } from "../../functions/lib/narrator.js";
-import { bootstrapInstallation, syncRepo } from "../../functions/lib/github-sync.js";
-import { getInstallationToken } from "../../functions/lib/github-app.js";
-import { recordFailure } from "../../functions/lib/op-failures.js";
+import { TASK } from "../../../functions/lib/tasks.js";
+import { narrateEvent, narrateReleaseNotes, narratePrOpened } from "../../../functions/lib/narrator.js";
+import { bootstrapInstallation, syncRepo } from "../../../functions/lib/github-sync.js";
+import { getInstallationToken } from "../../../functions/lib/github-app.js";
+import { recordFailure } from "../../../functions/lib/op-failures.js";
 import { runNextStatsAudit } from "./stats-audit.js";
 import { runDatabaseRecoveryStep } from "./database-recovery.js";
-import { createNoxSpotGitHubIssue, finalizeNoxSpotGitHubIssue } from "../../functions/lib/noxspot.js";
+import { createNoxSpotGitHubIssue, finalizeNoxSpotGitHubIssue } from "../../../functions/lib/noxspot.js";
 import {
   deliverNoxSpotResolutionEmail,
   prepareNoxSpotResolutionEmail,
   recoverNoxSpotResolutionPreparations,
   recoverNoxSpotResolutionEmails,
-} from "../../functions/lib/noxspot-resolution.js";
-import { deliverSlackOutbox, markOutboxFailed, recoverOutboxDeliveries, requeueBlockedForOrg } from "../../functions/lib/delivery-outbox.js";
-import { checkSlackOrgHealth } from "../../functions/lib/slack.js";
+} from "../../../functions/lib/noxspot-resolution.js";
+import { deliverSlackOutbox, markOutboxFailed, recoverOutboxDeliveries, requeueBlockedForOrg } from "../../../functions/lib/delivery-outbox.js";
+import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
 import { runNoxCueDigests } from "./noxcue-digests.js";
 import { runNoxSpotDailyDigests } from "./noxspot-digests.js";
 import { runNoxFeedDailySummaries } from "./noxfeed-daily-summaries.js";
-import { createOrUpdateNoxCueGitHubIssue, finalizeNoxCueGitHubIssue, recoverNoxCueGithubIncidents } from "../../functions/lib/noxcue-github.js";
+import { createOrUpdateNoxCueGitHubIssue, finalizeNoxCueGitHubIssue, recoverNoxCueGithubIncidents } from "../../../functions/lib/noxcue-github.js";
 import { runOperationalAlerts } from "./operational-alerts.js";
-import { recordHeartbeatAttempt, recordHeartbeatFailure, recordHeartbeatSuccess } from "../../functions/lib/service-heartbeats.js";
+import { recordHeartbeatAttempt, recordHeartbeatFailure, recordHeartbeatSuccess } from "../../../functions/lib/service-heartbeats.js";
 import { isTenantConfigurationFailure, reportNoxCueRuntimeFailure } from "./noxcue-runtime.js";
-import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands } from "../../functions/lib/transport-outbox.ts";
-import { deliverSlackTransport } from "../../functions/lib/transports/slack.ts";
-import { deliverGitHubTransport } from "../../functions/lib/transports/github.ts";
-import { projectPlatformEvent } from "../../functions/lib/platform-event-projector.ts";
-import { recoverPlatformEventProjections } from "../../functions/lib/platform-event-store.ts";
-import { recoverTransportDeliveryEvents } from "../../functions/lib/transport-delivery-events.ts";
+import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands } from "../../../functions/lib/transport-outbox.ts";
+import { deliverSlackTransport } from "../../../functions/lib/transports/slack.ts";
+import { deliverGitHubTransport } from "../../../functions/lib/transports/github.ts";
+import { projectPlatformEvent } from "../../../functions/lib/platform-event-projector.ts";
+import { recoverPlatformEventProjections } from "../../../functions/lib/platform-event-store.ts";
+import { recoverTransportDeliveryEvents } from "../../../functions/lib/transport-delivery-events.ts";
 
 // Cap concurrent orgs per tick to keep GitHub API consumption bounded.
 // Tune up once we measure real numbers.
@@ -46,7 +46,7 @@ const MAX_ORGS_PER_TICK = 10;
 
 // Cloudflare delivers a message up to (1 + max_retries) times (msg.attempts is
 // 1-based). We record the terminal failure on the FINAL delivery, so this must
-// equal max_retries + 1 (max_retries is set in cron/wrangler.toml).
+// equal max_retries + 1 (max_retries is set in services/scheduler/wrangler.toml).
 const MAX_DELIVERIES = 5;
 
 export default {

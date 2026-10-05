@@ -2,7 +2,7 @@
 //
 // Producer: functions/api/webhook.js enqueues instead of running work in
 // `context.waitUntil` (which has no retry and is lost on failure/eviction).
-// Consumer: the cron Worker's `queue()` handler (cron/src/index.js) drains it
+// Consumer: the cron Worker's `queue()` handler (services/scheduler/src/index.js) drains it
 // with retries + a dead-letter queue.
 //
 // Kept as plain JS because it's imported by both the JS webhook (Pages) and the

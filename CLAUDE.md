@@ -117,7 +117,7 @@ API Worker. Bounce and complaint content is disabled at the provider.
 
 ### NoxSpot public capture Worker
 
-`workers/noxspot-capture/` is a separate NoxConnect-owned Cloudflare Worker for
+`services/spot/` is a separate NoxConnect-owned Cloudflare Worker for
 the anonymous cross-origin NoxSpot capture surface. It is intentionally not a
 Pages Function and never uses NoxConnect browser bearer tokens. Versioned routes
 live under `/api/spots/public/v1`; `/sites/:id/config`, `/report`, `/errors`, and
@@ -146,8 +146,8 @@ with Postmark delivery, bounce, and complaint webhooks.
 
 The Worker has its own `package.json`, generated `worker-configuration.d.ts`,
 Wrangler JSONC config, Workers-runtime tests, CI job, and deploy step. Run it
-with `npm --prefix workers/noxspot-capture test` and validate deployment with
-`npm --prefix workers/noxspot-capture run build`.
+with `npm --prefix services/spot test` and validate deployment with
+`npm --prefix services/spot run build`.
 
 ### Sync System
 Batched cursor-based sync: `triggerSync()` (in `src/lib/github.ts`) calls `POST /api/sync` in a loop — first call runs `syncInit` (config migration, repos, members), subsequent calls sync one repo at a time via cursor until `done: true`. This prevents Cloudflare Function timeouts with many repos. `triggerSyncWithProgress()` wraps this with a callback for UI progress updates (used by Issues and PRs tab sync buttons). Staleness checked via `useSyncStatus()`, triggered via `useTriggerSync()` (both in `src/hooks/useGitHub.ts`).
@@ -170,7 +170,7 @@ Auto-include vs. auto-exclude policy (`settings.newRepoDefault`, default `includ
 
 **Live Activity events (the `events` table — feeds Engineers tab's Live activity)** has the same three-way redundancy as PRs/issues:
 1. **Webhooks** — `functions/lib/events.js storeEvent()` inserts rows in real time from `pull_request`, `issues`, `pull_request_review`, `push`, `release`, `repository`, and `installation*` payloads. `slimPayload` for `issues` carries `issue.number/title/state/author` forward so downstream dedup can match by number.
-2. **Cron reconcile (30 min)** — `cron/src/reconcile.js` calls `reconcileRepoEvents` per active repo with a 48h lookback. Catches webhook deliveries missed during deploys or provider outages.
+2. **Cron reconcile (30 min)** — `services/scheduler/src/reconcile.js` calls `reconcileRepoEvents` per active repo with a 48h lookback. Catches webhook deliveries missed during deploys or provider outages.
 3. **Manual admin backfill** — `POST /api/sync-events` triggered from Settings → Live Activity Backfill. Same `reconcileRepoEvents` helper with a 30-day lookback.
 
 `reconcileRepoEvents` (in `functions/lib/event-reconcile.js`) is the single source of truth for "what's missing in events for this repo." Three sources, in order: (1) `pull_requests` → `github:pr:opened|closed|merged`, (2) `issues` → `github:issue:opened|closed`, (3) `GET /repos/{owner}/{repo}/events` → reviews/pushes/releases (events GitHub doesn't expose as webhooks-into-D1). Idempotent via deterministic `delivery_id` of `reconcile:<org>:<repo>:pr-<n>:<kind>` / `issue-<n>:<kind>` / `gh-event-<id>` + the `events.delivery_id UNIQUE` constraint. Inserted rows are passed to all three narrators in parallel (`Promise.allSettled`): `narrateEvent` + `narrateReleaseNotes` (gated by `NARRATABLE_TYPES = ['github:pr:merged']`) and `narratePrOpened` (gated by `NARRATABLE_TYPES_OPENED = ['github:pr:opened']`), so backfilling closes/reviews/pushes doesn't trigger LLM spend but backfilled opens still land in the Opened feed.
@@ -214,10 +214,10 @@ Admins complete Slack OAuth once per organization, then configure shared fallbac
 Real-time updates via GitHub org webhooks. Endpoint: `POST /api/webhook`. Verified with `GITHUB_WEBHOOK_SECRET` env var (HMAC-SHA256). Handles `issues`, `pull_request`, `member` events. On `issues.closed`, captures `sender.login` as `closed_by`. Setup instructions shown in Settings UI. Requires manual webhook creation in GitHub org settings (no `admin:org_hook` scope needed).
 
 ### Durable background work (Queues)
-Slow webhook follow-up work (narration, install bootstrap, repo backfill) runs on the **`noxconnect-tasks`** Cloudflare Queue instead of `context.waitUntil` (which has no retry and is lost on failure). `functions/api/webhook.js` is the **producer** (`TASK_QUEUE` binding) via `enqueueTask` in `functions/lib/tasks.js` — message contract in `TASK`. The **consumer** is the cron Worker's `queue()` handler (`cron/src/index.js`), which dispatches by type to the same helpers, with retries + a dead-letter queue (`noxconnect-tasks-dlq`); terminal failures (after `MAX_DELIVERIES`) are recorded to `op_failures`. `enqueueTask` never throws into the webhook — a missing binding or send error is recorded to `op_failures` so the response still returns 200. **Provisioning:** `wrangler queues create noxconnect-tasks` + `noxconnect-tasks-dlq` before deploy; consumer needs `ANTHROPIC_API_KEY` for narration in addition to the GitHub App secrets.
+Slow webhook follow-up work (narration, install bootstrap, repo backfill) runs on the **`noxconnect-tasks`** Cloudflare Queue instead of `context.waitUntil` (which has no retry and is lost on failure). `functions/api/webhook.js` is the **producer** (`TASK_QUEUE` binding) via `enqueueTask` in `functions/lib/tasks.js` — message contract in `TASK`. The **consumer** is the cron Worker's `queue()` handler (`services/scheduler/src/index.js`), which dispatches by type to the same helpers, with retries + a dead-letter queue (`noxconnect-tasks-dlq`); terminal failures (after `MAX_DELIVERIES`) are recorded to `op_failures`. `enqueueTask` never throws into the webhook — a missing binding or send error is recorded to `op_failures` so the response still returns 200. **Provisioning:** `wrangler queues create noxconnect-tasks` + `noxconnect-tasks-dlq` before deploy; consumer needs `ANTHROPIC_API_KEY` for narration in addition to the GitHub App secrets.
 
 ### Event retention (R2 archival)
-The `events` table is bounded by a daily sweep in the cron Worker (`cron/src/archive-events.js`, gated to the 03:00 UTC ticks). Rows older than `RETENTION_DAYS` (90) are written to the **`EVENTS_ARCHIVE`** R2 bucket as date-partitioned NDJSON, then deleted from D1 in capped batches (archive-then-delete; idempotent). Manual trigger: `GET /__archive-events` on the cron Worker. **Provisioning:** `wrangler r2 bucket create noxconnect-events-archive` before deploy.
+The `events` table is bounded by a daily sweep in the cron Worker (`services/scheduler/src/archive-events.js`, gated to the 03:00 UTC ticks). Rows older than `RETENTION_DAYS` (90) are written to the **`EVENTS_ARCHIVE`** R2 bucket as date-partitioned NDJSON, then deleted from D1 in capped batches (archive-then-delete; idempotent). Manual trigger: `GET /__archive-events` on the cron Worker. **Provisioning:** `wrangler r2 bucket create noxconnect-events-archive` before deploy.
 
 ### GitHub Data Hooks (`src/hooks/useGitHub.ts`)
 TanStack Query hooks for live GitHub data: `useOrgs`, `useRepos`, `useOpenPRs`, `useOpenIssues`, `useClosedIssues`, `useMergedPRs`, `useAllPRs`, `useAllIssues`, `useOrgMembers`, `useSyncStatus`, `useTriggerSync`, `useTriggerFeatureSync`, `usePaginatedIssues`, `usePaginatedPrs`, `useIssueLabels`, `useIssueStats`, `usePRStats`, `useEngineerStats`, `useEngineerActivity`, `useIssueDetail`, `usePrDetail`, `useIssueBody`, `usePrBody`, `useUpdateIssueAssignees`, `useUpdateIssueState`, `useUnacknowledgedRepos`, `useAcknowledgeRepos`, `useActiveMembers`, `useGhTeamMemberships`, `useRateLimit`, `useMe`, `useIsAdmin`, `useExcludedMembers`, `useExcludedRepos`.
