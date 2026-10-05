@@ -15,6 +15,9 @@
     "example:check": "tsc --ignoreConfig --noEmit --strict --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution Bundler examples/browser/noxcue.ts",
     "sdk:build": "npm run build --workspace @noxcue/sdk",
     "sdk:check": "npm run check --workspace @noxcue/sdk",
+    "sdk:contract": "python3 scripts/generate-sdk-contract.py --check",
+    "sdk:python:test": "PYTHONPATH=packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v",
+    "sdk:parity": "npm run sdk:contract && npm run sdk:check && npx vitest run packages/sdk/src/sdk.test.ts && npm run sdk:python:test",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run cf-typegen && npm run typecheck && npm run sdk:build && npm run example:check && npm test && npm run build"

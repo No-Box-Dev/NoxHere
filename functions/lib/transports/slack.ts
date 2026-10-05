@@ -107,7 +107,7 @@ async function resolveDestination(env: SlackTransportEnvironment, command: Slack
 
 export async function deliverResolvedSlackMessage(
   env: SlackTransportEnvironment,
-  input: { orgId: number; connectionId?: string | null; channelId: string; messageId?: string; message: { text: string; blocks?: Record<string, unknown>[] } },
+  input: { orgId: number; connectionId?: string | null; channelId: string; messageId?: string; message: { text: string; client_msg_id?: string; blocks?: Record<string, unknown>[] } },
 ) {
   const install = await resolveSlackInstall(env, input.orgId, input.connectionId ?? null);
   if (!install) {

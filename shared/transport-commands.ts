@@ -42,6 +42,7 @@ const BaseCommand = z.object({
 
 const SlackMessage = z.object({
   text: z.string().trim().min(1).max(4_000),
+  client_msg_id: Identifier.optional(),
   blocks: z.array(z.record(z.string(), z.unknown())).max(50).default([]),
 }).strict();
 

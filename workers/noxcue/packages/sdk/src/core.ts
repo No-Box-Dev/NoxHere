@@ -14,15 +14,16 @@ import type {
   ServerErrorOptions,
   ServerNoxCueClient,
 } from "./types.js";
-
-const SDK_VERSION = "0.1.2";
-const DEFAULT_ENDPOINT = "https://app.noxhere.com/api/v1/cues/public/events";
-const DEFAULT_TIMEOUT_MS = 3_000;
-const MAX_TIMEOUT_MS = 10_000;
-const MAX_BODY_BYTES = 32_768;
-const MAX_RESPONSE_BYTES = 4_096;
-const RETRY_DELAY_MS = 250;
-const MAX_RETRY_AFTER_MS = 1_000;
+import {
+  DEFAULT_ENDPOINT,
+  DEFAULT_TIMEOUT_MS,
+  MAX_BODY_BYTES,
+  MAX_RESPONSE_BYTES,
+  MAX_RETRY_AFTER_MS,
+  MAX_TIMEOUT_MS,
+  RETRY_DELAY_MS,
+  SDK_VERSION,
+} from "./contract.js";
 
 type Runtime = "browser" | "server" | "edge" | "unknown";
 type KeyKind = "publishable" | "secret";

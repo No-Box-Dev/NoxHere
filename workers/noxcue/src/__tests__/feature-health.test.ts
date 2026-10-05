@@ -11,7 +11,15 @@ function featureEnv(previous: Record<string, unknown> | null) {
         bindings.push({ sql, values });
         return statement;
       }),
-      first: vi.fn(async () => sql.includes("FROM cue_feature_states") ? previous : null),
+      first: vi.fn(async () => {
+        if (sql.includes("FROM cue_feature_states")) return previous;
+        if (sql.includes("INSERT INTO transport_outbox")) return {
+          id: "transport-1", org_id: 7, project_id: "project-1", provider: "slack",
+          operation: "slack.message.send", idempotency_key: "noxcue:test", command_json: "{}",
+          status: "pending", attempt_count: 0, max_attempts: 5, receipt_json: null,
+        };
+        return null;
+      }),
       run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
     };
     return statement;
@@ -52,8 +60,8 @@ describe("critical feature incidents", () => {
 
     expect(result).toMatchObject({ status: "issue", queued: true, duplicate: false });
     expect(queue.send).toHaveBeenCalledOnce();
-    const outbox = bindings.find(({ sql }) => sql.includes("INSERT OR IGNORE INTO delivery_outbox"));
-    expect(outbox?.values).toContain("feature:source-1:auth.signup:incident:11111111-1111-4111-8111-111111111111");
+    const outbox = bindings.find(({ sql }) => sql.includes("INSERT INTO transport_outbox"));
+    expect(JSON.stringify(outbox?.values)).toContain("feature:source-1:auth.signup:incident:11111111-1111-4111-8111-111111111111");
     expect(JSON.stringify(outbox?.values)).toContain("A user was prevented from signing up");
     expect(JSON.stringify(outbox?.values)).toContain("Provider returned 503");
     const storedResult = bindings.find(({ sql }) => sql.includes("INSERT OR IGNORE INTO cue_feature_results"));

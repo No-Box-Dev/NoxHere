@@ -123,14 +123,22 @@ describe("NoxCue event contract", () => {
     const prepare = vi.fn((sql: string) => {
       const statement = {
         bind: vi.fn(() => statement),
-        first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
-          key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
-          source_id: "source-1", source_name: "Checkout", project_id: null,
-          source_environment: "production",
-          allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
-          error_cooldown_minutes: 15, environment: "production", alerts_enabled: 1,
-          slack_channel_id: "C123", slack_connection_id: "conn-1",
-        } : null),
+        first: vi.fn(async () => {
+          if (sql.includes("FROM cue_source_keys")) return {
+            key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
+            source_id: "source-1", source_name: "Checkout", project_id: "project-1",
+            source_environment: "production",
+            allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
+            error_cooldown_minutes: 15, environment: "production", alerts_enabled: 1,
+            slack_channel_id: "C123", slack_connection_id: "conn-1",
+          };
+          if (sql.includes("INSERT INTO transport_outbox")) return {
+            id: "transport-1", org_id: 7, project_id: "project-1", provider: "slack",
+            operation: "slack.message.send", idempotency_key: "noxcue:test", command_json: "{}",
+            status: "pending", attempt_count: 0, max_attempts: 5, receipt_json: null,
+          };
+          return null;
+        }),
         run: vi.fn(async () => ({ success: true })),
       };
       return statement;
@@ -157,7 +165,7 @@ describe("NoxCue event contract", () => {
     expect(String(sourceLookup?.[0]).indexOf("NULLIF(alert_route.channel_id"))
       .toBeLessThan(String(sourceLookup?.[0]).indexOf("NULLIF(source.slack_channel_id"));
     expect(batch).toHaveBeenCalledOnce();
-    expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_slack" }));
+    expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_transport" }));
   });
 
   it("rejects an event whose environment does not match the source key", async () => {
@@ -214,6 +222,11 @@ describe("NoxCue event contract", () => {
             slack_channel_id: "C123", slack_connection_id: "conn-1",
           };
           if (sql.includes("FROM cue_custom_features")) return null;
+          if (sql.includes("INSERT INTO transport_outbox")) return {
+            id: "transport-2", org_id: 7, project_id: "playnist", provider: "slack",
+            operation: "slack.message.send", idempotency_key: "noxcue:unregistered", command_json: "{}",
+            status: "pending", attempt_count: 0, max_attempts: 5, receipt_json: null,
+          };
           return null;
         }),
         run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),

@@ -69,6 +69,7 @@ describe("manual delivery verification", () => {
     const fetcher = vi.spyOn(globalThis, "fetch");
     const row = {
       org_id: 7, owner_id: "acme", source_id: "source-1", source_name: "Playnist", environment: "production",
+      project_id: "project-1",
       url: "https://app.example.com/health", status: "healthy", consecutive_failures: 0,
       consecutive_successes: 4, incident_started_at: null, last_checked_at: new Date().toISOString(),
       last_status_code: 200, last_latency_ms: 86, last_error: null,
@@ -77,7 +78,11 @@ describe("manual delivery verification", () => {
     const prepare = vi.fn((sql: string) => {
       const statement = {
         bind: vi.fn(() => statement),
-        first: vi.fn(async () => row),
+        first: vi.fn(async () => sql.includes("INSERT INTO transport_outbox") ? {
+          id: "transport-3", org_id: 7, project_id: "project-1", provider: "slack",
+          operation: "slack.message.send", idempotency_key: "noxcue:endpoint", command_json: "{}",
+          status: "pending", attempt_count: 0, max_attempts: 5, receipt_json: null,
+        } : row),
         run: vi.fn(async () => ({ meta: { changes: sql.includes("INSERT OR IGNORE") ? 1 : 1 } })),
       };
       return statement;

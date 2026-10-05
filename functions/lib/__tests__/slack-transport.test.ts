@@ -31,7 +31,7 @@ vi.mock("../slack-channel-status.js", () => ({
 import { deliverSlackTransport } from "../transports/slack";
 import { parseTransportCommand } from "../../../shared/transport-commands";
 
-function command(operation: "slack.message.send" | "slack.message.update" = "slack.message.send") {
+function command(operation: "slack.message.send" | "slack.message.update" = "slack.message.send", clientMessageId?: string) {
   return parseTransportCommand({
     contract: "platform.transport-command" as const,
     version: 1 as const,
@@ -44,7 +44,7 @@ function command(operation: "slack.message.send" | "slack.message.update" = "sla
     operation,
     input: operation === "slack.message.update"
       ? { messageId: "100.2", message: { text: "updated", blocks: [] } }
-      : { message: { text: "hello", blocks: [] } },
+      : { message: { text: "hello", ...(clientMessageId ? { client_msg_id: clientMessageId } : {}), blocks: [] } },
   });
 }
 
@@ -70,6 +70,15 @@ describe("Slack transport adapter", () => {
   it("uses the same adapter for updates", async () => {
     await deliverSlackTransport({ DB: {} as D1Database }, command("slack.message.update"));
     expect(provider.update).toHaveBeenCalledWith("xoxb-secret", "C123", "100.2", { text: "updated", blocks: [] });
+  });
+
+  it("passes the producer idempotency identifier to Slack", async () => {
+    await deliverSlackTransport({ DB: {} as D1Database }, command("slack.message.send", "capture-1"));
+    expect(provider.post).toHaveBeenCalledWith("xoxb-secret", "C123", {
+      text: "hello",
+      client_msg_id: "capture-1",
+      blocks: [],
+    });
   });
 
   it("resolves a site-scoped feedback route inside the adapter", async () => {

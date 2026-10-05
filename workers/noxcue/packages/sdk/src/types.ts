@@ -1,44 +1,24 @@
-export const NOXCUE_AUTH_FEATURES = [
-  "auth.signup",
-  "auth.login",
-  "auth.password_reset",
-  "auth.email_verification",
-  "auth.oauth",
-  "auth.mfa",
-  "auth.session_refresh",
-  "auth.logout",
-] as const;
+import {
+  DELIVERY_ERRORS,
+  NOXCUE_AUTH_FEATURES,
+  NOXCUE_ENVIRONMENTS,
+  NOXCUE_OUTCOMES,
+  NOXCUE_REASONS,
+} from "./contract.js";
+
+export { NOXCUE_AUTH_FEATURES };
 
 export type NoxCueAuthFeature = (typeof NOXCUE_AUTH_FEATURES)[number];
 export type NoxCueFeature = NoxCueAuthFeature | `custom.${string}`;
-export type NoxCueEnvironment = "production" | "staging" | "development" | "preview" | "test" | "local";
-export type NoxCueOutcome = "success" | "rejected" | "failure";
-export type NoxCueReason =
-  | "invalid_input"
-  | "invalid_credentials"
-  | "account_exists"
-  | "account_unverified"
-  | "account_locked"
-  | "verification_expired"
-  | "mfa_required"
-  | "rate_limited"
-  | "policy_rejected"
-  | "dependency_unavailable"
-  | "database_unavailable"
-  | "email_delivery_failed"
-  | "oauth_failed"
-  | "session_failed"
-  | "configuration_error"
-  | "timeout"
-  | "network_error"
-  | "internal_error"
-  | "unknown";
+export type NoxCueEnvironment = (typeof NOXCUE_ENVIRONMENTS)[number];
+export type NoxCueOutcome = (typeof NOXCUE_OUTCOMES)[number];
+export type NoxCueReason = (typeof NOXCUE_REASONS)[number];
 
 export interface DeliveryResult {
   ok: boolean;
   eventId: string;
   status?: number;
-  error?: "invalid_configuration" | "payload_too_large" | "timeout" | "network_error" | "rejected";
+  error?: (typeof DELIVERY_ERRORS)[number];
 }
 
 export interface NoxCueOptions {

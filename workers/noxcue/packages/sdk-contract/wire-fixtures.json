@@ -1,0 +1,33 @@
+[
+  {
+    "name": "registered user",
+    "operation": "user.registered",
+    "arguments": {"userId": "user-42"},
+    "options": {"occurredAt": "2026-01-02T03:04:05.000Z", "idempotencyKey": "signup:user-42"},
+    "expected": {
+      "version": 1,
+      "environment": "production",
+      "type": "user.registered",
+      "userId": "user-42",
+      "occurredAt": "2026-01-02T03:04:05.000Z",
+      "idempotencyKey": "signup:user-42",
+      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.1.7"}
+    }
+  },
+  {
+    "name": "custom activity",
+    "operation": "activity",
+    "arguments": {"metric": "custom.journals.added", "userId": "user-42"},
+    "options": {"eventId": "event-fixed", "occurredAt": "2026-01-02T03:04:05.000Z"},
+    "expected": {
+      "version": 1,
+      "environment": "production",
+      "eventId": "event-fixed",
+      "type": "activity.occurred",
+      "metric": "custom.journals.added",
+      "userId": "user-42",
+      "occurredAt": "2026-01-02T03:04:05.000Z",
+      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.1.7"}
+    }
+  }
+]

@@ -38,6 +38,18 @@ describe("unified transport contracts", () => {
     expect(providerForOperation(github.operation)).toBe("github");
   });
 
+  it("preserves Slack's idempotent client message identifier", () => {
+    const command = parseTransportCommand({
+      ...BASE,
+      operation: "slack.message.send",
+      input: { message: { text: "New feedback", client_msg_id: "capture-1", blocks: [] } },
+    });
+
+    expect(command.operation).toBe("slack.message.send");
+    if (command.operation !== "slack.message.send") throw new Error("Expected Slack send command");
+    expect(command.input.message.client_msg_id).toBe("capture-1");
+  });
+
   it("rejects credentials and producer-resolved destinations", () => {
     const unsafe = {
       ...BASE,
