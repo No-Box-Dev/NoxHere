@@ -37,8 +37,8 @@ jobs:
             test "$GITHUB_REF_NAME" = "sdk-v$node_version"
           fi
       - run: npm ci --prefix packages/sdk
+      - run: npm run sdk:check
       - run: npm --prefix packages/sdk test && npm --prefix packages/sdk run check && npm --prefix packages/sdk run build
-      - run: python3 packages/python-sdk/scripts/generate_operations.py --check
       - run: PYTHONPATH=packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v
       - run: cd packages/python-sdk && ../sdk/node_modules/.bin/pyright
       - run: python3 -m pip install build && python3 -m build packages/python-sdk
