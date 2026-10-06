@@ -47,8 +47,10 @@ type ParameterValue<K extends OperationId, P extends "path" | "query"> =
     ? P extends keyof Params ? Params[P] : never
     : never;
 
+type EmptyInput = Record<never, never>;
+
 type ParameterPart<K extends OperationId, P extends "path" | "query"> =
-  [Exclude<ParameterValue<K, P>, undefined>] extends [never] ? {} :
+  [Exclude<ParameterValue<K, P>, undefined>] extends [never] ? EmptyInput :
     undefined extends ParameterValue<K, P>
       ? { [Key in P]?: Exclude<ParameterValue<K, P>, undefined> }
       : { [Key in P]: ParameterValue<K, P> };
@@ -66,7 +68,7 @@ type RequestContent<K extends OperationId> = operations[K] extends { requestBody
 type BodyPart<K extends OperationId> = operations[K] extends { requestBody: unknown }
   ? { body: RequestContent<K> }
   : [RequestContent<K>] extends [never]
-    ? {}
+    ? EmptyInput
     : { body?: RequestContent<K> };
 
 type SuccessStatus = 200 | 201 | 202 | 203 | 204 | 205 | 206 | "2XX";
@@ -121,7 +123,7 @@ export class NoxHereTransportError extends Error {
   }
 }
 
-export type OperationArguments<K extends OperationId> = {} extends OperationInput<K>
+export type OperationArguments<K extends OperationId> = EmptyInput extends OperationInput<K>
   ? [input?: OperationInput<K>]
   : [input: OperationInput<K>];
 export type Operation<K extends OperationId = OperationId> = (...args: OperationArguments<K>) => Promise<OperationOutput<K>>;

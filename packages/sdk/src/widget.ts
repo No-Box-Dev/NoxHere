@@ -58,7 +58,8 @@ export async function installNoxHereWidget(options: InstallNoxHereWidgetOptions)
     script.onload = () => {
       clearTimeout(timeout);
       options.signal?.removeEventListener("abort", abort);
-      window.NoxSpot ? resolve() : fail(new Error("NoxHere widget loaded without registering its API"));
+      if (window.NoxSpot) resolve();
+      else fail(new Error("NoxHere widget loaded without registering its API"));
     };
     script.onerror = () => fail(new Error(`NoxHere widget failed to load from ${source}`));
     if (options.signal?.aborted) return abort();

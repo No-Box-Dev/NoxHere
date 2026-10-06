@@ -225,7 +225,7 @@ function primitiveAttributes(value: Record<string, string | number | boolean> | 
   if (!value) return undefined;
   const entries = Object.entries(value).slice(0, 96).flatMap(([rawKey, rawValue]) => {
     const key = rawKey.trim().slice(0, 120);
-    if (!/^[a-z][a-z0-9_.\[\]-]{0,119}$/i.test(key)) return [];
+    if (!/^[a-z][a-z0-9_.[\]-]{0,119}$/i.test(key)) return [];
     const nextValue = typeof rawValue === "string" ? redact(rawValue.trim().slice(0, 300)) : rawValue;
     return [[key, nextValue] as const];
   });

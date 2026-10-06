@@ -19,7 +19,7 @@ describe("@noxhere/sdk", () => {
     }>();
     expectTypeOf(client.activity.getIssue).returns.toMatchTypeOf<Promise<Record<string, unknown>>>();
 
-    if (false) {
+    const compileTimeAssertions = () => {
       // @ts-expect-error Required OpenAPI path parameters cannot be omitted.
       void client.activity.getIssue();
       // @ts-expect-error OpenAPI path parameter names are exact.
@@ -28,7 +28,8 @@ describe("@noxhere/sdk", () => {
       void client.workspace.getIssue({ path: { repo: "owner/repo", number: 1 } });
       // @ts-expect-error Required OpenAPI request bodies cannot be omitted.
       void client.feedback.createNoxSpotSite();
-    }
+    };
+    void compileTimeAssertions;
   });
 
   it("encodes path/query input and applies unified auth headers", async () => {
