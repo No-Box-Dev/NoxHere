@@ -46,7 +46,7 @@ cadence, while a recurrence after human closure creates a new linked issue.
 ## User statistics
 
 ```ts
-import { createNoxCue } from "@noxcue/sdk/server";
+import { createNoxCue } from "@noxhere/sdk/telemetry/server";
 
 const noxcue = createNoxCue({
   key: process.env.NOXCUE_SERVER_KEY!,
@@ -82,7 +82,7 @@ Wrap the user-facing operation. NoxCue preserves the original result and never
 attempts a repair:
 
 ```ts
-import { createNoxCue } from "@noxcue/sdk/browser";
+import { createNoxCue } from "@noxhere/sdk/telemetry/browser";
 
 const noxcue = createNoxCue({
   key: import.meta.env.VITE_NOXCUE_BROWSER_KEY,
@@ -100,7 +100,8 @@ projects by changing a payload field. NoxCue records the evidence and provides
 likely causes and possible fixes to investigate. It never changes application
 configuration, retries a product operation, or claims that an incident is fixed.
 
-Install `@noxcue/sdk` and import the explicit `/browser` or `/server` entry point.
+Install `@noxhere/sdk` and import the explicit `/telemetry/browser` or
+`/telemetry/server` entry point. `@noxcue/sdk` remains a compatibility shim.
 The browser entry accepts only an origin-restricted `nox_pub_…` key; the server
 entry accepts only a secret `nox_secret_…` key. Direct reports return a delivery
 receipt without throwing into the host app. Wrapped operations report in the

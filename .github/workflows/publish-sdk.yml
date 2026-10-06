@@ -28,6 +28,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.2"
       - name: Verify tag and package versions
         run: |
           node_version="$(node -p "require('./packages/sdk/package.json').version")"
@@ -42,6 +45,7 @@ jobs:
       - run: PYTHONPATH=packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v
       - run: cd packages/python-sdk && ../sdk/node_modules/.bin/pyright
       - run: python3 -m pip install build && python3 -m build packages/python-sdk
+      - run: swift test --package-path packages/swift-sdk
       - name: Publish @noxhere/sdk to npm
         working-directory: packages/sdk
         run: |

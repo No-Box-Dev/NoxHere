@@ -152,6 +152,39 @@ describe("@noxhere/sdk telemetry", () => {
 
     await expect(noxcue.error(new Error("Signup failed"), { title: "Signup failed" }))
       .resolves.toMatchObject({ ok: false, error: "network_error" });
-    expect(request).toHaveBeenCalledTimes(2);
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it("preserves the released controls and request-scoped identity behavior", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const browser = createBrowserNoxCue({ key: browserKey, fetch: request, maxRetries: 0 });
+    browser.identify({ id: "user-42", name: "Ada", email: "private@example.com" });
+    await browser.auth.login(async () => ({ ok: true }));
+    await browser.flush();
+
+    const feature = JSON.parse(String(request.mock.calls[0]![1]?.body));
+    expect(feature.userId).toBe("user-42");
+    expect(JSON.stringify(feature)).not.toContain("private@example.com");
+    expect(JSON.stringify(feature)).not.toContain("Ada");
+
+    const server = createServerNoxCue({ key: serverKey, fetch: request });
+    await server.forUser("user-99").error(new Error("failed"));
+    const scoped = JSON.parse(String(request.mock.calls.at(-1)?.[1]?.body));
+    expect(scoped.data.affectedUser).toBe("user-99");
+
+    server.close();
+    await expect(server.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
+  });
+
+  it("supports disabled clients and explicit fire-and-forget capture", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const disabled = createServerNoxCue({ key: serverKey, enabled: false, fetch: request });
+    await expect(disabled.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
+    expect(request).not.toHaveBeenCalled();
+
+    const enabled = createServerNoxCue({ key: serverKey, fetch: request });
+    enabled.capture(new Error("background"));
+    await enabled.flush();
+    expect(request).toHaveBeenCalledOnce();
   });
 });

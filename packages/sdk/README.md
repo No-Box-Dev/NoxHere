@@ -37,6 +37,10 @@ const telemetry = createNoxCue({
 });
 
 await telemetry.user.registered("user-42");
+
+// Request-scoped identity adds only the opaque id to telemetry evidence.
+const userTelemetry = telemetry.forUser("user-42");
+await userTelemetry.auth.login(() => authenticate());
 ```
 
 Browser applications import `@noxhere/sdk/telemetry/browser` and use a

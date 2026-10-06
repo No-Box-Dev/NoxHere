@@ -101,7 +101,7 @@ service.
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Active NoxHere frontend type-check |
 | `npm run typecheck:functions` | Backend (Functions + cron) type-check |
-| `npm run test:sdk` | Unified TypeScript and Python SDK tests |
+| `npm run test:sdk` | Unified TypeScript/Python tests and generated-contract checks |
 | `npm run build:sdk` | Verify and build the unified SDK contract |
 | `npm run test:spot-widget` | Migrated Spot capture-widget suite |
 

@@ -54,9 +54,9 @@ describe("developer documentation", () => {
 
   it("documents the minimal, environment-scoped Incidents SDK compatibility flow", () => {
     expect(html).toContain('id="noxcue-sdk"');
-    expect(html).toContain("npm install @noxcue/sdk");
-    expect(html).toContain('from <span class="token-string">"@noxcue/sdk/browser"</span>');
-    expect(html).toContain('from <span class="token-string">"@noxcue/sdk/server"</span>');
+    expect(html).toContain("npm install @noxhere/sdk");
+    expect(html).toContain('from <span class="token-string">"@noxhere/sdk/telemetry/browser"</span>');
+    expect(html).toContain('from <span class="token-string">"@noxhere/sdk/telemetry/server"</span>');
     expect(html).toContain("await noxcue.auth.signup");
     expect(html).toContain("await userCue.user.registered");
     expect(html).toContain("noxcue.identify({ id: user.id");

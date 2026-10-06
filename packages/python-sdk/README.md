@@ -1,6 +1,6 @@
 # `noxhere`
 
-The unified Python client for every NoxHere resource. Its 149-operation
+The unified Python client for every NoxHere resource. Its complete operation
 catalog is generated from the same OpenAPI contract as `@noxhere/sdk`.
 
 ```python

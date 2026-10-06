@@ -144,6 +144,32 @@ class SDKTests(unittest.TestCase):
         details = safe_error_details(ValueError("bad secret=hidden"))
         self.assertEqual(details["message"], "bad secret=[redacted]")
 
+    def test_identity_is_opaque_and_request_scoped(self) -> None:
+        self.client.identify(
+            {"id": "user-42", "name": "Ada", "email": "private@example.com"}
+        )
+        self.client.feature.result("auth.login", outcome="success")
+        payload = self.payload()
+        self.assertEqual(payload["userId"], "user-42")
+        self.assertNotIn("private@example.com", json.dumps(payload))
+        self.assertNotIn("Ada", json.dumps(payload))
+
+        with self.client.for_user("user-99") as scoped:
+            scoped.error(RuntimeError("failed"))
+        scoped_payload = self.payload()
+        self.assertEqual(scoped_payload["data"]["affectedUser"], "user-99")
+
+    def test_disabled_and_closed_clients_never_call_transport(self) -> None:
+        client = NoxCueClient(
+            key=SERVER_KEY,
+            environment="production",
+            enabled=False,
+            transport=lambda *_: self.fail("network called"),
+        )
+        self.assertEqual(client.test().error, "invalid_configuration")
+        client.close()
+        self.assertEqual(client.test().error, "invalid_configuration")
+
 
 if __name__ == "__main__":
     unittest.main()

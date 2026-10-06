@@ -346,20 +346,28 @@ class NoxCueClient:
         self,
         *,
         key: str,
-        environment: Environment,
+        environment: Environment | None = None,
         release: str | None = None,
         endpoint: str = DEFAULT_ENDPOINT,
         timeout_ms: int = DEFAULT_TIMEOUT_MS,
+        max_retries: int = 2,
+        enabled: bool = True,
+        get_user: Callable[[], Mapping[str, object] | None] | None = None,
         transport: Transport | None = None,
     ) -> None:
         self.key = key
-        self.environment = environment
+        self.environment: Environment | None = environment
         self.release = release
         self.endpoint = endpoint.strip()
         self.timeout_ms = min(MAX_TIMEOUT_MS, max(250, timeout_ms))
+        self.max_retries = min(3, max(0, round(max_retries)))
+        self._get_user = get_user
+        self._identified_user_id: str | None = None
+        self._closed = False
         self._transport = transport or _default_transport
         self._configured = (
-            key.startswith("nox_secret_")
+            enabled
+            and key.startswith("nox_secret_")
             and len(key) >= len("nox_secret_") + 30
             and _valid_endpoint(self.endpoint)
         )
@@ -377,14 +385,40 @@ class NoxCueClient:
 
     def close(self) -> None:
         self.flush()
+        self._closed = True
         self._executor.shutdown(wait=True)
+
+    def identify(self, user: Mapping[str, object] | None) -> None:
+        """Retain only the opaque id from a shared user identity object."""
+        self._identified_user_id = _bounded(user.get("id"), 200) if user else None
+
+    def _current_user_id(self) -> str | None:
+        try:
+            supplied = self._get_user() if self._get_user else None
+            return _bounded(supplied.get("id"), 200) if supplied else self._identified_user_id
+        except Exception:
+            return self._identified_user_id
+
+    def for_user(self, user_id: str) -> NoxCueClient:
+        """Create a concurrency-safe client view scoped to one opaque user id."""
+        return NoxCueClient(
+            key=self.key,
+            environment=self.environment,
+            release=self.release,
+            endpoint=self.endpoint,
+            timeout_ms=self.timeout_ms,
+            max_retries=self.max_retries,
+            get_user=lambda: {"id": user_id},
+            transport=self._transport,
+        )
 
     def _context(self) -> dict[str, object]:
         result: dict[str, object] = {
-            "environment": self.environment,
             "runtime": "server",
             "sdkVersion": SDK_VERSION,
         }
+        if self.environment:
+            result["environment"] = self.environment
         release = _bounded(self.release, 120)
         if release:
             result["release"] = release
@@ -396,14 +430,14 @@ class NoxCueClient:
             if isinstance(raw_event.get("eventId"), str)
             else str(uuid.uuid4())
         )
-        if not self._configured:
+        if not self._configured or self._closed:
             return DeliveryResult(
                 False, cast(str, event_id), error="invalid_configuration"
             )
         body = json.dumps(
             {
                 "version": 1,
-                "environment": self.environment,
+                **({"environment": self.environment} if self.environment else {}),
                 "eventId": event_id,
                 **raw_event,
             },
@@ -412,7 +446,8 @@ class NoxCueClient:
         ).encode()
         if len(body) > MAX_BODY_BYTES:
             return DeliveryResult(False, cast(str, event_id), error="payload_too_large")
-        for attempt in range(2):
+        total_attempts = self.max_retries + 1
+        for attempt in range(total_attempts):
             request = urllib.request.Request(
                 self.endpoint,
                 data=body,
@@ -451,22 +486,22 @@ class NoxCueClient:
                         if status in {408, 429} or status >= 500
                         else None
                     )
-                    if attempt == 1 or delay is None:
+                    if attempt == total_attempts - 1 or delay is None:
                         return DeliveryResult(
                             False, cast(str, event_id), status=status, error="rejected"
                         )
                 finally:
                     response.close()
-                time.sleep(delay)
+                time.sleep(min(MAX_RETRY_AFTER_MS / 1_000, delay * (2**attempt)))
             except Exception as error:
-                if attempt == 1:
+                if attempt == total_attempts - 1:
                     kind = (
                         "timeout"
                         if isinstance(error, TimeoutError)
                         else "network_error"
                     )
                     return DeliveryResult(False, cast(str, event_id), error=kind)
-                time.sleep(RETRY_DELAY_MS / 1_000)
+                time.sleep(min(MAX_RETRY_AFTER_MS, RETRY_DELAY_MS * (2**attempt)) / 1_000)
         return DeliveryResult(False, cast(str, event_id), error="network_error")
 
     @staticmethod
@@ -525,6 +560,9 @@ class NoxCueClient:
             "feature": feature,
             "outcome": outcome,
         }
+        user_id = self._current_user_id()
+        if user_id:
+            event["userId"] = user_id
         if reason:
             event["reason"] = reason
         if message:
@@ -563,7 +601,7 @@ class NoxCueClient:
         data: dict[str, object] = {"errorCode": details["code"]}
         for key, value, maximum in (
             ("component", component, 120),
-            ("affectedUser", affected_user, 200),
+            ("affectedUser", affected_user or self._current_user_id(), 200),
             ("fingerprint", fingerprint, 200),
         ):
             bounded = _bounded(value, maximum)

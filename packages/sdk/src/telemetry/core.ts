@@ -47,6 +47,10 @@ interface ClientRuntime {
   currentUrl?: () => string | undefined;
 }
 
+interface RuntimeProcess {
+  env?: Record<string, string | undefined>;
+}
+
 function bounded(value: unknown, max: number): string | undefined {
   if (typeof value !== "string" && typeof value !== "number") return undefined;
   const normalized = String(value).trim();
@@ -105,10 +109,36 @@ export function safeErrorDetails(value: unknown) {
 }
 
 function randomUuid(): string {
-  if (typeof crypto === "undefined" || typeof crypto.randomUUID !== "function") {
-    throw new Error("NoxCue requires crypto.randomUUID()");
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const value = Math.floor(Math.random() * 16);
+    return (char === "x" ? value : (value & 0x3) | 0x8).toString(16);
+  });
+}
+
+function inferredRelease(explicit: string | undefined): string | undefined {
+  const configured = bounded(explicit, 120);
+  if (configured) return configured;
+  const process = (globalThis as typeof globalThis & { process?: RuntimeProcess }).process;
+  const env = process?.env;
+  return bounded(env?.NOXCUE_RELEASE ?? env?.VERCEL_GIT_COMMIT_SHA ?? env?.CF_PAGES_COMMIT_SHA
+    ?? env?.GITHUB_SHA ?? env?.RENDER_GIT_COMMIT ?? env?.HEROKU_SLUG_COMMIT, 120);
+}
+
+function incidentPart(value: string | undefined, fallback: string): string {
+  return (value ?? fallback).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || fallback;
+}
+
+function inferredComponent(explicit: string | undefined, url: string | undefined, runtime: Runtime): string {
+  const configured = bounded(explicit, 120);
+  if (configured) return configured;
+  if (url) {
+    try {
+      const segment = new URL(url).pathname.split("/").filter(Boolean)[0];
+      if (segment) return `route.${incidentPart(segment, "root")}`;
+    } catch { /* safeUrl already validates ordinary input. */ }
   }
-  return crypto.randomUUID();
+  return `${runtime}.application`;
 }
 
 function validEndpoint(value: string): boolean {
@@ -195,7 +225,7 @@ function primitiveAttributes(value: Record<string, string | number | boolean> | 
   if (!value) return undefined;
   const entries = Object.entries(value).slice(0, 96).flatMap(([rawKey, rawValue]) => {
     const key = rawKey.trim().slice(0, 120);
-    if (!/^[a-z](?:[a-z0-9_.-]|\[|\]){0,119}$/i.test(key)) return [];
+    if (!/^[a-z][a-z0-9_.\[\]-]{0,119}$/i.test(key)) return [];
     const nextValue = typeof rawValue === "string" ? redact(rawValue.trim().slice(0, 300)) : rawValue;
     return [[key, nextValue] as const];
   });
@@ -211,15 +241,26 @@ export function createClient(
 ): BrowserNoxCueClient | ServerNoxCueClient {
   const endpoint = (options.endpoint ?? DEFAULT_ENDPOINT).trim();
   const timeoutMs = Math.min(MAX_TIMEOUT_MS, Math.max(250, options.timeoutMs ?? DEFAULT_TIMEOUT_MS));
+  const maxRetries = Math.min(3, Math.max(0, Math.round(options.maxRetries ?? 2)));
   const request = options.fetch ?? fetch;
-  const configured = validKey(options.key, keyKind) && validEndpoint(endpoint);
+  const configured = options.enabled !== false && validKey(options.key, keyKind) && validEndpoint(endpoint);
   const pending = new Set<Promise<DeliveryResult>>();
+  let closed = false;
+  let identifiedUserId: string | undefined;
+
+  const currentUserId = () => {
+    try {
+      return bounded(options.getUser?.()?.id, 200) ?? identifiedUserId;
+    } catch {
+      return identifiedUserId;
+    }
+  };
 
   const context = () => {
-    const release = bounded(options.release, 120);
+    const release = inferredRelease(options.release);
     const url = safeUrl(runtime.currentUrl?.());
     return {
-      environment: options.environment,
+      ...(options.environment ? { environment: options.environment } : {}),
       ...(release ? { release } : {}),
       runtime: runtime.kind,
       ...(url ? { url } : {}),
@@ -229,19 +270,24 @@ export function createClient(
 
   async function post(rawEvent: Record<string, unknown>): Promise<DeliveryResult> {
     const eventId = typeof rawEvent.eventId === "string" ? rawEvent.eventId : randomUuid();
-    if (!configured) return { ok: false, eventId, error: "invalid_configuration" };
-    const body = JSON.stringify({ version: 1, environment: options.environment, eventId, ...rawEvent });
+    if (!configured || closed) return { ok: false, eventId, error: "invalid_configuration" };
+    let body: string;
+    try {
+      body = JSON.stringify({ version: 1, ...(options.environment ? { environment: options.environment } : {}), eventId, ...rawEvent });
+    } catch {
+      return { ok: false, eventId, error: "payload_too_large" };
+    }
     if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
       return { ok: false, eventId, error: "payload_too_large" };
     }
 
-    for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const totalAttempts = maxRetries + 1;
+    for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const response = await request(endpoint, {
           method: "POST",
-          keepalive: true,
           headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": options.key },
           body,
           signal: controller.signal,
@@ -251,17 +297,17 @@ export function createClient(
         }
         const delay = retryable(response.status) ? retryDelay(response) : null;
         await response.body?.cancel();
-        if (attempt === 2 || delay === null) return { ok: false, eventId, status: response.status, error: "rejected" };
-        await new Promise<void>((resolve) => setTimeout(resolve, delay));
+        if (attempt === totalAttempts || delay === null) return { ok: false, eventId, status: response.status, error: "rejected" };
+        await new Promise<void>((resolve) => setTimeout(resolve, Math.min(MAX_RETRY_AFTER_MS, delay * (2 ** (attempt - 1)))));
       } catch (error) {
-        if (attempt === 2) {
+        if (attempt === totalAttempts) {
           return {
             ok: false,
             eventId,
             error: error instanceof Error && error.name === "AbortError" ? "timeout" : "network_error",
           };
         }
-        await new Promise<void>((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        await new Promise<void>((resolve) => setTimeout(resolve, Math.min(MAX_RETRY_AFTER_MS, RETRY_DELAY_MS * (2 ** (attempt - 1)))));
       } finally {
         clearTimeout(timeout);
       }
@@ -269,7 +315,7 @@ export function createClient(
     return { ok: false, eventId, error: "network_error" };
   }
 
-  function capture(event: Record<string, unknown>): void {
+  function deliver(event: Record<string, unknown>): Promise<DeliveryResult> {
     const delivery = post(event);
     pending.add(delivery);
     void delivery.then(
@@ -281,14 +327,21 @@ export function createClient(
     } catch {
       // Host scheduling must never change the observed application operation.
     }
+    return delivery;
+  }
+
+  function capture(event: Record<string, unknown>): void {
+    void deliver(event);
   }
 
   function featureEvent(feature: NoxCueFeature, result: FeatureResultOptions): Record<string, unknown> {
     const error = result.outcome === "failure" ? safeErrorDetails(result.error) : undefined;
+    const userId = currentUserId();
     return {
       type: "feature.result",
       feature,
       outcome: result.outcome,
+      ...(userId ? { userId } : {}),
       ...(result.reason ? { reason: result.reason } : {}),
       ...(result.message ? { message: redact(result.message.slice(0, 2_000)) } : error ? { message: error.message } : {}),
       ...(error ? { error } : {}),
@@ -331,7 +384,7 @@ export function createClient(
 
   const shared = {
     feature: {
-      result: (feature: NoxCueFeature, result: FeatureResultOptions) => post(featureEvent(feature, result)),
+      result: (feature: NoxCueFeature, result: FeatureResultOptions) => deliver(featureEvent(feature, result)),
       observe,
     },
     auth: {
@@ -344,23 +397,36 @@ export function createClient(
       sessionRefresh: wrap("auth.session_refresh"),
       logout: wrap("auth.logout"),
     },
-    test: (feature: NoxCueAuthFeature = "auth.signup") => post(featureEvent(feature, {
+    identify: (user: { id: string } | null) => { identifiedUserId = bounded(user?.id, 200); },
+    test: (feature: NoxCueAuthFeature = "auth.signup") => deliver(featureEvent(feature, {
       outcome: "success",
       test: true,
       occurredAt: new Date().toISOString(),
     })),
-    flush: () => Promise.all([...pending]),
+    flush: async () => {
+      const results: DeliveryResult[] = [];
+      while (pending.size) results.push(...await Promise.all([...pending]));
+      return results;
+    },
+    close: () => { closed = true; },
   };
 
   function reportError(error: unknown, errorOptions: ErrorOptions = {}): Promise<DeliveryResult> {
     const details = safeErrorDetails(error);
     const attributes = primitiveAttributes(errorOptions.attributes);
-    const fingerprint = "fingerprint" in errorOptions ? bounded(errorOptions.fingerprint, 200) : undefined;
-    const component = bounded(errorOptions.component, 120);
-    const affectedUser = bounded(errorOptions.affectedUser, 200);
+    const explicitFingerprint = "fingerprint" in errorOptions ? bounded(errorOptions.fingerprint, 200) : undefined;
+    const affectedUser = bounded(errorOptions.affectedUser, 200) ?? currentUserId();
     const explicitUrl = safeUrl(errorOptions.url);
     const currentUrl = safeUrl(runtime.currentUrl?.());
-    return post({
+    const url = explicitUrl ?? currentUrl;
+    const component = inferredComponent(errorOptions.component, url, runtime.kind);
+    const fingerprint = explicitFingerprint ?? [
+      "error.occurred",
+      incidentPart(component, `${runtime.kind}.application`),
+      incidentPart(details.code, "unknown"),
+      incidentPart(details.name, "error"),
+    ].join("|");
+    return deliver({
       type: "error.occurred",
       title: bounded(errorOptions.title, 200) ?? details.message.slice(0, 200),
       message: redact(bounded(errorOptions.message, 2_000) ?? details.message),
@@ -368,7 +434,7 @@ export function createClient(
       context: context(),
       occurredAt: errorOptions.occurredAt ?? new Date().toISOString(),
       ...(errorOptions.idempotencyKey ? { idempotencyKey: errorOptions.idempotencyKey.slice(0, 200) } : {}),
-      ...(explicitUrl ? { url: explicitUrl } : currentUrl ? { url: currentUrl } : {}),
+      ...(url ? { url } : {}),
       data: {
         errorCode: details.code,
         ...(component ? { component } : {}),
@@ -385,21 +451,24 @@ export function createClient(
     return {
       ...shared,
       error: (error: unknown, errorOptions: BrowserErrorOptions = {}) => reportError(error, errorOptions),
+      capture: (error: unknown, errorOptions: BrowserErrorOptions = {}) => { void reportError(error, errorOptions); },
     };
   }
 
   return {
     ...shared,
     error: (error: unknown, errorOptions: ServerErrorOptions = {}) => reportError(error, errorOptions),
+    capture: (error: unknown, errorOptions: ServerErrorOptions = {}) => { void reportError(error, errorOptions); },
+    forUser: (userId: string) => createClient({ ...options, getUser: () => ({ id: userId }) }, "secret", runtime),
     user: {
-      registered: (userId: string, event: EventOptions = {}) => post({
+      registered: (userId: string, event: EventOptions = {}) => deliver({
         type: "user.registered",
         userId: userId.slice(0, 200),
         occurredAt: event.occurredAt ?? new Date().toISOString(),
         ...(event.idempotencyKey ? { idempotencyKey: event.idempotencyKey.slice(0, 200) } : {}),
         context: context(),
       }),
-      active: (userId: string, event: EventOptions = {}) => post({
+      active: (userId: string, event: EventOptions = {}) => deliver({
         type: "user.active",
         userId: userId.slice(0, 200),
         occurredAt: event.occurredAt ?? new Date().toISOString(),
@@ -407,7 +476,7 @@ export function createClient(
         context: context(),
       }),
     },
-    activity: (metric: `custom.${string}`, userId: string, event: ActivityOptions = {}) => post({
+    activity: (metric: `custom.${string}`, userId: string, event: ActivityOptions = {}) => deliver({
       type: "activity.occurred",
       metric,
       userId: userId.slice(0, 200),

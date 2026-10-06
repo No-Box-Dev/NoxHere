@@ -182,12 +182,12 @@ idempotency, database uniqueness, and error cooldowns are authoritative.
 
 ## SDK
 
-Install `@noxcue/sdk` and choose the entry point that matches where the event is
+Install `@noxhere/sdk` and choose the entry point that matches where the event is
 created:
 
 ```ts
-import { createNoxCue } from "@noxcue/sdk/browser"; // nox_pub_ key
-import { createNoxCue } from "@noxcue/sdk/server";  // nox_secret_ key
+import { createNoxCue } from "@noxhere/sdk/telemetry/browser"; // nox_pub_ key
+import { createNoxCue } from "@noxhere/sdk/telemetry/server";  // nox_secret_ key
 ```
 
 The SDK uses the stable NoxConnect gateway by default. It supplies event IDs,

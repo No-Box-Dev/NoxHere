@@ -329,9 +329,9 @@ NoxSpot.init({
 
         <div class="code-block">
           <div class="code-head"><span>terminal · install</span><button class="copy-button" type="button" data-copy="noxcue-install">Copy</button></div>
-          <pre id="noxcue-install"><code>npm install @noxcue/sdk</code></pre>
+          <pre id="noxcue-install"><code>npm install @noxhere/sdk</code></pre>
         </div>
-        <p class="field-note">Available now as <a href="https://www.npmjs.com/package/@noxcue/sdk" rel="external">@noxcue/sdk 0.1.7 on npm</a>. Install without a version to receive the latest compatible release.</p>
+        <p class="field-note">NoxCue telemetry is included in the unified <a href="https://www.npmjs.com/package/@noxhere/sdk" rel="external">@noxhere/sdk package on npm</a>. Install without a version to receive the latest compatible release.</p>
 
         <div class="callouts">
           <article class="callout">
@@ -339,7 +339,7 @@ NoxSpot.init({
             <p>Use a publishable key restricted to the exact production or staging origins. The wrapper returns the original result and rethrows the original application error unchanged.</p>
             <div class="code-block compact-code">
               <div class="code-head"><span>typescript · browser</span><button class="copy-button" type="button" data-copy="noxcue-browser">Copy</button></div>
-              <pre id="noxcue-browser"><code>import { createNoxCue } from <span class="token-string">"@noxcue/sdk/browser"</span>;
+              <pre id="noxcue-browser"><code>import { createNoxCue } from <span class="token-string">"@noxhere/sdk/telemetry/browser"</span>;
 
 const noxcue = createNoxCue({
   key: import.meta.env.PUBLIC_NOXCUE_KEY,
@@ -358,7 +358,7 @@ await noxcue.auth.signup(() =&gt; auth.signUp(input));</code></pre>
             <p>Use a secret key on the server. NoxCue hashes user identifiers, deduplicates facts, and computes daily totals, active users, stickiness, comparisons, and registered custom metrics centrally.</p>
             <div class="code-block compact-code">
               <div class="code-head"><span>typescript · server</span><button class="copy-button" type="button" data-copy="noxcue-server">Copy</button></div>
-              <pre id="noxcue-server"><code>import { createNoxCue } from <span class="token-string">"@noxcue/sdk/server"</span>;
+              <pre id="noxcue-server"><code>import { createNoxCue } from <span class="token-string">"@noxhere/sdk/telemetry/server"</span>;
 
 const noxcue = createNoxCue({
   key: process.env.NOXCUE_INGEST_KEY!,
