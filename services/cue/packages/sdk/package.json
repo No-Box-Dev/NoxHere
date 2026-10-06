@@ -1,7 +1,7 @@
 {
   "name": "@noxcue/sdk",
   "version": "0.1.7",
-  "description": "Detection-first browser and server SDK for NoxCue",
+  "description": "Compatibility shim for NoxHere telemetry",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/No-Box-Dev/NoxHere.git",
@@ -30,6 +30,12 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@noxhere/sdk": ">=0.2.0 <1"
+  },
+  "devDependencies": {
+    "@noxhere/sdk": "file:../../../../packages/sdk"
   },
   "engines": {
     "node": ">=18"

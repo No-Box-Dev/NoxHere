@@ -1,4 +1,4 @@
-import { createNoxCue } from "@noxcue/sdk/server";
+import { createNoxCue } from "../../packages/sdk/src/telemetry/server.js";
 
 interface NoxCueEnv {
   NOXCUE_INGEST?: Fetcher;

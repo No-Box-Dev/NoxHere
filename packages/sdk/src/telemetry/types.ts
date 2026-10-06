@@ -23,12 +23,33 @@ export interface DeliveryResult {
 
 export interface NoxCueOptions {
   key: string;
-  environment: NoxCueEnvironment;
+  /** Optional assertion. The source key remains authoritative. */
+  environment?: NoxCueEnvironment;
   release?: string;
   endpoint?: string;
   timeoutMs?: number;
+  /** Retries after the first attempt. Defaults to 2 and is capped at 3. */
+  maxRetries?: number;
+  enabled?: boolean;
+  /** Supplies the current opaque application identity without retaining profile data. */
+  getUser?: () => NoxCueIdentity | null | undefined;
   fetch?: typeof fetch;
   waitUntil?: (promise: Promise<unknown>) => void;
+}
+
+export interface BrowserNoxCueOptions extends NoxCueOptions {
+  /** Explicit opt-in for global error and unhandled-rejection listeners. */
+  captureUnhandled?: boolean;
+}
+
+export interface NoxCueIdentity {
+  id: string;
+  /** Accepted for sharing one identity object with the widget; never transmitted by telemetry. */
+  name?: string;
+  /** Accepted for sharing one identity object with the widget; never transmitted by telemetry. */
+  email?: string;
+  /** Accepted for sharing one identity object with the widget; never transmitted by telemetry. */
+  avatarUrl?: string;
 }
 
 export interface EventOptions {
@@ -86,17 +107,30 @@ interface BaseNoxCueClient<ErrorOptions extends BrowserErrorOptions> {
     sessionRefresh: ObservedOperation;
     logout: ObservedOperation;
   };
+  /** Sets only an opaque user id; profile fields are deliberately discarded. */
+  identify(user: NoxCueIdentity | null): void;
+  /** Fire-and-forget error capture. Delivery is tracked by flush(). */
+  capture(error: unknown, options?: ErrorOptions): void;
   error(error: unknown, options?: ErrorOptions): Promise<DeliveryResult>;
   test(feature?: NoxCueAuthFeature): Promise<DeliveryResult>;
   flush(): Promise<DeliveryResult[]>;
+  close(): void;
 }
 
 export type BrowserNoxCueClient = BaseNoxCueClient<BrowserErrorOptions>;
 
 export interface ServerNoxCueClient extends BaseNoxCueClient<ServerErrorOptions> {
+  /** Creates a concurrency-safe view whose feature/error events carry this opaque id. */
+  forUser(userId: string): ServerNoxCueClient;
   user: {
     registered(userId: string, options?: EventOptions): Promise<DeliveryResult>;
     active(userId: string, options?: EventOptions): Promise<DeliveryResult>;
   };
   activity(metric: `custom.${string}`, userId: string, options?: ActivityOptions): Promise<DeliveryResult>;
+}
+
+export interface NoxCueAdapterOptions {
+  component?: string;
+  /** Trusted route template such as `/projects/:projectId`; raw request URLs are never captured. */
+  route?: string;
 }

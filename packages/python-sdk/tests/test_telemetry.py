@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Test doubles deliberately model arbitrary urllib request/JSON values.
+# pyright: reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportMissingTypeArgument=false, reportUnknownLambdaType=false
+
 import json
 import sys
 import unittest
@@ -9,11 +12,11 @@ from typing import Mapping
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "src"))
 
-from noxcue import NoxCueClient, safe_error_details  # noqa: E402
+from noxhere.telemetry import NoxCueClient, safe_error_details  # noqa: E402
 
 SERVER_KEY = "nox_secret_" + "b" * 32
 FIXTURES = json.loads(
-    (PACKAGE.parent / "sdk-contract" / "wire-fixtures.json").read_text()
+    (PACKAGE.parents[1] / "services" / "cue" / "packages" / "sdk-contract" / "wire-fixtures.json").read_text()
 )
 
 
@@ -140,6 +143,37 @@ class SDKTests(unittest.TestCase):
     def test_safe_error_details(self) -> None:
         details = safe_error_details(ValueError("bad secret=hidden"))
         self.assertEqual(details["message"], "bad secret=[redacted]")
+
+    def test_identity_is_opaque_and_request_scoped(self) -> None:
+        self.client.identify(
+            {"id": "user-42", "name": "Ada", "email": "private@example.com"}
+        )
+        self.client.feature.result("auth.login", outcome="success")
+        payload = self.payload()
+        self.assertEqual(payload["userId"], "user-42")
+        self.assertNotIn("private@example.com", json.dumps(payload))
+        self.assertNotIn("Ada", json.dumps(payload))
+
+        with self.client.for_user("user-99") as scoped:
+            scoped.error(RuntimeError("failed"))
+        scoped_payload = self.payload()
+        self.assertEqual(scoped_payload["data"]["affectedUser"], "user-99")
+
+    def test_disabled_and_closed_clients_never_call_transport(self) -> None:
+        client = NoxCueClient(
+            key=SERVER_KEY,
+            environment="production",
+            enabled=False,
+            transport=lambda *_: self.fail("network called"),
+        )
+        self.assertEqual(client.test().error, "invalid_configuration")
+        scoped = client.for_user("user-42")
+        try:
+            self.assertEqual(scoped.test().error, "invalid_configuration")
+        finally:
+            scoped.close()
+        client.close()
+        self.assertEqual(client.test().error, "invalid_configuration")
 
 
 if __name__ == "__main__":

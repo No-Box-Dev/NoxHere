@@ -1,6 +1,6 @@
 {
   "contractVersion": 1,
-  "sdkVersion": "0.1.7",
+  "sdkVersion": "0.2.0",
   "defaultEndpoint": "https://app.noxhere.com/api/v1/cues/public/events",
   "authFeatures": [
     "auth.signup",

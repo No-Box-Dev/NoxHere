@@ -1,4 +1,4 @@
-import { createNoxCue } from "@noxcue/sdk/browser";
+import { createNoxCue } from "@noxhere/sdk/telemetry/browser";
 
 const noxcue = createNoxCue({
   key: "nox_pub_replace_with_your_browser_key",

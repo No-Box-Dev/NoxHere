@@ -4,4 +4,4 @@ export function createFeedbackClient(options: NoxHereOptions = {}) {
   return createNoxHere(options).feedback;
 }
 
-export type { NoxHereOptions, OperationInput, ResourceClient } from "./client.js";
+export type { NoxHereOptions, OperationInput, OperationOutput, ResourceClient } from "./client.js";

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "noxcue"
-dynamic = ["version"]
-description = "Detection-first Python SDK for NoxCue"
+version = "0.2.0"
+description = "Compatibility shim for NoxHere telemetry"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "PolyForm-Noncommercial-1.0.0" }
@@ -16,15 +16,13 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
   "Typing :: Typed"
 ]
+dependencies = ["noxhere>=0.2.0,<1"]
 
 [project.urls]
 Repository = "https://github.com/No-Box-Dev/NoxHere"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/noxcue"]
-
-[tool.hatch.version]
-path = "src/noxcue/_contract.py"
 
 [tool.pyright]
 include = ["src", "tests"]

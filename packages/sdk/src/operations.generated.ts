@@ -4,895 +4,2368 @@ export const operationDefinitions = [
     "id": "acknowledgeRepositories",
     "method": "POST",
     "path": "/api/v1/repos/acknowledge",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "archiveProject",
     "method": "POST",
     "path": "/api/v1/projects/{projectId}/archive",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "archiveSpec",
     "method": "POST",
     "path": "/api/v1/specs/{specId}/archive",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "assignIssue",
     "method": "POST",
     "path": "/api/v1/assign",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "assignSlackConnectionProject",
     "method": "PATCH",
     "path": "/api/v1/slack/connections/{connectionId}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "backfillProjectPullRequests",
     "method": "POST",
     "path": "/api/v1/projects/{projectId}/backfill-prs",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "closeFeature",
     "method": "DELETE",
     "path": "/api/v1/features/{number}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "closePullRequest",
     "method": "POST",
     "path": "/api/v1/prs/close",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createApiToken",
     "method": "POST",
     "path": "/api/v1/api-tokens",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createFeature",
     "method": "POST",
     "path": "/api/v1/features",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createGuestInvitation",
     "method": "POST",
     "path": "/api/v1/guests/invites",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueCustomFeature",
     "method": "POST",
     "path": "/api/v1/cues/sources/{sourceId}/features",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueCustomMetric",
     "method": "POST",
     "path": "/api/v1/cues/sources/{sourceId}/custom-metrics",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueKey",
     "method": "POST",
     "path": "/api/v1/cues/sources/{sourceId}/keys",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueSource",
     "method": "POST",
     "path": "/api/v1/cues/sources",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createNoxSpotSite",
     "method": "POST",
     "path": "/api/v1/spots/sites",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createProject",
     "method": "POST",
     "path": "/api/v1/projects",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "createSpec",
     "method": "POST",
     "path": "/api/v1/specs",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "deleteFeatureAttachment",
     "method": "DELETE",
     "path": "/api/v1/features/{number}/attachments/{attachmentId}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxCueCustomFeature",
     "method": "DELETE",
     "path": "/api/v1/cues/sources/{sourceId}/features/{featureKey}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxCueCustomMetric",
     "method": "DELETE",
     "path": "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxCueSource",
     "method": "DELETE",
     "path": "/api/v1/cues/sources/{sourceId}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxSpotSite",
     "method": "DELETE",
     "path": "/api/v1/spots/sites/{siteId}",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "deleteSpecAttachment",
     "method": "DELETE",
     "path": "/api/v1/specs/{specId}/attachments/{attachmentId}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "disconnectConnection",
     "method": "POST",
     "path": "/api/v1/integrations/connections/{provider}/disconnect",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "disconnectSlackWorkspace",
     "method": "POST",
     "path": "/api/v1/slack/disconnect",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "downloadFeatureAttachment",
     "method": "GET",
     "path": "/api/v1/features/{number}/attachments/{attachmentId}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/octet-stream"
+    ],
+    "servers": []
   },
   {
     "id": "downloadSpecAttachment",
     "method": "GET",
     "path": "/api/v1/specs/{specId}/attachments/{attachmentId}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/octet-stream"
+    ],
+    "servers": []
   },
   {
     "id": "exchangeLegacyNativeCredential",
     "method": "POST",
     "path": "/api/v1/auth/native/exchange",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getActor",
     "method": "GET",
     "path": "/api/v1/actors/{actorId}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getAiSettings",
     "method": "GET",
     "path": "/api/v1/llm-settings",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getBootstrapStatus",
     "method": "GET",
     "path": "/api/v1/bootstrap-status",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectActions",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/cue/actions",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectAlertRules",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/cue/alert-rules",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectAlerts",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/cue/alerts",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectDashboard",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/cue/dashboard",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectStatEvents",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/cue/stat-events",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getCurrentMember",
     "method": "GET",
     "path": "/api/v1/me",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getCurrentWorkSummary",
     "method": "GET",
     "path": "/api/v1/feed/current-summary",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getEngineerActivity",
     "method": "GET",
     "path": "/api/v1/engineer-activity",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getEngineerStats",
     "method": "GET",
     "path": "/api/v1/engineer-stats",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getFeedEvent",
     "method": "GET",
     "path": "/api/v1/events/{id}",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getGitHubComments",
     "method": "GET",
     "path": "/api/v1/github/comments",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getGitHubDetails",
     "method": "GET",
     "path": "/api/v1/github/details",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getGitHubRateLimit",
     "method": "GET",
     "path": "/api/v1/github/rate-limit",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getIdentityProfile",
     "method": "GET",
     "path": "/api/v1/auth/profile",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getIntegrationStatus",
     "method": "GET",
     "path": "/api/v1/integrations/status",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getIssue",
     "method": "GET",
     "path": "/api/v1/issues/{repo}/{number}",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": "noxfeed:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueDailyHealth",
     "method": "GET",
     "path": "/api/v1/cues/metrics",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueGitHubIssueSettings",
     "method": "GET",
     "path": "/api/v1/cues/github-issues",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueProjectMetrics",
     "method": "GET",
     "path": "/api/v1/cues/projects/{projectId}/metrics",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueProjectOverview",
     "method": "GET",
     "path": "/api/v1/cues/project-overview",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxFeed",
     "method": "GET",
     "path": "/api/v1/feed",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": "noxfeed:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxFeedDefaultPrompt",
     "method": "GET",
     "path": "/api/v1/noxfeed/release-notes-prompt",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxService",
     "method": "GET",
     "path": "/api/v1/services/{service}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxServiceConfig",
     "method": "GET",
     "path": "/api/v1/services/{service}/config",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxServiceHealth",
     "method": "GET",
     "path": "/api/v1/services/{service}/health",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxServiceSetup",
     "method": "GET",
     "path": "/api/v1/services/{service}/setup",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxSpotProjectOverview",
     "method": "GET",
     "path": "/api/v1/spots/project-overview",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getNoxSpotResolutionTemplate",
     "method": "GET",
     "path": "/api/v1/spots/sites/{siteId}/resolution-template",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getOperatorUsage",
     "method": "GET",
     "path": "/api/v1/operator/usage",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "platform_operator",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getProjectActivity",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/activity",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getProjectFeedback",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/feedback",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getProjectIncident",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/incidents/{incidentId}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getProjectIncidents",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/incidents",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getProjectIssues",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/issues",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getProjectRouting",
     "method": "GET",
     "path": "/api/v1/projects/routing",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getPublicNoxSpotConfig",
     "method": "GET",
     "path": "/api/spots/public/v1/sites/{siteId}/config",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
+    ]
   },
   {
     "id": "getPullRequest",
     "method": "GET",
     "path": "/api/v1/prs/{repo}/{number}",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": "noxfeed:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getSetupPlan",
     "method": "GET",
     "path": "/api/v1/integrations/setup",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getSlackRouting",
     "method": "GET",
     "path": "/api/v1/integrations/slack/routing",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getSlackStatus",
     "method": "GET",
     "path": "/api/v1/slack/status",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getSpec",
     "method": "GET",
     "path": "/api/v1/specs/{specId}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getSyncStatus",
     "method": "GET",
     "path": "/api/v1/sync",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "getWorkspaceConfig",
     "method": "GET",
     "path": "/api/v1/config/{key}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "ingestNoxCueEvent",
     "method": "POST",
     "path": "/api/v1/cues/public/events",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "ingest_key",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "idempotent_with_event_key",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listActors",
     "method": "GET",
     "path": "/api/v1/actors",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listApiTokens",
     "method": "GET",
     "path": "/api/v1/api-tokens",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listConnections",
     "method": "GET",
     "path": "/api/v1/integrations/connections",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listFeatureAttachments",
     "method": "GET",
     "path": "/api/v1/features/{number}/attachments",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listFeatures",
     "method": "GET",
     "path": "/api/v1/features",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listFeedEvents",
     "method": "GET",
     "path": "/api/v1/events",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listGitHubTeams",
     "method": "GET",
     "path": "/api/v1/teams",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listGuestAccess",
     "method": "GET",
     "path": "/api/v1/guests",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listIssues",
     "method": "GET",
     "path": "/api/v1/issues",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": "noxfeed:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listMembers",
     "method": "GET",
     "path": "/api/v1/members",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueCustomMetrics",
     "method": "GET",
     "path": "/api/v1/cues/sources/{sourceId}/custom-metrics",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueEvents",
     "method": "GET",
     "path": "/api/v1/cues/events",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueFeatures",
     "method": "GET",
     "path": "/api/v1/cues/sources/{sourceId}/features",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueSources",
     "method": "GET",
     "path": "/api/v1/cues/sources",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listNoxServices",
     "method": "GET",
     "path": "/api/v1/services",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": "services:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listNoxSpotSites",
     "method": "GET",
     "path": "/api/v1/spots/sites",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "member",
+    "automationScope": "noxspot:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listOperationFailures",
     "method": "GET",
     "path": "/api/v1/op-failures",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listProjects",
     "method": "GET",
     "path": "/api/v1/projects",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listPullRequests",
     "method": "GET",
     "path": "/api/v1/prs",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": "noxfeed:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listRepositories",
     "method": "GET",
     "path": "/api/v1/repos",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listSlackChannels",
     "method": "GET",
     "path": "/api/v1/slack/channels",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listSpecAttachments",
     "method": "GET",
     "path": "/api/v1/specs/{specId}/attachments",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "listSpecs",
     "method": "GET",
     "path": "/api/v1/specs",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "patchNoxServiceConfig",
     "method": "PATCH",
     "path": "/api/v1/services/{service}/config",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "conditional_write",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "patchSlackRouting",
     "method": "PATCH",
     "path": "/api/v1/integrations/slack/routing",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "pollNativeDeviceAuthorization",
     "method": "POST",
     "path": "/api/v1/auth/native/device/poll",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "previewNoxSpotResolutionTemplate",
     "method": "POST",
     "path": "/api/v1/spots/sites/{siteId}/resolution-template/preview",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "putAiSettings",
     "method": "PUT",
     "path": "/api/v1/llm-settings",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "putNoxCueGitHubIssueSettings",
     "method": "PUT",
     "path": "/api/v1/cues/github-issues",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "putWorkspaceConfig",
     "method": "PUT",
     "path": "/api/v1/config/{key}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "recordAppActivity",
     "method": "POST",
     "path": "/api/v1/app-activity",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "recoverRepositoryHistory",
     "method": "POST",
     "path": "/api/v1/recover-repo-history",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "refreshNativeSession",
     "method": "POST",
     "path": "/api/v1/auth/native/refresh",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "reopenResolvedNoxSpotReport",
     "method": "POST",
     "path": "/api/spots/public/v1/resolution-responses/{token}",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "multipart/form-data"
+    ],
+    "responseContentTypes": [
+      "text/html"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
+    ]
   },
   {
     "id": "restoreProject",
     "method": "DELETE",
     "path": "/api/v1/projects/{projectId}/archive",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "restoreSpec",
     "method": "DELETE",
     "path": "/api/v1/specs/{specId}/archive",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "retrieveProject",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/retrieval",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "retryNoxSpotDeliveries",
     "method": "POST",
     "path": "/api/v1/spots/sites/{siteId}/retry-deliveries",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "revokeApiToken",
     "method": "DELETE",
     "path": "/api/v1/api-tokens/{id}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "revokeBrowserSession",
     "method": "POST",
     "path": "/api/v1/auth/logout",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "destructive",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "revokeGuestGrant",
     "method": "DELETE",
     "path": "/api/v1/guests/grants/{grantId}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "revokeGuestInvitation",
     "method": "DELETE",
     "path": "/api/v1/guests/invites/{inviteId}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "revokeNativeSession",
     "method": "POST",
     "path": "/api/v1/auth/native/revoke",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "native_refresh",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "destructive",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "revokeNoxCueKey",
     "method": "DELETE",
     "path": "/api/v1/cues/sources/{sourceId}/keys/{keyId}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "rotateApiToken",
     "method": "POST",
     "path": "/api/v1/api-tokens/{id}/rotate",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "searchWorkspace",
     "method": "GET",
     "path": "/api/v1/search",
-    "namespace": "activity"
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "setIssueState",
     "method": "POST",
     "path": "/api/v1/issue-state",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "startConnection",
     "method": "POST",
     "path": "/api/v1/integrations/connections/{provider}/start",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "startNativeDeviceAuthorization",
     "method": "POST",
     "path": "/api/v1/auth/native/device/start",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "submitPublicNoxSpotErrors",
     "method": "POST",
     "path": "/api/spots/public/v1/errors",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
+    ]
   },
   {
     "id": "submitPublicNoxSpotReport",
     "method": "POST",
     "path": "/api/spots/public/v1/reports",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
+    ]
   },
   {
     "id": "syncGitHubData",
     "method": "POST",
     "path": "/api/v1/sync",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "syncGitHubEvents",
     "method": "POST",
     "path": "/api/v1/sync-events",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "testNoxCueSource",
     "method": "POST",
     "path": "/api/v1/cues/sources/{sourceId}/health/test",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "testNoxSpotResolutionTemplate",
     "method": "POST",
     "path": "/api/v1/spots/sites/{siteId}/resolution-template/test",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "testSlackDestination",
     "method": "POST",
     "path": "/api/v1/slack/test",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "testSlackRoute",
     "method": "POST",
     "path": "/api/v1/integrations/slack/test",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateActor",
     "method": "PATCH",
     "path": "/api/v1/actors/{actorId}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateCueProjectActions",
     "method": "PUT",
     "path": "/api/v1/projects/{projectId}/cue/actions",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateFeature",
     "method": "PATCH",
     "path": "/api/v1/features/{number}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueCustomFeature",
     "method": "PUT",
     "path": "/api/v1/cues/sources/{sourceId}/features/{featureKey}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueCustomMetric",
     "method": "PUT",
     "path": "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueErrorStatus",
     "method": "PUT",
     "path": "/api/v1/cues/errors/{sourceId}/{fingerprint}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueProjectMetrics",
     "method": "PUT",
     "path": "/api/v1/cues/projects/{projectId}/metrics",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueSource",
     "method": "PUT",
     "path": "/api/v1/cues/sources/{sourceId}",
-    "namespace": "incidents"
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxSpotReport",
     "method": "PATCH",
     "path": "/api/v1/spots/reports/{reportId}",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxSpotResolutionTemplate",
     "method": "PATCH",
     "path": "/api/v1/spots/sites/{siteId}/resolution-template",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "conditional_write",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxSpotSite",
     "method": "PATCH",
     "path": "/api/v1/spots/sites/{siteId}",
-    "namespace": "feedback"
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateProjectIncident",
     "method": "PATCH",
     "path": "/api/v1/projects/{projectId}/incidents/{incidentId}",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateProjectRouting",
     "method": "PUT",
     "path": "/api/v1/projects/{projectId}/routing",
-    "namespace": "workspace"
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "updateSpec",
     "method": "PATCH",
     "path": "/api/v1/specs/{specId}",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "uploadFeatureAttachment",
     "method": "POST",
     "path": "/api/v1/features/{number}/attachments",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "multipart/form-data"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "uploadSpecAttachment",
     "method": "POST",
     "path": "/api/v1/specs/{specId}/attachments",
-    "namespace": "planning"
+    "namespace": "planning",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "multipart/form-data"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   }
 ] as const;
 export type OperationId = typeof operationDefinitions[number]["id"];

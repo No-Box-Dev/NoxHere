@@ -5,7 +5,7 @@ import { createNoxCue as createServerNoxCue } from "./server.js";
 
 const browserKey = `nox_pub_${"a".repeat(32)}`;
 const serverKey = `nox_secret_${"b".repeat(32)}`;
-const wireFixtures = JSON.parse(readFileSync(new URL("../../sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
+const wireFixtures = JSON.parse(readFileSync(new URL("../../../../services/cue/packages/sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
   name: string;
   operation: "user.registered" | "activity";
   arguments: { userId: string; metric?: `custom.${string}` };
@@ -20,7 +20,7 @@ function accepted(eventId = "stored-event") {
   });
 }
 
-describe("@noxcue/sdk", () => {
+describe("@noxhere/sdk telemetry", () => {
   it.each(wireFixtures)("matches the shared $name wire fixture", async (fixture) => {
     const request = vi.fn<typeof fetch>(async () => accepted());
     const noxcue = createServerNoxCue({
@@ -61,7 +61,7 @@ describe("@noxcue/sdk", () => {
         environment: "production",
         release: "playnist@abc123",
         runtime: "server",
-        sdkVersion: "0.1.7",
+        sdkVersion: "0.2.0",
       },
     });
   });
@@ -119,7 +119,7 @@ describe("@noxcue/sdk", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.1.7" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.0" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },
@@ -152,6 +152,39 @@ describe("@noxcue/sdk", () => {
 
     await expect(noxcue.error(new Error("Signup failed"), { title: "Signup failed" }))
       .resolves.toMatchObject({ ok: false, error: "network_error" });
-    expect(request).toHaveBeenCalledTimes(2);
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it("preserves the released controls and request-scoped identity behavior", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const browser = createBrowserNoxCue({ key: browserKey, fetch: request, maxRetries: 0 });
+    browser.identify({ id: "user-42", name: "Ada", email: "private@example.com" });
+    await browser.auth.login(async () => ({ ok: true }));
+    await browser.flush();
+
+    const feature = JSON.parse(String(request.mock.calls[0]![1]?.body));
+    expect(feature.userId).toBe("user-42");
+    expect(JSON.stringify(feature)).not.toContain("private@example.com");
+    expect(JSON.stringify(feature)).not.toContain("Ada");
+
+    const server = createServerNoxCue({ key: serverKey, fetch: request });
+    await server.forUser("user-99").error(new Error("failed"));
+    const scoped = JSON.parse(String(request.mock.calls.at(-1)?.[1]?.body));
+    expect(scoped.data.affectedUser).toBe("user-99");
+
+    server.close();
+    await expect(server.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
+  });
+
+  it("supports disabled clients and explicit fire-and-forget capture", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const disabled = createServerNoxCue({ key: serverKey, enabled: false, fetch: request });
+    await expect(disabled.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
+    expect(request).not.toHaveBeenCalled();
+
+    const enabled = createServerNoxCue({ key: serverKey, fetch: request });
+    enabled.capture(new Error("background"));
+    await enabled.flush();
+    expect(request).toHaveBeenCalledOnce();
   });
 });

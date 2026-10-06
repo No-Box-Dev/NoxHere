@@ -94,6 +94,7 @@ export function showOverlay(captureOrPromise, options = {}) {
             screenshotDataUrl: null,
             members: options.members,
             categories: options.categories,
+            reporter: options.reporter,
           })}
         </div>
       </div>

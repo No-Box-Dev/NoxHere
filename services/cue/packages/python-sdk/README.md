@@ -1,4 +1,7 @@
-# `noxcue`
+# `noxcue` (compatibility package)
+
+This package forwards to `noxhere.telemetry`. New applications should install
+`noxhere`; the example below remains valid for existing applications.
 
 Detection-first Python SDK for NoxCue. It mirrors the server surface and wire
 contract of `@noxcue/sdk`; Python has no browser entry point.
@@ -21,8 +24,8 @@ failure. Observed operations preserve the application's return value or
 exception and report their result on a background thread. Use `flush()` or the
 context manager before process exit.
 
-The SDK uses only the Python standard library at runtime and supports Python
-3.10 and newer.
+The unified SDK uses only the Python standard library plus `typing-extensions`
+at runtime and supports Python 3.10 and newer.
 
 ## Cross-language parity
 
