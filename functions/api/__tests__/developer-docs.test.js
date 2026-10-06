@@ -15,9 +15,19 @@ describe("developer documentation", () => {
   });
 
   it("loads behavior from an external CSP-compatible script", () => {
-    expect(html).toContain('<script src="/developers.js" defer></script>');
+    expect(html).toContain('<script src="/developers.js" type="module"></script>');
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/i);
     expect(script).not.toContain("innerHTML");
+  });
+
+  it("keeps direct HTTP usage first-class and generated from OpenAPI", () => {
+    expect(html).toContain("Use the HTTP API directly or choose an SDK");
+    expect(html).toContain("JavaScript · direct fetch");
+    expect(html).toContain("Python · direct requests");
+    expect(html).toContain("copyable direct HTTP request for every operation");
+    expect(html).toContain('href="/docs/direct-api.md">HTTP guide</a>');
+    expect(script).toContain('import { buildCurlExample } from "./direct-api-examples.js"');
+    expect(script).toContain('element("strong", "Direct HTTP · curl")');
   });
 
   it("derives the displayed operation count from the OpenAPI document", () => {

@@ -11,6 +11,24 @@ projects = nox.workspace.list_projects()
 incidents = nox.incidents.get_project_incidents(path={"projectId": "project-1"})
 ```
 
+The SDK is optional. The equivalent operation can always be called directly:
+
+```python
+import os
+import requests
+
+response = requests.get(
+    f"https://app.noxhere.com/api/v1/projects/{project_id}/incidents",
+    headers={"Authorization": f"Bearer {os.environ['NOXHERE_API_TOKEN']}"},
+    timeout=10,
+)
+response.raise_for_status()
+incidents = response.json()
+```
+
+See the repository's [direct HTTP guide](../../public/docs/direct-api.md) and the
+OpenAPI-generated operation examples in the developer reference.
+
 Every path, query, body, and response model is generated from NoxHere's
 OpenAPI contract and is available through `noxhere.models`. Async applications
 use the same generated resources:

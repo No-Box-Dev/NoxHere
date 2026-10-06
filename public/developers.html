@@ -21,6 +21,7 @@
         <span>Developers</span>
       </a>
       <nav class="top-actions" aria-label="Document links">
+        <a class="top-link" href="/docs/direct-api.md">HTTP guide</a>
         <a class="top-link" href="/docs/ai-setup.md">Agent guide</a>
         <a class="top-link primary" href="/openapi.json">OpenAPI ↗</a>
       </nav>
@@ -91,7 +92,7 @@
       <section class="section" id="quickstart">
         <p class="section-kicker">Quickstart</p>
         <h2>Discover your workspace</h2>
-        <p class="section-intro">Create a scoped token under NoxHere → API access while signed in as an organization admin, choose exactly one enabled project, copy it once, and keep it in your runtime's secret store. The token cannot read or change resources assigned to another project.</p>
+        <p class="section-intro">Use the HTTP API directly or choose an SDK. Both paths call the same OpenAPI contract. Create a scoped token under NoxHere → API access while signed in as an organization admin, choose exactly one enabled project, copy it once, and keep it in your runtime's secret store. The token cannot read or change resources assigned to another project.</p>
         <div class="callout caution standalone-callout">
           <h3>Use the credential made for the caller</h3>
           <p>Browsers use an opaque HttpOnly session and CSRF proof. Automation uses a scoped <code>nox_sk_…</code> token. Ingestion uses a source key. Never extract a browser cookie or reuse a GitHub or Slack provider token.</p>
@@ -99,7 +100,52 @@
         <div class="code-block">
           <div class="code-head"><span>terminal · list services</span><button class="copy-button" type="button" data-copy="curl-services">Copy</button></div>
           <pre id="curl-services"><code>curl https://app.noxhere.com/api/v1/services \
-  --header <span class="token-string">"Authorization: Bearer $NOXCONNECT_API_TOKEN"</span></code></pre>
+  --header <span class="token-string">"Authorization: Bearer $NOXHERE_API_TOKEN"</span></code></pre>
+        </div>
+        <div class="client-example-grid">
+          <div class="code-block compact-code">
+            <div class="code-head"><span>JavaScript · direct fetch</span><button class="copy-button" type="button" data-copy="fetch-services">Copy</button></div>
+            <pre id="fetch-services"><code>const response = await fetch(<span class="token-string">"https://app.noxhere.com/api/v1/services"</span>, {
+  headers: {
+    Authorization: <span class="token-string">`Bearer ${process.env.NOXHERE_API_TOKEN}`</span>,
+  },
+});
+
+if (!response.ok) throw await response.json();
+const catalog = await response.json();</code></pre>
+          </div>
+          <div class="code-block compact-code">
+            <div class="code-head"><span>TypeScript · unified SDK</span><button class="copy-button" type="button" data-copy="typescript-services">Copy</button></div>
+            <pre id="typescript-services"><code>import { createNoxHere } from <span class="token-string">"@noxhere/sdk"</span>;
+
+const nox = createNoxHere({
+  token: process.env.NOXHERE_API_TOKEN,
+});
+const catalog = await nox.workspace.listNoxServices();</code></pre>
+          </div>
+          <div class="code-block compact-code">
+            <div class="code-head"><span>Python · direct requests</span><button class="copy-button" type="button" data-copy="python-services">Copy</button></div>
+            <pre id="python-services"><code>import os
+import requests
+
+response = requests.get(
+    <span class="token-string">"https://app.noxhere.com/api/v1/services"</span>,
+    headers={<span class="token-string">"Authorization"</span>: f<span class="token-string">"Bearer {os.environ['NOXHERE_API_TOKEN']}"</span>},
+    timeout=10,
+)
+response.raise_for_status()
+catalog = response.json()</code></pre>
+          </div>
+          <div class="code-block compact-code">
+            <div class="code-head"><span>Python · unified SDK</span><button class="copy-button" type="button" data-copy="python-sdk-services">Copy</button></div>
+            <pre id="python-sdk-services"><code>import os
+from noxhere import NoxHereClient
+
+nox = NoxHereClient(
+    token=os.environ[<span class="token-string">"NOXHERE_API_TOKEN"</span>],
+)
+catalog = nox.workspace.list_nox_services()</code></pre>
+          </div>
         </div>
         <div class="code-block">
           <div class="code-head"><span>json · abbreviated response</span><button class="copy-button" type="button" data-copy="catalog-response">Copy</button></div>
@@ -463,7 +509,7 @@ curl -X PATCH https://app.noxhere.com/api/v1/services/noxfeed/config \
   <span class="token-key">"description"</span>: <span class="token-string">"Update the release-notes prompt with If-Match."</span>
 }</code></pre>
         </div>
-        <p>The supported API reference below is rendered directly from <a href="/openapi.json">OpenAPI 3.1</a>, so routes, methods, access levels, server overrides, and change-safety labels do not have to be copied into this page by hand. It includes the complete first-party client surface and excludes private provider callbacks, signed webhooks, and runner endpoints. Older supported compatibility endpoints may still expose loosely typed response bodies; those are labelled as legacy JSON in the schema.</p>
+        <p>The supported API reference below is rendered directly from <a href="/openapi.json">OpenAPI 3.1</a>, including a copyable direct HTTP request for every operation. Routes, methods, required parameters, authentication, request bodies, server overrides, and change-safety labels do not have to be copied into this page by hand. It includes the complete first-party client surface and excludes private provider callbacks, signed webhooks, and runner endpoints. Older supported compatibility endpoints may still expose loosely typed response bodies; those are labelled as legacy JSON in the schema.</p>
         <div class="reference-tools">
           <label for="operation-search">Find an operation</label>
           <div class="reference-controls">
@@ -520,12 +566,12 @@ curl -X PATCH https://app.noxhere.com/api/v1/services/noxfeed/config \
       </section>
 
       <footer class="footer">
-        NoxHere API v1 · <a href="/openapi.json">OpenAPI</a> · <a href="/docs/ai-setup.md">Agent setup</a> · <a href="/llms.txt">llms.txt</a>
+        NoxHere API v1 · <a href="/openapi.json">OpenAPI</a> · <a href="/docs/direct-api.md">Direct HTTP</a> · <a href="/docs/ai-setup.md">Agent setup</a> · <a href="/llms.txt">llms.txt</a>
       </footer>
     </main>
   </div>
 
   <div id="copy-status" class="sr-only" role="status" aria-live="polite"></div>
-  <script src="/developers.js" defer></script>
+  <script src="/developers.js" type="module"></script>
 </body>
 </html>

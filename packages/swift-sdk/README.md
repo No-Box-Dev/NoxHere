@@ -16,6 +16,11 @@ let attachment = try await nox.requestData(
 )
 ```
 
+The package is optional: native clients may use `URLSession` against the same
+documented HTTPS endpoints. See the repository's
+[direct HTTP guide](../../public/docs/direct-api.md); the hosted developer reference
+generates a raw `curl` request for every OpenAPI operation.
+
 `requestData` preserves binary attachment responses as `Data`; JSON operations
 use `request`. Bearer credentials require HTTPS, except for loopback HTTP during
 local development, and are never attached to public NoxSpot operations.

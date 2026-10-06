@@ -12,6 +12,7 @@ NoxHere is the public product, identity, CLI, and API. One account session works
 - [Incidents capabilities (`noxcue` compatibility ID)](/api/v1/services/noxcue)
 - [Per-service setup, config, and health contract](/docs/ai-setup.md#safe-configuration-updates)
 - [Agent setup guide](/docs/ai-setup.md)
+- [Direct HTTP guide and SDK-equivalent examples](/docs/direct-api.md)
 - [Resumable setup state](/api/v1/integrations/setup)
 
 For a supervised local agent, a human runs `noxconnect login`, completes browser approval, and selects context with `noxconnect use <organization>/<project>`. For a headless agent or CI, inject an expiring `nox_sk_…` token from an approved secret manager. Never copy a browser cookie or provider token into chat or CI. The complete CLI reference is at `/developers#cli`.
@@ -21,6 +22,8 @@ Browser authentication creates an opaque HttpOnly NoxHere session; browser write
 Every service has `/api/v1/services/{service}/setup`, `/config`, and `/health`. Config updates are service-scoped and require the latest config ETag in `If-Match`; provider credentials are never returned.
 
 Each capability includes an `operations` array with its stable operation ID, HTTP method, path, authentication mode, and description. Follow those operations rather than guessing legacy routes. API v1 errors use `{ apiVersion, error: { code, message, details? } }`.
+
+SDK use is optional. Every supported operation can be called directly over HTTP. The developer reference generates a copyable curl request for each operation from OpenAPI so the raw examples and SDK operation catalog share one contract.
 
 An agent may initiate GitHub or Slack OAuth. Treat the returned `userAction.url` as a temporary secret and have a human open it in a browser; never prefetch or log it. Poll `/api/v1/integrations/setup` no more than once every five seconds after approval. All channel discovery, organization routing, project/repository routing, verification, and disconnect operations are API-callable. Discover shared project routing at `/api/v1/projects/routing`.
 

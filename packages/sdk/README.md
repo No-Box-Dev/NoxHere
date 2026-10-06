@@ -13,6 +13,20 @@ const incidents = await nox.incidents.getProjectIncidents({
 });
 ```
 
+The SDK is optional. The equivalent operation can always be called directly:
+
+```ts
+const response = await fetch(
+  `https://app.noxhere.com/api/v1/projects/${projectId}/incidents`,
+  { headers: { Authorization: `Bearer ${process.env.NOXHERE_API_TOKEN}` } },
+);
+if (!response.ok) throw await response.json();
+const incidents = await response.json();
+```
+
+See the repository's [direct HTTP guide](../../public/docs/direct-api.md) and the
+OpenAPI-generated operation examples in the developer reference.
+
 Namespaces are `workspace`, `activity`, `planning`, `feedback`, and
 `incidents`. Compatibility aliases `connect`, `feed`, `ticket`, `spot`, and
 `cue` point to the same objects. Every operation is also available by its
