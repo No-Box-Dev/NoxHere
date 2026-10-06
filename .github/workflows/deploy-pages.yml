@@ -104,10 +104,5 @@ jobs:
         run: npx wrangler deploy --config services/gateway/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
       - name: Smoke production release
         run: node scripts/smoke-deployment.mjs https://app.noxhere.com https://api.noxspot.dev "$DEPLOY_SHA"
-      - name: Notify ecosystem verification
-        env:
-          GH_TOKEN: ${{ secrets.NOXHERE_DISPATCH_TOKEN }}
-        run: |
-          if [ -n "$GH_TOKEN" ]; then
-            gh api repos/No-Box-Dev/NoxHere/dispatches --method POST -f event_type=nox-service-deployed -f 'client_payload[service]=noxhere' -f "client_payload[sha]=$DEPLOY_SHA"
-          fi
+      - name: Verify production ecosystem
+        run: node scripts/check-ecosystem-health.mjs https://app.noxhere.com noxhere "$DEPLOY_SHA"
