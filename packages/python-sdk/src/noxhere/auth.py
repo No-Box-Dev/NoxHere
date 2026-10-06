@@ -191,7 +191,18 @@ class AsyncNativeAuth:
         device_code, verification_uri = result.get("device_code"), result.get("verification_uri")
         if not isinstance(device_code, str) or not isinstance(verification_uri, str):
             raise RuntimeError("NoxHere returned an invalid device authorization")
-        return DeviceAuthorization(device_code=device_code, verification_uri=verification_uri)
+        user_code = result.get("user_code")
+        complete = result.get("verification_uri_complete")
+        expires_in = result.get("expires_in")
+        interval = result.get("interval")
+        return DeviceAuthorization(
+            device_code=device_code,
+            verification_uri=verification_uri,
+            user_code=user_code if isinstance(user_code, str) else None,
+            verification_uri_complete=complete if isinstance(complete, str) else None,
+            expires_in=expires_in if isinstance(expires_in, int) else None,
+            interval=interval if isinstance(interval, int) else None,
+        )
 
     async def poll(self, device_code: str) -> NativeSessionState | None:
         result = await self._transport("/api/v1/auth/native/device/poll", {"client": self.client, "device_code": device_code})

@@ -340,7 +340,7 @@ app.get("/widget/:siteId{.+\\.js$}", async (context) => {
   if (!site || site.noxspot_enabled === 0) return new Response("/* NoxSpot: site not found */", { status: 404, headers: { "Content-Type": "application/javascript" } });
   if (!loader) return new Response("/* NoxSpot: loader unavailable */", { status: 503, headers: { "Content-Type": "application/javascript" } });
   const config = legacyWidgetConfig(site);
-  return new Response(`var __NoxSpotSiteConfig=${JSON.stringify(config)};\n${await loader.text()}`, {
+  return new Response(`var __NoxSpotSiteConfig=${JSON.stringify(config)};\n${await loader.text()}\nNoxSpot.init(__NoxSpotSiteConfig);`, {
     headers: { "Content-Type": "application/javascript", "Cache-Control": "public, max-age=0, must-revalidate", "Access-Control-Allow-Origin": "*" },
   });
 });

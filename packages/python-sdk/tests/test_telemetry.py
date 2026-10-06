@@ -167,6 +167,11 @@ class SDKTests(unittest.TestCase):
             transport=lambda *_: self.fail("network called"),
         )
         self.assertEqual(client.test().error, "invalid_configuration")
+        scoped = client.for_user("user-42")
+        try:
+            self.assertEqual(scoped.test().error, "invalid_configuration")
+        finally:
+            scoped.close()
         client.close()
         self.assertEqual(client.test().error, "invalid_configuration")
 

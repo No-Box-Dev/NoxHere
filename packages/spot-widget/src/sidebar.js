@@ -23,6 +23,7 @@ let onSubmitCallback = null;
 let reporterMembers = [];
 let reportCategories = [];
 let formBlocks = [];
+let defaultReporter = '';
 
 // Fallback used when the host page has an OLD cached loader.min.js but
 // loaded the NEW core bundle — the old loader doesn't pass `blocks` into
@@ -71,11 +72,12 @@ function customBlockDomId(blockId) {
  * @returns {string} HTML string
  */
 export function createSidebarHTML(opts) {
-  const { blocks, metadata, onSubmit, screenshotDataUrl, members, categories } = opts;
+  const { blocks, metadata, onSubmit, screenshotDataUrl, members, categories, reporter } = opts;
   onSubmitCallback = onSubmit;
   reporterMembers = Array.isArray(members) ? members : [];
   reportCategories = Array.isArray(categories) ? categories.filter(c => c && typeof c.label === 'string' && c.label) : [];
   formBlocks = Array.isArray(blocks) && blocks.length ? blocks : FALLBACK_BLOCKS;
+  defaultReporter = typeof reporter?.name === 'string' ? reporter.name.slice(0, REPORTER_MAX) : '';
 
   const thumbnailHTML = `
     <div class="noxspot-mobile-thumbnail" style="display:none">
@@ -181,6 +183,7 @@ function renderReporter(block) {
           data-1p-ignore
           data-lpignore="true"
           maxlength="${REPORTER_MAX}"
+          value="${escapeHtml(defaultReporter)}"
           ${block.required ? 'required' : ''}
         />
         <div

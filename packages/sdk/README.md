@@ -60,8 +60,14 @@ import { installNoxHereWidget } from "@noxhere/sdk/widget";
 
 await installNoxHereWidget({
   siteId: "site-1",
-  reporter: { name: currentUser.name, email: currentUser.email },
+  reporter: {
+    name: currentUser.name,
+    email: currentUser.email,
+    notifyOnResolution: true, // only after the user has consented
+  },
 });
 ```
 
 Identity is passed only when the host application explicitly supplies it.
+One page can install one site ID; conflicting or concurrent cross-site installs
+are rejected so reports cannot be sent to the wrong project.

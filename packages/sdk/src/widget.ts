@@ -23,14 +23,26 @@ export interface InstallNoxHereWidgetOptions {
 declare global {
   interface Window {
     NoxSpot?: NoxHereWidgetApi;
+    __NoxHereWidgetSiteId?: string;
   }
 }
+
+let pendingInstallation: { siteId: string; promise: Promise<NoxHereWidgetApi> } | undefined;
 
 export async function installNoxHereWidget(options: InstallNoxHereWidgetOptions): Promise<NoxHereWidgetApi> {
   if (typeof document === "undefined" || typeof window === "undefined") throw new Error("The NoxHere widget requires a browser document");
   const siteId = options.siteId.trim();
   if (!siteId || siteId.length > 120) throw new Error("siteId must contain 1 to 120 characters");
+  if (pendingInstallation) {
+    if (pendingInstallation.siteId !== siteId) throw new Error(`The NoxHere widget is already loading for site ${pendingInstallation.siteId}`);
+    const widget = await pendingInstallation.promise;
+    if (options.reporter !== undefined) widget.identify(options.reporter);
+    return widget;
+  }
   if (window.NoxSpot) {
+    if (window.__NoxHereWidgetSiteId !== siteId) {
+      throw new Error("The NoxHere widget is already installed for a different or unknown site");
+    }
     if (options.reporter !== undefined) window.NoxSpot.identify(options.reporter);
     return window.NoxSpot;
   }
@@ -46,7 +58,7 @@ export async function installNoxHereWidget(options: InstallNoxHereWidgetOptions)
   script.dataset.noxhereWidget = siteId;
   if (options.nonce) script.nonce = options.nonce;
 
-  await new Promise<void>((resolve, reject) => {
+  const promise = new Promise<NoxHereWidgetApi>((resolve, reject) => {
     const timeout = setTimeout(() => fail(new Error("NoxHere widget load timed out")), Math.max(250, Math.min(30_000, options.timeoutMs ?? 10_000)));
     const fail = (error: Error) => {
       clearTimeout(timeout);
@@ -58,17 +70,22 @@ export async function installNoxHereWidget(options: InstallNoxHereWidgetOptions)
     script.onload = () => {
       clearTimeout(timeout);
       options.signal?.removeEventListener("abort", abort);
-      if (window.NoxSpot) resolve();
-      else fail(new Error("NoxHere widget loaded without registering its API"));
+      const widget = Reflect.get(window, "NoxSpot") as NoxHereWidgetApi | undefined;
+      if (!widget) return fail(new Error("NoxHere widget loaded without registering its API"));
+      window.__NoxHereWidgetSiteId = siteId;
+      resolve(widget);
     };
     script.onerror = () => fail(new Error(`NoxHere widget failed to load from ${source}`));
     if (options.signal?.aborted) return abort();
     options.signal?.addEventListener("abort", abort, { once: true });
     document.head.appendChild(script);
   });
-
-  const widget = Reflect.get(window, "NoxSpot") as NoxHereWidgetApi | undefined;
-  if (!widget) throw new Error("NoxHere widget API is unavailable");
-  if (options.reporter !== undefined) widget.identify(options.reporter);
-  return widget;
+  pendingInstallation = { siteId, promise };
+  try {
+    const widget = await promise;
+    if (options.reporter !== undefined) widget.identify(options.reporter);
+    return widget;
+  } finally {
+    if (pendingInstallation?.promise === promise) pendingInstallation = undefined;
+  }
 }

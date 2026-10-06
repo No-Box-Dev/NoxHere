@@ -30,6 +30,8 @@ aliases. Use `noxhere.incidents.create_incident_client` or
 Server telemetry is available from the same distribution:
 
 ```python
+import os
+
 from noxhere.telemetry import NoxCueClient
 
 with NoxCueClient(

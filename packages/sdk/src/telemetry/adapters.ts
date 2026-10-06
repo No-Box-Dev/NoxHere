@@ -2,10 +2,6 @@ import type { NoxCueAdapterOptions, ServerNoxCueClient } from "./types.js";
 
 type WebHandler<Args extends unknown[]> = (request: Request, ...args: Args) => Response | Promise<Response>;
 
-function route(request: Request): string {
-  try { return new URL(request.url).pathname; } catch { return "/"; }
-}
-
 function responseError(response: Response): Error & { status: number; code: string } {
   return Object.assign(new Error(`HTTP ${response.status} returned by the request handler`), {
     name: "HTTPResponseError", status: response.status, code: `HTTP_${response.status}`,
@@ -13,15 +9,14 @@ function responseError(response: Response): Error & { status: number; code: stri
 }
 
 function details(request: Request, options: NoxCueAdapterOptions, status?: number) {
-  const pathname = route(request);
+  const method = request.method.toUpperCase();
   return {
-    title: `${request.method.toUpperCase()} ${pathname} failed`,
+    title: `${method} request failed`,
     message: status ? `The request handler returned HTTP ${status}.` : "The request handler threw an unexpected error.",
     component: options.component ?? "server.request",
-    url: request.url,
     fatal: false,
     unhandled: true,
-    attributes: { method: request.method.toUpperCase(), route: pathname, ...(status ? { status } : {}) },
+    attributes: { method, ...(options.route ? { route: options.route } : {}), ...(status ? { status } : {}) },
   };
 }
 
@@ -62,14 +57,13 @@ interface ExpressRequest { method?: string; originalUrl?: string; url?: string }
 
 export function noxCueExpressErrorHandler(noxcue: ServerNoxCueClient, options: NoxCueAdapterOptions = {}) {
   return (error: unknown, request: ExpressRequest, _response: unknown, next: (error: unknown) => void): void => {
-    const pathname = request.originalUrl ?? request.url ?? "/";
+    const method = (request.method ?? "REQUEST").toUpperCase();
     noxcue.capture(error, {
-      title: `${(request.method ?? "REQUEST").toUpperCase()} ${pathname} failed`,
+      title: `${method} request failed`,
       component: options.component ?? "express.request",
-      ...(pathname.startsWith("http") ? { url: pathname } : {}),
       fatal: false,
       unhandled: true,
-      attributes: { method: (request.method ?? "REQUEST").toUpperCase(), route: pathname.slice(0, 300) },
+      attributes: { method, ...(options.route ? { route: options.route } : {}) },
     });
     next(error);
   };

@@ -5,7 +5,7 @@ import json
 import unittest
 from typing import Mapping
 
-from noxhere import AsyncNoxHereClient, NoxHereApiError, NoxHereClient, NoxHereTransportError
+from noxhere import AsyncNoxHereClient, NoxHereApiError, NoxHereClient, NoxHereTransportError, models
 
 
 class Recorder:
@@ -101,9 +101,34 @@ class ClientTest(unittest.TestCase):
         scoped.feedback.get_public_nox_spot_config(path={"siteId": "site-1"})
         self.assertEqual(public.calls[0][1], "https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config")
         self.assertEqual(public.calls[0][2]["X-NoxHere-SDK"], "python/0.2.0")
+        self.assertNotIn("Authorization", public.calls[0][2])
+        self.assertNotIn("X-Org", public.calls[0][2])
+        self.assertNotIn("X-Project-ID", public.calls[0][2])
         scoped.request("reopenResolvedNoxSpotReport", path={"token": "secret-token"}, body=b"payload")
         self.assertIn("[redacted]", observed[-1])
         self.assertNotIn("secret-token", observed[-1])
+
+        scoped_project = scoped.with_context(project_id="project-2")
+        scoped_project.workspace.list_projects()
+        self.assertEqual(public.calls[-1][2]["X-Org"], "No-Box-Dev")
+        self.assertEqual(public.calls[-1][2]["X-Project-ID"], "project-2")
+
+        staging = Recorder(response={"ok": True})
+        NoxHereClient(base_url="https://staging.example.test/root", token="secret", transport=staging).feedback.get_public_nox_spot_config(path={"siteId": "site-1"})
+        self.assertEqual(staging.calls[0][1], "https://staging.example.test/api/spots/public/v1/sites/site-1/config")
+        self.assertNotIn("Authorization", staging.calls[0][2])
+
+    def test_generated_models_preserve_wire_field_names(self) -> None:
+        self.assertIn("from", models.SearchWorkspaceQuery.__annotations__)
+        self.assertNotIn("from_", models.SearchWorkspaceQuery.__annotations__)
+
+    def test_rejects_bearer_credentials_over_non_loopback_http(self) -> None:
+        recorder = Recorder(response={"ok": True})
+        with self.assertRaisesRegex(ValueError, "require HTTPS"):
+            NoxHereClient(base_url="http://example.test", token="secret", transport=recorder).workspace.list_projects()
+        self.assertEqual(recorder.calls, [])
+        NoxHereClient(base_url="http://127.0.0.1:8787", token="secret", transport=recorder).workspace.list_projects()
+        self.assertEqual(len(recorder.calls), 1)
 
 
 class AsyncClientTest(unittest.IsolatedAsyncioTestCase):
@@ -124,6 +149,15 @@ class AsyncClientTest(unittest.IsolatedAsyncioTestCase):
         client = AsyncNoxHereClient(transport=never_responds, timeout=0.001, max_retries=0)
         with self.assertRaises(NoxHereTransportError):
             await client.activity.get_nox_feed(query={"limit": 1})
+
+    async def test_async_context_and_public_credentials_are_safe(self) -> None:
+        recorder = AsyncRecorder(response={"ok": True})
+        client = AsyncNoxHereClient(token="secret", organization="org-1", project_id="project-1", transport=recorder)
+        await client.with_context(project_id="project-2").feedback.get_public_nox_spot_config(path={"siteId": "site-1"})
+        _, url, headers, _ = recorder.calls[0]
+        self.assertEqual(url, "https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config")
+        self.assertNotIn("Authorization", headers)
+        self.assertNotIn("X-Org", headers)
 
 
 if __name__ == "__main__":

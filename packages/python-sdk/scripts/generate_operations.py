@@ -28,12 +28,6 @@ def pascal(value: str) -> str:
     return "".join(part[:1].upper() + part[1:] for part in re.split(r"[^A-Za-z0-9]+|_", snake(value)) if part)
 
 
-def safe_identifier(value: str) -> str:
-    if not value.isidentifier():
-        raise ValueError(f"OpenAPI property {value!r} cannot be represented as a Python TypedDict field")
-    return f"{value}_" if keyword.iskeyword(value) else value
-
-
 def resolve(ref: str) -> Any:
     value: Any = document
     for token in ref.removeprefix("#/").split("/"):
@@ -117,11 +111,17 @@ class ModelGenerator:
             properties = schema.get("properties", {})
             if schema.get("type") == "object" and properties:
                 required = set(schema.get("required", []))
-                lines.append(f"class {name}(TypedDict, total=False):")
+                fields: list[tuple[str, str]] = []
                 for field, field_schema in properties.items():
                     field_type = self.expression(field_schema, f"{name}{pascal(field)}")
                     wrapper = "Required" if field in required else "NotRequired"
-                    lines.append(f"    {safe_identifier(field)}: {wrapper}[{field_type}]")
+                    fields.append((field, f"{wrapper}[{field_type}]"))
+                if all(field.isidentifier() and not keyword.iskeyword(field) for field, _ in fields):
+                    lines.append(f"class {name}(TypedDict, total=False):")
+                    lines.extend(f"    {field}: {annotation}" for field, annotation in fields)
+                else:
+                    body = ", ".join(f"{field!r}: {annotation}" for field, annotation in fields)
+                    lines.append(f"{name} = TypedDict({name!r}, {{{body}}}, total=False)")
                 lines.append("")
                 continue
             expression = self.expression(schema)
@@ -158,7 +158,7 @@ def request_body(operation: dict[str, Any]) -> tuple[str, bool] | None:
     body = resolve(raw["$ref"]) if "$ref" in raw else raw
     content = body.get("content", {})
     if "multipart/form-data" in content:
-        return "Mapping[str, Any]", bool(body.get("required", True))
+        return "Mapping[str, Any]", bool(body.get("required", False))
     selected = content.get("application/json") or next(iter(content.values()), {})
     schema = selected.get("schema", {})
     if "$ref" in schema:
@@ -167,7 +167,7 @@ def request_body(operation: dict[str, Any]) -> tuple[str, bool] | None:
         body_type = f"models.{models.register(pascal(operation['id']) + 'Body', schema)}"
     else:
         body_type = "JsonValue"
-    return body_type, bool(body.get("required", True))
+    return body_type, bool(body.get("required", False))
 
 
 def response_type(operation: dict[str, Any]) -> str:

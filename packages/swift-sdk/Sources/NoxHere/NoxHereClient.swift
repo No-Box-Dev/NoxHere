@@ -42,6 +42,8 @@ public struct NoxHereAPIError: Error, Sendable, Equatable {
 }
 
 public struct NoxHereClient: Sendable {
+    private static let defaultBaseURL = URL(string: "https://app.noxhere.com")!
+    private static let binaryOperations: Set<String> = ["downloadFeatureAttachment", "downloadSpecAttachment"]
     public let baseURL: URL
     public let token: String?
     public let organization: String?
@@ -86,7 +88,8 @@ public struct NoxHereClient: Sendable {
         guard !resolvedPath.contains("{") else {
             throw NoxHereAPIError(status: 0, code: "missing_path_parameter", message: "A required path parameter is missing", requestID: nil)
         }
-        let server = operation.servers.first.flatMap(URL.init(string:)) ?? baseURL
+        let usesDefaultBaseURL = baseURL.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")) == Self.defaultBaseURL.absoluteString
+        let server = usesDefaultBaseURL ? operation.servers.first.flatMap(URL.init(string:)) ?? baseURL : baseURL
         guard var components = URLComponents(url: server, resolvingAgainstBaseURL: false) else {
             throw NoxHereAPIError(status: 0, code: "invalid_url", message: "Could not build request URL", requestID: nil)
         }
@@ -98,13 +101,20 @@ public struct NoxHereClient: Sendable {
         guard let url = components.url else {
             throw NoxHereAPIError(status: 0, code: "invalid_url", message: "Could not build request URL", requestID: nil)
         }
+        let usesPlatformAuthentication = operation.servers.isEmpty
+        if token != nil && usesPlatformAuthentication && url.scheme?.lowercased() != "https" {
+            let loopback = ["localhost", "127.0.0.1", "::1"].contains(url.host?.lowercased() ?? "")
+            guard url.scheme?.lowercased() == "http" && loopback else {
+                throw NoxHereAPIError(status: 0, code: "insecure_url", message: "Bearer credentials require HTTPS or a loopback HTTP URL", requestID: nil)
+            }
+        }
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = operation.method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("swift/0.2.0", forHTTPHeaderField: "X-NoxHere-SDK")
-        if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
-        if let organization { request.setValue(organization, forHTTPHeaderField: "X-NoxHere-Organization") }
-        if let projectID { request.setValue(projectID, forHTTPHeaderField: "X-NoxHere-Project") }
+        if usesPlatformAuthentication, let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        if usesPlatformAuthentication, let organization { request.setValue(organization, forHTTPHeaderField: "X-Org") }
+        if usesPlatformAuthentication, let projectID { request.setValue(projectID, forHTTPHeaderField: "X-Project-ID") }
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         if let body {
             request.httpBody = try JSONEncoder().encode(body)
@@ -120,6 +130,20 @@ public struct NoxHereClient: Sendable {
         body: JSONValue? = nil,
         headers: [String: String] = [:]
     ) async throws -> JSONValue {
+        guard !Self.binaryOperations.contains(operationID) else {
+            throw NoxHereAPIError(status: 0, code: "binary_response", message: "Use requestData for attachment downloads", requestID: nil)
+        }
+        let data = try await requestData(operationID, path: path, query: query, body: body, headers: headers)
+        return data.isEmpty ? .null : try JSONDecoder().decode(JSONValue.self, from: data)
+    }
+
+    public func requestData(
+        _ operationID: String,
+        path: [String: String] = [:],
+        query: [String: String] = [:],
+        body: JSONValue? = nil,
+        headers: [String: String] = [:]
+    ) async throws -> Data {
         let request = try makeRequest(operationID: operationID, path: path, query: query, body: body, headers: headers)
         guard let operation = NoxHereOperations.all[operationID] else { preconditionFailure("makeRequest validates operation") }
         let attempts = operation.changeSafety == .safeRead ? maxRetries + 1 : 1
@@ -131,7 +155,7 @@ public struct NoxHereClient: Sendable {
                     throw NoxHereAPIError(status: 0, code: "invalid_response", message: "Expected an HTTP response", requestID: nil)
                 }
                 if (200..<300).contains(http.statusCode) {
-                    return data.isEmpty ? .null : try JSONDecoder().decode(JSONValue.self, from: data)
+                    return data
                 }
                 let error = Self.apiError(status: http.statusCode, data: data, requestID: http.value(forHTTPHeaderField: "X-Request-ID"))
                 if attempt + 1 == attempts || !(http.statusCode == 408 || http.statusCode == 429 || http.statusCode >= 500) { throw error }
@@ -148,8 +172,10 @@ public struct NoxHereClient: Sendable {
     private static func apiError(status: Int, data: Data, requestID: String?) -> NoxHereAPIError {
         let value = (try? JSONDecoder().decode(JSONValue.self, from: data))
         if case .object(let object) = value {
-            let code = object["code"].stringValue ?? "http_\(status)"
-            let message = object["message"].stringValue ?? object["error"].stringValue ?? "HTTP \(status)"
+            let nested: [String: JSONValue]
+            if case .object(let error)? = object["error"] { nested = error } else { nested = [:] }
+            let code = nested["code"].stringValue ?? object["code"].stringValue ?? "http_\(status)"
+            let message = nested["message"].stringValue ?? object["message"].stringValue ?? object["error"].stringValue ?? "HTTP \(status)"
             return .init(status: status, code: code, message: message, requestID: object["requestId"].stringValue ?? requestID)
         }
         return .init(status: status, code: "http_\(status)", message: "HTTP \(status)", requestID: requestID)

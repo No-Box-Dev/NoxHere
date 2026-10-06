@@ -361,6 +361,7 @@ class NoxCueClient:
         self.endpoint = endpoint.strip()
         self.timeout_ms = min(MAX_TIMEOUT_MS, max(250, timeout_ms))
         self.max_retries = min(3, max(0, round(max_retries)))
+        self._enabled = enabled
         self._get_user = get_user
         self._identified_user_id: str | None = None
         self._closed = False
@@ -408,6 +409,7 @@ class NoxCueClient:
             endpoint=self.endpoint,
             timeout_ms=self.timeout_ms,
             max_retries=self.max_retries,
+            enabled=self._enabled,
             get_user=lambda: {"id": user_id},
             transport=self._transport,
         )

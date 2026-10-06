@@ -40,6 +40,24 @@ class NativeAuthTest(unittest.TestCase):
 
 
 class AsyncNativeAuthTest(unittest.IsolatedAsyncioTestCase):
+    async def test_async_start_preserves_device_authorization_fields(self) -> None:
+        async def transport(path: str, body: Mapping[str, object]) -> Mapping[str, object]:
+            del path, body
+            return {
+                "device_code": "device-1",
+                "verification_uri": "https://app.noxhere.com/device",
+                "verification_uri_complete": "https://app.noxhere.com/device?code=ABCD",
+                "user_code": "ABCD",
+                "expires_in": 900,
+                "interval": 5,
+            }
+
+        authorization = await AsyncNativeAuth(client="test-client", transport=transport).start()
+        self.assertEqual(authorization.user_code, "ABCD")
+        self.assertEqual(authorization.verification_uri_complete, "https://app.noxhere.com/device?code=ABCD")
+        self.assertEqual(authorization.expires_in, 900)
+        self.assertEqual(authorization.interval, 5)
+
     async def test_async_refresh_is_single_flight(self) -> None:
         calls = 0
 

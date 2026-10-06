@@ -131,4 +131,6 @@ export interface ServerNoxCueClient extends BaseNoxCueClient<ServerErrorOptions>
 
 export interface NoxCueAdapterOptions {
   component?: string;
+  /** Trusted route template such as `/projects/:projectId`; raw request URLs are never captured. */
+  route?: string;
 }

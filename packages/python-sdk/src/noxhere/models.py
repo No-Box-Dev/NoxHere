@@ -687,18 +687,7 @@ class RevokeNoxCueKeyPath(TypedDict, total=False):
 class RotateApiTokenPath(TypedDict, total=False):
     id: Required[str]
 
-class SearchWorkspaceQuery(TypedDict, total=False):
-    q: NotRequired[str]
-    tools: NotRequired[str]
-    kinds: NotRequired[str]
-    repos: NotRequired[str]
-    assignees: NotRequired[str]
-    statuses: NotRequired[str]
-    tags: NotRequired[str]
-    exclude: NotRequired[str]
-    from_: NotRequired[str]
-    to: NotRequired[str]
-    limit: NotRequired[int]
+SearchWorkspaceQuery = TypedDict('SearchWorkspaceQuery', {'q': NotRequired[str], 'tools': NotRequired[str], 'kinds': NotRequired[str], 'repos': NotRequired[str], 'assignees': NotRequired[str], 'statuses': NotRequired[str], 'tags': NotRequired[str], 'exclude': NotRequired[str], 'from': NotRequired[str], 'to': NotRequired[str], 'limit': NotRequired[int]}, total=False)
 
 class StartConnectionPath(TypedDict, total=False):
     provider: Required[Literal['github', 'slack']]

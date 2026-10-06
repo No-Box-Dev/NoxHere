@@ -225,6 +225,10 @@ function browserCsrfToken(): string | undefined {
   return value ? decodeURIComponent(value) : undefined;
 }
 
+function credentialSafeUrl(url: URL): boolean {
+  return url.protocol === "https:" || (url.protocol === "http:" && ["localhost", "127.0.0.1", "::1"].includes(url.hostname));
+}
+
 export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
   const baseUrl = new URL(options.baseUrl ?? "https://app.noxhere.com").href;
   const requestFetch = options.fetch ?? globalThis.fetch;
@@ -258,8 +262,17 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
         body = JSON.stringify(input.body);
       }
     }
-    const operationBaseUrl = definition.servers[0]?.url ?? baseUrl;
+    const operationBaseUrl = options.baseUrl === undefined ? definition.servers[0]?.url ?? baseUrl : baseUrl;
     const url = endpoint(operationBaseUrl, definition.path, input);
+    if (definition.servers.length > 0 || url.origin !== new URL(baseUrl).origin) {
+      headers.delete("Authorization");
+      headers.delete("X-CSRF-Token");
+      headers.delete("X-Org");
+      headers.delete("X-Project-ID");
+    }
+    if (headers.has("Authorization") && !credentialSafeUrl(url)) {
+      throw new TypeError("Bearer credentials require HTTPS or a loopback HTTP URL");
+    }
     const safeToRetry = definition.changeSafety === "safe_read" || definition.changeSafety === "idempotent_with_event_key";
     for (let attempt = 1; ; attempt += 1) {
       const started = Date.now();

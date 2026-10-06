@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { isUrlMatch, init, destroy, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS } from '../loader.js';
+import { isUrlMatch, init, destroy, identify, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS } from '../loader.js';
 
 describe('isUrlMatch', () => {
   beforeEach(() => {
@@ -126,6 +126,14 @@ describe('init', () => {
     init({});
     expect(document.querySelector('.noxspot-trigger')).toBeNull();
     expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it('exposes identify and updates an open reporter field', () => {
+    document.body.innerHTML = '<input id="noxspot-reporter">';
+    identify({ id: 'opaque-id', name: 'Ada', email: 'ada@example.com' });
+    expect(document.getElementById('noxspot-reporter').value).toBe('Ada');
+    identify(null);
+    expect(document.getElementById('noxspot-reporter').value).toBe('');
   });
 });
 
@@ -259,6 +267,24 @@ describe('buildSubmitBody', () => {
     expect(body.metadata).toEqual(baseData.metadata);
     expect(body.elements).toEqual(baseData.elements);
     expect(body.blockValues).toEqual({ q1: 'answer' });
+  });
+
+  it('adds only explicitly identified reporter profile fields', () => {
+    const body = buildSubmitBody({ ...baseData, reporter: '' }, {
+      ...baseCtx,
+      reporter: {
+        name: 'Ada',
+        email: 'ada@example.com',
+        avatarUrl: 'https://images.example/ada.png',
+        notifyOnResolution: true,
+      },
+    });
+    expect(body).toMatchObject({
+      reporter: 'Ada',
+      reporterEmail: 'ada@example.com',
+      reporterAvatarUrl: 'https://images.example/ada.png',
+      notifyOnResolution: true,
+    });
   });
 
   it('drops elements when element_picker block is absent', () => {

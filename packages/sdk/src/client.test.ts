@@ -94,13 +94,39 @@ describe("@noxhere/sdk", () => {
     const [url, init] = (request.mock.calls as unknown as [URL, RequestInit][])[0];
     expect(String(url)).toBe("https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config");
     const headers = new Headers(init.headers);
-    expect(headers.get("x-org")).toBe("No-Box-Dev");
-    expect(headers.get("x-project-id")).toBe("project-1");
+    expect(headers.get("authorization")).toBeNull();
+    expect(headers.get("x-org")).toBeNull();
+    expect(headers.get("x-project-id")).toBeNull();
     expect(headers.get("x-noxhere-sdk")).toBe("typescript/0.2.0");
 
     await client.feedback.reopenResolvedNoxSpotReport({ path: { token: "secret-token" }, body: new FormData() });
     expect(observed.at(-1)).toContain("[redacted]");
     expect(observed.at(-1)).not.toContain("secret-token");
+  });
+
+  it("keeps operation-server requests on an explicitly configured base URL", async () => {
+    const request = vi.fn(async () => Response.json({ ok: true }));
+    const client = createNoxHere({
+      baseUrl: "https://staging.example.test/root/",
+      token: "nox_sk_staging",
+      fetch: request as typeof fetch,
+    });
+
+    await client.feedback.getPublicNoxSpotConfig({ path: { siteId: "site-1" } });
+
+    const [url, init] = (request.mock.calls as unknown as [URL, RequestInit][])[0];
+    expect(String(url)).toBe("https://staging.example.test/api/spots/public/v1/sites/site-1/config");
+    expect(new Headers(init.headers).get("authorization")).toBeNull();
+  });
+
+  it("rejects bearer credentials over non-loopback HTTP", async () => {
+    const request = vi.fn(async () => Response.json({ ok: true }));
+    const insecure = createNoxHere({ baseUrl: "http://example.test", token: "secret", fetch: request as typeof fetch });
+    await expect(insecure.workspace.listProjects()).rejects.toThrow(/require HTTPS/);
+    expect(request).not.toHaveBeenCalled();
+
+    const loopback = createNoxHere({ baseUrl: "http://127.0.0.1:8787", token: "secret", fetch: request as typeof fetch });
+    await expect(loopback.workspace.listProjects()).resolves.toEqual({ ok: true });
   });
 
   it("bounds requests with a timeout without retrying unsafe work", async () => {

@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable, Mapping, Protocol, Sequence, cast
 from urllib.error import HTTPError
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
-from urllib.parse import quote, urlencode, urljoin
+from urllib.parse import quote, urlencode, urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 from ._operations import OPERATIONS
@@ -65,6 +65,7 @@ class Operation:
 
 
 SDK_VERSION = "0.2.0"
+DEFAULT_BASE_URL = "https://app.noxhere.com"
 MAX_RETRY_AFTER_SECONDS = 30.0
 
 
@@ -96,6 +97,24 @@ def _safe_url(url: str, path: Mapping[str, str | int] | None) -> str:
 
 def _snake(value: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower()
+
+
+def _origin(url: str) -> tuple[str, str | None, int | None]:
+    parsed = urlsplit(url)
+    default_port = 443 if parsed.scheme == "https" else 80 if parsed.scheme == "http" else None
+    return parsed.scheme.lower(), parsed.hostname, parsed.port or default_port
+
+
+def _strip_cross_origin_credentials(headers: dict[str, str]) -> None:
+    sensitive = {"authorization", "x-csrf-token", "x-org", "x-project-id"}
+    for name in list(headers):
+        if name.lower() in sensitive:
+            del headers[name]
+
+
+def _credential_safe_url(url: str) -> bool:
+    parsed = urlsplit(url)
+    return parsed.scheme.lower() == "https" or (parsed.scheme.lower() == "http" and parsed.hostname in {"localhost", "127.0.0.1", "::1"})
 
 
 def _default_transport(method: str, url: str, headers: Mapping[str, str], body: bytes | None, timeout: float = 30.0) -> TransportResult:
@@ -184,6 +203,7 @@ def _request_parts(
     query: Mapping[str, str | int | float | bool | Sequence[str | int | float | bool] | None] | None,
     body: JsonValue | str | bytes | None,
     headers: Mapping[str, str] | None,
+    allow_operation_server: bool,
 ) -> tuple[Operation, str, Mapping[str, str], bytes | None]:
     operation = operations.get(operation_id)
     if operation is None:
@@ -203,10 +223,15 @@ def _request_parts(
             continue
         items = value if isinstance(value, (list, tuple)) else [value]
         pairs.extend((key, str(item).lower() if isinstance(item, bool) else str(item)) for item in items)
-    url = urljoin(base_url, operation_path)
+    selected_base_url = operation.servers[0] if allow_operation_server and operation.servers else base_url
+    url = urljoin(selected_base_url.rstrip("/") + "/", operation_path)
     if pairs:
         url += "?" + urlencode(pairs)
     request_headers = {**default_headers, **dict(headers or {})}
+    if operation.servers or _origin(url) != _origin(base_url):
+        _strip_cross_origin_credentials(request_headers)
+    if any(name.lower() == "authorization" for name in request_headers) and not _credential_safe_url(url):
+        raise ValueError("Bearer credentials require HTTPS or a loopback HTTP URL")
     if body is None:
         encoded = None
     elif isinstance(body, bytes):
@@ -223,7 +248,7 @@ class NoxHereClient:
     def __init__(
         self,
         *,
-        base_url: str = "https://app.noxhere.com",
+        base_url: str = DEFAULT_BASE_URL,
         token: str | None = None,
         organization: str | None = None,
         project_id: str | None = None,
@@ -238,6 +263,7 @@ class NoxHereClient:
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
+        self._allow_operation_servers = base_url.rstrip("/") == DEFAULT_BASE_URL
         self._timeout = max(0.001, timeout)
         self._transport: Transport = transport or _transport_with_timeout(self._timeout)
         self._max_retries = max(0, max_retries)
@@ -294,9 +320,8 @@ class NoxHereClient:
         operation, url, request_headers, encoded = _request_parts(
             base_url=self.base_url, operations=self._operations, default_headers=self._headers,
             operation_id=operation_id, path=path, query=query, body=body, headers=headers,
+            allow_operation_server=self._allow_operation_servers,
         )
-        if operation.servers:
-            url = url.replace(self.base_url.rstrip("/"), operation.servers[0].rstrip("/"), 1)
         safe_to_retry = operation.change_safety in {"safe_read", "idempotent_with_event_key"}
         for attempt in range(1, self._max_retries + 2):
             started = time.monotonic()
@@ -330,8 +355,10 @@ class NoxHereClient:
 
     def with_context(self, *, organization: str | None = None, project_id: str | None = None) -> "NoxHereClient":
         return NoxHereClient(
-            base_url=self._base_url_input, token=self._token, organization=organization,
-            project_id=project_id, csrf_token=self._csrf_token, headers=self._initial_headers,
+            base_url=self._base_url_input, token=self._token,
+            organization=organization if organization is not None else self._organization,
+            project_id=project_id if project_id is not None else self._project_id,
+            csrf_token=self._csrf_token, headers=self._initial_headers,
             transport=self._provided_transport, timeout=self._timeout, max_retries=self._max_retries,
             retry_delay=self._retry_delay, on_request=self._on_request, on_response=self._on_response,
             sleep=self._sleep,
@@ -342,7 +369,7 @@ class AsyncNoxHereClient:
     def __init__(
         self,
         *,
-        base_url: str = "https://app.noxhere.com",
+        base_url: str = DEFAULT_BASE_URL,
         token: str | None = None,
         organization: str | None = None,
         project_id: str | None = None,
@@ -356,6 +383,7 @@ class AsyncNoxHereClient:
         on_response: Callable[[Mapping[str, object]], None] | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
+        self._allow_operation_servers = base_url.rstrip("/") == DEFAULT_BASE_URL
         self._timeout = max(0.001, timeout)
         self._transport: AsyncTransport = transport or _async_transport_with_timeout(self._timeout)
         self._max_retries = max(0, max_retries)
@@ -411,9 +439,8 @@ class AsyncNoxHereClient:
         operation, url, request_headers, encoded = _request_parts(
             base_url=self.base_url, operations=self._operations, default_headers=self._headers,
             operation_id=operation_id, path=path, query=query, body=body, headers=headers,
+            allow_operation_server=self._allow_operation_servers,
         )
-        if operation.servers:
-            url = url.replace(self.base_url.rstrip("/"), operation.servers[0].rstrip("/"), 1)
         safe_to_retry = operation.change_safety in {"safe_read", "idempotent_with_event_key"}
         for attempt in range(1, self._max_retries + 2):
             started = time.monotonic()
@@ -447,8 +474,10 @@ class AsyncNoxHereClient:
 
     def with_context(self, *, organization: str | None = None, project_id: str | None = None) -> "AsyncNoxHereClient":
         return AsyncNoxHereClient(
-            base_url=self._base_url_input, token=self._token, organization=organization,
-            project_id=project_id, csrf_token=self._csrf_token, headers=self._initial_headers,
+            base_url=self._base_url_input, token=self._token,
+            organization=organization if organization is not None else self._organization,
+            project_id=project_id if project_id is not None else self._project_id,
+            csrf_token=self._csrf_token, headers=self._initial_headers,
             transport=self._provided_transport, timeout=self._timeout, max_retries=self._max_retries,
             retry_delay=self._retry_delay, on_request=self._on_request, on_response=self._on_response,
         )

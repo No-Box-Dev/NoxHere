@@ -43,6 +43,8 @@ const config = {
   color: '#FE795D',
   text: 'Report issue',
   getContext: null,
+  getUser: null,
+  reporter: null,
   shortcut: DEFAULT_SHORTCUT,
   members: [],
   blocks: DEFAULT_BLOCKS,
@@ -187,6 +189,8 @@ export function init(options = {}) {
   config.color = options.color || '#FE795D';
   config.text = options.text || 'Report issue';
   config.getContext = typeof options.getContext === 'function' ? options.getContext : null;
+  const reporterProvider = options.getUser ?? options.getReporter;
+  config.getUser = typeof reporterProvider === 'function' ? reporterProvider : null;
   if (options.shortcut !== undefined) config.shortcut = options.shortcut;
 
   setDebug(!!options.debug);
@@ -230,9 +234,46 @@ export function destroy() {
   config.color = '#FE795D';
   config.text = 'Report issue';
   config.getContext = null;
+  config.getUser = null;
+  config.reporter = null;
   config.shortcut = DEFAULT_SHORTCUT;
   config.autoErrorLogging = false;
   config.blocks = DEFAULT_BLOCKS;
+}
+
+function normalizeReporter(reporter) {
+  if (!reporter || typeof reporter !== 'object') return null;
+  const bounded = (value, limit) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
+  const avatarUrl = bounded(reporter.avatarUrl, 2048);
+  let safeAvatarUrl = '';
+  try {
+    const parsed = new URL(avatarUrl);
+    if (parsed.protocol === 'https:' && !parsed.username && !parsed.password) safeAvatarUrl = parsed.href;
+  } catch {
+    // An avatar is optional; invalid URLs are discarded at the privacy boundary.
+  }
+  return {
+    name: bounded(reporter.name, 100),
+    email: bounded(reporter.email, 254),
+    avatarUrl: safeAvatarUrl,
+    notifyOnResolution: reporter.notifyOnResolution === true,
+  };
+}
+
+export function identify(reporter) {
+  config.reporter = normalizeReporter(reporter);
+  const input = document.getElementById('noxspot-reporter');
+  if (input) input.value = config.reporter?.name || '';
+}
+
+function currentReporter() {
+  if (!config.getUser) return config.reporter;
+  try {
+    return normalizeReporter(config.getUser()) || config.reporter;
+  } catch (error) {
+    debugLog('[NoxSpot] getUser() failed:', error?.message || error);
+    return config.reporter;
+  }
 }
 
 function scheduleCorePrefetch() {
@@ -311,6 +352,7 @@ async function fetchConfig() {
 }
 
 function overlayCallbacks() {
+  const reporter = currentReporter();
   return {
     onClose: () => {
       showTrigger();
@@ -320,6 +362,7 @@ function overlayCallbacks() {
     members: config.members,
     categories: config.categories,
     blocks: config.blocks,
+    reporter,
     onCaptureError: (error) => {
       console.error('[NoxSpot] Capture failed:', error);
       showToast({ message: 'Screenshot capture failed', variant: 'error', durationMs: 4000 });
@@ -462,7 +505,10 @@ export function buildSubmitBody(data, ctx) {
     siteId: ctx.siteId,
     title: data.title,
     description: data.description,
-    reporter: data.reporter,
+    reporter: data.reporter || ctx.reporter?.name || '',
+    reporterEmail: ctx.reporter?.notifyOnResolution === true ? ctx.reporter.email || null : null,
+    reporterAvatarUrl: ctx.reporter?.avatarUrl || null,
+    notifyOnResolution: ctx.reporter?.notifyOnResolution === true,
     category: data.category || null,
     environment: ctx.environment || null,
     screenshot: data.screenshot,
@@ -520,6 +566,7 @@ function handleSubmit(data) {
     siteId: config.siteId,
     environment: config.environment,
     blocks: config.blocks,
+    reporter: currentReporter(),
   });
 
   sendReport(body)
