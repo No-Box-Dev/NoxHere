@@ -3,6 +3,7 @@ name: Publish unified SDK
 on:
   push:
     tags: ["sdk-v*"]
+  workflow_dispatch:
 
 concurrency:
   group: publish-unified-sdk
@@ -32,7 +33,9 @@ jobs:
           node_version="$(node -p "require('./packages/sdk/package.json').version")"
           python_version="$(python3 -c "import tomllib; print(tomllib.load(open('packages/python-sdk/pyproject.toml', 'rb'))['project']['version'])")"
           test "$node_version" = "$python_version"
-          test "$GITHUB_REF_NAME" = "sdk-v$node_version"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            test "$GITHUB_REF_NAME" = "sdk-v$node_version"
+          fi
       - run: npm ci --prefix packages/sdk
       - run: npm --prefix packages/sdk test && npm --prefix packages/sdk run check && npm --prefix packages/sdk run build
       - run: python3 packages/python-sdk/scripts/generate_operations.py --check
@@ -41,8 +44,16 @@ jobs:
       - run: python3 -m pip install build && python3 -m build packages/python-sdk
       - name: Publish @noxhere/sdk to npm
         working-directory: packages/sdk
-        run: npm publish --access public --provenance
+        run: |
+          package_name="$(node -p "require('./package.json').name")"
+          package_version="$(node -p "require('./package.json').version")"
+          if npm view "$package_name@$package_version" version >/dev/null 2>&1; then
+            echo "$package_name@$package_version is already published; continuing"
+          else
+            npm publish --access public --provenance
+          fi
       - name: Publish noxhere to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: packages/python-sdk/dist/
+          skip-existing: true
