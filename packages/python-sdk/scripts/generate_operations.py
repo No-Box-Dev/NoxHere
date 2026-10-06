@@ -305,7 +305,7 @@ outputs = {
     OPERATIONS_OUTPUT: "# Generated from packages/sdk-contract/public-api.json. Do not edit by hand.\nfrom typing import Final\n\n" + f"OPERATIONS: Final = {operation_tuples!r}\n",
     MODELS_OUTPUT: models.render(),
     CLIENT_STUB_OUTPUT: render_client_stub(),
-    INIT_STUB_OUTPUT: "from .client import AsyncNoxHereClient, NoxHereApiError, NoxHereClient, NoxHereTransportError, ResourceClient, create_async_noxhere, create_noxhere\nfrom . import models as models\n\n__all__ = [\"AsyncNoxHereClient\", \"NoxHereApiError\", \"NoxHereClient\", \"NoxHereTransportError\", \"ResourceClient\", \"create_async_noxhere\", \"create_noxhere\", \"models\"]\n",
+    INIT_STUB_OUTPUT: "from .auth import AsyncNativeAuth, DeviceAuthorization, NativeAuth, NativeSessionState\nfrom .client import AsyncNoxHereClient, NoxHereApiError, NoxHereClient, NoxHereTransportError, ResourceClient, create_async_noxhere, create_noxhere\nfrom . import models as models\n\n__all__ = [\"AsyncNativeAuth\", \"AsyncNoxHereClient\", \"DeviceAuthorization\", \"NativeAuth\", \"NativeSessionState\", \"NoxHereApiError\", \"NoxHereClient\", \"NoxHereTransportError\", \"ResourceClient\", \"create_async_noxhere\", \"create_noxhere\", \"models\"]\n",
 }
 
 if "--check" in sys.argv:

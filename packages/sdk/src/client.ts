@@ -3,10 +3,10 @@ import type { operations } from "./schema.generated.js";
 
 export interface NoxHereOptions {
   baseUrl?: string;
-  token?: string;
+  token?: string | CredentialProvider;
   organization?: string;
   projectId?: string;
-  csrfToken?: string;
+  csrfToken?: string | CredentialProvider;
   fetch?: typeof fetch;
   headers?: HeadersInit;
   timeoutMs?: number;
@@ -15,7 +15,10 @@ export interface NoxHereOptions {
   onRequest?: (event: NoxHereRequestEvent) => void | Promise<void>;
   onResponse?: (event: NoxHereResponseEvent) => void | Promise<void>;
   sleep?: (milliseconds: number) => Promise<void>;
+  onAuthenticationRequired?: (error: NoxHereApiError) => void | Promise<void>;
 }
+
+export type CredentialProvider = () => string | null | undefined | Promise<string | null | undefined>;
 
 export interface NoxHereRequestEvent {
   operationId: OperationId;
@@ -208,6 +211,18 @@ function requestSignal(caller: AbortSignal | undefined, timeoutMs: number): { si
   };
 }
 
+async function credential(value: string | CredentialProvider | undefined): Promise<string | undefined> {
+  const resolved = typeof value === "function" ? await value() : value;
+  return resolved || undefined;
+}
+
+function browserCsrfToken(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const value = document.cookie.split(";").map((item) => item.trim())
+    .find((item) => item.startsWith("nox_csrf="))?.slice("nox_csrf=".length);
+  return value ? decodeURIComponent(value) : undefined;
+}
+
 export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
   const baseUrl = new URL(options.baseUrl ?? "https://app.noxhere.com").href;
   const requestFetch = options.fetch ?? globalThis.fetch;
@@ -225,10 +240,12 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
     const headers = new Headers(options.headers);
     headers.set("Accept", "application/json");
     headers.set("X-NoxHere-SDK", `typescript/${SDK_VERSION}`);
-    if (options.token) headers.set("Authorization", `Bearer ${options.token}`);
+    const accessToken = await credential(options.token);
+    if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
     if (options.organization) headers.set("X-Org", options.organization);
     if (options.projectId) headers.set("X-Project-ID", options.projectId);
-    if (options.csrfToken) headers.set("X-CSRF-Token", options.csrfToken);
+    const csrfToken = await credential(options.csrfToken) ?? browserCsrfToken();
+    if (csrfToken) headers.set("X-CSRF-Token", csrfToken);
     new Headers(input.headers).forEach((value, key) => headers.set(key, value));
     let body: BodyInit | undefined;
     if (input.body !== undefined) {
@@ -249,7 +266,7 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
       try {
         const response = await requestFetch(url, {
           method: definition.method, headers, body, signal: controlled.signal,
-          credentials: options.token ? "omit" : "same-origin",
+          credentials: accessToken ? "omit" : "same-origin",
         });
         const result = await payload(response);
         const retrying = !response.ok && safeToRetry && retryableStatus(response.status) && attempt <= maxRetries;
@@ -260,6 +277,7 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
         });
         if (response.ok) return result as OperationOutput<K>;
         const error = new NoxHereApiError(response.status, operationId, result, response.headers);
+        if (response.status === 401) await options.onAuthenticationRequired?.(error);
         if (!retrying) throw error;
         await sleep(error.retryAfter ?? baseRetryDelay * 2 ** (attempt - 1));
       } catch (error) {

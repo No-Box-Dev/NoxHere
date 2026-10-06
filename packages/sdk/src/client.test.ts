@@ -110,4 +110,19 @@ describe("@noxhere/sdk", () => {
     await expect(client.workspace.createProject({ body: { name: "Demo" } })).rejects.toBeInstanceOf(NoxHereTransportError);
     expect(request).toHaveBeenCalledTimes(1);
   });
+
+  it("resolves dynamic credentials, browser CSRF, and authentication callbacks per request", async () => {
+    vi.stubGlobal("document", { cookie: "other=value; nox_csrf=csrf%20token" });
+    const token = vi.fn(async () => "nox_at_dynamic");
+    const onAuthenticationRequired = vi.fn();
+    const request = vi.fn(async () => Response.json({ error: "expired" }, { status: 401 }));
+    const client = createNoxHere({ token, fetch: request as typeof fetch, onAuthenticationRequired });
+    await expect(client.workspace.createProject({ body: { name: "Demo" } })).rejects.toMatchObject({ status: 401 });
+    const headers = new Headers((request.mock.calls[0][1] as RequestInit).headers);
+    expect(headers.get("authorization")).toBe("Bearer nox_at_dynamic");
+    expect(headers.get("x-csrf-token")).toBe("csrf token");
+    expect(token).toHaveBeenCalledTimes(1);
+    expect(onAuthenticationRequired).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
 });
