@@ -1,3 +1,5 @@
+import { buildCurlExample } from "./direct-api-examples.js";
+
 const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete"]);
 const searchInput = document.querySelector("#operation-search");
 const serviceFilter = document.querySelector("#service-filter");
@@ -62,6 +64,8 @@ function collectOperations(document) {
         parameters: resolveParameters(operation.parameters ?? [], document),
         requestBody: operation.requestBody,
         responses: operation.responses ?? {},
+        security: operation.security ?? document.security ?? [],
+        curl: buildCurlExample(document, path, method, operation, pathItem),
       });
     }
   }
@@ -164,6 +168,19 @@ function operationCard(operation) {
     responseList.append(item);
   }
   body.append(subsection("Responses", responseList));
+  const example = element("div", "", "operation-example");
+  const exampleHead = element("div", "", "operation-example-head");
+  exampleHead.append(element("strong", "Direct HTTP · curl"));
+  const copy = element("button", "Copy", "copy-button");
+  copy.type = "button";
+  const exampleId = `curl-${operation.id}`;
+  copy.dataset.copy = exampleId;
+  exampleHead.append(copy);
+  const pre = document.createElement("pre");
+  pre.id = exampleId;
+  pre.append(element("code", operation.curl));
+  example.append(exampleHead, pre);
+  body.append(example);
   details.append(summary, body);
   return details;
 }

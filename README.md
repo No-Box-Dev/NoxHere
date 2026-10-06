@@ -53,9 +53,13 @@ npm install --global noxconnect
 Incident actions use immutable `inc_…` IDs returned by incident reads. Error
 fingerprints remain internal grouping data and are not resource URLs.
 
-## SDKs
+## API clients
 
-The generated SDKs cover every operation in [`public/openapi.json`](./public/openapi.json):
+Every operation in [`public/openapi.json`](./public/openapi.json) is callable
+directly over HTTPS; an SDK is never required. See the
+[direct HTTP guide](./public/docs/direct-api.md) for `curl`, `fetch`, and Python
+`requests` examples. The generated SDKs provide typed convenience clients over
+the same contract:
 
 - TypeScript: [`@noxhere/sdk`](./packages/sdk) with focused `feedback` and `incidents` entry points.
 - Python: [`noxhere`](./packages/python-sdk) with matching resource namespaces.

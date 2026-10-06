@@ -46,7 +46,7 @@
     "sdk:check": "npm run openapi:check && node scripts/generate-sdk-contract.mjs --check && node scripts/generate-sdk-events.mjs --check && npm --prefix packages/sdk run generate:check && python3 packages/python-sdk/scripts/generate_operations.py --check && python3 packages/swift-sdk/scripts/generate_operations.py --check",
     "docs:cli-check": "node scripts/check-cli-docs.mjs",
     "docs:stale-check": "node scripts/check-public-docs.mjs",
-    "docs:check": "npm run openapi:check && npm run docs:cli-check && npm run docs:stale-check && vitest run functions/api/__tests__/developer-docs.test.js functions/api/__tests__/openapi-capabilities.test.ts functions/api/__tests__/openapi-routes.test.js functions/api/__tests__/client-api-parity.test.js",
+    "docs:check": "npm run openapi:check && npm run docs:cli-check && npm run docs:stale-check && vitest run functions/api/__tests__/developer-docs.test.js functions/api/__tests__/direct-api-examples.test.js functions/api/__tests__/openapi-capabilities.test.ts functions/api/__tests__/openapi-routes.test.js functions/api/__tests__/client-api-parity.test.js",
     "typecheck": "npm --prefix apps/web run typecheck",
     "typecheck:functions": "tsc -p tsconfig.functions.json",
     "lint": "eslint .",
