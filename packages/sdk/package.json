@@ -1,6 +1,6 @@
 {
   "name": "@noxhere/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unified TypeScript SDK for every NoxHere resource",
   "type": "module",
   "sideEffects": false,
@@ -33,6 +33,14 @@
     "./incidents": {
       "types": "./dist/incidents.d.ts",
       "import": "./dist/incidents.js"
+    },
+    "./telemetry/browser": {
+      "types": "./dist/telemetry/browser.d.ts",
+      "import": "./dist/telemetry/browser.js"
+    },
+    "./telemetry/server": {
+      "types": "./dist/telemetry/server.d.ts",
+      "import": "./dist/telemetry/server.js"
     }
   },
   "scripts": {
@@ -41,9 +49,6 @@
     "build": "npm run generate:check && tsc -p tsconfig.json",
     "check": "npm run generate:check && tsc -p tsconfig.json --noEmit",
     "test": "npm run generate:check && vitest run"
-  },
-  "dependencies": {
-    "@noxcue/sdk": "^0.2.2"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

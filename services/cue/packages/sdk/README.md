@@ -1,4 +1,8 @@
-# `@noxcue/sdk`
+# `@noxcue/sdk` (compatibility package)
+
+This package forwards to `@noxhere/sdk/telemetry/browser` and
+`@noxhere/sdk/telemetry/server`. New applications should install and import
+`@noxhere/sdk`; the examples below remain valid for existing applications.
 
 NoxCue detects whether important user-facing outcomes are working. It does not
 collect arbitrary logs, traces, sessions, or analytics properties.
@@ -57,8 +61,8 @@ Required Notice: Copyright © 2026 No-Box-Dev (https://github.com/No-Box-Dev/Nox
 
 ## Python parity
 
-The sibling `packages/python-sdk` mirrors this package's server API and wire
-format. Both SDKs consume generated constants from
+The sibling `packages/python-sdk` forwards to `noxhere.telemetry`. The unified
+TypeScript and Python SDKs consume generated constants from
 `packages/sdk-contract/contract.json` and execute the same wire fixtures in CI.
 Run `npm run sdk:parity` from `services/cue` before changing the public SDK
 contract.

@@ -11,7 +11,7 @@
       "userId": "user-42",
       "occurredAt": "2026-01-02T03:04:05.000Z",
       "idempotencyKey": "signup:user-42",
-      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.1.7"}
+      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.2.0"}
     }
   },
   {
@@ -27,7 +27,7 @@
       "metric": "custom.journals.added",
       "userId": "user-42",
       "occurredAt": "2026-01-02T03:04:05.000Z",
-      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.1.7"}
+      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.2.0"}
     }
   }
 ]

@@ -5,7 +5,7 @@ import { createNoxCue as createServerNoxCue } from "./server.js";
 
 const browserKey = `nox_pub_${"a".repeat(32)}`;
 const serverKey = `nox_secret_${"b".repeat(32)}`;
-const wireFixtures = JSON.parse(readFileSync(new URL("../../sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
+const wireFixtures = JSON.parse(readFileSync(new URL("../../../../services/cue/packages/sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
   name: string;
   operation: "user.registered" | "activity";
   arguments: { userId: string; metric?: `custom.${string}` };
@@ -20,7 +20,7 @@ function accepted(eventId = "stored-event") {
   });
 }
 
-describe("@noxcue/sdk", () => {
+describe("@noxhere/sdk telemetry", () => {
   it.each(wireFixtures)("matches the shared $name wire fixture", async (fixture) => {
     const request = vi.fn<typeof fetch>(async () => accepted());
     const noxcue = createServerNoxCue({
@@ -61,7 +61,7 @@ describe("@noxcue/sdk", () => {
         environment: "production",
         release: "playnist@abc123",
         runtime: "server",
-        sdkVersion: "0.1.7",
+        sdkVersion: "0.2.0",
       },
     });
   });
@@ -119,7 +119,7 @@ describe("@noxcue/sdk", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.1.7" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.0" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },

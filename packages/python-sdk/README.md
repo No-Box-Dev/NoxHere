@@ -26,3 +26,18 @@ Namespaces are `workspace`, `activity`, `planning`, `feedback`, and
 `incidents`; `connect`, `feed`, `ticket`, `spot`, and `cue` are compatibility
 aliases. Use `noxhere.incidents.create_incident_client` or
 `noxhere.feedback.create_feedback_client` for focused clients.
+
+Server telemetry is available from the same distribution:
+
+```python
+from noxhere.telemetry import NoxCueClient
+
+with NoxCueClient(
+    key=os.environ["NOXHERE_TELEMETRY_KEY"],
+    environment="production",
+) as telemetry:
+    telemetry.user.registered("user-42")
+```
+
+`noxcue` remains available as a deprecated forwarding package for existing
+applications; new code should import `noxhere.telemetry`.

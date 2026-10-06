@@ -7,10 +7,11 @@ import argparse
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "packages" / "sdk-contract" / "contract.json"
-PYTHON_OUTPUT = ROOT / "packages" / "python-sdk" / "src" / "noxcue" / "_contract.py"
-TYPESCRIPT_OUTPUT = ROOT / "packages" / "sdk" / "src" / "contract.ts"
+SERVICE_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = SERVICE_ROOT.parents[1]
+CONTRACT = SERVICE_ROOT / "packages" / "sdk-contract" / "contract.json"
+PYTHON_OUTPUT = REPOSITORY_ROOT / "packages" / "python-sdk" / "src" / "noxhere" / "telemetry" / "_contract.py"
+TYPESCRIPT_OUTPUT = REPOSITORY_ROOT / "packages" / "sdk" / "src" / "telemetry" / "contract.ts"
 
 
 def python_source(contract: dict[str, object]) -> str:
@@ -79,7 +80,7 @@ def main() -> int:
     args = parser.parse_args()
     contract = json.loads(CONTRACT.read_text())
     typescript_package = json.loads(
-        (ROOT / "packages" / "sdk" / "package.json").read_text()
+        (REPOSITORY_ROOT / "packages" / "sdk" / "package.json").read_text()
     )
     if typescript_package["version"] != contract["sdkVersion"]:
         print("packages/sdk/package.json version must equal contract.json sdkVersion")
@@ -93,7 +94,7 @@ def main() -> int:
         for output, expected in outputs.items():
             actual = output.read_text() if output.exists() else ""
             if actual != expected:
-                stale.append(str(output.relative_to(ROOT)))
+                stale.append(str(output.relative_to(REPOSITORY_ROOT)))
         if stale:
             print(f"{', '.join(stale)} stale; run scripts/generate-sdk-contract.py")
             return 1

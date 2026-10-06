@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Test doubles deliberately model arbitrary urllib request/JSON values.
+# pyright: reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportMissingTypeArgument=false, reportUnknownLambdaType=false
+
 import json
 import sys
 import unittest
@@ -9,11 +12,11 @@ from typing import Mapping
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "src"))
 
-from noxcue import NoxCueClient, safe_error_details  # noqa: E402
+from noxhere.telemetry import NoxCueClient, safe_error_details  # noqa: E402
 
 SERVER_KEY = "nox_secret_" + "b" * 32
 FIXTURES = json.loads(
-    (PACKAGE.parent / "sdk-contract" / "wire-fixtures.json").read_text()
+    (PACKAGE.parents[1] / "services" / "cue" / "packages" / "sdk-contract" / "wire-fixtures.json").read_text()
 )
 
 

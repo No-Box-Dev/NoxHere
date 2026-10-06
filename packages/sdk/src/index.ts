@@ -4,3 +4,5 @@ export type { OperationId, ResourceNamespace } from "./operations.generated.js";
 export type { components, operations, paths } from "./schema.generated.js";
 export { createNativeAuth } from "./auth.js";
 export type { DeviceAuthorization, NativeAuth, NativeAuthOptions, NativeSessionState, NativeSessionStorage } from "./auth.js";
+export { createNoxCue, safeErrorDetails } from "./telemetry/server.js";
+export type { DeliveryResult, NoxCueEnvironment, NoxCueFeature, NoxCueOptions, NoxCueOutcome, NoxCueReason, ServerNoxCueClient } from "./telemetry/types.js";

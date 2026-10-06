@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal, TypeAlias, TypedDict
+from typing_extensions import Required
 
 Environment: TypeAlias = Literal[
     "production", "staging", "development", "preview", "test", "local"
@@ -43,8 +44,8 @@ class DeliveryResult:
 
 
 class ErrorDetails(TypedDict, total=False):
-    name: str
-    message: str
-    code: str
+    name: Required[str]
+    message: Required[str]
+    code: Required[str]
     status: int
     stack: str

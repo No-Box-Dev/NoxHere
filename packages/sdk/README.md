@@ -22,6 +22,23 @@ Path parameters, queries, request bodies, responses, and exported component
 models are generated from the same checked OpenAPI contract. Invalid operation
 names and malformed inputs fail during TypeScript compilation.
 
-Use `@noxhere/sdk/incidents` for the focused incident client and existing
-NoxCue event instrumentation, or `@noxhere/sdk/feedback` for a focused public
-feedback client.
+Use `@noxhere/sdk/incidents` for the focused incident client or
+`@noxhere/sdk/feedback` for a focused public feedback client.
+
+Telemetry is part of the same SDK, with runtime-specific entry points so a
+secret ingest key can never be included in a browser bundle:
+
+```ts
+import { createNoxCue } from "@noxhere/sdk/telemetry/server";
+
+const telemetry = createNoxCue({
+  key: process.env.NOXHERE_TELEMETRY_KEY!,
+  environment: "production",
+});
+
+await telemetry.user.registered("user-42");
+```
+
+Browser applications import `@noxhere/sdk/telemetry/browser` and use a
+`nox_pub_…` key. The compatibility function remains named `createNoxCue`, but
+the implementation and wire contract now live only in this package.

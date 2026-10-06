@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# The transport intentionally accepts arbitrary provider objects and JSON values.
+# pyright: reportUnknownVariableType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportPrivateUsage=false
+
 import json
 import math
 import re
@@ -227,11 +230,12 @@ class FeatureAPI:
                 evidence = None
             if evidence is None and (_status_of(result) or 0) >= 400:
                 evidence = result
-            outcome, reason = (
-                (classify or _classify)(feature, evidence)
-                if evidence is not None
-                else ("success", None)
-            )
+            if evidence is None:
+                outcome, reason = "success", None
+            elif classify is not None:
+                outcome, reason = classify(evidence)
+            else:
+                outcome, reason = _classify(feature, evidence)
             self._client._capture(
                 self._client._feature_event(
                     feature,
@@ -243,7 +247,9 @@ class FeatureAPI:
             )
             return result
         except BaseException as error:
-            outcome, reason = (classify or _classify)(feature, error)
+            outcome, reason = (
+                classify(error) if classify is not None else _classify(feature, error)
+            )
             self._client._capture(
                 self._client._feature_event(
                     feature,

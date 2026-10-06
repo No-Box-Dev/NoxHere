@@ -191,6 +191,8 @@ jobs:
           python-version: "3.10"
       - name: Install shared contract dependencies
         run: npm ci --prefix ../..
+      - name: Build unified SDK for compatibility packages
+        run: npm ci --prefix ../../packages/sdk && npm --prefix ../../packages/sdk run build
       - run: npm ci
       - name: Verify Cue Worker, contracts, and build
         run: npm run check
