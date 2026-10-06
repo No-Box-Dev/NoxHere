@@ -54,7 +54,7 @@ if (swiftClientPath) {
 if (failures.length) {
   console.error("Feed changed without matching NoxHere developer documentation:\n");
   for (const failure of failures) console.error(`- ${failure}`);
-  console.error("\nUpdate and deploy https://github.com/No-Box-Dev/noxconnect before merging this service change.");
+  console.error("\nUpdate and deploy https://github.com/No-Box-Dev/NoxHere before merging this service change.");
   process.exitCode = 1;
 } else {
   console.log(`Developer documentation matches ${operations.length} Feed operations and ${manifestFields.length} writable config field(s).`);

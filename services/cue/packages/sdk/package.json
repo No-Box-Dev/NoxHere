@@ -4,7 +4,7 @@
   "description": "Detection-first browser and server SDK for NoxCue",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/No-Box-Dev/noxconnect.git",
+    "url": "git+https://github.com/No-Box-Dev/NoxHere.git",
     "directory": "services/cue/packages/sdk"
   },
   "type": "module",

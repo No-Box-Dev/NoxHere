@@ -4,10 +4,10 @@ Thanks for your interest in improving noxconnect. This is source-available softw
 
 ## Workflow
 
-1. **Fork** the repo (`No-Box-Dev/noxconnect`) to your own account.
+1. **Fork** the repo (`No-Box-Dev/NoxHere`) to your own account.
 2. **Branch** off `main` with a descriptive name, e.g. `feat/issues-label-filter` or `fix/oauth-refresh-race`.
 3. Make your change. Keep it focused — one logical change per PR.
-4. **Open a pull request** against `No-Box-Dev/noxconnect:main`. Fill out the PR template.
+4. **Open a pull request** against `No-Box-Dev/NoxHere:main`. Fill out the PR template.
 
 ## Required checks
 
