@@ -7,14 +7,17 @@ const generated = JSON.parse(readFileSync(new URL("../packages/sdk-contract/publ
 
 describe("language-neutral SDK contract", () => {
   it("is an exact deterministic projection of the canonical OpenAPI document", () => {
+    const operationCount = Object.values(openapi.paths).flatMap((path) =>
+      Object.entries(path).filter(([method, operation]) => ["get", "post", "put", "patch", "delete"].includes(method) && operation?.operationId),
+    ).length;
     expect(generated).toEqual(buildSdkContract(openapi));
-    expect(generated.operations).toHaveLength(149);
-    expect(new Set(generated.operations.map((operation) => operation.id)).size).toBe(149);
+    expect(generated["x-sdk-operations"]).toHaveLength(operationCount);
+    expect(new Set(generated["x-sdk-operations"].map((operation) => operation.id)).size).toBe(operationCount);
     expect(Object.keys(generated.components.schemas)).toEqual(Object.keys(openapi.components.schemas).sort());
   });
 
   it("carries safety, authentication, scope, and content metadata for every operation", () => {
-    for (const operation of generated.operations) {
+    for (const operation of generated["x-sdk-operations"]) {
       expect(operation.authentication, operation.id).toBeTruthy();
       expect(operation.changeSafety, operation.id).toBeTruthy();
       expect(operation.projectScope, operation.id).toBeTruthy();

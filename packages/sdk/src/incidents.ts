@@ -5,4 +5,4 @@ export function createIncidentClient(options: NoxHereOptions = {}) {
 }
 
 export { createNoxCue, safeErrorDetails } from "@noxcue/sdk/server";
-export type { NoxHereOptions, OperationInput, ResourceClient } from "./client.js";
+export type { NoxHereOptions, OperationInput, OperationOutput, ResourceClient } from "./client.js";

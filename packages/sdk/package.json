@@ -13,11 +13,23 @@
     "access": "public",
     "provenance": true
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./feedback": { "types": "./dist/feedback.d.ts", "import": "./dist/feedback.js" },
-    "./incidents": { "types": "./dist/incidents.d.ts", "import": "./dist/incidents.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./feedback": {
+      "types": "./dist/feedback.d.ts",
+      "import": "./dist/feedback.js"
+    },
+    "./incidents": {
+      "types": "./dist/incidents.d.ts",
+      "import": "./dist/incidents.js"
+    }
   },
   "scripts": {
     "generate": "node scripts/generate-operations.mjs",
@@ -31,10 +43,13 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "openapi-typescript": "7.13.0",
     "pyright": "1.1.414",
     "typescript": "~5.9.3",
     "vitest": "^4.1.11"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "license": "PolyForm-Noncommercial-1.0.0"
 }

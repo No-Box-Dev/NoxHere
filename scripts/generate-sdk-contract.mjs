@@ -93,19 +93,12 @@ export function buildSdkContract(document) {
   operations.sort((left, right) => left.id.localeCompare(right.id));
   const canonicalSource = JSON.stringify(sorted(document));
   return sorted({
-    contractVersion: 1,
-    source: "public/openapi.json",
-    sourceSha256: createHash("sha256").update(canonicalSource).digest("hex"),
-    openapi: document.openapi,
-    info: document.info,
-    servers: document.servers ?? [],
-    namespaces: [...new Set(operations.map((operation) => operation.namespace))].sort(),
-    components: {
-      parameters: document.components?.parameters ?? {},
-      schemas: document.components?.schemas ?? {},
-      securitySchemes: document.components?.securitySchemes ?? {},
-    },
-    operations,
+    ...document,
+    "x-sdk-contract-version": 1,
+    "x-sdk-source": "public/openapi.json",
+    "x-sdk-source-sha256": createHash("sha256").update(canonicalSource).digest("hex"),
+    "x-sdk-namespaces": [...new Set(operations.map((operation) => operation.namespace))].sort(),
+    "x-sdk-operations": operations,
   });
 }
 

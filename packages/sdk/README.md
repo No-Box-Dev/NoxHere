@@ -18,6 +18,10 @@ Namespaces are `workspace`, `activity`, `planning`, `feedback`, and
 `cue` point to the same objects. Every operation is also available by its
 OpenAPI operation ID through `nox.operations` and `nox.request()`.
 
+Path parameters, queries, request bodies, responses, and exported component
+models are generated from the same checked OpenAPI contract. Invalid operation
+names and malformed inputs fail during TypeScript compilation.
+
 Use `@noxhere/sdk/incidents` for the focused incident client and existing
 NoxCue event instrumentation, or `@noxhere/sdk/feedback` for a focused public
 feedback client.

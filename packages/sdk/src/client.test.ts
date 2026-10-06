@@ -1,15 +1,34 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { createNoxHere } from "./client.js";
 import { operationDefinitions } from "./operations.generated.js";
 
 describe("@noxhere/sdk", () => {
   it("maps every OpenAPI operation exactly once", () => {
-    expect(operationDefinitions).toHaveLength(149);
-    expect(new Set(operationDefinitions.map((item) => item.id)).size).toBe(149);
+    expect(operationDefinitions.length).toBeGreaterThan(100);
+    expect(new Set(operationDefinitions.map((item) => item.id)).size).toBe(operationDefinitions.length);
     const client = createNoxHere({ fetch: vi.fn() as typeof fetch });
-    expect(Object.keys(client.operations)).toHaveLength(149);
+    expect(Object.keys(client.operations)).toHaveLength(operationDefinitions.length);
     expect(client.cue).toBe(client.incidents);
     expect(client.spot).toBe(client.feedback);
+  });
+
+  it("exposes exact generated operation inputs, outputs, and namespaces", () => {
+    const client = createNoxHere({ fetch: vi.fn() as typeof fetch });
+    expectTypeOf(client.activity.getIssue).parameter(0).toMatchTypeOf<{
+      path: { repo: string; number: number };
+    }>();
+    expectTypeOf(client.activity.getIssue).returns.toMatchTypeOf<Promise<Record<string, unknown>>>();
+
+    if (false) {
+      // @ts-expect-error Required OpenAPI path parameters cannot be omitted.
+      void client.activity.getIssue();
+      // @ts-expect-error OpenAPI path parameter names are exact.
+      void client.activity.getIssue({ path: { repository: "owner/repo", number: 1 } });
+      // @ts-expect-error Activity operations do not leak into the workspace namespace.
+      void client.workspace.getIssue({ path: { repo: "owner/repo", number: 1 } });
+      // @ts-expect-error Required OpenAPI request bodies cannot be omitted.
+      void client.feedback.createNoxSpotSite();
+    }
   });
 
   it("encodes path/query input and applies unified auth headers", async () => {
