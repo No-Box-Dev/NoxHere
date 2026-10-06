@@ -28,11 +28,11 @@ function context(options: { heartbeat?: { status: string; last_succeeded_at: str
   } as never;
 }
 
-describe("NoxConnect health", () => {
+describe("NoxHere health", () => {
   it("returns a minimal liveness response", async () => {
     const response = live();
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ service: "noxconnect", status: "ok" });
+    expect(await response.json()).toEqual({ service: "noxhere", status: "ok" });
   });
 
   it("is ready when storage, cron, queue and product services are healthy", async () => {
@@ -41,7 +41,8 @@ describe("NoxConnect health", () => {
     expect(await response.json()).toMatchObject({
       status: "ok",
       checks: { database: true, scheduledWorker: true, deliveryQueue: true, noxticket: true, noxspot: true, noxcue: true, noxfeed: true },
-      versions: { noxconnect: "connect-sha", noxticket: "service-sha", noxspot: "service-sha", noxcue: "service-sha", noxfeed: "service-sha" },
+      service: "noxhere",
+      versions: { noxhere: "connect-sha", noxticket: "service-sha", noxspot: "service-sha", noxcue: "service-sha", noxfeed: "service-sha" },
     });
   });
 

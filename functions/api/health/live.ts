@@ -1,6 +1,6 @@
 export function onRequestGet(): Response {
   return Response.json(
-    { service: "noxconnect", status: "ok" },
+    { service: "noxhere", status: "ok" },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

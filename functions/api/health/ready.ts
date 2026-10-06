@@ -72,7 +72,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
   checks.noxcue = cue.ok;
   checks.noxfeed = feed.ok;
   const versions = {
-    noxconnect: context.env.BUILD_SHA ?? "development",
+    noxhere: context.env.BUILD_SHA ?? "development",
     ...(ticket.buildSha ? { noxticket: ticket.buildSha } : {}),
     ...(spot.buildSha ? { noxspot: spot.buildSha } : {}),
     ...(cue.buildSha ? { noxcue: cue.buildSha } : {}),
@@ -81,7 +81,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
 
   const ready = Object.values(checks).every(Boolean);
   return Response.json(
-    { service: "noxconnect", status: ready ? "ok" : "not_ready", checks, versions },
+    { service: "noxhere", status: ready ? "ok" : "not_ready", checks, versions },
     { status: ready ? 200 : 503, headers: { "Cache-Control": "no-store" } },
   );
 }

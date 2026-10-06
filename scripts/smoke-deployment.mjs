@@ -8,7 +8,7 @@ async function ready() {
   const body = await response.json();
   return body?.checks?.database === true
     && body?.checks?.noxspot === true
-    && body?.versions?.noxconnect === expectedSha
+    && body?.versions?.noxhere === expectedSha
     && body?.versions?.noxspot === expectedSha;
 }
 
@@ -27,4 +27,4 @@ for (let attempt = 1; attempt <= 12; attempt += 1) {
   } catch { /* retry while bindings and routes converge */ }
   await new Promise((resolve) => setTimeout(resolve, 5_000));
 }
-throw new Error(`NoxConnect release ${expectedSha} did not become ready`);
+throw new Error(`NoxHere release ${expectedSha} did not become ready`);
