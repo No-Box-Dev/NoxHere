@@ -18,6 +18,7 @@ const operations = contract["x-sdk-operations"].map((operation) => ({
   changeSafety: operation.changeSafety,
   requestContentTypes: operation.requestContentTypes,
   responseContentTypes: operation.responseContentTypes,
+  servers: operation.servers,
 }));
 
 const output = `// Generated from public/openapi.json. Do not edit by hand.\n` +

@@ -1,7 +1,7 @@
 # Generated public typing surface. Runtime implementation lives in client.py.
 from __future__ import annotations
 
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Callable, Mapping, Protocol, Sequence
 from . import models
 from .models import JsonValue
 
@@ -13,6 +13,13 @@ class NoxHereApiError(RuntimeError):
     status: int
     operation_id: str
     details: Any
+    code: str
+    request_id: str | None
+    retry_after: float | None
+    retryable: bool
+class NoxHereTransportError(RuntimeError):
+    operation_id: str
+    retryable: bool
 
 class ResourceClient:
     def operation_ids(self) -> tuple[str, ...]: ...
@@ -349,9 +356,10 @@ class NoxHereClient:
     ticket: PlanningClient
     spot: FeedbackClient
     cue: IncidentsClient
-    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Transport = ...) -> None: ...
+    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Transport | None = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ..., sleep: Callable[[float], None] = ...) -> None: ...
     def request(self, operation_id: str, *, path: Mapping[str, str | int] | None = ..., query: Mapping[str, str | int | float | bool | Sequence[str | int | float | bool] | None] | None = ..., body: JsonValue | str | bytes | None = ..., headers: Mapping[str, str] | None = ...) -> Any: ...
     def operation_ids(self) -> tuple[str, ...]: ...
+    def with_context(self, *, organization: str | None = ..., project_id: str | None = ...) -> NoxHereClient: ...
 
 class AsyncNoxHereClient:
     base_url: str
@@ -365,9 +373,10 @@ class AsyncNoxHereClient:
     ticket: AsyncPlanningClient
     spot: AsyncFeedbackClient
     cue: AsyncIncidentsClient
-    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Any = ...) -> None: ...
+    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Any = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ...) -> None: ...
     async def request(self, operation_id: str, *, path: Mapping[str, str | int] | None = ..., query: Mapping[str, str | int | float | bool | Sequence[str | int | float | bool] | None] | None = ..., body: JsonValue | str | bytes | None = ..., headers: Mapping[str, str] | None = ...) -> Any: ...
     def operation_ids(self) -> tuple[str, ...]: ...
+    def with_context(self, *, organization: str | None = ..., project_id: str | None = ...) -> AsyncNoxHereClient: ...
 
 def create_noxhere(**options: Any) -> NoxHereClient: ...
 def create_async_noxhere(**options: Any) -> AsyncNoxHereClient: ...

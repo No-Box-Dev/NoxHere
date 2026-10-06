@@ -14,7 +14,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "archiveProject",
@@ -28,7 +29,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "archiveSpec",
@@ -42,7 +44,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "assignIssue",
@@ -58,7 +61,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "assignSlackConnectionProject",
@@ -74,7 +78,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "backfillProjectPullRequests",
@@ -90,7 +95,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "closeFeature",
@@ -104,7 +110,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "closePullRequest",
@@ -120,7 +127,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createApiToken",
@@ -136,7 +144,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createFeature",
@@ -152,7 +161,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createGuestInvitation",
@@ -168,7 +178,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueCustomFeature",
@@ -184,7 +195,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueCustomMetric",
@@ -200,7 +212,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueKey",
@@ -216,7 +229,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createNoxCueSource",
@@ -232,7 +246,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createNoxSpotSite",
@@ -248,7 +263,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createProject",
@@ -264,7 +280,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "createSpec",
@@ -280,7 +297,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "deleteFeatureAttachment",
@@ -294,7 +312,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxCueCustomFeature",
@@ -308,7 +327,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxCueCustomMetric",
@@ -322,7 +342,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxCueSource",
@@ -336,7 +357,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "deleteNoxSpotSite",
@@ -350,7 +372,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "deleteSpecAttachment",
@@ -364,7 +387,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "disconnectConnection",
@@ -378,7 +402,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "disconnectSlackWorkspace",
@@ -394,7 +419,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "downloadFeatureAttachment",
@@ -408,7 +434,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/octet-stream"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "downloadSpecAttachment",
@@ -422,7 +449,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/octet-stream"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "exchangeLegacyNativeCredential",
@@ -438,7 +466,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getActor",
@@ -452,7 +481,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getAiSettings",
@@ -466,7 +496,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getBootstrapStatus",
@@ -480,7 +511,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectActions",
@@ -494,7 +526,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectAlertRules",
@@ -508,7 +541,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectAlerts",
@@ -522,7 +556,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectDashboard",
@@ -536,7 +571,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getCueProjectStatEvents",
@@ -550,7 +586,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getCurrentMember",
@@ -564,7 +601,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getCurrentWorkSummary",
@@ -578,7 +616,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getEngineerActivity",
@@ -592,7 +631,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getEngineerStats",
@@ -606,7 +646,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getFeedEvent",
@@ -620,7 +661,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getGitHubComments",
@@ -634,7 +676,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getGitHubDetails",
@@ -648,7 +691,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getGitHubRateLimit",
@@ -662,7 +706,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getIdentityProfile",
@@ -676,7 +721,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getIntegrationStatus",
@@ -690,7 +736,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getIssue",
@@ -704,7 +751,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueDailyHealth",
@@ -718,7 +766,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueGitHubIssueSettings",
@@ -732,7 +781,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueProjectMetrics",
@@ -746,7 +796,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxCueProjectOverview",
@@ -760,7 +811,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxFeed",
@@ -774,7 +826,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxFeedDefaultPrompt",
@@ -788,7 +841,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxService",
@@ -802,7 +856,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxServiceConfig",
@@ -816,7 +871,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxServiceHealth",
@@ -830,7 +886,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxServiceSetup",
@@ -844,7 +901,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxSpotProjectOverview",
@@ -858,7 +916,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getNoxSpotResolutionTemplate",
@@ -872,7 +931,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getOperatorUsage",
@@ -886,7 +946,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getProjectActivity",
@@ -900,7 +961,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getProjectFeedback",
@@ -914,7 +976,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getProjectIncident",
@@ -928,7 +991,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getProjectIncidents",
@@ -942,7 +1006,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getProjectIssues",
@@ -956,7 +1021,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getProjectRouting",
@@ -970,7 +1036,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getPublicNoxSpotConfig",
@@ -984,6 +1051,11 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
     ]
   },
   {
@@ -998,7 +1070,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getSetupPlan",
@@ -1012,7 +1085,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getSlackRouting",
@@ -1026,7 +1100,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getSlackStatus",
@@ -1040,7 +1115,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getSpec",
@@ -1054,7 +1130,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getSyncStatus",
@@ -1068,7 +1145,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "getWorkspaceConfig",
@@ -1082,7 +1160,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "ingestNoxCueEvent",
@@ -1098,7 +1177,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listActors",
@@ -1112,7 +1192,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listApiTokens",
@@ -1126,7 +1207,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listConnections",
@@ -1140,7 +1222,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listFeatureAttachments",
@@ -1154,7 +1237,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listFeatures",
@@ -1168,7 +1252,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listFeedEvents",
@@ -1182,7 +1267,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listGitHubTeams",
@@ -1196,7 +1282,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listGuestAccess",
@@ -1210,7 +1297,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listIssues",
@@ -1224,7 +1312,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listMembers",
@@ -1238,7 +1327,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueCustomMetrics",
@@ -1252,7 +1342,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueEvents",
@@ -1266,7 +1357,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueFeatures",
@@ -1280,7 +1372,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listNoxCueSources",
@@ -1294,7 +1387,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listNoxServices",
@@ -1308,7 +1402,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listNoxSpotSites",
@@ -1322,7 +1417,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listOperationFailures",
@@ -1336,7 +1432,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listProjects",
@@ -1350,7 +1447,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listPullRequests",
@@ -1364,7 +1462,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listRepositories",
@@ -1378,7 +1477,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listSlackChannels",
@@ -1392,7 +1492,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listSpecAttachments",
@@ -1406,7 +1507,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "listSpecs",
@@ -1420,7 +1522,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "patchNoxServiceConfig",
@@ -1436,7 +1539,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "patchSlackRouting",
@@ -1452,7 +1556,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "pollNativeDeviceAuthorization",
@@ -1468,7 +1573,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "previewNoxSpotResolutionTemplate",
@@ -1484,7 +1590,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "putAiSettings",
@@ -1500,7 +1607,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "putNoxCueGitHubIssueSettings",
@@ -1516,7 +1624,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "putWorkspaceConfig",
@@ -1532,7 +1641,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "recordAppActivity",
@@ -1548,7 +1658,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "recoverRepositoryHistory",
@@ -1564,7 +1675,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "refreshNativeSession",
@@ -1580,7 +1692,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "reopenResolvedNoxSpotReport",
@@ -1596,6 +1709,11 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "text/html"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
     ]
   },
   {
@@ -1610,7 +1728,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "restoreSpec",
@@ -1624,7 +1743,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "retrieveProject",
@@ -1638,7 +1758,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "retryNoxSpotDeliveries",
@@ -1652,7 +1773,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "revokeApiToken",
@@ -1666,7 +1788,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "revokeBrowserSession",
@@ -1682,7 +1805,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "revokeGuestGrant",
@@ -1696,7 +1820,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "revokeGuestInvitation",
@@ -1710,7 +1835,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "revokeNativeSession",
@@ -1726,7 +1852,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "revokeNoxCueKey",
@@ -1740,7 +1867,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "rotateApiToken",
@@ -1754,7 +1882,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "searchWorkspace",
@@ -1768,7 +1897,8 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "setIssueState",
@@ -1784,7 +1914,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "startConnection",
@@ -1800,7 +1931,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "startNativeDeviceAuthorization",
@@ -1816,7 +1948,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "submitPublicNoxSpotErrors",
@@ -1832,6 +1965,11 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
     ]
   },
   {
@@ -1848,6 +1986,11 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
     ]
   },
   {
@@ -1864,7 +2007,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "syncGitHubEvents",
@@ -1880,7 +2024,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "testNoxCueSource",
@@ -1896,7 +2041,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "testNoxSpotResolutionTemplate",
@@ -1912,7 +2058,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "testSlackDestination",
@@ -1928,7 +2075,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "testSlackRoute",
@@ -1944,7 +2092,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateActor",
@@ -1960,7 +2109,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateCueProjectActions",
@@ -1976,7 +2126,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateFeature",
@@ -1992,7 +2143,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueCustomFeature",
@@ -2008,7 +2160,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueCustomMetric",
@@ -2024,7 +2177,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueErrorStatus",
@@ -2040,7 +2194,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueProjectMetrics",
@@ -2056,7 +2211,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxCueSource",
@@ -2072,7 +2228,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxSpotReport",
@@ -2088,7 +2245,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxSpotResolutionTemplate",
@@ -2104,7 +2262,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateNoxSpotSite",
@@ -2120,7 +2279,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateProjectIncident",
@@ -2136,7 +2296,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateProjectRouting",
@@ -2152,7 +2313,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "updateSpec",
@@ -2168,7 +2330,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "uploadFeatureAttachment",
@@ -2184,7 +2347,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   },
   {
     "id": "uploadSpecAttachment",
@@ -2200,7 +2364,8 @@ export const operationDefinitions = [
     ],
     "responseContentTypes": [
       "application/json"
-    ]
+    ],
+    "servers": []
   }
 ] as const;
 export type OperationId = typeof operationDefinitions[number]["id"];

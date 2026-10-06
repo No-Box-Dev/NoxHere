@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
-import { createNoxHere } from "./client.js";
+import { createNoxHere, NoxHereTransportError } from "./client.js";
 import { operationDefinitions } from "./operations.generated.js";
 
 describe("@noxhere/sdk", () => {
@@ -48,14 +48,66 @@ describe("@noxhere/sdk", () => {
   });
 
   it("serializes JSON and returns structured API errors", async () => {
-    const request = vi.fn(async () => Response.json({ error: "denied" }, { status: 403 }));
+    const request = vi.fn(async () => Response.json(
+      { error: { code: "permission_denied", message: "Access denied" } },
+      { status: 403, headers: { "X-Request-ID": "request-1" } },
+    ));
     const client = createNoxHere({ fetch: request as typeof fetch });
     await expect(client.request("createProject", { body: { name: "Demo" } })).rejects.toMatchObject({
       status: 403,
       operationId: "createProject",
-      details: { error: "denied" },
+      code: "permission_denied",
+      message: "Access denied",
+      requestId: "request-1",
+      retryable: false,
     });
     const [, init] = (request.mock.calls as unknown as [URL, RequestInit][])[0];
     expect(new Headers(init.headers).get("content-type")).toBe("application/json");
+  });
+
+  it("retries only operations classified as safe and honors Retry-After", async () => {
+    const safeRequest = vi.fn()
+      .mockResolvedValueOnce(Response.json({ error: "busy" }, { status: 503, headers: { "Retry-After": "0" } }))
+      .mockResolvedValueOnce(Response.json({ projects: [] }));
+    const sleep = vi.fn(async () => {});
+    const client = createNoxHere({ fetch: safeRequest as typeof fetch, sleep });
+    await expect(client.workspace.listProjects()).resolves.toEqual({ projects: [] });
+    expect(safeRequest).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledWith(0);
+
+    const unsafeRequest = vi.fn(async () => Response.json({ error: "busy" }, { status: 503 }));
+    const unsafe = createNoxHere({ fetch: unsafeRequest as typeof fetch, sleep });
+    await expect(unsafe.workspace.createProject({ body: { name: "Demo" } })).rejects.toMatchObject({ status: 503 });
+    expect(unsafeRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("supports scoped clients, operation servers, SDK headers, and sanitized hooks", async () => {
+    const request = vi.fn(async () => Response.json({ ok: true }));
+    const observed: string[] = [];
+    const client = createNoxHere({
+      token: "nox_sk_secret",
+      fetch: request as typeof fetch,
+      onRequest: (event) => { observed.push(event.url); },
+    }).withContext({ organization: "No-Box-Dev", projectId: "project-1" });
+    await client.feedback.getPublicNoxSpotConfig({ path: { siteId: "site-1" } });
+    const [url, init] = (request.mock.calls as unknown as [URL, RequestInit][])[0];
+    expect(String(url)).toBe("https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config");
+    const headers = new Headers(init.headers);
+    expect(headers.get("x-org")).toBe("No-Box-Dev");
+    expect(headers.get("x-project-id")).toBe("project-1");
+    expect(headers.get("x-noxhere-sdk")).toBe("typescript/0.2.0");
+
+    await client.feedback.reopenResolvedNoxSpotReport({ path: { token: "secret-token" }, body: new FormData() });
+    expect(observed.at(-1)).toContain("[redacted]");
+    expect(observed.at(-1)).not.toContain("secret-token");
+  });
+
+  it("bounds requests with a timeout without retrying unsafe work", async () => {
+    const request = vi.fn((_url: URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+    }));
+    const client = createNoxHere({ fetch: request as typeof fetch, timeoutMs: 5, maxRetries: 0 });
+    await expect(client.workspace.createProject({ body: { name: "Demo" } })).rejects.toBeInstanceOf(NoxHereTransportError);
+    expect(request).toHaveBeenCalledTimes(1);
   });
 });

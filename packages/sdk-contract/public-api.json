@@ -13102,12 +13102,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Acknowledge newly discovered repositories",
       "tag": "NoxConnect"
     },
@@ -13175,12 +13170,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Stop tracking a project without deleting it",
       "tag": "NoxConnect"
     },
@@ -13245,12 +13235,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Archive a specification",
       "tag": "NoxTicket"
     },
@@ -13323,12 +13308,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Assign a tracked GitHub issue",
       "tag": "NoxTicket"
     },
@@ -13404,12 +13384,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Assign a Slack workspace to a project",
       "tag": "NoxConnect"
     },
@@ -13494,12 +13469,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Queue bounded NoxFeed pull-request history",
       "tag": "NoxConnect"
     },
@@ -13570,12 +13540,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Close a feature",
       "tag": "NoxTicket"
     },
@@ -13662,12 +13627,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Close a pull request through GitHub",
       "tag": "Activity"
     },
@@ -13736,12 +13696,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Create a scoped API token",
       "tag": "NoxConnect"
     },
@@ -13823,12 +13778,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Create a feature",
       "tag": "NoxTicket"
     },
@@ -13901,12 +13851,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Invite a guest to an organization, project, or capability",
       "tag": "NoxConnect"
     },
@@ -13985,12 +13930,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Register a custom NoxCue feature before ingest",
       "tag": "NoxCue"
     },
@@ -14069,12 +14009,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Register a custom activity metric before ingest",
       "tag": "NoxCue"
     },
@@ -14172,12 +14107,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Create a one-time NoxCue browser or server ingest key",
       "tag": "NoxCue"
     },
@@ -14253,12 +14183,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Create a NoxCue event source",
       "tag": "NoxCue"
     },
@@ -14334,12 +14259,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Create a NoxSpot site",
       "tag": "NoxSpot"
     },
@@ -14412,12 +14332,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Create an empty project scope",
       "tag": "NoxConnect"
     },
@@ -14493,12 +14408,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Create a specification",
       "tag": "NoxTicket"
     },
@@ -14569,12 +14479,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Delete a feature attachment",
       "tag": "NoxTicket"
     },
@@ -14648,12 +14553,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Delete a custom feature definition while retaining historical results",
       "tag": "NoxCue"
     },
@@ -14727,12 +14627,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Delete a custom metric definition while retaining historical events",
       "tag": "NoxCue"
     },
@@ -14800,12 +14695,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Delete a NoxCue source and revoke its keys",
       "tag": "NoxCue"
     },
@@ -14873,12 +14763,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Delete a NoxSpot site and its screenshots",
       "tag": "NoxSpot"
     },
@@ -14949,12 +14834,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Delete a specification attachment",
       "tag": "NoxTicket"
     },
@@ -15019,12 +14899,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Disconnect a provider",
       "tag": "NoxConnect"
     },
@@ -15097,12 +14972,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Disconnect one Slack workspace",
       "tag": "NoxConnect"
     },
@@ -15173,12 +15043,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Download a feature attachment",
       "tag": "NoxTicket"
     },
@@ -15249,12 +15114,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Download a specification attachment",
       "tag": "NoxTicket"
     },
@@ -15344,12 +15204,7 @@
         }
       },
       "security": [],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Upgrade a legacy native session",
       "tag": "NoxConnect"
     },
@@ -15416,12 +15271,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get one organization identity",
       "tag": "NoxConnect"
     },
@@ -15482,12 +15332,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get organization AI execution settings",
       "tag": "Activity"
     },
@@ -15548,12 +15393,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read initial GitHub synchronization status",
       "tag": "NoxConnect"
     },
@@ -15620,12 +15460,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project Cue actions",
       "tag": "NoxCue"
     },
@@ -15692,12 +15527,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project Cue alert rules",
       "tag": "NoxCue"
     },
@@ -15764,12 +15594,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project Cue alerts",
       "tag": "NoxCue"
     },
@@ -15836,12 +15661,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read the project Cue dashboard",
       "tag": "NoxCue"
     },
@@ -15908,12 +15728,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project Cue statistic events",
       "tag": "NoxCue"
     },
@@ -15974,12 +15789,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read membership and NoxConnect role for the current organization",
       "tag": "NoxConnect"
     },
@@ -16040,12 +15850,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read per-person current-work counts for the selected project",
       "tag": "Activity"
     },
@@ -16122,12 +15927,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get normalized monthly activity for one engineer",
       "tag": "Activity"
     },
@@ -16188,12 +15988,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read current work counts by engineer",
       "tag": "Activity"
     },
@@ -16263,12 +16058,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read one detailed NoxFeed event",
       "tag": "Activity"
     },
@@ -16329,12 +16119,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read comments for a tracked pull request",
       "tag": "Activity"
     },
@@ -16395,12 +16180,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read live details for a tracked issue or pull request",
       "tag": "Activity"
     },
@@ -16461,12 +16241,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read the connected GitHub installation rate limit",
       "tag": "NoxConnect"
     },
@@ -16521,12 +16296,7 @@
           "nativeSession": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read the signed-in GitHub identity and organizations",
       "tag": "NoxConnect"
     },
@@ -16587,12 +16357,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read credential-free integration readiness",
       "tag": "NoxConnect"
     },
@@ -16665,12 +16430,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get one tracked GitHub issue",
       "tag": "Activity"
     },
@@ -16743,12 +16503,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get stored NoxCue-derived user metrics and digest state",
       "tag": "NoxCue"
     },
@@ -16809,12 +16564,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List project GitHub-incident settings",
       "tag": "NoxCue"
     },
@@ -16881,12 +16631,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List selectable metrics and their active event status for one project",
       "tag": "NoxCue"
     },
@@ -16947,12 +16692,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read a guest-safe NoxCue project overview",
       "tag": "NoxCue"
     },
@@ -17073,12 +16813,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get normalized current work, posts, and release notes",
       "tag": "Activity"
     },
@@ -17139,12 +16874,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read the server-owned NoxFeed release-notes prompt",
       "tag": "Activity"
     },
@@ -17211,12 +16941,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get capabilities and setup readiness for one Nox service",
       "tag": "NoxConnect"
     },
@@ -17290,12 +17015,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get the settings owned by one service",
       "tag": "NoxConnect"
     },
@@ -17362,12 +17082,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get service readiness and connection checks",
       "tag": "NoxConnect"
     },
@@ -17434,12 +17149,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get setup state, sections, blockers, and capabilities for one service",
       "tag": "NoxConnect"
     },
@@ -17500,12 +17210,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read a guest-safe NoxSpot project overview",
       "tag": "NoxSpot"
     },
@@ -17578,12 +17283,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read the effective NoxSpot resolution email template",
       "tag": "NoxSpot"
     },
@@ -17638,12 +17338,7 @@
           "nativeSession": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read platform-wide operator usage",
       "tag": "NoxConnect"
     },
@@ -17710,12 +17405,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project activity",
       "tag": "NoxConnect"
     },
@@ -17782,12 +17472,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project feedback",
       "tag": "NoxConnect"
     },
@@ -17863,12 +17548,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read one project incident",
       "tag": "NoxConnect"
     },
@@ -17935,12 +17615,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project incidents",
       "tag": "NoxConnect"
     },
@@ -18007,12 +17682,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read project issues",
       "tag": "NoxConnect"
     },
@@ -18073,12 +17743,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List NoxConnect projects, repository assignments, and product destinations",
       "tag": "NoxConnect"
     },
@@ -18212,12 +17877,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get one tracked pull request",
       "tag": "Activity"
     },
@@ -18278,12 +17938,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get resumable setup state and next actions",
       "tag": "NoxConnect"
     },
@@ -18344,12 +17999,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get service-to-channel routing",
       "tag": "NoxConnect"
     },
@@ -18410,12 +18060,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read Slack connections and delivery health",
       "tag": "NoxConnect"
     },
@@ -18482,12 +18127,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Get one specification",
       "tag": "NoxTicket"
     },
@@ -18548,12 +18188,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read GitHub synchronization freshness",
       "tag": "NoxConnect"
     },
@@ -18623,12 +18258,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Read one shared workspace configuration document",
       "tag": "NoxConnect"
     },
@@ -18714,12 +18344,7 @@
           "noxCueKey": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Submit one standardized NoxCue event through the stable NoxConnect gateway",
       "tag": "NoxCue"
     },
@@ -18780,12 +18405,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List organization people and identity overlays",
       "tag": "NoxConnect"
     },
@@ -18842,12 +18462,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List redacted API-token metadata",
       "tag": "NoxConnect"
     },
@@ -18908,12 +18523,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List provider connection state",
       "tag": "NoxConnect"
     },
@@ -18977,12 +18587,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List feature attachments",
       "tag": "NoxTicket"
     },
@@ -19054,12 +18659,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List NoxTicket features",
       "tag": "NoxTicket"
     },
@@ -19120,12 +18720,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List detailed NoxFeed events",
       "tag": "Activity"
     },
@@ -19186,12 +18781,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List teams visible through the connected GitHub organization",
       "tag": "NoxConnect"
     },
@@ -19252,12 +18842,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List guest invitations and active grants",
       "tag": "NoxConnect"
     },
@@ -19384,12 +18969,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List tracked GitHub issues",
       "tag": "Activity"
     },
@@ -19450,12 +19030,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List members visible through the connected GitHub organization",
       "tag": "NoxConnect"
     },
@@ -19522,12 +19097,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List registered custom activity metrics and event status",
       "tag": "NoxCue"
     },
@@ -19613,12 +19183,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List recent NoxCue events and Slack delivery state",
       "tag": "NoxCue"
     },
@@ -19685,12 +19250,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List standard and registered custom features with health",
       "tag": "NoxCue"
     },
@@ -19754,12 +19314,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List NoxCue sources, linked projects, and ingest keys",
       "tag": "NoxCue"
     },
@@ -19823,12 +19378,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List Nox services, their focus, capabilities, and setup readiness",
       "tag": "NoxConnect"
     },
@@ -19892,12 +19442,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List NoxSpot sites",
       "tag": "NoxSpot"
     },
@@ -19958,12 +19503,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List recent background-operation failures",
       "tag": "NoxConnect"
     },
@@ -20024,12 +19564,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List active projects used by feature setup",
       "tag": "NoxConnect"
     },
@@ -20143,12 +19678,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List tracked pull requests",
       "tag": "Activity"
     },
@@ -20219,12 +19749,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List tracked repositories or include all discovered repositories",
       "tag": "NoxConnect"
     },
@@ -20285,12 +19810,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List channels visible to the connected Nox bot",
       "tag": "NoxConnect"
     },
@@ -20354,12 +19874,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List specification attachments",
       "tag": "NoxTicket"
     },
@@ -20438,12 +19953,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "List NoxTicket specifications",
       "tag": "NoxTicket"
     },
@@ -20538,12 +20048,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Partially update the settings owned by one service",
       "tag": "NoxConnect"
     },
@@ -20616,12 +20121,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Partially update service-to-channel routing",
       "tag": "NoxConnect"
     },
@@ -20707,12 +20207,7 @@
         }
       },
       "security": [],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Poll native GitHub authorization",
       "tag": "NoxConnect"
     },
@@ -20806,12 +20301,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Render a safe preview of a draft resolution email template",
       "tag": "NoxSpot"
     },
@@ -20900,12 +20390,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Set organization AI execution mode",
       "tag": "Activity"
     },
@@ -20981,12 +20466,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update project GitHub-incident settings",
       "tag": "NoxCue"
     },
@@ -21068,12 +20548,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Replace one shared workspace configuration document",
       "tag": "NoxConnect"
     },
@@ -21146,12 +20621,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Record bounded first-party app activity",
       "tag": "NoxConnect"
     },
@@ -21224,12 +20694,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Recover bounded repository history",
       "tag": "NoxConnect"
     },
@@ -21312,12 +20777,7 @@
         }
       },
       "security": [],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Rotate a native session",
       "tag": "NoxConnect"
     },
@@ -21472,12 +20932,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Resume tracking an eligible project",
       "tag": "NoxConnect"
     },
@@ -21542,12 +20997,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Restore a specification",
       "tag": "NoxTicket"
     },
@@ -21617,12 +21067,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Search the selected project across Nox services",
       "tag": "NoxConnect"
     },
@@ -21693,12 +21138,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Retry blocked deliveries for one NoxSpot site",
       "tag": "NoxSpot"
     },
@@ -21764,12 +21204,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Revoke an API token",
       "tag": "NoxConnect"
     },
@@ -21833,12 +21268,7 @@
           "csrfProof": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Revoke the current browser session",
       "tag": "NoxConnect"
     },
@@ -21909,12 +21339,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Revoke active guest access",
       "tag": "NoxConnect"
     },
@@ -21985,12 +21410,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Revoke a pending guest invitation",
       "tag": "NoxConnect"
     },
@@ -22060,12 +21480,7 @@
         }
       },
       "security": [],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Revoke the current native session",
       "tag": "NoxConnect"
     },
@@ -22136,12 +21551,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Revoke a NoxCue ingest key",
       "tag": "NoxCue"
     },
@@ -22207,12 +21617,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Rotate an API token and return its replacement once",
       "tag": "NoxConnect"
     },
@@ -22366,12 +21771,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Search accessible project data with combinable filters",
       "tag": "Activity"
     },
@@ -22444,12 +21844,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Open or close a tracked GitHub issue",
       "tag": "NoxTicket"
     },
@@ -22525,12 +21920,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Start a provider connection",
       "tag": "NoxConnect"
     },
@@ -22611,12 +22001,7 @@
         }
       },
       "security": [],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Start native GitHub authorization",
       "tag": "NoxConnect"
     },
@@ -22875,12 +22260,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Synchronize bounded GitHub data",
       "tag": "NoxConnect"
     },
@@ -22953,12 +22333,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Backfill bounded GitHub activity events",
       "tag": "NoxConnect"
     },
@@ -23043,12 +22418,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Test a NoxCue source destination",
       "tag": "NoxCue"
     },
@@ -23151,12 +22521,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Send a draft resolution email through NoxConnect and Postmark",
       "tag": "NoxSpot"
     },
@@ -23229,12 +22594,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Send a test message to a Slack destination",
       "tag": "NoxConnect"
     },
@@ -23307,12 +22667,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Send a test message through a saved or candidate route",
       "tag": "NoxConnect"
     },
@@ -23391,12 +22746,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update an organization identity overlay",
       "tag": "NoxConnect"
     },
@@ -23475,12 +22825,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update project Cue actions",
       "tag": "NoxCue"
     },
@@ -23565,12 +22910,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Partially update a feature",
       "tag": "NoxTicket"
     },
@@ -23655,12 +22995,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update or pause a registered custom feature",
       "tag": "NoxCue"
     },
@@ -23745,12 +23080,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Rename or pause a registered custom activity metric",
       "tag": "NoxCue"
     },
@@ -23856,12 +23186,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update an error incident status",
       "tag": "NoxCue"
     },
@@ -23940,12 +23265,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Choose metrics included in one project's daily report",
       "tag": "NoxCue"
     },
@@ -24024,12 +23344,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update a NoxCue event source",
       "tag": "NoxCue"
     },
@@ -24140,12 +23455,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update a NoxSpot report status",
       "tag": "NoxSpot"
     },
@@ -24260,12 +23570,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update or reset a NoxSpot resolution email template",
       "tag": "NoxSpot"
     },
@@ -24344,12 +23649,7 @@
           "noxApiToken": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update a NoxSpot site including its channel override",
       "tag": "NoxSpot"
     },
@@ -24437,12 +23737,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Update one project incident",
       "tag": "NoxConnect"
     },
@@ -24524,12 +23819,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Atomically update one project's repositories and named Slack destinations",
       "tag": "NoxConnect"
     },
@@ -24611,12 +23901,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Partially update or relink a specification",
       "tag": "NoxTicket"
     },
@@ -24707,12 +23992,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Upload a bounded feature attachment",
       "tag": "NoxTicket"
     },
@@ -24803,12 +24083,7 @@
           "organization": []
         }
       ],
-      "servers": [
-        {
-          "description": "Hosted NoxConnect API",
-          "url": "https://app.noxhere.com"
-        }
-      ],
+      "servers": [],
       "summary": "Upload a bounded specification attachment",
       "tag": "NoxTicket"
     }

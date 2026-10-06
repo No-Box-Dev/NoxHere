@@ -80,7 +80,7 @@ export function buildSdkContract(document) {
         projectScope: operation["x-project-scope"] ?? "none",
         changeSafety: operation["x-change-safety"],
         security: operation.security ?? document.security ?? [],
-        servers: operation.servers ?? document.servers ?? [],
+        servers: operation.servers ?? [],
         parameters: [...(pathItem.parameters ?? []), ...(operation.parameters ?? [])],
         requestBody: operation.requestBody ?? null,
         responses: operation.responses,
