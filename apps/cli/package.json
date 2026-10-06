@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/No-Box-Dev/noxconnect.git",
+    "url": "git+https://github.com/No-Box-Dev/NoxHere.git",
     "directory": "apps/cli"
   },
   "publishConfig": {

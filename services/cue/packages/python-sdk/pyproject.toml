@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/No-Box-Dev/noxconnect"
+Repository = "https://github.com/No-Box-Dev/NoxHere"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/noxcue"]

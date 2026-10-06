@@ -19,7 +19,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://app.noxhere.com"
-Repository = "https://github.com/No-Box-Dev/noxconnect"
+Repository = "https://github.com/No-Box-Dev/NoxHere"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/noxhere"]

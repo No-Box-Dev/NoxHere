@@ -16,7 +16,7 @@ Worker, a Queue, and R2 buckets. This guide walks a fresh deploy end to end.
 ## 1. Clone and configure
 
 ```bash
-git clone https://github.com/No-Box-Dev/noxconnect.git
+git clone https://github.com/No-Box-Dev/NoxHere.git
 cd noxconnect
 npm ci
 cp .env.example .env.local
