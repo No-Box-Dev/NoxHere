@@ -63,7 +63,8 @@
     "openapi-typescript": "7.13.0",
     "pyright": "1.1.414",
     "typescript": "~5.9.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "zod": "^4.4.3"
   },
   "engines": {
     "node": ">=18"

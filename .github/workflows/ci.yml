@@ -167,6 +167,7 @@ jobs:
         with:
           swift-version: "6.2"
       - run: npm ci --prefix packages/sdk
+      - run: python3 -m pip install -e packages/python-sdk
       - run: npm run sdk:check
       - run: npm --prefix packages/sdk test
       - run: npm --prefix packages/sdk run check
@@ -198,6 +199,8 @@ jobs:
       - name: Build unified SDK for compatibility packages
         run: npm ci --prefix ../../packages/sdk && npm --prefix ../../packages/sdk run build
       - run: npm ci
+      - name: Install unified Python SDK for compatibility tests
+        run: python3 -m pip install -e ../../packages/python-sdk
       - name: Verify Cue Worker, contracts, and build
         run: npm run check
       - name: Verify TypeScript/Python SDK parity
