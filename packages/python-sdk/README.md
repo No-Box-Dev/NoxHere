@@ -41,3 +41,9 @@ with NoxCueClient(
 
 `noxcue` remains available as a deprecated forwarding package for existing
 applications; new code should import `noxhere.telemetry`.
+
+`noxhere.events.create_platform_event` builds the same common event envelope
+as the TypeScript SDK. Versions, size limits, privacy keys, and the registered
+event-type catalog are generated from the canonical platform event contract,
+so contract changes make the SDK drift check fail until both languages are
+regenerated.

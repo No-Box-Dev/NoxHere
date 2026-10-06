@@ -6,3 +6,5 @@ export { createNativeAuth } from "./auth.js";
 export type { DeviceAuthorization, NativeAuth, NativeAuthOptions, NativeSessionState, NativeSessionStorage } from "./auth.js";
 export { createNoxCue, safeErrorDetails } from "./telemetry/server.js";
 export type { DeliveryResult, NoxCueEnvironment, NoxCueFeature, NoxCueOptions, NoxCueOutcome, NoxCueReason, ServerNoxCueClient } from "./telemetry/types.js";
+export { createPlatformEvent } from "./events.js";
+export type { CreatePlatformEvent, JsonValue, PlatformEventActor, PlatformEventEnvelope, PlatformEventType } from "./events.js";

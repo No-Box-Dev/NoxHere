@@ -41,6 +41,14 @@
     "./telemetry/server": {
       "types": "./dist/telemetry/server.d.ts",
       "import": "./dist/telemetry/server.js"
+    },
+    "./events": {
+      "types": "./dist/events.d.ts",
+      "import": "./dist/events.js"
+    },
+    "./widget": {
+      "types": "./dist/widget.d.ts",
+      "import": "./dist/widget.js"
     }
   },
   "scripts": {

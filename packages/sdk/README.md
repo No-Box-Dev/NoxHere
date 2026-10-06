@@ -42,3 +42,22 @@ await telemetry.user.registered("user-42");
 Browser applications import `@noxhere/sdk/telemetry/browser` and use a
 `nox_pub_…` key. The compatibility function remains named `createNoxCue`, but
 the implementation and wire contract now live only in this package.
+
+`@noxhere/sdk/events` builds the shared versioned event envelope and rejects
+oversized data or credential/private-identity fields. Its registered event
+types are generated from the canonical platform contract. Each event keeps its
+own typed `type` and custom `data` while the outer JSON remains consistent.
+
+Browser apps can load their site-specific feedback widget without managing a
+script tag:
+
+```ts
+import { installNoxHereWidget } from "@noxhere/sdk/widget";
+
+await installNoxHereWidget({
+  siteId: "site-1",
+  reporter: { name: currentUser.name, email: currentUser.email },
+});
+```
+
+Identity is passed only when the host application explicitly supplies it.

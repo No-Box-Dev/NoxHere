@@ -6,3 +6,8 @@ capability. The production service loads `noxspot.min.js` and
 `blindspot.min.js` build is retained only for legacy embed compatibility.
 
 Run `npm test` and `npm run build` before publishing the three generated files.
+
+Applications using the TypeScript SDK can install the site-specific script
+through `installNoxHereWidget` from `@noxhere/sdk/widget`. The widget remains a
+separate lazy-loaded bundle so it does not inflate the API client's package or
+application startup bundle.
