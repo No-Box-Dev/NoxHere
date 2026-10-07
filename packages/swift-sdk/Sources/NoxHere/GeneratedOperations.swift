@@ -28,7 +28,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 150
+    public static let operationCount = 151
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -152,6 +152,7 @@ public enum NoxHereOperations {
         "revokeNoxCueKey": .init(id: "revokeNoxCueKey", method: "DELETE", path: "/api/v1/cues/sources/{sourceId}/keys/{keyId}", resource: .incidents, changeSafety: .destructive, servers: []),
         "rotateApiToken": .init(id: "rotateApiToken", method: "POST", path: "/api/v1/api-tokens/{id}/rotate", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "searchWorkspace": .init(id: "searchWorkspace", method: "GET", path: "/api/v1/search", resource: .activity, changeSafety: .safeRead, servers: []),
+        "sendSlackMessage": .init(id: "sendSlackMessage", method: "POST", path: "/api/v1/integrations/slack/messages", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "setIssueState": .init(id: "setIssueState", method: "POST", path: "/api/v1/issue-state", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
         "startConnection": .init(id: "startConnection", method: "POST", path: "/api/v1/integrations/connections/{provider}/start", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "startNativeDeviceAuthorization": .init(id: "startNativeDeviceAuthorization", method: "POST", path: "/api/v1/auth/native/device/start", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
