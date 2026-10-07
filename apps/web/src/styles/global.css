@@ -452,6 +452,38 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .spot-context pre { max-height: 260px; margin: 0; padding: 10px; overflow: auto; border-top: 1px solid var(--line); background: var(--soft); color: var(--muted); font: 8px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
 .spot-report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 2px; }
 .spot-report-actions a, .spot-report-actions > span { padding: 6px 8px; border-radius: 7px; background: var(--service-soft); color: var(--service); font-size: 8px; font-weight: 700; text-decoration: none; }
+.widget-settings { display: grid; gap: 12px; }
+.widget-settings-head, .widget-site-card > header, .widget-environments > header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.widget-settings-head h2, .widget-site-card h3 { margin: 0; color: var(--ink); font-size: 12px; }
+.widget-settings-head p, .widget-site-card header p, .widget-install p, .widget-environments header p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
+.widget-settings-head > span, .widget-health { padding: 5px 8px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: 8px; font-weight: 750; }
+.widget-create, .widget-site-card { padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: #fff; box-shadow: var(--shadow); }
+.widget-create { display: grid; gap: 7px; }
+.widget-create > label, .widget-fields label, .widget-environment label { color: var(--muted); font-size: 8px; font-weight: 700; }
+.widget-create > div { display: flex; gap: 8px; }
+.widget-create input, .widget-fields input:not([type="checkbox"]), .widget-fields select, .widget-environment input { min-height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--body); font: inherit; outline: none; }
+.widget-create input { flex: 1; }
+.widget-site-list { display: grid; gap: 10px; }
+.widget-site-card { display: grid; gap: 13px; }
+.widget-install { display: grid; gap: 4px; }
+.widget-install b, .widget-environments b { font-size: 9px; }
+.widget-install > div { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 10px; border-radius: 8px; background: #252321; }
+.widget-install code { flex: 1; overflow-x: auto; color: #f6f3ef; font: 8px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
+.widget-install button, .widget-environments header button, .widget-remove { padding: 5px 7px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--body); font-size: 8px; font-weight: 700; }
+.widget-install button { border-color: #4c4945; background: #383532; color: #fff; }
+.widget-editor { border-top: 1px solid var(--line); }
+.widget-editor > summary { display: flex; justify-content: space-between; padding-top: 12px; color: var(--body); cursor: pointer; list-style: none; font-size: 9px; font-weight: 750; }
+.widget-editor > summary::-webkit-details-marker { display: none; }
+.widget-editor > form { display: grid; gap: 13px; padding-top: 13px; }
+.widget-fields { display: grid; grid-template-columns: 1fr 100px 1fr; gap: 9px; align-items: end; }
+.widget-fields label:not(.widget-check), .widget-environment label { display: grid; gap: 5px; }
+.widget-fields input[type="color"] { width: 100%; padding: 4px; }
+.widget-check { display: flex !important; align-items: center; gap: 6px; min-height: 34px; }
+.widget-environments { display: grid; gap: 8px; padding: 11px; border-radius: 9px; background: var(--soft); }
+.widget-environment { display: grid; grid-template-columns: minmax(120px, .7fr) minmax(180px, 1.3fr) auto auto; align-items: end; gap: 8px; }
+.widget-warning { margin: 0; padding: 8px; border-radius: 7px; background: var(--amber-soft); color: var(--amber); font-size: 8px; }
+.widget-remove { margin-bottom: 1px; color: var(--red); }
+.widget-editor small[role="alert"], .widget-create small[role="alert"] { color: var(--red); font-size: 8px; }
 .messaging-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 16px; align-items: start; }
 .messaging-panel, .email-preview { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: var(--shadow); }
 .messaging-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
@@ -602,6 +634,7 @@ button.list-row:hover { background: var(--service-soft); }
 @media (max-width: 800px) {
   .platform, .platform.sidebar-collapsed { grid-template-columns: 68px minmax(0, 1fr); }
   .spot-report-detail { grid-template-columns: 1fr; }
+  .widget-fields, .widget-environment { grid-template-columns: 1fr; }
   .sidebar { padding-inline: 10px; }
   .brand-row { display: none; }
   .project-switcher, .sidebar-label, .service-nav a > span:last-child, .sidebar-account small, .sidebar-account b { display: none; }

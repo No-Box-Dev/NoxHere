@@ -588,6 +588,19 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.queryByRole("link", { name: "Issues" })).not.toBeInTheDocument();
   });
 
+  it("loads project capture widgets instead of showing a placeholder", async () => {
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/widgets");
+    expect(await screen.findByRole("heading", { name: "Capture widgets" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Playnist" })).toBeInTheDocument();
+    expect(screen.getByText(/api\.noxspot\.dev\/widget\/site-playnist\.js/)).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/v1/spots/sites",
+      expect.objectContaining({
+        headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
+      }),
+    );
+  });
+
   it("filters the complete Feedback issue inbox by source", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
