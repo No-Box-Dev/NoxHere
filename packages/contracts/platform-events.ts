@@ -101,6 +101,19 @@ const FeedbackResolvedData = z.object({
   externalIssueNumber: z.number().int().positive().optional(),
 }).strict();
 
+const DeveloperFeedbackData = z.object({
+  area: z.enum(["api", "documentation", "sdk", "product", "other"]),
+  category: z.enum(["bug", "friction", "suggestion", "missing_capability", "other"]),
+  details: z.string().trim().min(1).max(4_000),
+  suggestedChange: z.string().trim().min(1).max(2_000).optional(),
+  operationId: z.string().trim().min(1).max(160).optional(),
+  impact: z.enum(["low", "medium", "high"]).default("medium"),
+  client: z.object({
+    name: z.string().trim().min(1).max(80),
+    version: z.string().trim().min(1).max(40).optional(),
+  }).strict().optional(),
+}).strict();
+
 const DiagnosticValue = z.union([
   z.string().max(1_000),
   z.number().finite(),
@@ -188,6 +201,7 @@ const eventSchemas = [
   event("feedback.report.created", FeedbackCreatedData),
   event("feedback.report.reopened", FeedbackReopenedData),
   event("feedback.report.resolved", FeedbackResolvedData),
+  event("feedback.developer.submitted", DeveloperFeedbackData),
   event("reliability.error.detected", ErrorDetectedData),
   event("reliability.incident.opened", IncidentOpenedData),
   event("reliability.incident.resolved", IncidentResolvedData),

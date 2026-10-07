@@ -199,8 +199,51 @@ document.components.schemas.ApiTokenCreate = {
     name: { type: "string", minLength: 1, maxLength: 80 },
     environment: { type: "string", enum: ["live", "test"], default: "live" },
     projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxConnect project. The token cannot access resources assigned to another project." },
-    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|(noxfeed|noxspot|noxcue):(read|write))$" } },
+    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|(noxfeed|noxspot|noxcue):(read|write))$" } },
     expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
+  },
+};
+document.components.schemas.DeveloperFeedbackCreate = {
+  type: "object",
+  additionalProperties: false,
+  required: ["area", "category", "summary", "details", "idempotencyKey"],
+  properties: {
+    area: { type: "string", enum: ["api", "documentation", "sdk", "product", "other"] },
+    category: { type: "string", enum: ["bug", "friction", "suggestion", "missing_capability", "other"] },
+    summary: { type: "string", minLength: 1, maxLength: 240 },
+    details: { type: "string", minLength: 1, maxLength: 4000 },
+    suggestedChange: { type: "string", minLength: 1, maxLength: 2000 },
+    operationId: { type: "string", minLength: 1, maxLength: 160 },
+    impact: { type: "string", enum: ["low", "medium", "high"] },
+    idempotencyKey: {
+      type: "string", minLength: 8, maxLength: 160, pattern: "^[A-Za-z0-9._:-]{8,160}$",
+      description: "Stable per observation. Reusing it from the same credential returns the original receipt.",
+    },
+    client: {
+      type: "object", additionalProperties: false, required: ["name"],
+      properties: {
+        name: { type: "string", minLength: 1, maxLength: 80 },
+        version: { type: "string", minLength: 1, maxLength: 40 },
+      },
+    },
+  },
+};
+document.components.schemas.DeveloperFeedbackReceipt = {
+  type: "object",
+  additionalProperties: false,
+  required: ["apiVersion", "feedback"],
+  properties: {
+    apiVersion: { type: "integer", enum: [1] },
+    feedback: {
+      type: "object", additionalProperties: false,
+      required: ["id", "status", "duplicate", "createdAt"],
+      properties: {
+        id: { type: "string", format: "uuid" },
+        status: { type: "string", enum: ["received"] },
+        duplicate: { type: "boolean" },
+        createdAt: { type: "string", format: "date-time" },
+      },
+    },
   },
 };
 document.components.schemas.NoxSpotResolutionTemplate = {
@@ -476,6 +519,7 @@ document.paths["/api/v1/cues/github-issues"] = {
 
 function automationScope(path, method) {
   const access = method === "get" ? "read" : "write";
+  if (method === "post" && path === "/api/v1/developer-feedback") return "developer-feedback:write";
   if (method === "get" && path === "/api/v1/services") return "services:read";
   const service = path.match(/^\/api\/v1\/services\/(noxfeed|noxspot|noxcue)(?:\/(?:setup|health))?$/)?.[1];
   if (method === "get" && service) return `${service}:read`;
@@ -515,6 +559,27 @@ document.paths["/api/v1/api-tokens"] = {
   post: {
     ...apiTokenOperation("createApiToken", "Create a scoped API token", "201"),
     requestBody: { required: true, content: { "application/json": { schema: { "$ref": "#/components/schemas/ApiTokenCreate" } } } },
+  },
+};
+document.paths["/api/v1/developer-feedback"] = {
+  post: {
+    operationId: "submitDeveloperFeedback",
+    summary: "Submit actionable API or product feedback",
+    description: "Records one firsthand observation from a developer tool or AI agent. Do not include credentials, personal data, prompts, or full request and response bodies. Use one stable idempotency key per observation and do not post routine success reports.",
+    requestBody: {
+      required: true,
+      content: { "application/json": { schema: { "$ref": "#/components/schemas/DeveloperFeedbackCreate" } } },
+    },
+    responses: {
+      "202": {
+        description: "Feedback received or previously received under the same idempotency key",
+        content: { "application/json": { schema: { "$ref": "#/components/schemas/DeveloperFeedbackReceipt" } } },
+      },
+      "413": { "$ref": "#/components/responses/V1Error" },
+      "415": { "$ref": "#/components/responses/V1Error" },
+      "422": { "$ref": "#/components/responses/V1Error" },
+      "503": { "$ref": "#/components/responses/V1Error" },
+    },
   },
 };
 document.paths["/api/v1/api-tokens/{id}"] = {
@@ -862,6 +927,7 @@ function authenticationFor(operation) {
 
 function changeSafety(method, operationId) {
   if (method === "get") return "safe_read";
+  if (operationId === "submitDeveloperFeedback") return "idempotent_with_key";
   if (["patchNoxServiceConfig", "updateNoxSpotResolutionTemplate"].includes(operationId)) return "conditional_write";
   if (operationId === "ingestNoxCueEvent") return "idempotent_with_event_key";
   if (method === "delete" || /disconnect|archive|close|revoke|delete/i.test(operationId)) return "destructive";

@@ -222,3 +222,35 @@ On `429`, honor `Retry-After` and stop sending until that delay has elapsed. On
 token. One-time secrets and OAuth handoff URLs cannot be recovered after they
 have been displayed or expired; create a replacement through the advertised
 operation.
+
+## Share developer feedback
+
+When real API work exposes a concrete bug, friction point, missing capability,
+or documentation gap, an agent with `developer-feedback:write` may submit one
+concise observation to `POST /api/v1/developer-feedback`. This is for feedback
+about NoxHere itself; it is separate from customer feedback captured by
+NoxSpot.
+
+```http
+POST /api/v1/developer-feedback
+Authorization: Bearer <nox_sk_…>
+Content-Type: application/json
+
+{
+  "area": "api",
+  "category": "friction",
+  "summary": "Project selection was unclear",
+  "details": "The response did not identify the project resolved from the token.",
+  "suggestedChange": "Return the resolved project ID.",
+  "operationId": "listNoxServices",
+  "impact": "medium",
+  "idempotencyKey": "agent-run-8f4c-project-selection",
+  "client": { "name": "example-agent", "version": "1.0.0" }
+}
+```
+
+Only report firsthand, actionable observations. Do not submit routine success
+reports, guesses, prompts, personal data, credentials, or full request and
+response bodies. Use the same `idempotencyKey` if delivery is uncertain; do not
+create a second report or automatically retry with a new key. The endpoint is
+limited to 10 accepted observations per credential and project per hour.

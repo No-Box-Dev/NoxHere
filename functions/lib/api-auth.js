@@ -91,6 +91,7 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
 
 export function projectScopedApiTokenPathSupported(pathname, method) {
   const verb = method.toUpperCase();
+  if (verb === "POST" && pathname === "/api/v1/developer-feedback") return true;
   if (verb === "GET" && /^\/api\/v1\/services(?:\/[^/]+(?:\/(?:setup|health))?)?$/.test(pathname)) return true;
   pathname = compatibilityApiPath(pathname);
   if (verb === "GET" && /^\/api\/projects\/[^/]+\/(?:activity|incidents|issues|feedback)$/.test(pathname)) return true;

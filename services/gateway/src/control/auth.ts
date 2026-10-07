@@ -10,6 +10,7 @@ export const NATIVE_REFRESH_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 export const API_TOKEN_SCOPES = [
   "services:read",
+  "developer-feedback:write",
   "noxfeed:read", "noxfeed:write",
   "noxspot:read", "noxspot:write",
   "noxcue:read", "noxcue:write",
@@ -384,6 +385,7 @@ export async function revokeBrowserSession(request: Request, db: D1Database): Pr
 
 export function requiredScope(pathname: string, method: string): string | null {
   const access = ["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase()) ? "read" : "write";
+  if (pathname === "/api/v1/developer-feedback" && access === "write") return "developer-feedback:write";
   const service = pathname.match(/^\/api\/v1\/services\/([^/]+)/)?.[1];
   if (service && service !== "noxconnect") return `${service}:${access}`;
   if (pathname === "/api/v1/services" && access === "read") return "services:read";

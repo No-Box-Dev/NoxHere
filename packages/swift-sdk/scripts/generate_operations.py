@@ -29,6 +29,7 @@ def generate() -> str:
         "public enum NoxHereChangeSafety: String, Sendable {",
         "    case safeRead = \"safe_read\"",
         "    case idempotentWithEventKey = \"idempotent_with_event_key\"",
+        "    case idempotentWithKey = \"idempotent_with_key\"",
         "    case conditionalWrite = \"conditional_write\"",
         "    case writeNotSafeToRetry = \"write_not_safe_to_retry\"",
         "    case destructive",
@@ -52,6 +53,7 @@ def generate() -> str:
         safety = {
             "safe_read": "safeRead",
             "idempotent_with_event_key": "idempotentWithEventKey",
+            "idempotent_with_key": "idempotentWithKey",
             "conditional_write": "conditionalWrite",
             "write_not_safe_to_retry": "writeNotSafeToRetry",
             "destructive": "destructive",

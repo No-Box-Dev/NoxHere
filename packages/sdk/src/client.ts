@@ -273,7 +273,9 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
     if (headers.has("Authorization") && !credentialSafeUrl(url)) {
       throw new TypeError("Bearer credentials require HTTPS or a loopback HTTP URL");
     }
-    const safeToRetry = definition.changeSafety === "safe_read" || definition.changeSafety === "idempotent_with_event_key";
+    const safeToRetry = definition.changeSafety === "safe_read"
+      || definition.changeSafety === "idempotent_with_event_key"
+      || definition.changeSafety === "idempotent_with_key";
     for (let attempt = 1; ; attempt += 1) {
       const started = Date.now();
       const controlled = requestSignal(input.signal, timeoutMs);

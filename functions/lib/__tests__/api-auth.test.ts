@@ -8,6 +8,7 @@ import {
 describe("API authentication primitives", () => {
   it("allows only resource-safe project token routes", () => {
     expect(projectScopedApiTokenPathSupported("/api/v1/feed", "GET")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/developer-feedback", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/spots/sites/site-1", "PATCH")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/spots/sites/site-1", "PATCH")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/cues/sources/source-1/keys", "POST")).toBe(true);

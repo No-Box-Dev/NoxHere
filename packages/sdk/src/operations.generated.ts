@@ -1952,6 +1952,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "submitDeveloperFeedback",
+    "method": "POST",
+    "path": "/api/v1/developer-feedback",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": "developer-feedback:write",
+    "projectScope": "optional",
+    "changeSafety": "idempotent_with_key",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "submitPublicNoxSpotErrors",
     "method": "POST",
     "path": "/api/spots/public/v1/errors",

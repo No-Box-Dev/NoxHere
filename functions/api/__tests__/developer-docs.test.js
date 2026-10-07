@@ -54,6 +54,15 @@ describe("developer documentation", () => {
     expect(discovery).toContain("The complete CLI reference is at `/developers#cli`");
   });
 
+  it("nudges agents toward bounded, actionable developer feedback", () => {
+    expect(html).toContain('id="developer-feedback"');
+    expect(html).toContain("developer-feedback:write");
+    expect(guide).toContain("POST /api/v1/developer-feedback");
+    expect(guide).toContain("Only report firsthand, actionable observations");
+    expect(discovery).toContain("Do not post routine success reports");
+    expect(discovery).toContain("never retry automatically except with that same key");
+  });
+
   it("uses NoxHere and capability names as the public vocabulary", () => {
     expect(html).toContain("NoxHere API — Developer documentation");
     expect(html).toContain("NoxHere is one product");

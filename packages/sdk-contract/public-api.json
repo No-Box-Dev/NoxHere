@@ -312,7 +312,7 @@
           },
           "scopes": {
             "items": {
-              "pattern": "^(services:read|(noxfeed|noxspot|noxcue):(read|write))$",
+              "pattern": "^(services:read|developer-feedback:write|(noxfeed|noxspot|noxcue):(read|write))$",
               "type": "string"
             },
             "maxItems": 12,
@@ -394,6 +394,138 @@
           "path",
           "authentication",
           "description"
+        ],
+        "type": "object"
+      },
+      "DeveloperFeedbackCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "enum": [
+              "api",
+              "documentation",
+              "sdk",
+              "product",
+              "other"
+            ],
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "bug",
+              "friction",
+              "suggestion",
+              "missing_capability",
+              "other"
+            ],
+            "type": "string"
+          },
+          "client": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              "version": {
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "type": "object"
+          },
+          "details": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "description": "Stable per observation. Reusing it from the same credential returns the original receipt.",
+            "maxLength": 160,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9._:-]{8,160}$",
+            "type": "string"
+          },
+          "impact": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "operationId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "suggestedChange": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 240,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "area",
+          "category",
+          "summary",
+          "details",
+          "idempotencyKey"
+        ],
+        "type": "object"
+      },
+      "DeveloperFeedbackReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "apiVersion": {
+            "enum": [
+              1
+            ],
+            "type": "integer"
+          },
+          "feedback": {
+            "additionalProperties": false,
+            "properties": {
+              "createdAt": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "duplicate": {
+                "type": "boolean"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "received"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "status",
+              "duplicate",
+              "createdAt"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "apiVersion",
+          "feedback"
         ],
         "type": "object"
       },
@@ -6055,6 +6187,88 @@
         "x-authentication": "admin",
         "x-automation-scope": "noxcue:write",
         "x-change-safety": "destructive",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/developer-feedback": {
+      "post": {
+        "description": "Records one firsthand observation from a developer tool or AI agent. Do not include credentials, personal data, prompts, or full request and response bodies. Use one stable idempotency key per observation and do not post routine success reports.",
+        "operationId": "submitDeveloperFeedback",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeveloperFeedbackCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperFeedbackReceipt"
+                }
+              }
+            },
+            "description": "Feedback received or previously received under the same idempotency key"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "csrfProof": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "summary": "Submit actionable API or product feedback",
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-automation-scope": "developer-feedback:write",
+        "x-change-safety": "idempotent_with_key",
         "x-project-scope": "optional"
       }
     },
@@ -22006,6 +22220,94 @@
       "tag": "NoxConnect"
     },
     {
+      "authentication": "member",
+      "automationScope": "developer-feedback:write",
+      "changeSafety": "idempotent_with_key",
+      "description": "Records one firsthand observation from a developer tool or AI agent. Do not include credentials, personal data, prompts, or full request and response bodies. Use one stable idempotency key per observation and do not post routine success reports.",
+      "id": "submitDeveloperFeedback",
+      "method": "POST",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/developer-feedback",
+      "projectScope": "optional",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DeveloperFeedbackCreate"
+            }
+          }
+        },
+        "required": true
+      },
+      "requestContentTypes": [
+        "application/json"
+      ],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "202": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeveloperFeedbackReceipt"
+              }
+            }
+          },
+          "description": "Feedback received or previously received under the same idempotency key"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "413": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "415": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "422": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "503": {
+          "$ref": "#/components/responses/V1Error"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "csrfProof": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        },
+        {
+          "noxApiToken": []
+        }
+      ],
+      "servers": [],
+      "summary": "Submit actionable API or product feedback",
+      "tag": "NoxConnect"
+    },
+    {
       "authentication": "public",
       "automationScope": null,
       "changeSafety": "write_not_safe_to_retry",
@@ -24089,5 +24391,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "e4cfc6593676c4a0ed3f0d8d38da8ef8cf4a22a6c99fc72504075528056c69ef"
+  "x-sdk-source-sha256": "10e17d0a6c979789da27a4d8941d581177618adee4e3fc4ddd5ff7ce274d4732"
 }
