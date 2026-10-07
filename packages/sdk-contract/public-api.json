@@ -5559,6 +5559,68 @@
       }
     },
     "/api/v1/cues/sources/{sourceId}/cards": {
+      "get": {
+        "operationId": "listNoxCueCards",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Configured report cards"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "summary": "List source-scoped NoxCue report card configuration",
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-automation-scope": "noxcue:read",
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      },
       "put": {
         "operationId": "updateNoxCueCards",
         "parameters": [
@@ -19618,6 +19680,76 @@
       "automationScope": "noxcue:read",
       "changeSafety": "safe_read",
       "description": "",
+      "id": "listNoxCueCards",
+      "method": "GET",
+      "namespace": "incidents",
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/projectContext"
+        },
+        {
+          "$ref": "#/components/parameters/sourceId"
+        }
+      ],
+      "path": "/api/v1/cues/sources/{sourceId}/cards",
+      "projectScope": "optional",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Configured report cards"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "404": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/V1Error"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        },
+        {
+          "noxApiToken": []
+        }
+      ],
+      "servers": [],
+      "summary": "List source-scoped NoxCue report card configuration",
+      "tag": "NoxCue"
+    },
+    {
+      "authentication": "member",
+      "automationScope": "noxcue:read",
+      "changeSafety": "safe_read",
+      "description": "",
       "id": "listNoxCueCustomMetrics",
       "method": "GET",
       "namespace": "incidents",
@@ -24979,5 +25111,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "78deb6b99eebcaace31bf3ae87a3d25d0f2b6d89e74fdb6a4c928a90378e1fb7"
+  "x-sdk-source-sha256": "8cc4d2629f5a4d141fe9fb19d30cc1bc134e7b5c8bc51051674cd8e5af33a672"
 }

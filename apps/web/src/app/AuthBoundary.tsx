@@ -55,13 +55,13 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!profile || location.pathname !== "/") return;
-    const preferred = profile.orgs.find((org) => org.login.toLowerCase() === "no-box-dev") ?? profile.orgs[0];
+    const preferred = profile.orgs[0];
     if (!preferred) return;
 
     const organizationId = preferred.login.toLowerCase();
     const controller = new AbortController();
     void platformApi.bootstrap(organizationId, "", controller.signal).then((bootstrap) => {
-      const project = bootstrap.projects.find((item) => item.id === "proj_no-box-dev_playnist") ?? bootstrap.projects[0];
+      const project = bootstrap.projects[0];
       if (!project) {
         setError("No project is available for this workspace");
         return;

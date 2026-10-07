@@ -768,10 +768,10 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.getByText("↑ 25.0% vs previous 7 days")).toBeInTheDocument();
   });
 
-  it("shows the organization-level NoxKey placeholder and app download", async () => {
+  it("hands NoxKey management off to the separate app", async () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/key/vault");
-    expect(await screen.findByRole("heading", { name: "Organization secrets are coming soon" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Download NoxKey" })).toHaveAttribute("href", "https://apps.apple.com/app/noxkey/id6760210699");
+    expect(await screen.findByRole("heading", { name: "NoxKey is a separate secure app" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open NoxKey in the App Store" })).toHaveAttribute("href", "https://apps.apple.com/app/noxkey/id6760210699");
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
   });
 

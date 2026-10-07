@@ -642,6 +642,9 @@ class ListIssuesQuery(TypedDict, total=False):
     sort: NotRequired[str]
     sort_dir: NotRequired[Literal['asc', 'desc']]
 
+class ListNoxCueCardsPath(TypedDict, total=False):
+    sourceId: Required[str]
+
 class ListNoxCueCustomMetricsPath(TypedDict, total=False):
     sourceId: Required[str]
 

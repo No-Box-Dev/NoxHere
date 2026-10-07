@@ -1331,6 +1331,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "listNoxCueCards",
+    "method": "GET",
+    "path": "/api/v1/cues/sources/{sourceId}/cards",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "listNoxCueCustomMetrics",
     "method": "GET",
     "path": "/api/v1/cues/sources/{sourceId}/custom-metrics",

@@ -12,7 +12,7 @@ function browserStorage() {
 }
 
 export function PlatformShell() {
-  const { organizationId = "no-box-dev", projectId = "playnist" } = useParams();
+  const { organizationId = "", projectId = "" } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const bootstrap = useQuery({
@@ -24,7 +24,7 @@ export function PlatformShell() {
   const service = serviceById.get(routeSegment as ServiceId) ?? serviceById.get("connect")!;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => browserStorage()?.getItem("noxhere.sidebar.collapsed") === "true");
   const selectedProject = bootstrap.data?.projects.find((project) => project.id === projectId);
-  const fallbackProject = bootstrap.data?.projects.find((project) => project.id === "proj_no-box-dev_playnist") ?? bootstrap.data?.projects[0];
+  const fallbackProject = bootstrap.data?.projects[0];
   const isGuest = bootstrap.data?.actor.accessLevel === "guest";
   const visibleServices = services.filter((item) => !item.hidden && (!isGuest || bootstrap.data?.actor.allowedServiceIds.includes(item.id)));
   const guestFallback = visibleServices[0];
@@ -56,10 +56,13 @@ export function PlatformShell() {
             <span className="sidebar-label">Capabilities</span>
             <nav className="service-nav" aria-label="NoxConnect capabilities">
               {visibleServices.map((item) => <div className="service-nav-item" key={item.id}>
-                <NavLink to={`/${bootstrap.data.organization.id}/${projectId}/${item.id}/${item.defaultView}`} className={({ isActive }) => isActive ? "active" : ""} aria-label={item.name} title={sidebarCollapsed ? item.name : undefined}>
+                {item.externalHref ? <a href={item.externalHref} target="_blank" rel="noreferrer" aria-label={item.name} title={sidebarCollapsed ? item.name : `${item.name} — opens App Store`}>
                   <ServiceIcon service={item} />
                   <span>{item.name}</span>
-                </NavLink>
+                </a> : <NavLink to={`/${bootstrap.data.organization.id}/${projectId}/${item.id}/${item.defaultView}`} className={({ isActive }) => isActive ? "active" : ""} aria-label={item.name} title={sidebarCollapsed ? item.name : undefined}>
+                  <ServiceIcon service={item} />
+                  <span>{item.name}</span>
+                </NavLink>}
               </div>)}
             </nav>
             <div className="sidebar-account"><span>{bootstrap.data.actor.initials}</span><small>{bootstrap.data.organization.name}</small><b>⌄</b></div>

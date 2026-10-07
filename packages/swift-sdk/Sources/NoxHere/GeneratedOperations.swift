@@ -28,7 +28,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 153
+    public static let operationCount = 154
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -116,6 +116,7 @@ public enum NoxHereOperations {
         "listGuestAccess": .init(id: "listGuestAccess", method: "GET", path: "/api/v1/guests", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listIssues": .init(id: "listIssues", method: "GET", path: "/api/v1/issues", resource: .activity, changeSafety: .safeRead, servers: []),
         "listMembers": .init(id: "listMembers", method: "GET", path: "/api/v1/members", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "listNoxCueCards": .init(id: "listNoxCueCards", method: "GET", path: "/api/v1/cues/sources/{sourceId}/cards", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listNoxCueCustomMetrics": .init(id: "listNoxCueCustomMetrics", method: "GET", path: "/api/v1/cues/sources/{sourceId}/custom-metrics", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listNoxCueEvents": .init(id: "listNoxCueEvents", method: "GET", path: "/api/v1/cues/events", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listNoxCueFeatures": .init(id: "listNoxCueFeatures", method: "GET", path: "/api/v1/cues/sources/{sourceId}/features", resource: .incidents, changeSafety: .safeRead, servers: []),

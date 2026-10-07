@@ -2601,6 +2601,68 @@
       }
     },
     "/api/v1/cues/sources/{sourceId}/cards": {
+      "get": {
+        "operationId": "listNoxCueCards",
+        "summary": "List source-scoped NoxCue report card configuration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured report cards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:read"
+      },
       "put": {
         "operationId": "updateNoxCueCards",
         "summary": "Replace source-scoped NoxCue report card configuration",

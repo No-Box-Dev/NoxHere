@@ -7,8 +7,9 @@ import { platformApi } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
+import { NoxFeedSettings } from "./NoxFeedSettings";
 
-const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"], ["issues", "Issues"]] as const;
+const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"], ["issues", "Issues"], ["settings", "Settings"]] as const;
 type WorkItem = { id: number; repo: string; number: number; title: string; state: string; author?: string; author_avatar?: string; assignees?: Array<{ login: string; avatar_url?: string }>; html_url?: string; updated_at?: string; draft?: boolean };
 type PageResult = { data?: WorkItem[] };
 type CurrentResult = { prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[]; members: GithubMember[]; excludedMembers: string[]; ticketEnabled: boolean };
@@ -17,11 +18,12 @@ type FeedResult = { events?: FeedEvent[]; releaseNotes?: FeedEvent[]; nextCursor
 type QuickView = "opened" | "merged" | "issues";
 
 export default function NoxFeedPage() {
-  const { organizationId = "no-box-dev", projectId = "playnist", view = "current", person } = useParams();
+  const { organizationId = "", projectId = "", view = "current", person } = useParams();
   const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
   const project = bootstrap.projects.find((item) => item.id === projectId);
   const ticketEnabled = true;
   const isFeedStream = view === "opened" || view === "merged";
+  const isSettings = view === "settings";
   const scope = { organizationId, projectId };
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -41,7 +43,7 @@ export default function NoxFeedPage() {
       }));
       return { prs: prs.data ?? [], issues: issues.data ?? [], features, members, excludedMembers: settings.excludedMembers ?? [], ticketEnabled } satisfies CurrentResult;
     },
-    enabled: !isFeedStream,
+    enabled: !isFeedStream && !isSettings,
   });
   const stream = useInfiniteQuery({
     queryKey: ["feed-stream", organizationId, projectId, view],
@@ -91,6 +93,7 @@ export default function NoxFeedPage() {
     {query.data && view === "current" ? <Current data={query.data as CurrentResult} base={base} person={person} /> : null}
     {stream.data && isFeedStream ? <Events events={streamEvents} releaseNotes={releaseNotes.data?.events ?? []} label={view} hasNextPage={stream.hasNextPage} loadingMore={stream.isFetchingNextPage} onLoadMore={() => void stream.fetchNextPage()} /> : null}
     {query.data && view === "issues" ? <Issues items={(query.data as PageResult).data ?? []} /> : null}
+    {isSettings ? <NoxFeedSettings organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}
   </div></section>;
 }
 

@@ -115,9 +115,13 @@ async function createDigest(
 
   const enabledKeys = await loadEnabledNoxCueMetricKeys(env.DB, source.org_id, source.project_id, source.id);
   const selected = selectNoxCueDigestMetrics(digest, enabledKeys);
-  const cards = await loadNoxCueSourceCards(env.DB, source.org_id, source.id);
+  const cards = await loadNoxCueSourceCards(env.DB, source.org_id, source.id) as Array<{
+    metric_key: string;
+    daily_label: string | null;
+    cumulative_label: string | null;
+  }>;
   if (cards.length > 0) {
-    selected.metricLabels = Object.fromEntries(cards.map((card: any) => [
+    selected.metricLabels = Object.fromEntries(cards.map((card) => [
       String(card.metric_key), String(card.daily_label || card.cumulative_label || selected.metricLabels[String(card.metric_key)] || ""),
     ]));
   }

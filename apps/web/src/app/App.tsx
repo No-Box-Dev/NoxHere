@@ -29,7 +29,7 @@ export function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate replace to="connect/overview" />} />
           </Route>
-          <Route path="*" element={<Navigate replace to="/no-box-dev/proj_no-box-dev_playnist/connect/overview" />} />
+          <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>
       </Suspense>
     </AuthBoundary>

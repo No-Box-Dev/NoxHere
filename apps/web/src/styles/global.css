@@ -601,6 +601,45 @@ button.list-row:hover { background: var(--service-soft); }
 .callout b { font-size: 11px; }
 .callout p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
 
+.settings-stack, .cue-source-list { display: grid; gap: 14px; }
+.settings-card { display: grid; gap: 13px; padding: 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); box-shadow: var(--shadow); }
+.settings-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.settings-card > header b { color: var(--ink); font-size: 11px; }
+.settings-card > header p, .settings-card > p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
+.settings-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; }
+.settings-form-grid label, .scope-editor label, .maintenance-actions label, .feed-route-list label { display: grid; gap: 5px; color: var(--muted); font-size: 8px; font-weight: 600; }
+.settings-form-grid input, .settings-form-grid select, .scope-editor select, .maintenance-actions select, .feed-route-list select, .settings-card textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff; color: var(--body); font: inherit; }
+.settings-form-grid input, .settings-form-grid select, .scope-editor select, .maintenance-actions select, .feed-route-list select { min-height: 34px; padding: 7px 9px; }
+.settings-card textarea { padding: 10px; resize: vertical; font-size: 9px; line-height: 1.55; }
+.scope-editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 9px; }
+.scope-editor label { grid-template-columns: 1fr auto; align-items: center; }
+.secret-once { display: grid; gap: 8px; padding: 14px; border: 1px solid #d8bb76; border-radius: 10px; background: #fff8e6; }
+.secret-once p { margin: 0; color: var(--muted); font-size: 9px; }
+.secret-once > div { display: flex; align-items: center; gap: 8px; }
+.secret-once code { flex: 1; min-width: 0; padding: 9px; overflow: auto; border-radius: 6px; background: #fff; font-size: 8px; white-space: nowrap; }
+.maintenance-resources { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.maintenance-resources span { display: grid; gap: 3px; padding: 9px; border-radius: 7px; background: var(--soft); }
+.maintenance-resources small { color: var(--muted); font-size: 8px; }
+.maintenance-actions { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.failure-list { display: grid; gap: 8px; }
+.failure-list article { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; padding: 10px; border-radius: 7px; background: var(--soft); font-size: 8px; }
+.failure-list pre { grid-column: 1 / -1; margin: 0; overflow: auto; white-space: pre-wrap; }
+.feed-route-list { display: grid; gap: 8px; }
+.feed-route-list label { grid-template-columns: minmax(120px, .5fr) minmax(180px, 1fr) auto; align-items: center; }
+.widget-delivery-health { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 9px; border-radius: 7px; background: var(--soft); color: var(--muted); font-size: 8px; }
+.widget-delivery-health small { flex: 1 1 100%; color: var(--red); }
+.widget-delete { margin-top: 10px; justify-self: start; }
+.widget-slack-route { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; align-items: end; gap: 8px; padding: 11px; border: 1px solid var(--line); border-radius: 8px; }
+.widget-slack-route label { display: grid; gap: 5px; color: var(--muted); font-size: 8px; font-weight: 600; }
+.widget-slack-route select { min-height: 34px; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff; }
+.widget-slack-route small { grid-column: 1 / -1; }
+.cue-card-editor { border-top: 1px solid var(--line); padding-top: 12px; }
+.cue-card-editor summary { display: flex; justify-content: space-between; cursor: pointer; color: var(--ink); font-size: 10px; font-weight: 700; }
+.cue-card-list { display: grid; gap: 7px; margin: 11px 0; }
+.cue-card-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; align-items: center; gap: 7px; }
+.cue-card-row input[type="text"], .cue-card-row > input { min-height: 32px; min-width: 0; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 6px; }
+.cue-card-row label { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 8px; white-space: nowrap; }
+
 .cue-actions-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(820px, 100%); max-height: min(780px, calc(100vh - 48px)); overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 30px 90px rgb(39 34 29 / 24%); }
 .cue-actions-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 20px 22px 17px; border-bottom: 1px solid var(--line); }
 .cue-actions-dialog > header h2 { margin: 5px 0 3px; color: var(--ink); font-size: 20px; }

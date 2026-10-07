@@ -21,6 +21,27 @@ interface Ctx {
   request: Request;
 }
 
+export async function onRequestGet(context: Ctx): Promise<Response> {
+  const { orgId, projectId } = getCtx(context) as Ctx["data"];
+  if (!orgId) return errorResponse("Missing org context", 400);
+  const db = getNoxDb(context.env);
+  const source = await db.prepare(
+    `SELECT id FROM cue_sources WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""}`,
+  ).bind(...(projectId ? [context.params.id, orgId, projectId] : [context.params.id, orgId])).first();
+  if (!source) return errorResponse("Cue source not found", 404);
+  const result = await db.prepare(
+    `SELECT metric_key, enabled, position, daily_label, cumulative_label, per_active_enabled
+       FROM cue_source_card_settings WHERE source_id = ? AND org_id = ? ORDER BY position, metric_key`,
+  ).bind(context.params.id, orgId).all<Record<string, unknown>>();
+  return jsonResponse({ cards: (result.results ?? []).map((card) => ({
+    metricKey: card.metric_key,
+    enabled: Number(card.enabled) === 1,
+    dailyLabel: card.daily_label,
+    cumulativeLabel: card.cumulative_label,
+    perActiveEnabled: Number(card.per_active_enabled) === 1,
+  })) });
+}
+
 export async function onRequestPut(context: Ctx): Promise<Response> {
   const { orgId, projectId, userLogin, isAdmin } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);

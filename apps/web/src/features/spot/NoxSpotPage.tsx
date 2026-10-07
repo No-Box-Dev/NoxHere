@@ -42,7 +42,7 @@ type SpotIssue = {
 type SpotPage = { issues?: SpotIssue[]; nextCursor?: string | null };
 
 export default function NoxSpotPage() {
-  const { organizationId = "no-box-dev", projectId = "playnist", view = "issues" } = useParams();
+  const { organizationId = "", projectId = "", view = "issues" } = useParams();
   const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const isGuest = bootstrap.actor.accessLevel === "guest";
