@@ -26,6 +26,7 @@
         "groups:read",
         "chat:write",
         "chat:write.public",
+        "chat:write.customize",
         "links:read",
         "links:write"
       ]

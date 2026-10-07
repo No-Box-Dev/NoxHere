@@ -569,6 +569,36 @@ button.list-row:hover { background: var(--service-soft); }
 .callout b { font-size: 11px; }
 .callout p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
 
+.settings-stack { display: grid; gap: 14px; }
+.settings-card { display: grid; gap: 13px; padding: 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); box-shadow: var(--shadow); }
+.settings-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.settings-card > header b { color: var(--ink); font-size: 11px; }
+.settings-card > header p, .settings-card > p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
+.settings-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; }
+.settings-form-grid label, .scope-editor label { display: grid; gap: 5px; color: var(--muted); font-size: 8px; font-weight: 600; }
+.settings-form-grid input, .settings-form-grid select, .scope-editor select, .settings-card textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff; color: var(--body); font: inherit; }
+.settings-form-grid input, .settings-form-grid select, .scope-editor select { min-height: 34px; padding: 7px 9px; }
+.settings-card textarea { padding: 10px; resize: vertical; font-size: 9px; line-height: 1.55; }
+.scope-editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 9px; }
+.scope-editor label { grid-template-columns: 1fr auto; align-items: center; }
+.secret-once { display: grid; gap: 8px; padding: 14px; border: 1px solid #d8bb76; border-radius: 10px; background: #fff8e6; }
+.secret-once p { margin: 0; color: var(--muted); font-size: 9px; }
+.secret-once > div { display: flex; align-items: center; gap: 8px; }
+.secret-once code { flex: 1; min-width: 0; padding: 9px; overflow: auto; border-radius: 6px; background: #fff; font-size: 8px; white-space: nowrap; }
+.slack-message-bridge { display: grid; gap: 12px; padding-top: 10px; }
+.slack-bridge-badge { padding: 4px 8px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: 8px; font-weight: 700; white-space: nowrap; }
+.slack-bridge-destination { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 9px; }
+.slack-bridge-destination label, .slack-bridge-field, .slack-image-fields label { display: grid; gap: 5px; color: var(--muted); font-size: 8px; font-weight: 600; }
+.slack-bridge-destination select, .slack-message-bridge input, .slack-message-bridge textarea { width: 100%; min-width: 0; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff; color: var(--body); font: inherit; }
+.slack-bridge-destination select, .slack-message-bridge input { min-height: 36px; padding: 7px 9px; }
+.slack-message-bridge textarea { padding: 10px; resize: vertical; font-size: 9px; line-height: 1.55; }
+.slack-image-fields { display: grid; grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) minmax(140px, .7fr); gap: 9px; margin: 0; padding: 11px; border: 1px solid var(--line); border-radius: 8px; }
+.slack-image-fields legend { padding: 0 5px; color: var(--ink); font-size: 8px; font-weight: 700; }
+.slack-advanced { padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+.slack-advanced summary { cursor: pointer; color: var(--ink); font-size: 9px; font-weight: 700; }
+.slack-advanced p { margin: 7px 0; color: var(--muted); font-size: 8px; line-height: 1.5; }
+.slack-bridge-actions { display: flex; align-items: center; gap: 10px; }
+.form-success { color: var(--green); font-size: 8px; font-weight: 700; }
 .cue-actions-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(820px, 100%); max-height: min(780px, calc(100vh - 48px)); overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 30px 90px rgb(39 34 29 / 24%); }
 .cue-actions-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 20px 22px 17px; border-bottom: 1px solid var(--line); }
 .cue-actions-dialog > header h2 { margin: 5px 0 3px; color: var(--ink); font-size: 20px; }
@@ -630,6 +660,7 @@ button.list-row:hover { background: var(--service-soft); }
   .cue-template-controls .field-label { width: 100%; }
   .cue-action-number { height: 28px; }
   .guest-invite-form, .api-reference-intro { grid-template-columns: 1fr; }
+  .slack-bridge-destination, .slack-image-fields { grid-template-columns: 1fr; }
   .repository-editor-toolbar { grid-template-columns: 1fr 1fr; }
   .repository-editor-toolbar input { grid-column: 1 / -1; }
   .repository-editor-footer { align-items: stretch; flex-direction: column; }

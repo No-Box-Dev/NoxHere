@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackRoutingSchema, slackStatusSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
-import type { Bootstrap, CueAction, CueActions, CueAlert, CueAlertRule, CueDashboard, CueStatEvent, GithubMember, GuestAccess, GuestInvite, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackRouting, SlackStatus, TicketFeatureAttachment, TicketFeatureRecord } from "./contracts";
+import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
+import type { Bootstrap, CueAction, CueActions, CueAlert, CueAlertRule, CueDashboard, CueStatEvent, GithubMember, GuestAccess, GuestInvite, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TicketFeatureAttachment, TicketFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
@@ -31,6 +31,7 @@ export interface PlatformApi {
   slackRouting(organizationId: string, projectId: string, signal?: AbortSignal): Promise<SlackRouting>;
   slackStatus(organizationId: string, projectId: string, signal?: AbortSignal): Promise<SlackStatus>;
   slackChannels(organizationId: string, projectId: string, connectionId: string, signal?: AbortSignal): Promise<SlackChannels>;
+  sendSlackMessage(organizationId: string, projectId: string, connectionId: string, channelId: string, message: SlackMessagePayload): Promise<SlackMessageDelivery>;
   setNoxTicketSlackChannel(organizationId: string, projectId: string, connectionId: string | null, channelId: string | null): Promise<SlackRouting>;
   testNoxTicketSlackChannel(organizationId: string, projectId: string, connectionId: string, channelId: string): Promise<void>;
 }
@@ -128,6 +129,7 @@ export const platformApi: PlatformApi = {
   slackRouting: (organizationId, projectId, signal) => getJson("/api/v1/integrations/slack/routing", slackRoutingSchema, signal, { organizationId, projectId }),
   slackStatus: (organizationId, projectId, signal) => getJson("/api/v1/slack/status", slackStatusSchema, signal, { organizationId, projectId }),
   slackChannels: (organizationId, projectId, connectionId, signal) => getJson(`/api/v1/slack/channels?connectionId=${encodeURIComponent(connectionId)}`, slackChannelsSchema, signal, { organizationId, projectId }),
+  sendSlackMessage: (organizationId, projectId, connectionId, channelId, message) => postJson("/api/v1/integrations/slack/messages", { connectionId, channelId, message }, slackMessageDeliverySchema, { organizationId, projectId }),
   setNoxTicketSlackChannel: (organizationId, projectId, connectionId, channelId) => patchJson("/api/v1/integrations/slack/routing", { routes: { noxticket: channelId }, connections: { noxticket: connectionId } }, slackRoutingSchema, { organizationId, projectId }),
   testNoxTicketSlackChannel: async (organizationId, projectId, connectionId, channelId) => {
     await postJson("/api/v1/slack/test", { connectionId, channelId, kind: "noxticket" }, z.object({ ok: z.literal(true) }).loose(), { organizationId, projectId });

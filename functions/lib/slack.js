@@ -72,7 +72,7 @@ export async function resolveSlackInstall(env, orgId, connectionId = null) {
   if (!db || !orgId) return null;
   const row = await db
     .prepare(
-      `SELECT id, app_id, team_id, team_name, bot_user_id, encrypted_bot_token, is_default
+      `SELECT id, app_id, team_id, team_name, bot_user_id, encrypted_bot_token, is_default, project_id
          FROM slack_connections
         WHERE org_id = ? AND (? IS NULL OR id = ?)
         ORDER BY is_default DESC, installed_at
@@ -88,6 +88,7 @@ export async function resolveSlackInstall(env, orgId, connectionId = null) {
     if (!botToken) return null;
     return {
       id: row.id,
+      projectId: row.project_id ?? null,
       isDefault: Boolean(row.is_default),
       appId: row.app_id ?? null,
       teamId: row.team_id,
@@ -512,7 +513,7 @@ export function resolveSlackOAuthRedirectUri() {
 // `links:read` + `links:write` power the link-shared unfurl handler at
 // /api/slack/events. Existing installs that didn't get these scopes will
 // stop unfurling until an admin re-runs the Connect flow.
-export const SLACK_BOT_SCOPES = ["channels:read", "groups:read", "chat:write", "chat:write.public", "links:read", "links:write"];
+export const SLACK_BOT_SCOPES = ["channels:read", "groups:read", "chat:write", "chat:write.public", "chat:write.customize", "links:read", "links:write"];
 
 // Slack team IDs look like T08B8C3E91N. Validated everywhere a `team` value
 // enters the OAuth flow so a crafted value can only ever be dropped, never

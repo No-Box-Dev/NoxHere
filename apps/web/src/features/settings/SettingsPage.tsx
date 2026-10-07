@@ -6,8 +6,10 @@ import { platformApi, projectSettingsQueryKey } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { StatusTag } from "../../components/StatusTag";
 import { ProjectRepositories } from "../../components/ProjectRepositories";
+import { ApiTokens } from "./ApiTokens";
+import { SlackMessageBridge } from "./SlackMessageBridge";
 
-type SettingsSection = "repositories" | "members" | "api-access" | "maintenance";
+type SettingsSection = "repositories" | "members" | "slack-message" | "api-access" | "maintenance";
 
 export default function SettingsPage() {
   const { organizationId = "no-box-dev", projectId = "playnist" } = useParams();
@@ -39,8 +41,11 @@ export default function SettingsPage() {
         saveTracking.mutate({ ...(settings.data ?? {}), excludedMembers: nextExcluded });
       }} />
     </SettingsAccordion>
+    <SettingsAccordion id="slack-message" symbol="S" title="Send to Slack" description="Compose a message using the connected Slack workspace" status="Message bridge">
+      <SlackMessageBridge organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} />
+    </SettingsAccordion>
     <SettingsAccordion id="api-access" symbol="A" title="API access" description="Project tokens, scopes and developer documentation" status="API connected">
-      <ApiAccess projectName={projectName} />
+      <ApiAccess organizationId={organizationId} projectId={projectId} projectName={projectName} isAdmin={bootstrap.actor.isAdmin} />
     </SettingsAccordion>
     <SettingsAccordion id="maintenance" symbol="M" title="Maintenance" description="Synchronization, recovery and background operations" status="Not connected">
       <Maintenance />
@@ -73,11 +78,11 @@ function MembersTracking({ members, settings, loading, saving, error, onToggle }
   </>;
 }
 
-function ApiAccess({ projectName }: { projectName: string }) {
+function ApiAccess({ organizationId, projectId, projectName, isAdmin }: { organizationId: string; projectId: string; projectName: string; isAdmin: boolean }) {
   const [view, setView] = useState<"credentials" | "reference">("credentials");
   return <>
     <div className="settings-tabs" role="tablist" aria-label="API access settings"><button type="button" role="tab" aria-selected={view === "credentials"} onClick={() => setView("credentials")}>Credentials</button><button type="button" role="tab" aria-selected={view === "reference"} onClick={() => setView("reference")}>API reference</button></div>
-    {view === "credentials" ? <><div className="connect-inline-action"><p>Automation credentials are scoped to {projectName}.</p><button type="button" className="button" disabled>Create token</button></div><div className="connect-empty"><b>No API credentials returned</b><p>Project tokens will appear here after the NoxConnect token endpoint is connected. Token values are never simulated or displayed again.</p></div></> : <ApiReference projectName={projectName} />}
+    {view === "credentials" ? <ApiTokens organizationId={organizationId} projectId={projectId} projectName={projectName} isAdmin={isAdmin} /> : <ApiReference projectName={projectName} />}
   </>;
 }
 

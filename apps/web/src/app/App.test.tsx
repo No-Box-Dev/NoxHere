@@ -103,6 +103,39 @@ const resolutionTemplate = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("NoxConnect API-backed platform", () => {
+  it("sends a text and image message through the selected Slack connection", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/integrations/slack/messages" && init?.method === "POST") {
+        return json({ apiVersion: 1, delivery: { status: "sent", connectionId: "conn-1", channelId: "C-FEATURES", messageTs: "1730000000.123456", sentAt: "2026-10-07T12:00:00.000Z" } }, 201);
+      }
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+
+    await user.click(await screen.findByRole("button", { name: "Toggle Send to Slack" }));
+    await user.click(screen.getByRole("button", { name: "Send to Slack" }));
+    expect(await screen.findByText("Choose a Slack channel before sending the message.")).toHaveAttribute("role", "alert");
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Slack channel" }), "C-FEATURES");
+    await user.type(screen.getByRole("textbox", { name: "Slack message" }), "Release ready");
+    await user.type(screen.getByRole("textbox", { name: "Public image URL" }), "https://example.com/release.png");
+    await user.type(screen.getByRole("textbox", { name: "Image alternative text" }), "Release graph");
+    await user.click(screen.getByRole("button", { name: "Send to Slack" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Message sent");
+    const request = vi.mocked(fetch).mock.calls.find(([input, init]) => String(input) === "/api/v1/integrations/slack/messages" && init?.method === "POST")?.[1];
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      connectionId: "conn-1",
+      channelId: "C-FEATURES",
+      message: {
+        text: "Release ready",
+        blocks: [{ type: "image", image_url: "https://example.com/release.png", alt_text: "Release graph" }],
+      },
+    });
+  });
+
   it("opens the first authorized project after login without using a placeholder project URL", async () => {
     renderApp(<><App /><CurrentRoute /></>, "/");
 
