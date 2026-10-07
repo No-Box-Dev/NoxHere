@@ -434,6 +434,33 @@ class SetupStep(TypedDict, total=False):
     state: Required[Literal['available', 'blocked', 'complete']]
     title: Required[str]
 
+class SlackMessageDelivery(TypedDict, total=False):
+    apiVersion: Required[Literal[1]]
+    delivery: Required["SlackMessageDeliveryDelivery"]
+
+class SlackMessagePayload(TypedDict, total=False):
+    attachments: NotRequired[list[dict[str, Any]]]
+    blocks: NotRequired[list[dict[str, Any]]]
+    client_msg_id: NotRequired[str]
+    icon_emoji: NotRequired[str]
+    icon_url: NotRequired[str]
+    link_names: NotRequired[bool]
+    markdown_text: NotRequired[str]
+    metadata: NotRequired["SlackMessagePayloadMetadata"]
+    mrkdwn: NotRequired[bool]
+    parse: NotRequired[Literal['none', 'full']]
+    reply_broadcast: NotRequired[bool]
+    text: NotRequired[str]
+    thread_ts: NotRequired[str]
+    unfurl_links: NotRequired[bool]
+    unfurl_media: NotRequired[bool]
+    username: NotRequired[str]
+
+class SlackMessageRequest(TypedDict, total=False):
+    channelId: Required[str]
+    connectionId: Required[str]
+    message: Required["SlackMessagePayload"]
+
 class SlackProjectAssignment(TypedDict, total=False):
     projectId: Required[Union[str, None]]
 
@@ -924,6 +951,17 @@ class ServiceSetupDetailSections(TypedDict, total=False):
     id: Required[str]
     name: Required[str]
     state: Required[Literal['ready', 'blocked', 'disabled']]
+
+class SlackMessageDeliveryDelivery(TypedDict, total=False):
+    channelId: Required[str]
+    connectionId: Required[str]
+    messageTs: Required[str]
+    sentAt: Required[str]
+    status: Required[Literal['sent']]
+
+class SlackMessagePayloadMetadata(TypedDict, total=False):
+    event_payload: Required[dict[str, Any]]
+    event_type: Required[str]
 
 class SpecInputLinks(TypedDict, total=False):
     label: NotRequired[str]

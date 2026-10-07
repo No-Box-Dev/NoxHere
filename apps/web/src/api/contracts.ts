@@ -64,6 +64,36 @@ export const slackChannelsSchema = z.object({
   })),
 });
 
+export const slackMessageDeliverySchema = z.object({
+  apiVersion: z.literal(1),
+  delivery: z.object({
+    status: z.literal("sent"),
+    connectionId: z.string(),
+    channelId: z.string(),
+    messageTs: z.string(),
+    sentAt: z.string(),
+  }),
+});
+
+export type SlackMessagePayload = {
+  text?: string;
+  markdown_text?: string;
+  blocks?: Record<string, unknown>[];
+  attachments?: Record<string, unknown>[];
+  metadata?: { event_type: string; event_payload: Record<string, unknown> };
+  thread_ts?: string;
+  reply_broadcast?: boolean;
+  mrkdwn?: boolean;
+  parse?: "none" | "full";
+  link_names?: boolean;
+  unfurl_links?: boolean;
+  unfurl_media?: boolean;
+  username?: string;
+  icon_emoji?: string;
+  icon_url?: string;
+  client_msg_id?: string;
+};
+
 const guestInviteSchema = z.object({
   id: z.string(),
   email: z.string().email(),
@@ -245,6 +275,7 @@ export type ProjectSettings = NonNullable<z.infer<typeof projectSettingsSchema>>
 export type SlackRouting = z.infer<typeof slackRoutingSchema>;
 export type SlackStatus = z.infer<typeof slackStatusSchema>;
 export type SlackChannels = z.infer<typeof slackChannelsSchema>;
+export type SlackMessageDelivery = z.infer<typeof slackMessageDeliverySchema>;
 export type ServiceId = z.infer<typeof serviceIdSchema>;
 export type CueDashboard = z.infer<typeof cueDashboardSchema>;
 export type CueAction = z.infer<typeof cueActionSchema>;

@@ -8,8 +8,9 @@ import { StatusTag } from "../../components/StatusTag";
 import { ProjectRepositories } from "../../components/ProjectRepositories";
 import { ApiTokens } from "./ApiTokens";
 import { Maintenance } from "./Maintenance";
+import { SlackMessageBridge } from "./SlackMessageBridge";
 
-type SettingsSection = "repositories" | "members" | "api-access" | "maintenance";
+type SettingsSection = "repositories" | "members" | "slack-message" | "api-access" | "maintenance";
 
 export default function SettingsPage() {
   const { organizationId = "", projectId = "" } = useParams();
@@ -40,6 +41,9 @@ export default function SettingsPage() {
         const nextExcluded = excluded.has(login) ? current.filter((item) => item !== login) : [...current, login];
         saveTracking.mutate({ ...(settings.data ?? {}), excludedMembers: nextExcluded });
       }} />
+    </SettingsAccordion>
+    <SettingsAccordion id="slack-message" symbol="S" title="Send to Slack" description="Compose a message using the connected Slack workspace" status="Message bridge">
+      <SlackMessageBridge organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} />
     </SettingsAccordion>
     <SettingsAccordion id="api-access" symbol="A" title="API access" description="Project tokens, scopes and developer documentation" status="Connected">
       <ApiAccess organizationId={organizationId} projectId={projectId} projectName={projectName} isAdmin={bootstrap.actor.isAdmin} />

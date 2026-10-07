@@ -331,6 +331,7 @@ describe("resolveSlackInstall", () => {
     };
     expect(await resolveSlackInstall(env, "org-1")).toEqual({
       id: "conn-1",
+      projectId: null,
       isDefault: true,
       appId: "A1",
       teamId: "T1",

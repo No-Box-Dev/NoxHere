@@ -1169,6 +1169,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/slack/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a Slack message through an existing connection
+         * @description Uses the selected encrypted Slack installation. Supports text, Block Kit, image blocks, attachments, metadata, threads, unfurls, author overrides, and client message IDs.
+         */
+        post: operations["sendSlackMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integrations/slack/routing": {
         parameters: {
             query?: never;
@@ -2989,6 +3009,54 @@ export interface components {
             /** @enum {string} */
             state: "available" | "blocked" | "complete";
             title: string;
+        };
+        SlackMessageDelivery: {
+            /** @constant */
+            apiVersion: 1;
+            delivery: {
+                channelId: string;
+                connectionId: string;
+                messageTs: string;
+                /** Format: date-time */
+                sentAt: string;
+                /** @constant */
+                status: "sent";
+            };
+        };
+        SlackMessagePayload: {
+            attachments?: {
+                [key: string]: unknown;
+            }[];
+            blocks?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: uuid */
+            client_msg_id?: string;
+            icon_emoji?: string;
+            /** Format: uri */
+            icon_url?: string;
+            link_names?: boolean;
+            markdown_text?: string;
+            metadata?: {
+                event_payload: {
+                    [key: string]: unknown;
+                };
+                event_type: string;
+            };
+            mrkdwn?: boolean;
+            /** @enum {string} */
+            parse?: "none" | "full";
+            reply_broadcast?: boolean;
+            text?: string;
+            thread_ts?: string;
+            unfurl_links?: boolean;
+            unfurl_media?: boolean;
+            username?: string;
+        };
+        SlackMessageRequest: {
+            channelId: string;
+            connectionId: string;
+            message: components["schemas"]["SlackMessagePayload"];
         };
         SlackProjectAssignment: {
             /** @description Project to own this workspace. Null is allowed only while it is the organization's sole workspace. */
@@ -5662,6 +5730,42 @@ export interface operations {
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["V1Error"];
+        };
+    };
+    sendSlackMessage: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlackMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Message sent */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlackMessageDelivery"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            413: components["responses"]["V1Error"];
+            415: components["responses"]["V1Error"];
+            422: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            502: components["responses"]["V1Error"];
         };
     };
     getSlackRouting: {

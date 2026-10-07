@@ -1488,6 +1488,88 @@
         "x-project-scope": "optional"
       }
     },
+    "/api/v1/integrations/slack/messages": {
+      "post": {
+        "operationId": "sendSlackMessage",
+        "summary": "Send a Slack message through an existing connection",
+        "description": "Uses the selected encrypted Slack installation. Supports text, Block Kit, image blocks, attachments, metadata, threads, unfurls, author overrides, and client message IDs.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlackMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackMessageDelivery"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "slack:write"
+      }
+    },
     "/api/v1/integrations/slack/test": {
       "post": {
         "operationId": "testSlackRoute",
@@ -10883,6 +10965,165 @@
           }
         }
       },
+      "SlackMessageRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "connectionId",
+          "channelId",
+          "message"
+        ],
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "channelId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "message": {
+            "$ref": "#/components/schemas/SlackMessagePayload"
+          }
+        }
+      },
+      "SlackMessagePayload": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 40000
+          },
+          "markdown_text": {
+            "type": "string",
+            "maxLength": 12000
+          },
+          "blocks": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "event_type",
+              "event_payload"
+            ],
+            "properties": {
+              "event_type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "event_payload": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "thread_ts": {
+            "type": "string",
+            "pattern": "^\\d{1,20}\\.\\d{1,20}$"
+          },
+          "reply_broadcast": {
+            "type": "boolean"
+          },
+          "mrkdwn": {
+            "type": "boolean"
+          },
+          "parse": {
+            "type": "string",
+            "enum": [
+              "none",
+              "full"
+            ]
+          },
+          "link_names": {
+            "type": "boolean"
+          },
+          "unfurl_links": {
+            "type": "boolean"
+          },
+          "unfurl_media": {
+            "type": "boolean"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "icon_emoji": {
+            "type": "string",
+            "pattern": "^:[a-zA-Z0-9_+-]+:$"
+          },
+          "icon_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "client_msg_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SlackMessageDelivery": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "apiVersion",
+          "delivery"
+        ],
+        "properties": {
+          "apiVersion": {
+            "const": 1
+          },
+          "delivery": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "connectionId",
+              "channelId",
+              "messageTs",
+              "sentAt"
+            ],
+            "properties": {
+              "status": {
+                "const": "sent"
+              },
+              "connectionId": {
+                "type": "string"
+              },
+              "channelId": {
+                "type": "string"
+              },
+              "messageTs": {
+                "type": "string"
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
       "NoxSpotSiteCreate": {
         "type": "object",
         "required": [
@@ -13016,7 +13257,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(services:read|developer-feedback:write|(noxfeed|noxspot|noxcue):(read|write))$"
+              "pattern": "^(services:read|developer-feedback:write|slack:write|(noxfeed|noxspot|noxcue):(read|write))$"
             }
           },
           "expiresInDays": {

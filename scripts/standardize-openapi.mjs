@@ -199,7 +199,7 @@ document.components.schemas.ApiTokenCreate = {
     name: { type: "string", minLength: 1, maxLength: 80 },
     environment: { type: "string", enum: ["live", "test"], default: "live" },
     projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxConnect project. The token cannot access resources assigned to another project." },
-    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|(noxfeed|noxspot|noxcue):(read|write))$" } },
+    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:write|(noxfeed|noxspot|noxcue):(read|write))$" } },
     expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
   },
 };
@@ -520,6 +520,7 @@ document.paths["/api/v1/cues/github-issues"] = {
 function automationScope(path, method) {
   const access = method === "get" ? "read" : "write";
   if (method === "post" && path === "/api/v1/developer-feedback") return "developer-feedback:write";
+  if (method === "post" && path === "/api/v1/integrations/slack/messages") return "slack:write";
   if (method === "get" && path === "/api/v1/services") return "services:read";
   const service = path.match(/^\/api\/v1\/services\/(noxfeed|noxspot|noxcue)(?:\/(?:setup|health))?$/)?.[1];
   if (method === "get" && service) return `${service}:read`;

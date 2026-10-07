@@ -1946,6 +1946,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "sendSlackMessage",
+    "method": "POST",
+    "path": "/api/v1/integrations/slack/messages",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": "slack:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "setIssueState",
     "method": "POST",
     "path": "/api/v1/issue-state",
