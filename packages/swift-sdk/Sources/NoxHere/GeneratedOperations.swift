@@ -12,6 +12,7 @@ public enum NoxHereResource: String, CaseIterable, Sendable {
 public enum NoxHereChangeSafety: String, Sendable {
     case safeRead = "safe_read"
     case idempotentWithEventKey = "idempotent_with_event_key"
+    case idempotentWithKey = "idempotent_with_key"
     case conditionalWrite = "conditional_write"
     case writeNotSafeToRetry = "write_not_safe_to_retry"
     case destructive
@@ -27,7 +28,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 149
+    public static let operationCount = 150
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -154,6 +155,7 @@ public enum NoxHereOperations {
         "setIssueState": .init(id: "setIssueState", method: "POST", path: "/api/v1/issue-state", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
         "startConnection": .init(id: "startConnection", method: "POST", path: "/api/v1/integrations/connections/{provider}/start", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "startNativeDeviceAuthorization": .init(id: "startNativeDeviceAuthorization", method: "POST", path: "/api/v1/auth/native/device/start", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
+        "submitDeveloperFeedback": .init(id: "submitDeveloperFeedback", method: "POST", path: "/api/v1/developer-feedback", resource: .workspace, changeSafety: .idempotentWithKey, servers: []),
         "submitPublicNoxSpotErrors": .init(id: "submitPublicNoxSpotErrors", method: "POST", path: "/api/spots/public/v1/errors", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: ["https://api.noxspot.dev"]),
         "submitPublicNoxSpotReport": .init(id: "submitPublicNoxSpotReport", method: "POST", path: "/api/spots/public/v1/reports", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: ["https://api.noxspot.dev"]),
         "syncGitHubData": .init(id: "syncGitHubData", method: "POST", path: "/api/v1/sync", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),

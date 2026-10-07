@@ -322,7 +322,7 @@ class NoxHereClient:
             operation_id=operation_id, path=path, query=query, body=body, headers=headers,
             allow_operation_server=self._allow_operation_servers,
         )
-        safe_to_retry = operation.change_safety in {"safe_read", "idempotent_with_event_key"}
+        safe_to_retry = operation.change_safety in {"safe_read", "idempotent_with_event_key", "idempotent_with_key"}
         for attempt in range(1, self._max_retries + 2):
             started = time.monotonic()
             event = {"operationId": operation_id, "method": operation.method, "url": _safe_url(url, path), "attempt": attempt}
@@ -441,7 +441,7 @@ class AsyncNoxHereClient:
             operation_id=operation_id, path=path, query=query, body=body, headers=headers,
             allow_operation_server=self._allow_operation_servers,
         )
-        safe_to_retry = operation.change_safety in {"safe_read", "idempotent_with_event_key"}
+        safe_to_retry = operation.change_safety in {"safe_read", "idempotent_with_event_key", "idempotent_with_key"}
         for attempt in range(1, self._max_retries + 2):
             started = time.monotonic()
             event = {"operationId": operation_id, "method": operation.method, "url": _safe_url(url, path), "attempt": attempt}

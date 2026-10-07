@@ -80,6 +80,17 @@ describe("@noxhere/sdk", () => {
     const unsafe = createNoxHere({ fetch: unsafeRequest as typeof fetch, sleep });
     await expect(unsafe.workspace.createProject({ body: { name: "Demo" } })).rejects.toMatchObject({ status: 503 });
     expect(unsafeRequest).toHaveBeenCalledTimes(1);
+
+    const idempotentRequest = vi.fn()
+      .mockResolvedValueOnce(Response.json({ error: "busy" }, { status: 503, headers: { "Retry-After": "0" } }))
+      .mockResolvedValueOnce(Response.json({ apiVersion: 1, feedback: { id: "feedback-1", status: "received", duplicate: false, createdAt: "2026-10-07T00:00:00Z" } }, { status: 202 }));
+    const idempotent = createNoxHere({ fetch: idempotentRequest as typeof fetch, sleep });
+    await expect(idempotent.workspace.submitDeveloperFeedback({ body: {
+      area: "api", category: "friction", summary: "Unclear project", details: "The selected project was unclear.",
+      idempotencyKey: "feedback-retry-1",
+    } })).resolves.toMatchObject({ feedback: { status: "received" } });
+    expect(idempotentRequest).toHaveBeenCalledTimes(2);
+    expect(idempotentRequest.mock.calls[0][1]?.body).toBe(idempotentRequest.mock.calls[1][1]?.body);
   });
 
   it("supports scoped clients, operation servers, SDK headers, and sanitized hooks", async () => {

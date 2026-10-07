@@ -35,6 +35,21 @@ class CapabilityOperation(TypedDict, total=False):
     method: Required[Literal['GET', 'POST', 'PUT', 'PATCH', 'DELETE']]
     path: Required[str]
 
+class DeveloperFeedbackCreate(TypedDict, total=False):
+    area: Required[Literal['api', 'documentation', 'sdk', 'product', 'other']]
+    category: Required[Literal['bug', 'friction', 'suggestion', 'missing_capability', 'other']]
+    client: NotRequired["DeveloperFeedbackCreateClient"]
+    details: Required[str]
+    idempotencyKey: Required[str]
+    impact: NotRequired[Literal['low', 'medium', 'high']]
+    operationId: NotRequired[str]
+    suggestedChange: NotRequired[str]
+    summary: Required[str]
+
+class DeveloperFeedbackReceipt(TypedDict, total=False):
+    apiVersion: Required[Literal[1]]
+    feedback: Required["DeveloperFeedbackReceiptFeedback"]
+
 Feature: TypeAlias = ApiRecord
 
 class FeatureCreate(TypedDict, total=False):
@@ -779,6 +794,16 @@ class ApiV1ErrorError(TypedDict, total=False):
     code: Required[str]
     details: NotRequired[Any]
     message: Required[str]
+
+class DeveloperFeedbackCreateClient(TypedDict, total=False):
+    name: Required[str]
+    version: NotRequired[str]
+
+class DeveloperFeedbackReceiptFeedback(TypedDict, total=False):
+    createdAt: Required[str]
+    duplicate: Required[bool]
+    id: Required[str]
+    status: Required[Literal['received']]
 
 class NoxConnectConfigPatchEnabledServices(TypedDict, total=False):
     noxcue: NotRequired[bool]

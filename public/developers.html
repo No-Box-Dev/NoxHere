@@ -43,6 +43,7 @@
         <a href="#noxcue-sdk">NoxCue SDK</a>
         <a href="#control-plane">Control plane</a>
         <a href="#configuration">Configuration</a>
+        <a href="#developer-feedback">Developer feedback</a>
       </div>
       <div class="nav-group">
         <p class="nav-label">Reference</p>
@@ -217,7 +218,7 @@ noxconnect whoami</code></pre>
             <p><code>Authorization: Bearer nox_sk_…</code> carries one organization, one project, environment, expiry, and explicit service read/write scopes. Values are shown once, stored only as hashes, and can be rotated or revoked.</p>
           </article>
         </div>
-        <p class="section-intro auth-note">Operations advertise <code>member</code>, <code>admin</code>, <code>native_session</code>, <code>native_refresh</code>, <code>public</code>, or <code>ingest_key</code> authentication. Browser and native requests may omit <code>X-Project-ID</code> for organization-wide data or supply it to narrow results. Automation scopes use <code>noxfeed</code>, <code>noxspot</code>, or <code>noxcue</code> with <code>:read</code> or <code>:write</code>, plus <code>services:read</code> for discovery; every automation token remains bound to one project. A resource outside that project returns <code>resource_not_found</code>. NoxTicket and organization-level control-plane operations currently require a browser or native user session.</p>
+        <p class="section-intro auth-note">Operations advertise <code>member</code>, <code>admin</code>, <code>native_session</code>, <code>native_refresh</code>, <code>public</code>, or <code>ingest_key</code> authentication. Browser and native requests may omit <code>X-Project-ID</code> for organization-wide data or supply it to narrow results. Automation scopes use <code>noxfeed</code>, <code>noxspot</code>, or <code>noxcue</code> with <code>:read</code> or <code>:write</code>, plus <code>services:read</code> for discovery and <code>developer-feedback:write</code> for product observations; every automation token remains bound to one project. A resource outside that project returns <code>resource_not_found</code>. NoxTicket and organization-level control-plane operations currently require a browser or native user session.</p>
         <p class="field-note">A NoxHere <code>nox_sk_…</code> automation token authenticates API calls. It is separate from secrets stored or shared through NoxKey, and separate from the source keys used by public NoxCue/NoxSpot ingestion.</p>
         <p class="field-note">A raw GitHub token is not a NoxConnect API credential. Unsupported bearer formats return <code>unsupported_credential</code> without being sent to GitHub.</p>
         <div class="callouts">
@@ -493,6 +494,24 @@ curl -X PATCH https://app.noxhere.com/api/v1/services/noxfeed/config \
           <article class="callout safe"><h3>Service-scoped</h3><p>NoxConnect, NoxTicket, and NoxFeed expose strict writable fields in their service config response.</p></article>
           <article class="callout caution"><h3>Resource-scoped</h3><p>NoxSpot sites and NoxCue sources remain authoritative. Their service config is read-only and links to the correct child resources.</p></article>
         </div>
+      </section>
+
+      <section class="section" id="developer-feedback">
+        <p class="section-kicker">Developer feedback</p>
+        <h2>Let tools report concrete friction</h2>
+        <p class="section-intro">An AI agent or developer tool may submit one firsthand API, documentation, SDK, or product observation to <code>POST /api/v1/developer-feedback</code>. Give its project token only the <code>developer-feedback:write</code> scope when no other API access is needed.</p>
+        <div class="callouts">
+          <article class="callout safe"><h3>Useful reports</h3><p>Describe what happened, identify the OpenAPI <code>operationId</code> when relevant, and suggest one practical change.</p></article>
+          <article class="callout caution"><h3>Keep the channel clean</h3><p>Do not send routine success reports, guesses, prompts, personal data, secrets, or complete request and response bodies.</p></article>
+        </div>
+        <div class="code-block">
+          <div class="code-head"><span>terminal · submit one observation</span><button class="copy-button" type="button" data-copy="curl-developer-feedback">Copy</button></div>
+          <pre id="curl-developer-feedback"><code>curl -X POST https://app.noxhere.com/api/v1/developer-feedback \
+  -H <span class="token-string">"Authorization: Bearer $NOXHERE_API_TOKEN"</span> \
+  -H <span class="token-string">"Content-Type: application/json"</span> \
+  --data <span class="token-string">'{"area":"api","category":"friction","summary":"Project selection was unclear","details":"The response did not identify the resolved project.","suggestedChange":"Return the resolved project ID.","operationId":"listNoxServices","impact":"medium","idempotencyKey":"agent-run-8f4c-project-selection","client":{"name":"example-agent"}}'</span></code></pre>
+        </div>
+        <p class="field-note">Reuse the same <code>idempotencyKey</code> if delivery is uncertain. Do not create a new report key for a retry. The endpoint accepts at most 10 observations per credential and project per hour.</p>
       </section>
 
       <section class="section" id="operations">

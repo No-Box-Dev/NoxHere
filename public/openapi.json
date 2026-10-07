@@ -10168,6 +10168,88 @@
         "x-change-safety": "destructive",
         "x-project-scope": "optional"
       }
+    },
+    "/api/v1/developer-feedback": {
+      "post": {
+        "operationId": "submitDeveloperFeedback",
+        "summary": "Submit actionable API or product feedback",
+        "description": "Records one firsthand observation from a developer tool or AI agent. Do not include credentials, personal data, prompts, or full request and response bodies. Use one stable idempotency key per observation and do not post routine success reports.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeveloperFeedbackCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Feedback received or previously received under the same idempotency key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperFeedbackReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "x-project-scope": "optional",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-automation-scope": "developer-feedback:write",
+        "x-change-safety": "idempotent_with_key"
+      }
     }
   },
   "components": {
@@ -12510,7 +12592,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(services:read|(noxfeed|noxspot|noxcue):(read|write))$"
+              "pattern": "^(services:read|developer-feedback:write|(noxfeed|noxspot|noxcue):(read|write))$"
             }
           },
           "expiresInDays": {
@@ -12949,6 +13031,138 @@
           "revision": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "DeveloperFeedbackCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "area",
+          "category",
+          "summary",
+          "details",
+          "idempotencyKey"
+        ],
+        "properties": {
+          "area": {
+            "type": "string",
+            "enum": [
+              "api",
+              "documentation",
+              "sdk",
+              "product",
+              "other"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "bug",
+              "friction",
+              "suggestion",
+              "missing_capability",
+              "other"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "details": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "suggestedChange": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "operationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "impact": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:-]{8,160}$",
+            "description": "Stable per observation. Reusing it from the same credential returns the original receipt."
+          },
+          "client": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
+            }
+          }
+        }
+      },
+      "DeveloperFeedbackReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "apiVersion",
+          "feedback"
+        ],
+        "properties": {
+          "apiVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "feedback": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "status",
+              "duplicate",
+              "createdAt"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "received"
+                ]
+              },
+              "duplicate": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
           }
         }
       }

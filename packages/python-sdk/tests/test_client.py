@@ -95,6 +95,18 @@ class ClientTest(unittest.TestCase):
             NoxHereClient(transport=unsafe, sleep=delays.append).workspace.create_project(body={"name": "Demo"})
         self.assertEqual(len(unsafe.calls), 1)
 
+        idempotent = SequenceRecorder([
+            (503, {"Content-Type": "application/json", "Retry-After": "0"}, {"error": "busy"}),
+            (202, {"Content-Type": "application/json"}, {"apiVersion": 1, "feedback": {"id": "feedback-1", "status": "received", "duplicate": False, "createdAt": "2026-10-07T00:00:00Z"}}),
+        ])
+        result = NoxHereClient(transport=idempotent, sleep=delays.append).workspace.submit_developer_feedback(body={
+            "area": "api", "category": "friction", "summary": "Unclear project",
+            "details": "The selected project was unclear.", "idempotencyKey": "feedback-retry-1",
+        })
+        self.assertEqual(result["feedback"]["status"], "received")
+        self.assertEqual(len(idempotent.calls), 2)
+        self.assertEqual(idempotent.calls[0][3], idempotent.calls[1][3])
+
         observed: list[str] = []
         public = Recorder(response={"ok": True})
         scoped = NoxHereClient(token="nox_sk_secret", transport=public, on_request=lambda event: observed.append(str(event["url"]))).with_context(organization="No-Box-Dev", project_id="project-1")

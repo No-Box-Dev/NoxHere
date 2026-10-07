@@ -52,6 +52,11 @@ const fixtures: Record<string, ReturnType<typeof base>> = {
   "feedback.report.resolved": base("feedback.report.resolved", {
     summary: "The checkout request now completes", resolutionSource: "source_control", externalIssueNumber: 51,
   }),
+  "feedback.developer.submitted": base("feedback.developer.submitted", {
+    area: "api", category: "friction", details: "The response did not explain which project was selected.",
+    suggestedChange: "Return the resolved project ID.", operationId: "listNoxServices", impact: "medium",
+    client: { name: "example-agent", version: "1.2.0" },
+  }, { subject: { type: "feedback.developer", id: "feedback-1" } }),
   "reliability.error.detected": base("reliability.error.detected", {
     fingerprint: "checkout-timeout", errorCode: "CHECKOUT_TIMEOUT", component: "payment_form",
     fatal: false, unhandled: true, sanitizedError: { name: "TimeoutError", message: "Request timed out" },

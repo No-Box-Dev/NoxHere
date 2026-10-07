@@ -710,6 +710,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/developer-feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit actionable API or product feedback
+         * @description Records one firsthand observation from a developer tool or AI agent. Do not include credentials, personal data, prompts, or full request and response bodies. Use one stable idempotency key per observation and do not post routine success reports.
+         */
+        post: operations["submitDeveloperFeedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/engineer-activity": {
         parameters: {
             query?: never;
@@ -2308,6 +2328,37 @@ export interface components {
             /** @enum {string} */
             method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
             path: string;
+        };
+        DeveloperFeedbackCreate: {
+            /** @enum {string} */
+            area: "api" | "documentation" | "sdk" | "product" | "other";
+            /** @enum {string} */
+            category: "bug" | "friction" | "suggestion" | "missing_capability" | "other";
+            client?: {
+                name: string;
+                version?: string;
+            };
+            details: string;
+            /** @description Stable per observation. Reusing it from the same credential returns the original receipt. */
+            idempotencyKey: string;
+            /** @enum {string} */
+            impact?: "low" | "medium" | "high";
+            operationId?: string;
+            suggestedChange?: string;
+            summary: string;
+        };
+        DeveloperFeedbackReceipt: {
+            /** @enum {integer} */
+            apiVersion: 1;
+            feedback: {
+                /** Format: date-time */
+                createdAt: string;
+                duplicate: boolean;
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                status: "received";
+            };
         };
         /** @description NoxTicket feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project. */
         Feature: components["schemas"]["ApiRecord"];
@@ -4582,6 +4633,42 @@ export interface operations {
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["V1Error"];
+        };
+    };
+    submitDeveloperFeedback: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeveloperFeedbackCreate"];
+            };
+        };
+        responses: {
+            /** @description Feedback received or previously received under the same idempotency key */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeveloperFeedbackReceipt"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            413: components["responses"]["V1Error"];
+            415: components["responses"]["V1Error"];
+            422: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            503: components["responses"]["V1Error"];
         };
     };
     getEngineerActivity: {
