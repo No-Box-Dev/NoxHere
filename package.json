@@ -64,8 +64,8 @@
     "test:noxspot-capture": "npm --prefix services/spot test",
     "typecheck:noxspot-capture": "npm --prefix services/spot exec tsc -- --noEmit",
     "build:noxspot-capture": "npm --prefix services/spot run build",
-    "test:spot-widget": "npm --prefix packages/spot-widget test",
-    "build:spot-widget": "npm --prefix packages/spot-widget run build",
+    "test:feedback-widget": "npm --prefix packages/feedback-widget test",
+    "build:feedback-widget": "npm --prefix packages/feedback-widget run build",
     "test:sdk": "npm run sdk:check && npm --prefix packages/sdk test && PYTHONPATH=packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v",
     "build:sdk": "npm run sdk:check && npm --prefix packages/sdk run build && swift build --package-path packages/swift-sdk"
   },

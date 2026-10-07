@@ -1,5 +1,5 @@
 {
-  "name": "@noxhere/spot-widget",
+  "name": "@noxhere/feedback-widget",
   "version": "0.1.0",
   "description": "NoxHere feedback capture widget",
   "private": true,
@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/No-Box-Dev/NoxHere.git",
-    "directory": "packages/spot-widget"
+    "directory": "packages/feedback-widget"
   },
   "scripts": {
     "build": "npm run build:loader && npm run build:legacy && npm run build:core",

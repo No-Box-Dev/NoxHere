@@ -24,7 +24,7 @@ Web / Apple apps / noxconnect CLI
 - **API** — `services/gateway/` is the only public authority and forwards a short-lived signed assertion over a private binding. Compatibility capability handlers remain under `functions/api/` while traffic moves to the service directories; new code uses zod validation at the boundary and native D1 access (`DB.prepare().bind()`, `DB.batch()`).
 - **Capabilities** — `services/feed/`, `services/ticket/`, `services/spot/`, `services/cue/`, and `services/connect/` own distinct domain behavior while sharing envelopes and transports from `packages/contracts/`.
 - **Client SDKs** — `packages/sdk/` and `packages/python-sdk/` generate the same 149-operation catalog from `public/openapi.json`; resource namespaces follow the capability boundaries above.
-- **Feedback widget** — `packages/spot-widget/` owns the browser capture source and tests. Its three compatibility bundles are published to R2 from this repository.
+- **Feedback widget** — `packages/feedback-widget/` owns the independently built browser capture source and tests. Its public `NoxSpot` API and three compatibility bundles are published to R2 from this repository.
 - **Database** — Cloudflare D1 (SQLite). Schema in `migrations/`, applied with `wrangler d1 migrations apply`.
 - **Scheduler service** — `services/scheduler/` imports shared platform helpers, reconciles GitHub state every 30 minutes, and consumes the background-work queue.
 - **Queue + R2** — durable background work (narration, bootstrap, repo sync) runs on a Cloudflare Queue with retries and a dead-letter queue; the `events` table is archived to R2 after 90 days.
@@ -75,7 +75,7 @@ A bounded server-side Anthropic integration narrates pull-request activity. NoxC
 | API routes | `functions/api/` |
 | Shared server helpers | `functions/lib/` |
 | TypeScript/Python SDKs | `packages/sdk/`, `packages/python-sdk/` |
-| Feedback capture widget | `packages/spot-widget/` |
+| Feedback capture widget | `packages/feedback-widget/` |
 | Project routing core | `functions/lib/project-routing.ts`, `functions/api/projects/routing*` |
 | DB schema | `migrations/` |
 | Cron + queue consumer | `services/scheduler/src/` |
