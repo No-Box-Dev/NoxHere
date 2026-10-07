@@ -28,7 +28,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 150
+    public static let operationCount = 153
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -119,6 +119,7 @@ public enum NoxHereOperations {
         "listNoxCueCustomMetrics": .init(id: "listNoxCueCustomMetrics", method: "GET", path: "/api/v1/cues/sources/{sourceId}/custom-metrics", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listNoxCueEvents": .init(id: "listNoxCueEvents", method: "GET", path: "/api/v1/cues/events", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listNoxCueFeatures": .init(id: "listNoxCueFeatures", method: "GET", path: "/api/v1/cues/sources/{sourceId}/features", resource: .incidents, changeSafety: .safeRead, servers: []),
+        "listNoxCueKeys": .init(id: "listNoxCueKeys", method: "GET", path: "/api/v1/cues/sources/{sourceId}/keys", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listNoxCueSources": .init(id: "listNoxCueSources", method: "GET", path: "/api/v1/cues/sources", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listNoxServices": .init(id: "listNoxServices", method: "GET", path: "/api/v1/services", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listNoxSpotSites": .init(id: "listNoxSpotSites", method: "GET", path: "/api/v1/spots/sites", resource: .feedback, changeSafety: .safeRead, servers: []),
@@ -151,6 +152,7 @@ public enum NoxHereOperations {
         "revokeNativeSession": .init(id: "revokeNativeSession", method: "POST", path: "/api/v1/auth/native/revoke", resource: .workspace, changeSafety: .destructive, servers: []),
         "revokeNoxCueKey": .init(id: "revokeNoxCueKey", method: "DELETE", path: "/api/v1/cues/sources/{sourceId}/keys/{keyId}", resource: .incidents, changeSafety: .destructive, servers: []),
         "rotateApiToken": .init(id: "rotateApiToken", method: "POST", path: "/api/v1/api-tokens/{id}/rotate", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
+        "rotateNoxCueKey": .init(id: "rotateNoxCueKey", method: "POST", path: "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "searchWorkspace": .init(id: "searchWorkspace", method: "GET", path: "/api/v1/search", resource: .activity, changeSafety: .safeRead, servers: []),
         "setIssueState": .init(id: "setIssueState", method: "POST", path: "/api/v1/issue-state", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
         "startConnection": .init(id: "startConnection", method: "POST", path: "/api/v1/integrations/connections/{provider}/start", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
@@ -167,6 +169,7 @@ public enum NoxHereOperations {
         "updateActor": .init(id: "updateActor", method: "PATCH", path: "/api/v1/actors/{actorId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateCueProjectActions": .init(id: "updateCueProjectActions", method: "PUT", path: "/api/v1/projects/{projectId}/cue/actions", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateFeature": .init(id: "updateFeature", method: "PATCH", path: "/api/v1/features/{number}", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateNoxCueCards": .init(id: "updateNoxCueCards", method: "PUT", path: "/api/v1/cues/sources/{sourceId}/cards", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateNoxCueCustomFeature": .init(id: "updateNoxCueCustomFeature", method: "PUT", path: "/api/v1/cues/sources/{sourceId}/features/{featureKey}", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateNoxCueCustomMetric": .init(id: "updateNoxCueCustomMetric", method: "PUT", path: "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateNoxCueErrorStatus": .init(id: "updateNoxCueErrorStatus", method: "PUT", path: "/api/v1/cues/errors/{sourceId}/{fingerprint}", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),

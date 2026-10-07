@@ -1376,6 +1376,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "listNoxCueKeys",
+    "method": "GET",
+    "path": "/api/v1/cues/sources/{sourceId}/keys",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "listNoxCueSources",
     "method": "GET",
     "path": "/api/v1/cues/sources",
@@ -1886,6 +1901,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "rotateNoxCueKey",
+    "method": "POST",
+    "path": "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "searchWorkspace",
     "method": "GET",
     "path": "/api/v1/search",
@@ -2153,6 +2183,23 @@ export const operationDefinitions = [
     "namespace": "planning",
     "authentication": "member",
     "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateNoxCueCards",
+    "method": "PUT",
+    "path": "/api/v1/cues/sources/{sourceId}/cards",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [

@@ -5,6 +5,8 @@ import { createNoxCue as createServerNoxCue } from "./server.js";
 
 const browserKey = `nox_pub_${"a".repeat(32)}`;
 const serverKey = `nox_secret_${"b".repeat(32)}`;
+const identityHashKey = "identity-secret-key-that-is-at-least-32-bytes";
+const protectedUser42 = "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40";
 const wireFixtures = JSON.parse(readFileSync(new URL("../../../../services/cue/packages/sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
   name: string;
   operation: "user.registered" | "activity";
@@ -24,7 +26,7 @@ describe("@noxhere/sdk telemetry", () => {
   it.each(wireFixtures)("matches the shared $name wire fixture", async (fixture) => {
     const request = vi.fn<typeof fetch>(async () => accepted());
     const noxcue = createServerNoxCue({
-      key: serverKey, environment: "production", release: "app@abc123", fetch: request,
+      key: serverKey, identityHashKey, environment: "production", release: "app@abc123", fetch: request,
     });
     if (fixture.operation === "user.registered") {
       await noxcue.user.registered(fixture.arguments.userId, fixture.options);
@@ -40,6 +42,7 @@ describe("@noxhere/sdk telemetry", () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
     const noxcue = createServerNoxCue({
       key: serverKey,
+      identityHashKey,
       environment: "production",
       release: "playnist@abc123",
       fetch: request,
@@ -54,7 +57,7 @@ describe("@noxhere/sdk telemetry", () => {
       version: 1,
       type: "user.registered",
       environment: "production",
-      userId: "user-42",
+      userId: protectedUser42,
       eventId: expect.any(String),
       occurredAt: expect.any(String),
       context: {
@@ -84,7 +87,7 @@ describe("@noxhere/sdk telemetry", () => {
     const request = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response("busy", { status: 503, headers: { "Retry-After": "0" } }))
       .mockResolvedValueOnce(accepted("stored-after-retry"));
-    const noxcue = createServerNoxCue({ key: serverKey, environment: "production", fetch: request });
+    const noxcue = createServerNoxCue({ key: serverKey, identityHashKey, environment: "production", fetch: request });
 
     const result = await noxcue.activity("custom.journals.added", "user-42");
 
@@ -163,14 +166,14 @@ describe("@noxhere/sdk telemetry", () => {
     await browser.flush();
 
     const feature = JSON.parse(String(request.mock.calls[0]![1]?.body));
-    expect(feature.userId).toBe("user-42");
+    expect(feature.userId).toBeUndefined();
     expect(JSON.stringify(feature)).not.toContain("private@example.com");
     expect(JSON.stringify(feature)).not.toContain("Ada");
 
-    const server = createServerNoxCue({ key: serverKey, fetch: request });
+    const server = createServerNoxCue({ key: serverKey, identityHashKey, fetch: request });
     await server.forUser("user-99").error(new Error("failed"));
     const scoped = JSON.parse(String(request.mock.calls.at(-1)?.[1]?.body));
-    expect(scoped.data.affectedUser).toBe("user-99");
+    expect(scoped.data.affectedUser).toBe("h1_primary_ofqGXPyat7KK5ahKDwoHUnwy2rtCkjQKU5qH04t8mXE");
 
     server.close();
     await expect(server.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });

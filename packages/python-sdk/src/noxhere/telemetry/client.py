@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import time
 import traceback
@@ -29,10 +30,21 @@ from ._contract import (
     SDK_VERSION,
 )
 from .types import DeliveryResult, Environment, ErrorDetails, Outcome, Primitive, Reason
+from ._identity import protect_identity, valid_identity_key
 
 T = TypeVar("T")
 Feature = str
 Classifier = Callable[[object], tuple[Outcome, Reason | None]]
+TRACK_NAME = re.compile(r"^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,5}$")
+IDENTITY_TRACK_NAMES = {
+    "user.registered",
+    "user.active",
+    "subscription.trial_started",
+    "subscription.paid_started",
+    "subscription.cancelled",
+    "records.parsed",
+    "reports.generated",
+}
 
 
 class Response(Protocol):
@@ -323,8 +335,8 @@ class UserAPI:
         occurred_at: str | None = None,
         idempotency_key: str | None = None,
     ) -> DeliveryResult:
-        return self._client._user_event(
-            "user.registered", user_id, occurred_at, idempotency_key
+        return self._client.track(
+            "user.registered", user_id=user_id, occurred_at=occurred_at, idempotency_key=idempotency_key
         )
 
     def active(
@@ -334,8 +346,8 @@ class UserAPI:
         occurred_at: str | None = None,
         idempotency_key: str | None = None,
     ) -> DeliveryResult:
-        return self._client._user_event(
-            "user.active", user_id, occurred_at, idempotency_key
+        return self._client.track(
+            "user.active", user_id=user_id, occurred_at=occurred_at, idempotency_key=idempotency_key
         )
 
 
@@ -346,6 +358,8 @@ class NoxCueClient:
         self,
         *,
         key: str,
+        identity_hash_key: str | None = None,
+        identity_key_id: str | None = None,
         environment: Environment | None = None,
         release: str | None = None,
         endpoint: str = DEFAULT_ENDPOINT,
@@ -356,6 +370,12 @@ class NoxCueClient:
         transport: Transport | None = None,
     ) -> None:
         self.key = key
+        self.identity_hash_key = identity_hash_key or os.environ.get(
+            "NOXHERE_IDENTITY_HASH_KEY"
+        )
+        self.identity_key_id = (
+            identity_key_id or os.environ.get("NOXHERE_IDENTITY_KEY_ID") or "primary"
+        )
         self.environment: Environment | None = environment
         self.release = release
         self.endpoint = endpoint.strip()
@@ -404,6 +424,8 @@ class NoxCueClient:
         """Create a concurrency-safe client view scoped to one opaque user id."""
         return NoxCueClient(
             key=self.key,
+            identity_hash_key=self.identity_hash_key,
+            identity_key_id=self.identity_key_id,
             environment=self.environment,
             release=self.release,
             endpoint=self.endpoint,
@@ -436,12 +458,40 @@ class NoxCueClient:
             return DeliveryResult(
                 False, cast(str, event_id), error="invalid_configuration"
             )
+        event = dict(raw_event)
+        raw_user_value = event.get("userId")
+        raw_user_id = raw_user_value if isinstance(raw_user_value, str) else None
+        raw_data_value = event.get("data")
+        raw_data = (
+            dict(cast(Mapping[str, object], raw_data_value))
+            if isinstance(raw_data_value, dict)
+            else None
+        )
+        raw_affected_value = raw_data.get("affectedUser") if raw_data else None
+        raw_affected_user = (
+            raw_affected_value if isinstance(raw_affected_value, str) else None
+        )
+        if raw_user_id or raw_affected_user:
+            if not valid_identity_key(self.identity_hash_key, self.identity_key_id):
+                return DeliveryResult(
+                    False, cast(str, event_id), error="invalid_configuration"
+                )
+            identity_hash_key = cast(str, self.identity_hash_key)
+            if raw_user_id:
+                event["userId"] = protect_identity(
+                    raw_user_id, identity_hash_key, self.identity_key_id
+                )
+            if raw_affected_user and raw_data is not None:
+                raw_data["affectedUser"] = protect_identity(
+                    raw_affected_user, identity_hash_key, self.identity_key_id
+                )
+                event["data"] = raw_data
         body = json.dumps(
             {
                 "version": 1,
                 **({"environment": self.environment} if self.environment else {}),
                 "eventId": event_id,
-                **raw_event,
+                **event,
             },
             ensure_ascii=False,
             separators=(",", ":"),
@@ -534,6 +584,20 @@ class NoxCueClient:
             return
         self._pending.add(future)
         future.add_done_callback(self._pending.discard)
+
+    def _queue(self, event: dict[str, object]) -> DeliveryResult:
+        raw_event_id = event.get("eventId")
+        event_id = raw_event_id if isinstance(raw_event_id, str) else str(uuid.uuid4())
+        event["eventId"] = event_id
+        if not self._configured or self._closed:
+            return DeliveryResult(False, event_id, error="invalid_configuration")
+        raw_data = event.get("data")
+        affected_user = cast(dict[str, object], raw_data).get("affectedUser") if isinstance(raw_data, dict) else None
+        if (event.get("userId") or affected_user) \
+                and not valid_identity_key(self.identity_hash_key, self.identity_key_id):
+            return DeliveryResult(False, event_id, error="invalid_configuration")
+        self._capture(event)
+        return DeliveryResult(True, event_id)
 
     def flush(self) -> list[DeliveryResult]:
         pending = list(self._pending)
@@ -649,13 +713,60 @@ class NoxCueClient:
     ) -> DeliveryResult:
         event: dict[str, object] = {
             "type": event_type,
+            "eventId": str(uuid.uuid4()),
             "userId": user_id[:200],
             "occurredAt": occurred_at or _utc_now(),
             "context": self._context(),
         }
         if idempotency_key:
             event["idempotencyKey"] = idempotency_key[:200]
-        return self._post(event)
+        return self._queue(event)
+
+    def track(
+        self,
+        name: str,
+        *,
+        user_id: str | None = None,
+        value: int | float = 1,
+        attributes: Mapping[str, Primitive] | None = None,
+        event_id: str | None = None,
+        occurred_at: str | None = None,
+        idempotency_key: str | None = None,
+    ) -> DeliveryResult:
+        delivery_id = event_id or str(uuid.uuid4())
+        if not TRACK_NAME.fullmatch(name):
+            return DeliveryResult(False, delivery_id, error="invalid_configuration")
+        if (name in IDENTITY_TRACK_NAMES or name.startswith("custom.")) and not user_id:
+            return DeliveryResult(False, delivery_id, error="invalid_configuration")
+        if isinstance(value, bool) or not math.isfinite(value) or value <= 0 or value > 1_000_000_000:
+            return DeliveryResult(False, delivery_id, error="invalid_configuration")
+        if name.startswith("custom.") and value != 1:
+            return DeliveryResult(False, delivery_id, error="invalid_configuration")
+        if name in {"user.registered", "user.active"}:
+            return self._user_event(name, cast(str, user_id), occurred_at, idempotency_key)
+        clean_attributes: dict[str, Primitive] = {}
+        for raw_key, raw_value in list((attributes or {}).items())[:96]:
+            key = raw_key.strip()[:120]
+            if re.fullmatch(r"[a-z](?:[a-z0-9_.-]|\[|\]){0,119}", key, re.I):
+                clean_attributes[key] = _redact(raw_value[:300]) if isinstance(raw_value, str) else raw_value
+        event: dict[str, object] = {
+            "type": "activity.occurred" if name.startswith("custom.") else "activity.tracked",
+            "eventId": delivery_id,
+            "occurredAt": occurred_at or _utc_now(),
+            "context": self._context(),
+        }
+        if name.startswith("custom."):
+            event["metric"] = name
+        else:
+            event["name"] = name
+            event["value"] = value
+        if user_id:
+            event["userId"] = user_id[:200]
+        if clean_attributes:
+            event["attributes"] = clean_attributes
+        if idempotency_key:
+            event["idempotencyKey"] = idempotency_key[:200]
+        return self._queue(event)
 
     def activity(
         self,
@@ -668,17 +779,13 @@ class NoxCueClient:
     ) -> DeliveryResult:
         if not metric.startswith("custom."):
             raise ValueError("activity metric must start with 'custom.'")
-        event: dict[str, object] = {
-            "type": "activity.occurred",
-            "metric": metric,
-            "userId": user_id[:200],
-            "eventId": event_id or str(uuid.uuid4()),
-            "occurredAt": occurred_at or _utc_now(),
-            "context": self._context(),
-        }
-        if idempotency_key:
-            event["idempotencyKey"] = idempotency_key[:200]
-        return self._post(event)
+        return self.track(
+            metric,
+            user_id=user_id,
+            event_id=event_id,
+            occurred_at=occurred_at,
+            idempotency_key=idempotency_key,
+        )
 
 
 def create_noxcue(**options: Any) -> NoxCueClient:

@@ -2317,6 +2317,65 @@
       }
     },
     "/api/v1/cues/sources/{sourceId}/keys": {
+      "get": {
+        "operationId": "listNoxCueKeys",
+        "summary": "List NoxCue key metadata, usage, and audit history",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key lifecycle metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:read"
+      },
       "post": {
         "operationId": "createNoxCueKey",
         "summary": "Create a one-time NoxCue browser or server ingest key",
@@ -2455,6 +2514,149 @@
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:write"
+      }
+    },
+    "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate": {
+      "post": {
+        "operationId": "rotateNoxCueKey",
+        "summary": "Rotate a NoxCue ingest key with a 24-hour overlap",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          },
+          {
+            "$ref": "#/components/parameters/keyId"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Replacement key shown once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:write"
+      }
+    },
+    "/api/v1/cues/sources/{sourceId}/cards": {
+      "put": {
+        "operationId": "updateNoxCueCards",
+        "summary": "Replace source-scoped NoxCue report card configuration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoxCueCardSelection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cards updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
         "security": [
           {
             "browserSession": [],
@@ -5482,6 +5684,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/NoxCueActivityEvent"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NoxCueTrackedEvent"
                   }
                 ]
               }
@@ -10937,8 +11142,24 @@
             "type": "string",
             "maxLength": 120
           },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "production",
+              "staging",
+              "development",
+              "preview",
+              "test",
+              "local"
+            ],
+            "default": "production"
+          },
           "enabled": {
             "type": "boolean"
+          },
+          "alertsEnabled": {
+            "type": "boolean",
+            "default": true
           },
           "projectId": {
             "type": [
@@ -10979,6 +11200,38 @@
               "description": "Exact HTTPS origin; localhost HTTP is allowed for development."
             }
           },
+          "allowedEvents": {
+            "type": "array",
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,5}$"
+            }
+          },
+          "reportTitle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "productionStats": {
+            "type": "boolean",
+            "default": false,
+            "description": "May only be true for a production source."
+          },
+          "retentionDays": {
+            "type": "integer",
+            "minimum": 7,
+            "maximum": 730,
+            "default": 62
+          },
+          "aggregateOnlySlack": {
+            "type": "boolean",
+            "default": false
+          },
           "healthEnabled": {
             "type": "boolean",
             "default": false
@@ -10990,6 +11243,56 @@
             ],
             "format": "uri",
             "maxLength": 2048
+          }
+        }
+      },
+      "NoxCueCardSelection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cards"
+        ],
+        "properties": {
+          "cards": {
+            "type": "array",
+            "maxItems": 14,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "metricKey"
+              ],
+              "properties": {
+                "metricKey": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,6}$"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "dailyLabel": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "cumulativeLabel": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "perActiveEnabled": {
+                  "type": "boolean",
+                  "default": false
+                }
+              }
+            }
           }
         }
       },
@@ -12183,9 +12486,70 @@
           },
           "userId": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Stable app identifier; NoxCue stores only a source-scoped hash."
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "SDK-generated HMAC pseudonym; raw application identifiers are rejected."
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        }
+      },
+      "NoxCueTrackedEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "eventId",
+          "name"
+        ],
+        "properties": {
+          "version": {
+            "const": 1,
+            "default": 1
+          },
+          "type": {
+            "const": "activity.tracked"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "environment": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,5}$"
+          },
+          "value": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1000000000,
+            "default": 1
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "Required for trusted non-website events and forbidden for public browser events."
+          },
+          "attributes": {
+            "type": "object",
+            "maxProperties": 96,
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
           },
           "occurredAt": {
             "type": "string",
@@ -12237,9 +12601,8 @@
           },
           "userId": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Optional actor identity. NoxCue stores only a source-scoped hash; browser identity never contributes to authoritative active-user totals."
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "Optional SDK-generated HMAC pseudonym."
           },
           "reason": {
             "type": "string"
@@ -12326,8 +12689,8 @@
               },
               "affectedUser": {
                 "type": "string",
-                "maxLength": 200,
-                "description": "Opaque identifier; NoxCue stores only a source-scoped hash."
+                "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+                "description": "SDK-generated HMAC pseudonym; raw application identifiers are rejected."
               },
               "fatal": {
                 "type": "boolean",
@@ -12362,9 +12725,8 @@
           },
           "userId": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Stable app identifier; NoxCue stores only a source-scoped SHA-256 hash."
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "SDK-generated HMAC pseudonym; raw application identifiers are rejected."
           },
           "occurredAt": {
             "type": "string",

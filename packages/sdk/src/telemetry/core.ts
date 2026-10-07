@@ -1,5 +1,6 @@
 import type {
   ActivityOptions,
+  AnonymousTrackOptions,
   BrowserErrorOptions,
   BrowserNoxCueClient,
   DeliveryResult,
@@ -13,7 +14,10 @@ import type {
   ObserveOptions,
   ServerErrorOptions,
   ServerNoxCueClient,
+  TrackOptions,
 } from "./types.js";
+import { NOXCUE_WEBSITE_EVENTS } from "./types.js";
+import { PROTECTED_IDENTITY, protectIdentity, validIdentityKey } from "./identity.js";
 import {
   DEFAULT_ENDPOINT,
   DEFAULT_TIMEOUT_MS,
@@ -28,6 +32,17 @@ import {
 type Runtime = "browser" | "server" | "edge" | "unknown";
 type KeyKind = "publishable" | "secret";
 type ErrorOptions = BrowserErrorOptions | ServerErrorOptions;
+const TRACK_NAME = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,5}$/;
+const IDENTITY_TRACK_NAMES = new Set([
+  "user.registered",
+  "user.active",
+  "subscription.trial_started",
+  "subscription.paid_started",
+  "subscription.cancelled",
+  "records.parsed",
+  "reports.generated",
+]);
+const WEBSITE_TRACK_NAMES = new Set<string>(NOXCUE_WEBSITE_EVENTS);
 
 interface ProviderResult {
   error?: unknown;
@@ -244,11 +259,18 @@ export function createClient(
   const maxRetries = Math.min(3, Math.max(0, Math.round(options.maxRetries ?? 2)));
   const request = options.fetch ?? fetch;
   const configured = options.enabled !== false && validKey(options.key, keyKind) && validEndpoint(endpoint);
+  const processEnvironment = (globalThis as typeof globalThis & { process?: RuntimeProcess }).process?.env;
+  const identityHashKey = keyKind === "secret"
+    ? bounded(options.identityHashKey ?? processEnvironment?.NOXHERE_IDENTITY_HASH_KEY, 4_096)
+    : undefined;
+  const identityKeyId = bounded(options.identityKeyId ?? processEnvironment?.NOXHERE_IDENTITY_KEY_ID ?? "primary", 32);
+  const validIdentityConfiguration = validIdentityKey(identityHashKey, identityKeyId);
   const pending = new Set<Promise<DeliveryResult>>();
   let closed = false;
   let identifiedUserId: string | undefined;
 
   const currentUserId = () => {
+    if (keyKind === "publishable") return undefined;
     try {
       return bounded(options.getUser?.()?.id, 200) ?? identifiedUserId;
     } catch {
@@ -271,9 +293,34 @@ export function createClient(
   async function post(rawEvent: Record<string, unknown>): Promise<DeliveryResult> {
     const eventId = typeof rawEvent.eventId === "string" ? rawEvent.eventId : randomUuid();
     if (!configured || closed) return { ok: false, eventId, error: "invalid_configuration" };
+    const event = { ...rawEvent };
+    const rawUserId = typeof event.userId === "string" ? event.userId : undefined;
+    const rawData = event.data && typeof event.data === "object" && !Array.isArray(event.data)
+      ? { ...(event.data as Record<string, unknown>) }
+      : undefined;
+    const rawAffectedUser = typeof rawData?.affectedUser === "string" ? rawData.affectedUser : undefined;
+    if (keyKind === "publishable" && (rawUserId || rawAffectedUser)) {
+      return { ok: false, eventId, error: "invalid_configuration" };
+    }
+    if (rawUserId || rawAffectedUser) {
+      if (!validIdentityConfiguration || !identityHashKey || !identityKeyId) {
+        return { ok: false, eventId, error: "invalid_configuration" };
+      }
+      if (rawUserId) {
+        event.userId = PROTECTED_IDENTITY.test(rawUserId)
+          ? rawUserId
+          : await protectIdentity(rawUserId, identityHashKey, identityKeyId);
+      }
+      if (rawAffectedUser && rawData) {
+        rawData.affectedUser = PROTECTED_IDENTITY.test(rawAffectedUser)
+          ? rawAffectedUser
+          : await protectIdentity(rawAffectedUser, identityHashKey, identityKeyId);
+        event.data = rawData;
+      }
+    }
     let body: string;
     try {
-      body = JSON.stringify({ version: 1, ...(options.environment ? { environment: options.environment } : {}), eventId, ...rawEvent });
+      body = JSON.stringify({ version: 1, ...(options.environment ? { environment: options.environment } : {}), eventId, ...event });
     } catch {
       return { ok: false, eventId, error: "payload_too_large" };
     }
@@ -332,6 +379,51 @@ export function createClient(
 
   function capture(event: Record<string, unknown>): void {
     void deliver(event);
+  }
+
+  function trackEvent(name: string, trackOptions: TrackOptions | AnonymousTrackOptions = {}): Promise<DeliveryResult> {
+    const eventId = trackOptions.eventId ?? randomUuid();
+    if (!TRACK_NAME.test(name)) return Promise.resolve({ ok: false, eventId, error: "invalid_configuration" });
+    if (keyKind === "publishable" && !WEBSITE_TRACK_NAMES.has(name)) {
+      return Promise.resolve({ ok: false, eventId, error: "invalid_configuration" });
+    }
+    const userId = "userId" in trackOptions ? bounded(trackOptions.userId, 200) : undefined;
+    if (keyKind === "secret" && (IDENTITY_TRACK_NAMES.has(name) || name.startsWith("custom.")) && !userId) {
+      return Promise.resolve({ ok: false, eventId, error: "invalid_configuration" });
+    }
+    const rawValue = trackOptions.value ?? 1;
+    if (!Number.isFinite(rawValue) || rawValue <= 0 || rawValue > 1_000_000_000) {
+      return Promise.resolve({ ok: false, eventId, error: "invalid_configuration" });
+    }
+    if (name.startsWith("custom.") && rawValue !== 1) {
+      return Promise.resolve({ ok: false, eventId, error: "invalid_configuration" });
+    }
+    const attributes = primitiveAttributes(trackOptions.attributes);
+    const common = {
+      ...(userId ? { userId } : {}),
+      occurredAt: trackOptions.occurredAt ?? new Date().toISOString(),
+      ...(trackOptions.idempotencyKey ? { idempotencyKey: trackOptions.idempotencyKey.slice(0, 200) } : {}),
+      context: context(),
+    };
+    if (name === "user.registered" || name === "user.active") {
+      return deliver({ type: name, ...common });
+    }
+    if (name.startsWith("custom.")) {
+      return deliver({
+        type: "activity.occurred",
+        metric: name,
+        eventId,
+        ...common,
+      });
+    }
+    return deliver({
+      type: "activity.tracked",
+      name,
+      value: rawValue,
+      eventId,
+      ...common,
+      ...(attributes ? { attributes } : {}),
+    });
   }
 
   function featureEvent(feature: NoxCueFeature, result: FeatureResultOptions): Record<string, unknown> {
@@ -397,7 +489,9 @@ export function createClient(
       sessionRefresh: wrap("auth.session_refresh"),
       logout: wrap("auth.logout"),
     },
-    identify: (user: { id: string } | null) => { identifiedUserId = bounded(user?.id, 200); },
+    identify: (user: { id: string } | null) => {
+      identifiedUserId = keyKind === "secret" ? bounded(user?.id, 200) : undefined;
+    },
     test: (feature: NoxCueAuthFeature = "auth.signup") => deliver(featureEvent(feature, {
       outcome: "success",
       test: true,
@@ -415,7 +509,9 @@ export function createClient(
     const details = safeErrorDetails(error);
     const attributes = primitiveAttributes(errorOptions.attributes);
     const explicitFingerprint = "fingerprint" in errorOptions ? bounded(errorOptions.fingerprint, 200) : undefined;
-    const affectedUser = bounded(errorOptions.affectedUser, 200) ?? currentUserId();
+    const affectedUser = keyKind === "secret"
+      ? bounded("affectedUser" in errorOptions ? errorOptions.affectedUser : undefined, 200) ?? currentUserId()
+      : undefined;
     const explicitUrl = safeUrl(errorOptions.url);
     const currentUrl = safeUrl(runtime.currentUrl?.());
     const url = explicitUrl ?? currentUrl;
@@ -450,6 +546,7 @@ export function createClient(
   if (keyKind === "publishable") {
     return {
       ...shared,
+      track: (name: string, trackOptions: AnonymousTrackOptions = {}) => trackEvent(name, trackOptions),
       error: (error: unknown, errorOptions: BrowserErrorOptions = {}) => reportError(error, errorOptions),
       capture: (error: unknown, errorOptions: BrowserErrorOptions = {}) => { void reportError(error, errorOptions); },
     };
@@ -457,33 +554,17 @@ export function createClient(
 
   return {
     ...shared,
+    track: (name: string, trackOptions: TrackOptions = {}) => trackEvent(name, trackOptions),
     error: (error: unknown, errorOptions: ServerErrorOptions = {}) => reportError(error, errorOptions),
     capture: (error: unknown, errorOptions: ServerErrorOptions = {}) => { void reportError(error, errorOptions); },
     forUser: (userId: string) => createClient({ ...options, getUser: () => ({ id: userId }) }, "secret", runtime),
     user: {
-      registered: (userId: string, event: EventOptions = {}) => deliver({
-        type: "user.registered",
-        userId: userId.slice(0, 200),
-        occurredAt: event.occurredAt ?? new Date().toISOString(),
-        ...(event.idempotencyKey ? { idempotencyKey: event.idempotencyKey.slice(0, 200) } : {}),
-        context: context(),
-      }),
-      active: (userId: string, event: EventOptions = {}) => deliver({
-        type: "user.active",
-        userId: userId.slice(0, 200),
-        occurredAt: event.occurredAt ?? new Date().toISOString(),
-        ...(event.idempotencyKey ? { idempotencyKey: event.idempotencyKey.slice(0, 200) } : {}),
-        context: context(),
-      }),
+      registered: (userId: string, event: EventOptions = {}) => trackEvent("user.registered", { ...event, userId }),
+      active: (userId: string, event: EventOptions = {}) => trackEvent("user.active", { ...event, userId }),
     },
-    activity: (metric: `custom.${string}`, userId: string, event: ActivityOptions = {}) => deliver({
-      type: "activity.occurred",
-      metric,
-      userId: userId.slice(0, 200),
-      eventId: event.eventId ?? randomUuid(),
-      occurredAt: event.occurredAt ?? new Date().toISOString(),
-      ...(event.idempotencyKey ? { idempotencyKey: event.idempotencyKey.slice(0, 200) } : {}),
-      context: context(),
+    activity: (metric: `custom.${string}`, userId: string, event: ActivityOptions = {}) => trackEvent(metric, {
+      ...event,
+      userId,
     }),
   };
 }

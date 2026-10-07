@@ -23,6 +23,10 @@ export interface DeliveryResult {
 
 export interface NoxCueOptions {
   key: string;
+  /** HMAC key used by trusted runtimes to protect user identities before transmission. */
+  identityHashKey?: string;
+  /** Public identifier for the current identity key. Defaults to `primary`. */
+  identityKeyId?: string;
   /** Optional assertion. The source key remains authoritative. */
   environment?: NoxCueEnvironment;
   release?: string;
@@ -61,6 +65,40 @@ export interface ActivityOptions extends EventOptions {
   eventId?: string;
 }
 
+export const NOXCUE_WEBSITE_EVENTS = [
+  "website.page_visited",
+  "website.demo_clicked",
+  "website.signup_clicked",
+  "website.pricing_clicked",
+  "website.login_clicked",
+  "website.contact_clicked",
+] as const;
+
+export type NoxCueWebsiteEvent = (typeof NOXCUE_WEBSITE_EVENTS)[number];
+export type NoxCueTrackName =
+  | "user.registered"
+  | "user.active"
+  | "subscription.trial_started"
+  | "subscription.paid_started"
+  | "subscription.cancelled"
+  | "records.parsed"
+  | "reports.generated"
+  | NoxCueWebsiteEvent
+  | `custom.${string}`;
+
+export interface TrackOptions extends EventOptions {
+  eventId?: string;
+  userId?: string;
+  value?: number;
+  attributes?: Record<string, string | number | boolean>;
+}
+
+export interface AnonymousTrackOptions extends EventOptions {
+  eventId?: string;
+  value?: number;
+  attributes?: Record<string, string | number | boolean>;
+}
+
 interface FeatureResultCommon extends EventOptions {
   durationMs?: number;
   test?: boolean;
@@ -80,7 +118,6 @@ export interface BrowserErrorOptions extends EventOptions {
   message?: string;
   url?: string;
   component?: string;
-  affectedUser?: string;
   fatal?: boolean;
   unhandled?: boolean;
   attributes?: Record<string, string | number | boolean>;
@@ -88,6 +125,7 @@ export interface BrowserErrorOptions extends EventOptions {
 
 export interface ServerErrorOptions extends BrowserErrorOptions {
   fingerprint?: string;
+  affectedUser?: string;
 }
 
 export type ObservedOperation = <T>(operation: () => T | Promise<T>, options?: ObserveOptions) => Promise<T>;
@@ -117,9 +155,14 @@ interface BaseNoxCueClient<ErrorOptions extends BrowserErrorOptions> {
   close(): void;
 }
 
-export type BrowserNoxCueClient = BaseNoxCueClient<BrowserErrorOptions>;
+export interface BrowserNoxCueClient extends BaseNoxCueClient<BrowserErrorOptions> {
+  /** Records an anonymous, count-only website event. */
+  track(name: NoxCueWebsiteEvent, options?: AnonymousTrackOptions): Promise<DeliveryResult>;
+}
 
 export interface ServerNoxCueClient extends BaseNoxCueClient<ServerErrorOptions> {
+  /** Records an event; supplied user identities are HMAC-protected before serialization. */
+  track(name: NoxCueTrackName, options?: TrackOptions): Promise<DeliveryResult>;
   /** Creates a concurrency-safe view whose feature/error events carry this opaque id. */
   forUser(userId: string): ServerNoxCueClient;
   user: {

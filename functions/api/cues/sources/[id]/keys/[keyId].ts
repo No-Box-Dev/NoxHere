@@ -3,12 +3,12 @@ import { getNoxDb, type NoxDatabaseEnv } from "../../../../../lib/nox-db";
 
 interface Ctx {
   env: NoxDatabaseEnv;
-  data: { orgId: number; projectId?: string | null; isAdmin: boolean };
+  data: { orgId: number; projectId?: string | null; userLogin: string; isAdmin: boolean };
   params: { id: string; keyId: string };
 }
 
 export async function onRequestDelete(context: Ctx): Promise<Response> {
-  const { orgId, projectId, isAdmin } = getCtx(context) as Ctx["data"];
+  const { orgId, projectId, userLogin, isAdmin } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const result = await getNoxDb(context.env).prepare(
@@ -20,5 +20,9 @@ export async function onRequestDelete(context: Ctx): Promise<Response> {
     ? [context.params.keyId, context.params.id, orgId, projectId]
     : [context.params.keyId, context.params.id, orgId])).run();
   if (!result.meta.changes) return errorResponse("Ingest key not found", 404);
+  await getNoxDb(context.env).prepare(
+    `INSERT INTO cue_source_key_audit (id, org_id, source_id, key_id, action, actor)
+     VALUES (?, ?, ?, ?, 'revoked', ?)`,
+  ).bind(crypto.randomUUID(), orgId, context.params.id, context.params.keyId, userLogin).run();
   return jsonResponse({ ok: true });
 }

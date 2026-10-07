@@ -6,6 +6,8 @@ interface Env extends NoxDatabaseEnv {
   NOXCUE_INGEST?: Fetcher;
   NOXCUE_INGEST_KEY?: string;
   NOXCUE_NOXFEED_INGEST_KEY?: string;
+  NOXHERE_IDENTITY_HASH_KEY?: string;
+  NOXHERE_IDENTITY_KEY_ID?: string;
 }
 
 interface Ctx {

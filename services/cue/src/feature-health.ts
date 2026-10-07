@@ -27,6 +27,12 @@ const FEATURE_REASONS = [
 ] as const;
 
 const FEATURE_KEY_PATTERN = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,5}$/;
+const PROTECTED_IDENTITY_PATTERN = /^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$/;
+
+async function hashIdentity(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 export const diagnosticContextSchema = z.object({
   environment: z.string().trim().min(1).max(80).optional(),
@@ -59,6 +65,7 @@ export const cueFeatureResultSchema = z.object({
   durationMs: z.number().int().min(0).max(120_000).optional(),
   test: z.boolean().default(false),
   occurredAt: z.string().datetime({ offset: true }).optional(),
+  userId: z.string().regex(PROTECTED_IDENTITY_PATTERN).optional(),
 }).strict().superRefine((event, ctx) => {
   if (event.outcome === "failure" && !event.error) {
     ctx.addIssue({ code: "custom", path: ["error"], message: "A failure must include the actual error" });
@@ -222,8 +229,8 @@ export async function storeFeatureResult(
   const inserted = await env.NOX_DB.prepare(
     `INSERT OR IGNORE INTO cue_feature_results
        (org_id, source_id, event_id, feature_key, feature_kind, outcome, reason,
-        message, error_json, duration_ms, is_test, occurred_at, received_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        message, error_json, duration_ms, is_test, occurred_at, received_at, subject_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(source.org_id, source.source_id, eventId, event.feature, definition.kind,
     event.outcome, event.reason ?? null,
     event.outcome === "failure" ? event.message ?? definition.failureMessage : null,
@@ -239,7 +246,8 @@ export async function storeFeatureResult(
       },
       diagnosis: diagnoseFeatureFailure(event, definition.label),
     }) : null,
-    event.durationMs ?? null, event.test ? 1 : 0, occurredAt.toISOString(), now).run();
+    event.durationMs ?? null, event.test ? 1 : 0, occurredAt.toISOString(), now,
+    event.userId ? await hashIdentity(`${source.source_id}\u0000${event.userId}`) : null).run();
   const previous = await env.NOX_DB.prepare(
     `SELECT status, consecutive_failures, consecutive_successes, incident_started_at, last_reason
        FROM cue_feature_states WHERE source_id = ? AND feature_key = ?`,

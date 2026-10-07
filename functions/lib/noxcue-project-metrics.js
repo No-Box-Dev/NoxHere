@@ -7,6 +7,14 @@ export const NOXCUE_USER_METRIC_KEYS = Object.freeze([
   "users.stickiness.dau_mau",
 ]);
 
+export const NOXCUE_N1_METRIC_KEYS = Object.freeze([
+  "subscriptions.trials.new", "subscriptions.trials.total",
+  "subscriptions.paid.new", "subscriptions.paid.total",
+  "subscriptions.trial_to_paid", "subscriptions.churn",
+  "records.parsed", "records.parsed.per_active", "records.parsed.users.total",
+  "reports.generated", "reports.generated.per_active", "reports.generated.users.total",
+]);
+
 const NOXCUE_USER_METRIC_SET = new Set(NOXCUE_USER_METRIC_KEYS);
 const REGISTRATION_METRICS = new Set(["users.new", "users.total"]);
 
@@ -110,15 +118,37 @@ export async function loadEnabledNoxCueMetricKeys(db, orgId, projectId, sourceId
     const key = String(row.metric_key);
     return [key, `${key}.per_mau`];
   });
-  if (!projectId) return new Set([...NOXCUE_USER_METRIC_KEYS, ...customKeys]);
+  const sourceSettings = sourceId ? await db.prepare(
+    `SELECT metric_key, enabled, per_active_enabled FROM cue_source_card_settings
+      WHERE org_id = ? AND source_id = ? ORDER BY position, metric_key`,
+  ).bind(orgId, sourceId).all() : { results: [] };
+  const sourceRows = sourceSettings.results ?? [];
+  const sourceOverrides = new Map(sourceRows.map((row) => [String(row.metric_key), row]));
+  const sourceMetricKeys = NOXCUE_N1_METRIC_KEYS.filter((key) => {
+    const setting = sourceOverrides.get(key);
+    if (setting && Number(setting.enabled) !== 1) return false;
+    if (key.endsWith(".per_active") && setting && Number(setting.per_active_enabled) !== 1) return false;
+    return true;
+  });
+  if (!projectId) return new Set([...NOXCUE_USER_METRIC_KEYS, ...sourceMetricKeys, ...customKeys]);
   const result = await db.prepare(
     `SELECT metric_key, enabled FROM cue_project_metric_settings
       WHERE org_id = ? AND project_id = ?`,
   ).bind(orgId, projectId).all();
-  if ((result.results ?? []).length === 0) return new Set([...NOXCUE_USER_METRIC_KEYS, ...customKeys]);
+  if ((result.results ?? []).length === 0) return new Set([...NOXCUE_USER_METRIC_KEYS, ...sourceMetricKeys, ...customKeys]);
   return new Set([...(result.results ?? [])
     .filter((row) => Number(row.enabled) === 1 && isNoxCueUserMetricKey(row.metric_key))
-    .map((row) => String(row.metric_key)), ...customKeys]);
+    .map((row) => String(row.metric_key)), ...sourceMetricKeys, ...customKeys]);
+}
+
+export async function loadNoxCueSourceCards(db, orgId, sourceId) {
+  const result = await db.prepare(
+    `SELECT metric_key, daily_label, cumulative_label, position
+       FROM cue_source_card_settings
+      WHERE org_id = ? AND source_id = ? AND enabled = 1
+      ORDER BY position, metric_key LIMIT 14`,
+  ).bind(orgId, sourceId).all();
+  return result.results ?? [];
 }
 
 export function selectNoxCueDigestMetrics(digest, enabledKeys) {

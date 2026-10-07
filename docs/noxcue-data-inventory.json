@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "identityPolicy": "Only h1_ HMAC pseudonyms are accepted; Noxhere hashes them again with the source id before storage.",
+  "slackPolicy": "Aggregated statistics only for sources configured with aggregateOnlySlack.",
+  "stores": [
+    { "table": "cue_user_registrations", "classification": "pseudonymous", "retention": "source deletion; no raw identifier" },
+    { "table": "cue_user_active_days", "classification": "pseudonymous", "retention": "source.retention_days" },
+    { "table": "cue_activity_events", "classification": "pseudonymous", "retention": "source.retention_days" },
+    { "table": "cue_tracked_events", "classification": "pseudonymous-or-anonymous", "retention": "source.retention_days" },
+    { "table": "cue_daily_metrics", "classification": "aggregate", "retention": "source deletion" },
+    { "table": "cue_source_keys", "classification": "credential-hash", "retention": "source deletion" },
+    { "table": "cue_source_key_audit", "classification": "audit", "retention": "source deletion" },
+    { "table": "cue_source_audit", "classification": "audit", "retention": "organization deletion" }
+  ],
+  "prohibited": ["raw user identifiers", "email addresses", "clinical content", "report content", "payment details", "cookies", "browser fingerprints"]
+}

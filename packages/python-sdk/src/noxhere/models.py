@@ -123,6 +123,9 @@ class NoxCueActivityEvent(TypedDict, total=False):
     userId: Required[str]
     version: NotRequired[Literal[1]]
 
+class NoxCueCardSelection(TypedDict, total=False):
+    cards: Required[list["NoxCueCardSelectionCards"]]
+
 class NoxCueCustomFeatureInput(TypedDict, total=False):
     failureMessage: Required[str]
     key: Required[str]
@@ -188,17 +191,37 @@ class NoxCueProjectMetricSelection(TypedDict, total=False):
     enabledMetricKeys: Required[list[Literal['users.new', 'users.total', 'users.active.daily', 'users.active.weekly', 'users.active.monthly', 'users.stickiness.dau_mau']]]
 
 class NoxCueSourceInput(TypedDict, total=False):
+    aggregateOnlySlack: NotRequired[bool]
+    alertsEnabled: NotRequired[bool]
+    allowedEvents: NotRequired[list[str]]
     allowedOrigins: NotRequired[list[str]]
     digestEnabled: Required[bool]
     digestTimeLocal: Required[str]
     enabled: Required[bool]
+    environment: NotRequired[Literal['production', 'staging', 'development', 'preview', 'test', 'local']]
     healthEnabled: NotRequired[bool]
     healthUrl: NotRequired[Union[str, None]]
     name: Required[str]
+    productionStats: NotRequired[bool]
     projectId: Required[Union[str, None]]
+    reportTitle: NotRequired[Union[str, None]]
+    retentionDays: NotRequired[int]
     slackChannelId: Required[Union[str, None]]
     slackConnectionId: Required[Union[str, None]]
     timezone: Required[str]
+
+class NoxCueTrackedEvent(TypedDict, total=False):
+    attributes: NotRequired[dict[str, Union[str, float, bool]]]
+    context: NotRequired["JsonValue"]
+    environment: NotRequired[str]
+    eventId: Required[str]
+    idempotencyKey: NotRequired[str]
+    name: Required[str]
+    occurredAt: NotRequired[str]
+    type: Required[Literal['activity.tracked']]
+    userId: NotRequired[str]
+    value: NotRequired[float]
+    version: NotRequired[Literal[1]]
 
 class NoxCueUserEvent(TypedDict, total=False):
     occurredAt: NotRequired[str]
@@ -629,6 +652,9 @@ class ListNoxCueEventsQuery(TypedDict, total=False):
 class ListNoxCueFeaturesPath(TypedDict, total=False):
     sourceId: Required[str]
 
+class ListNoxCueKeysPath(TypedDict, total=False):
+    sourceId: Required[str]
+
 class ListPullRequestsQuery(TypedDict, total=False):
     state: NotRequired[str]
     author: NotRequired[str]
@@ -702,6 +728,10 @@ class RevokeNoxCueKeyPath(TypedDict, total=False):
 class RotateApiTokenPath(TypedDict, total=False):
     id: Required[str]
 
+class RotateNoxCueKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+    keyId: Required[str]
+
 SearchWorkspaceQuery = TypedDict('SearchWorkspaceQuery', {'q': NotRequired[str], 'tools': NotRequired[str], 'kinds': NotRequired[str], 'repos': NotRequired[str], 'assignees': NotRequired[str], 'statuses': NotRequired[str], 'tags': NotRequired[str], 'exclude': NotRequired[str], 'from': NotRequired[str], 'to': NotRequired[str], 'limit': NotRequired[int]}, total=False)
 
 class StartConnectionPath(TypedDict, total=False):
@@ -728,6 +758,9 @@ class UpdateCueProjectActionsPath(TypedDict, total=False):
 
 class UpdateFeaturePath(TypedDict, total=False):
     number: Required[int]
+
+class UpdateNoxCueCardsPath(TypedDict, total=False):
+    sourceId: Required[str]
 
 class UpdateNoxCueCustomFeaturePath(TypedDict, total=False):
     sourceId: Required[str]
@@ -810,6 +843,13 @@ class NoxConnectConfigPatchEnabledServices(TypedDict, total=False):
     noxfeed: NotRequired[bool]
     noxspot: NotRequired[bool]
     noxticket: NotRequired[bool]
+
+class NoxCueCardSelectionCards(TypedDict, total=False):
+    cumulativeLabel: NotRequired[Union[str, None]]
+    dailyLabel: NotRequired[Union[str, None]]
+    enabled: NotRequired[bool]
+    metricKey: Required[str]
+    perActiveEnabled: NotRequired[bool]
 
 class NoxCueErrorData(TypedDict, total=False):
     affectedUser: NotRequired[str]

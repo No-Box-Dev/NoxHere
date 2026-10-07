@@ -29,16 +29,28 @@ export interface DisplayMetric {
   key: string;
   label: string;
   kind: "count" | "ratio" | "decimal";
-  group: "Growth" | "Engagement" | "Activity";
+  group: "Growth" | "Subscriptions" | "Engagement" | "Activity";
 }
 
 const DISPLAY_METRICS: DisplayMetric[] = [
   { key: "users.new", label: "New users", kind: "count", group: "Growth" },
   { key: "users.total", label: "Total users", kind: "count", group: "Growth" },
+  { key: "subscriptions.trials.new", label: "New trial users", kind: "count", group: "Subscriptions" },
+  { key: "subscriptions.trials.total", label: "Total trial users", kind: "count", group: "Subscriptions" },
+  { key: "subscriptions.paid.new", label: "New paid users", kind: "count", group: "Subscriptions" },
+  { key: "subscriptions.paid.total", label: "Total paid users", kind: "count", group: "Subscriptions" },
+  { key: "subscriptions.trial_to_paid", label: "Trial-to-paid conversion", kind: "ratio", group: "Subscriptions" },
+  { key: "subscriptions.churn", label: "Churn", kind: "ratio", group: "Subscriptions" },
   { key: "users.active.daily", label: "Daily active", kind: "count", group: "Engagement" },
-  { key: "users.active.weekly", label: "Weekly active", kind: "count", group: "Engagement" },
   { key: "users.active.monthly", label: "Monthly active", kind: "count", group: "Engagement" },
+  { key: "records.parsed", label: "Records parsed", kind: "count", group: "Activity" },
+  { key: "records.parsed.per_active", label: "Records parsed per active user", kind: "decimal", group: "Activity" },
+  { key: "reports.generated", label: "Reports generated", kind: "count", group: "Activity" },
+  { key: "reports.generated.per_active", label: "Reports generated per active user", kind: "decimal", group: "Activity" },
+  { key: "users.active.weekly", label: "Weekly active", kind: "count", group: "Engagement" },
   { key: "users.stickiness.dau_mau", label: "DAU / MAU", kind: "ratio", group: "Engagement" },
+  { key: "records.parsed.users.total", label: "Users who parsed records", kind: "count", group: "Activity" },
+  { key: "reports.generated.users.total", label: "Users who generated reports", kind: "count", group: "Activity" },
 ];
 
 export function displayMetricsFor(metrics: Record<string, number>, labels: Record<string, string> = {}): DisplayMetric[] {
@@ -56,7 +68,19 @@ export function displayMetricsFor(metrics: Record<string, number>, labels: Recor
       const label = perMau ? `${action} per active user` : supplied;
       return { key, label, kind: perUser ? "decimal" as const : "count" as const, group: "Activity" as const };
     });
-  return [...DISPLAY_METRICS, ...custom];
+  const all = [...DISPLAY_METRICS, ...custom].map((metric) => ({
+    ...metric,
+    label: metric.key.startsWith("custom.") ? metric.label : (labels[metric.key]?.trim() || metric.label),
+  }));
+  const configuredOrder = new Map(Object.keys(labels).map((key, index) => [key, index]));
+  return all.sort((left, right) => {
+    const leftOrder = configuredOrder.get(left.key);
+    const rightOrder = configuredOrder.get(right.key);
+    if (leftOrder === undefined && rightOrder === undefined) return 0;
+    if (leftOrder === undefined) return 1;
+    if (rightOrder === undefined) return -1;
+    return leftOrder - rightOrder;
+  });
 }
 
 export function buildTestResponse(orgLogin: string) {
@@ -96,7 +120,7 @@ export function buildDigestResponse(
   const visibleMetrics = displayMetricsFor(metrics, metricLabels).filter(({ key }) => {
     const value = metrics[key];
     return typeof value === "number" && Number.isFinite(value) && value >= 0;
-  });
+  }).slice(0, 14);
   if (visibleMetrics.length === 0) {
     throw new Error("NoxCue digest has no supported user statistics");
   }
@@ -124,10 +148,10 @@ export function buildDigestResponse(
     });
   }
   if (!chartImageUrl) {
-    for (const group of ["Growth", "Engagement", "Activity"] as const) {
+    for (const group of ["Growth", "Subscriptions", "Engagement", "Activity"] as const) {
       const groupMetrics = visibleMetrics.filter((metric) => metric.group === group);
       if (groupMetrics.length === 0) continue;
-      const groupIcon = group === "Growth" ? "🌱" : group === "Engagement" ? "⚡" : "✍️";
+      const groupIcon = group === "Growth" ? "🌱" : group === "Subscriptions" ? "💳" : group === "Engagement" ? "⚡" : "✍️";
       blocks.push({ type: "section", text: { type: "mrkdwn", text: `*${groupIcon} ${group}*` } });
       blocks.push({
         type: "section",

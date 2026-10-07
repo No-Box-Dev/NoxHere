@@ -6,13 +6,13 @@ import { validate } from "../../../../lib/validate";
 
 interface Ctx {
   env: NoxDatabaseEnv;
-  data: { orgId: number; projectId?: string | null; orgLogin: string; isAdmin: boolean };
+  data: { orgId: number; projectId?: string | null; orgLogin: string; userLogin: string; isAdmin: boolean };
   params: { id: string };
   request: Request;
 }
 
 export async function onRequestPut(context: Ctx): Promise<Response> {
-  const { orgId, projectId, orgLogin, isAdmin } = getCtx(context) as Ctx["data"];
+  const { orgId, projectId, orgLogin, userLogin, isAdmin } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
@@ -60,7 +60,8 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
   }
   const result = await db.prepare(
     `UPDATE cue_sources SET name = ?, environment = ?, project_id = ?, enabled = ?, alerts_enabled = ?,
-       timezone = ?, digest_enabled = ?, digest_time_local = ?, allowed_origins_json = ?, slack_channel_id = ?,
+       timezone = ?, digest_enabled = ?, digest_time_local = ?, allowed_origins_json = ?, allowed_events_json = ?,
+       report_title = ?, production_stats = ?, retention_days = ?, aggregate_only_slack = ?, slack_channel_id = ?,
        slack_connection_id = ?,
        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
      WHERE id = ? AND org_id = ? AND project_id = ? AND owner_id = ?`,
@@ -69,6 +70,8 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
     parsed.data.alertsEnabled ? 1 : 0,
     parsed.data.timezone,
     parsed.data.digestEnabled ? 1 : 0, parsed.data.digestTimeLocal, JSON.stringify(parsed.data.allowedOrigins),
+    JSON.stringify(parsed.data.allowedEvents), parsed.data.reportTitle, parsed.data.productionStats ? 1 : 0,
+    parsed.data.retentionDays, parsed.data.aggregateOnlySlack ? 1 : 0,
     parsed.data.slackChannelId, slackConnectionId, context.params.id, orgId, existing.project_id, orgLogin,
   ).run();
   if (!result.meta.changes) return errorResponse("Cue source not found", 404);
@@ -89,11 +92,20 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
        last_latency_ms = CASE WHEN excluded.url IS NOT cue_endpoint_monitors.url THEN NULL ELSE cue_endpoint_monitors.last_latency_ms END,
        enabled = excluded.enabled, url = excluded.url, updated_at = excluded.updated_at`,
   ).bind(orgId, context.params.id, parsed.data.healthEnabled ? 1 : 0, parsed.data.healthUrl).run();
+  await db.prepare(
+    `INSERT INTO cue_source_audit (id, org_id, source_id, action, actor, details_json)
+     VALUES (?, ?, ?, 'updated', ?, ?)`,
+  ).bind(crypto.randomUUID(), orgId, context.params.id, userLogin, JSON.stringify({
+    projectId: targetProjectId,
+    environment: parsed.data.environment,
+    retentionDays: parsed.data.retentionDays,
+    aggregateOnlySlack: parsed.data.aggregateOnlySlack,
+  })).run();
   return jsonResponse({ ok: true });
 }
 
 export async function onRequestDelete(context: Ctx): Promise<Response> {
-  const { orgId, projectId, orgLogin, isAdmin } = getCtx(context) as Ctx["data"];
+  const { orgId, projectId, orgLogin, userLogin, isAdmin } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const result = await getNoxDb(context.env).prepare(
@@ -103,5 +115,9 @@ export async function onRequestDelete(context: Ctx): Promise<Response> {
     ? [context.params.id, orgId, projectId, orgLogin]
     : [context.params.id, orgId, orgLogin])).run();
   if (!result.meta.changes) return errorResponse("Cue source not found", 404);
+  await getNoxDb(context.env).prepare(
+    `INSERT INTO cue_source_audit (id, org_id, source_id, action, actor)
+     VALUES (?, ?, ?, 'deleted', ?)`,
+  ).bind(crypto.randomUUID(), orgId, context.params.id, userLogin).run();
   return jsonResponse({ ok: true });
 }

@@ -15,6 +15,7 @@ sys.path.insert(0, str(PACKAGE / "src"))
 from noxhere.telemetry import NoxCueClient, safe_error_details  # noqa: E402
 
 SERVER_KEY = "nox_secret_" + "b" * 32
+IDENTITY_HASH_KEY = "identity-secret-key-that-is-at-least-32-bytes"
 FIXTURES = json.loads(
     (PACKAGE.parents[1] / "services" / "cue" / "packages" / "sdk-contract" / "wire-fixtures.json").read_text()
 )
@@ -48,6 +49,7 @@ class SDKTests(unittest.TestCase):
 
         self.client = NoxCueClient(
             key=SERVER_KEY,
+            identity_hash_key=IDENTITY_HASH_KEY,
             environment="production",
             release="app@abc123",
             transport=transport,
@@ -75,6 +77,7 @@ class SDKTests(unittest.TestCase):
                         event_id=fixture["options"]["eventId"],
                         occurred_at=fixture["options"]["occurredAt"],
                     )
+                self.client.flush()
                 payload = self.payload()
                 if "eventId" not in fixture["expected"]:
                     payload.pop("eventId")
@@ -90,7 +93,7 @@ class SDKTests(unittest.TestCase):
             return MockResponse()
 
         with NoxCueClient(
-            key=SERVER_KEY, environment="production", transport=transport
+            key=SERVER_KEY, identity_hash_key=IDENTITY_HASH_KEY, environment="production", transport=transport
         ) as client:
             result = client.activity("custom.journals.added", "user-42")
         self.assertTrue(result.ok)
@@ -150,14 +153,20 @@ class SDKTests(unittest.TestCase):
         )
         self.client.feature.result("auth.login", outcome="success")
         payload = self.payload()
-        self.assertEqual(payload["userId"], "user-42")
+        self.assertEqual(
+            payload["userId"],
+            "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40",
+        )
         self.assertNotIn("private@example.com", json.dumps(payload))
         self.assertNotIn("Ada", json.dumps(payload))
 
         with self.client.for_user("user-99") as scoped:
             scoped.error(RuntimeError("failed"))
         scoped_payload = self.payload()
-        self.assertEqual(scoped_payload["data"]["affectedUser"], "user-99")
+        self.assertEqual(
+            scoped_payload["data"]["affectedUser"],
+            "h1_primary_ofqGXPyat7KK5ahKDwoHUnwy2rtCkjQKU5qH04t8mXE",
+        )
 
     def test_disabled_and_closed_clients_never_call_transport(self) -> None:
         client = NoxCueClient(

@@ -80,7 +80,7 @@ async function loadEventDerivedNoxCueDigestData(db, sourceId, period) {
   const currentStart = `-${windowDays - 1} days`;
   const previousStart = `-${windowDays * 2 - 1} days`;
   const previousEnd = `-${windowDays} days`;
-  const [{ results }, { results: activityResults }] = await Promise.all([db.prepare(
+  const [{ results }, { results: activityResults }, { results: trackedResults }] = await Promise.all([db.prepare(
     `WITH RECURSIVE periods(period) AS (
        SELECT date(?, '-30 days')
        UNION ALL
@@ -142,7 +142,42 @@ async function loadEventDerivedNoxCueDigestData(db, sourceId, period) {
      ORDER BY periods.period, definitions.metric_key`,
   ).bind(period, period, sourceId, sourceId, sourceId, currentStart, sourceId, currentStart,
     sourceId, currentStart, currentStart, sourceId, previousStart, previousEnd,
-    sourceId, previousStart, previousEnd).all()]);
+    sourceId, previousStart, previousEnd).all(), db.prepare(
+    `WITH RECURSIVE periods(period) AS (
+       SELECT date(?, '-30 days')
+       UNION ALL SELECT date(period, '+1 day') FROM periods WHERE period < date(?)
+     )
+     SELECT periods.period,
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'subscription.trial_started'
+           AND event.period = periods.period) AS trials_new,
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'subscription.trial_started'
+           AND event.period <= periods.period) AS trials_total,
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'subscription.paid_started'
+           AND event.period = periods.period) AS paid_new,
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'subscription.paid_started'
+           AND event.period <= periods.period) AS paid_total,
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'subscription.cancelled'
+           AND event.period = periods.period) AS churned,
+       (SELECT COALESCE(SUM(event.value), 0) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'records.parsed'
+           AND event.period = periods.period) AS records_parsed,
+       (SELECT COALESCE(SUM(event.value), 0) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'reports.generated'
+           AND event.period = periods.period) AS reports_generated,
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'records.parsed'
+           AND event.subject_hash IS NOT NULL AND event.period <= periods.period) AS records_users_total,
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+         WHERE event.source_id = ? AND event.name = 'reports.generated'
+           AND event.subject_hash IS NOT NULL AND event.period <= periods.period) AS reports_users_total
+     FROM periods ORDER BY periods.period`,
+  ).bind(period, period, sourceId, sourceId, sourceId, sourceId, sourceId,
+    sourceId, sourceId, sourceId, sourceId).all()]);
   const metricRows = [];
   const metricLabels = {};
   const activityBreakdowns = {};
@@ -202,6 +237,32 @@ async function loadEventDerivedNoxCueDigestData(db, sourceId, period) {
           previousPerActiveUser: previousActiveUsers > 0 ? previousActions / previousActiveUsers : null,
         };
       }
+    }
+  }
+  const activeByPeriod = new Map((results ?? []).map((row) => [String(row.period), Number(row.daily_active ?? 0)]));
+  for (const row of trackedResults ?? []) {
+    const trialsTotal = Number(row.trials_total ?? 0);
+    const paidTotal = Number(row.paid_total ?? 0);
+    const recordsParsed = Number(row.records_parsed ?? 0);
+    const reportsGenerated = Number(row.reports_generated ?? 0);
+    const dailyActive = activeByPeriod.get(String(row.period)) ?? 0;
+    const values = {
+      "subscriptions.trials.new": Number(row.trials_new ?? 0),
+      "subscriptions.trials.total": trialsTotal,
+      "subscriptions.paid.new": Number(row.paid_new ?? 0),
+      "subscriptions.paid.total": paidTotal,
+      "subscriptions.trial_to_paid": trialsTotal > 0 ? paidTotal / trialsTotal : 0,
+      "subscriptions.churn": paidTotal > 0 ? Number(row.churned ?? 0) / paidTotal : 0,
+      "records.parsed": recordsParsed,
+      "records.parsed.per_active": dailyActive > 0 ? recordsParsed / dailyActive : 0,
+      "records.parsed.users.total": Number(row.records_users_total ?? 0),
+      "reports.generated": reportsGenerated,
+      "reports.generated.per_active": dailyActive > 0 ? reportsGenerated / dailyActive : 0,
+      "reports.generated.users.total": Number(row.reports_users_total ?? 0),
+    };
+    if (Object.values(values).some((value) => value > 0)) hasFacts = true;
+    for (const [metricKey, value] of Object.entries(values)) {
+      metricRows.push({ period: row.period, metric_key: metricKey, value, origin: "calculated" });
     }
   }
   if (!hasFacts) return null;
