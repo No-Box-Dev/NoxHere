@@ -107,7 +107,7 @@ service.
 | `npm run typecheck:functions` | Backend (Functions + cron) type-check |
 | `npm run test:sdk` | Unified TypeScript/Python tests and generated-contract checks |
 | `npm run build:sdk` | Verify and build the unified SDK contract |
-| `npm run test:spot-widget` | Migrated Spot capture-widget suite |
+| `npm run test:feedback-widget` | Feedback capture-widget suite |
 
 ## Contributing
 

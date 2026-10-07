@@ -1,7 +1,8 @@
-# NoxHere Spot widget
+# NoxHere feedback widget
 
-This package owns the browser capture widget served by the NoxHere Spot
-capability. The production service loads `noxspot.min.js` and
+This package owns the independently built browser capture client for NoxHere's
+Feedback capability. The public browser API remains named `NoxSpot` for embed
+compatibility. The production service loads `noxspot.min.js` and
 `noxspot-core.min.js` from the `noxspot-assets` R2 bucket. The
 `blindspot.min.js` build is retained only for legacy embed compatibility.
 

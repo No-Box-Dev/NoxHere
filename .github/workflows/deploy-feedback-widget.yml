@@ -1,15 +1,15 @@
-name: Deploy Spot widget
+name: Deploy feedback widget
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - packages/spot-widget/**
-      - .github/workflows/deploy-spot-widget.yml
+      - packages/feedback-widget/**
+      - .github/workflows/deploy-feedback-widget.yml
 
 concurrency:
-  group: deploy-spot-widget
+  group: deploy-feedback-widget
   cancel-in-progress: false
 
 jobs:
@@ -23,14 +23,14 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     defaults:
       run:
-        working-directory: packages/spot-widget
+        working-directory: packages/feedback-widget
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: packages/spot-widget/package-lock.json
+          cache-dependency-path: packages/feedback-widget/package-lock.json
       - run: npm ci
       - run: npm test
       - run: npm run build

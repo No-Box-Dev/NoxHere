@@ -135,18 +135,18 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  spot-widget:
+  feedback-widget:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/spot-widget
+        working-directory: packages/feedback-widget
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: packages/spot-widget/package-lock.json
+          cache-dependency-path: packages/feedback-widget/package-lock.json
       - run: npm ci
       - run: npm test
       - run: npm run build
