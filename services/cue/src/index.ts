@@ -2,14 +2,16 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import { createChartSnapshot, handleChartImage } from "./chart";
 import { handleCueEvent } from "./events";
 import { narrateDailyStats } from "./narration";
-import { buildDigestResponse, buildTestResponse, type ActivityBreakdowns, type MetricComparisons } from "./response";
+import {
+  buildDigestResponse,
+  buildGitHubIncident,
+  buildTestResponse,
+  type ActivityBreakdowns,
+  type GitHubIncidentInput,
+  type MetricComparisons,
+} from "./response";
 import { runEndpointMonitors, testEndpointMonitor } from "./monitor";
 import { NOXCUE_SERVICE_MANIFEST } from "./service-manifest";
-import {
-  buildGitHubIncident,
-  type GitHubIncidentInput,
-  type PreviousGitHubIncident,
-} from "./incident-presentation";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -28,7 +30,7 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     const chartResponse = await handleChartImage(request, this.env.NOX_DB);
     if (chartResponse) return chartResponse;
     if (request.method === "GET" && url.pathname === "/health") {
-      return Response.json({ service: "noxcue", status: "ok" });
+      return Response.json({ service: "noxcue", status: "ok", buildSha: this.env.BUILD_SHA ?? "development" });
     }
     if (url.pathname === "/v1/events") {
       return handleCueEvent(request, this.env);
@@ -48,7 +50,7 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
     return buildTestResponse(orgLogin);
   }
 
-  buildGitHubIncident(input: GitHubIncidentInput, previous: PreviousGitHubIncident | null = null) {
+  buildGitHubIncident(input: GitHubIncidentInput, previous: { url: string } | null = null) {
     return buildGitHubIncident(input, previous);
   }
 

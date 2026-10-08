@@ -206,9 +206,9 @@ jobs:
         run: npm run telemetry:milestones:verify
       - name: Verify Cue Worker, contracts, and build
         run: npm run check
-      - name: Verify NoxCue service-binding RPC contract
-        working-directory: ../..
-        run: node scripts/check-service-rpc.mjs services/cue/wrangler.jsonc noxcue noxcue buildGitHubIncident
+      - name: Verify NoxCue RPC capabilities through a real Worker harness
+        working-directory: ${{ github.workspace }}
+        run: npm run health:noxcue-capability -- services/cue/wrangler.jsonc
       - name: Verify TypeScript/Python SDK parity
         run: npm run sdk:parity
       - name: Build Python distribution

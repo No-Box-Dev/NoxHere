@@ -227,8 +227,16 @@ function enabledEnvironment(raw, environment) {
 function updateDue(last, minutes) { return !last || Date.now() - Date.parse(last) >= Number(minutes) * 60_000; }
 function validRepo(value) { return typeof value === "string" && /^[A-Za-z0-9_.-]{1,100}$/.test(value); }
 function requirePresentation(value) {
-  if (!value || typeof value.marker !== "string" || typeof value.title !== "string" || typeof value.body !== "string"
-    || !Array.isArray(value.labels) || typeof value.repeatComment !== "string") throw new Error("NoxCue returned an invalid incident presentation");
+  if (!value || value.contract !== "noxcue.response" || value.version !== 1 || value.kind !== "github_incident"
+    || typeof value.marker !== "string" || value.marker.length > 320
+    || typeof value.title !== "string" || value.title.length > 256
+    || typeof value.body !== "string" || value.body.length > 30_000
+    || !Array.isArray(value.labels) || value.labels.length > 10
+    || value.labels.some((label) => !label || typeof label.name !== "string" || typeof label.color !== "string")
+    || (value.latestRelease !== null && value.latestRelease !== undefined && typeof value.latestRelease !== "string")
+    || typeof value.repeatComment !== "string" || value.repeatComment.length > 500) {
+    throw new Error("NoxCue returned an invalid incident presentation");
+  }
   return value;
 }
 function errorMessage(error) { return (error instanceof Error ? error.message : String(error)).slice(0, 500); }
