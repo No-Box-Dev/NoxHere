@@ -1,7 +1,74 @@
 import { describe, expect, it } from "vitest";
-import { buildDigestResponse, buildTestResponse } from "../response";
+import { buildDigestResponse, buildGitHubIncident, buildTestResponse } from "../response";
+
+const incidentInput = {
+  environment: "production",
+  incidentKey: "error.occurred/api/network_error/fetchlibrary",
+  title: "Library request failed",
+  sourceName: "Playnist <web>",
+  firstSeenAt: "2026-10-08T05:31:00Z",
+  lastSeenAt: "2026-10-08T05:32:00Z",
+  occurrenceCount: 7,
+  payloadJson: JSON.stringify({
+    impact: "The library could not load.",
+    message: "GET https://playnist.com/api/users/private-user/library?token=secret failed",
+    error: {
+      name: "TypeError",
+      message: "Failed to fetch",
+      code: "NETWORK_ERROR",
+      stack: "at load (https://playnist.com/assets/app.js?account=private:10:4)",
+    },
+    context: {
+      environment: "production",
+      release: "web-123",
+      runtime: "browser",
+      url: "https://playnist.com/users/private-user/library?token=secret#private",
+    },
+    diagnosis: {
+      possibleCauses: ["The request path was interrupted."],
+      possibleFixes: ["Inspect edge logs."],
+    },
+  }),
+};
 
 describe("NoxCue response policy", () => {
+  it("builds a bounded GitHub incident through the owned response contract", () => {
+    const response = buildGitHubIncident(incidentInput, { url: "https://github.com/acme/playnist/issues/12" });
+
+    expect(response).toMatchObject({
+      contract: "noxcue.response",
+      version: 1,
+      kind: "github_incident",
+      marker: "<!-- noxcue-key: production/error.occurred/api/network_error/fetchlibrary -->",
+      title: "[NoxCue] Library request failed",
+      latestRelease: "web-123",
+    });
+    expect(response.labels.map(({ name }) => name)).toEqual(["noxcue", "incident"]);
+    expect(response.body).toContain("Origin: https://playnist\\.com");
+    expect(response.body).toContain("Previous occurrence: https://github.com/acme/playnist/issues/12");
+    expect(response.body).not.toContain("private-user");
+    expect(response.body).not.toContain("token=secret");
+    expect(response.body.length).toBeLessThanOrEqual(30_000);
+  });
+
+  it("fails closed for malformed, oversized, or private diagnostic payloads", () => {
+    expect(() => buildGitHubIncident({ ...incidentInput, payloadJson: "{" })).toThrow("invalid diagnostic payload");
+    expect(() => buildGitHubIncident({ ...incidentInput, payloadJson: "x".repeat(24_001) })).toThrow("payloadJson");
+    expect(() => buildGitHubIncident({
+      ...incidentInput,
+      payloadJson: JSON.stringify({
+        impact: "Failure",
+        affectedUser: "private@example.test",
+        diagnosis: { possibleCauses: [], possibleFixes: [] },
+      }),
+    })).toThrow("invalid diagnostic payload");
+  });
+
+  it("rejects unsafe marker and previous-issue inputs", () => {
+    expect(() => buildGitHubIncident({ ...incidentInput, incidentKey: "safe/-->unsafe" })).toThrow("incidentKey");
+    expect(() => buildGitHubIncident(incidentInput, { url: "https://github.com/acme/repo/issues/1?secret=yes" })).toThrow("previousIssueUrl");
+  });
+
   it("owns its delivery test message", () => {
     const response = buildTestResponse("Acme<&>");
     expect(response).toMatchObject({ contract: "noxcue.response", version: 1 });

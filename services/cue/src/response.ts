@@ -1,5 +1,146 @@
+import { z } from "zod";
+
 const CONTRACT = "noxcue.response" as const;
 const VERSION = 1 as const;
+
+const INCIDENT_PAYLOAD_MAX_BYTES = 24_000;
+const INCIDENT_BODY_MAX_LENGTH = 30_000;
+const INCIDENT_LABELS = [
+  { name: "noxcue", color: "6f42c1", description: "Detected by NoxCue" },
+  { name: "incident", color: "d73a4a", description: "Application incident requiring investigation" },
+] as const;
+
+const IncidentPayloadSchema = z.object({
+  impact: z.string().min(1).max(2_000),
+  message: z.string().max(2_000).optional(),
+  error: z.object({
+    name: z.string().max(120).optional(),
+    message: z.string().max(2_000),
+    code: z.string().max(120).optional(),
+    status: z.number().int().min(100).max(599).optional(),
+    stack: z.string().max(6_000).optional(),
+  }).strict().optional(),
+  context: z.object({
+    environment: z.string().max(50).optional(),
+    release: z.string().max(200).optional(),
+    runtime: z.string().max(200).optional(),
+    url: z.string().max(1_000).optional(),
+  }).strict().optional(),
+  diagnosis: z.object({
+    summary: z.string().max(2_000).optional(),
+    possibleCauses: z.array(z.string().min(1).max(500)).max(8),
+    possibleFixes: z.array(z.string().min(1).max(500)).max(8),
+  }).strict(),
+}).strict();
+
+export interface GitHubIncidentInput {
+  environment: string;
+  incidentKey: string;
+  title: string;
+  payloadJson: string;
+  sourceName: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  occurrenceCount: number;
+}
+
+export interface GitHubIncidentPresentation {
+  contract: typeof CONTRACT;
+  version: typeof VERSION;
+  kind: "github_incident";
+  marker: string;
+  title: string;
+  body: string;
+  labels: Array<{ name: string; color: string; description: string }>;
+  latestRelease: string | null;
+  repeatComment: string;
+}
+
+export function buildGitHubIncident(
+  input: GitHubIncidentInput,
+  previous: { url: string } | null = null,
+): GitHubIncidentPresentation {
+  const environment = incidentKeyPart(input.environment, "environment", 50);
+  const incidentKey = incidentKeyPart(input.incidentKey, "incidentKey", 240);
+  const title = requiredIncidentText(input.title, "title", 200);
+  const sourceName = requiredIncidentText(input.sourceName, "sourceName", 200);
+  const firstSeenAt = incidentTimestamp(input.firstSeenAt, "firstSeenAt");
+  const lastSeenAt = incidentTimestamp(input.lastSeenAt, "lastSeenAt");
+  if (!Number.isSafeInteger(input.occurrenceCount) || input.occurrenceCount < 1) {
+    throw new Error("Invalid NoxCue occurrenceCount");
+  }
+  if (typeof input.payloadJson !== "string" || byteLength(input.payloadJson) > INCIDENT_PAYLOAD_MAX_BYTES) {
+    throw new Error("Invalid NoxCue payloadJson");
+  }
+
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(input.payloadJson);
+  } catch {
+    throw new Error("NoxCue incident has invalid diagnostic payload");
+  }
+  const parsed = IncidentPayloadSchema.safeParse(decoded);
+  if (!parsed.success) throw new Error("NoxCue incident has invalid diagnostic payload");
+  const payload = parsed.data;
+  const previousUrl = previous === null ? null : safePreviousIssueUrl(previous?.url);
+  const marker = `<!-- noxcue-key: ${environment}/${incidentKey} -->`;
+  const causes = payload.diagnosis.possibleCauses.map((value) => `- ${markdown(value)}`).join("\n") || "- No bounded cause was supplied.";
+  const fixes = payload.diagnosis.possibleFixes.map((value) => `- ${markdown(value)}`).join("\n") || "- Inspect the matching application logs and release changes.";
+  const error = payload.error
+    ? [payload.error.name, payload.error.code, payload.error.status ? `HTTP ${payload.error.status}` : null, payload.error.message]
+      .filter((value): value is string => Boolean(value)).map(markdown).join(" · ")
+    : "No structured error was supplied.";
+  const stack = payload.error?.stack
+    ? `\n<details>\n<summary>Redacted stack trace</summary>\n\n\`\`\`text\n${codeBlock(payload.error.stack)}\n\`\`\`\n</details>\n`
+    : "";
+  const origin = safeOrigin(payload.context?.url);
+  const context = [
+    `- Environment: \`${codeSpan(environment)}\``,
+    `- Source: ${markdown(sourceName)}`,
+    `- Incident key: \`${codeSpan(incidentKey)}\``,
+    `- First seen: ${markdown(firstSeenAt)}`,
+    `- Last seen: ${markdown(lastSeenAt)}`,
+    `- Occurrences: ${input.occurrenceCount}`,
+    payload.context?.release ? `- Latest release: \`${codeSpan(payload.context.release)}\`` : null,
+    payload.context?.runtime ? `- Runtime: ${markdown(payload.context.runtime)}` : null,
+    origin ? `- Origin: ${markdown(origin)}` : null,
+    previousUrl ? `- Previous occurrence: ${escapeHtml(previousUrl)}` : null,
+  ].filter((value): value is string => Boolean(value)).join("\n");
+  const body = `${marker}
+## Detected impact
+
+${markdown(payload.impact)}
+
+${payload.message ? `**Message:** ${markdown(payload.message)}\n\n` : ""}**Error:** ${error}
+${stack}
+
+## Context
+
+${context}
+
+## Possible causes
+
+${causes}
+
+## Possible fixes to investigate
+
+${fixes}
+
+> NoxCue detected and explained this incident. It has not changed the application or attempted a fix.
+`.slice(0, INCIDENT_BODY_MAX_LENGTH);
+
+  return {
+    contract: CONTRACT,
+    version: VERSION,
+    kind: "github_incident",
+    marker,
+    title: `[NoxCue] ${plainText(title)}`.slice(0, 256),
+    body,
+    labels: INCIDENT_LABELS.map((label) => ({ ...label })),
+    latestRelease: payload.context?.release ? plainText(payload.context.release).slice(0, 200) : null,
+    repeatComment: `NoxCue observed this incident again. Occurrences: **${input.occurrenceCount}** · Last seen: ${markdown(lastSeenAt)}.`.slice(0, 500),
+  };
+}
 
 interface MetricComparison {
   yesterday: number | null;
@@ -275,4 +416,86 @@ function requireText(value: unknown, field: string, maxLength: number): asserts 
 
 function escapeMrkdwn(value: unknown): string {
   return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function byteLength(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+function requiredIncidentText(value: unknown, field: string, maxLength: number): string {
+  if (typeof value !== "string" || !value.trim() || value.length > maxLength) {
+    throw new Error(`Invalid NoxCue ${field}`);
+  }
+  return value.trim();
+}
+
+function incidentKeyPart(value: unknown, field: string, maxLength: number): string {
+  const text = requiredIncidentText(value, field, maxLength);
+  if (!/^[A-Za-z0-9._/-]+$/.test(text) || text.includes("..") || text.includes("--")) {
+    throw new Error(`Invalid NoxCue ${field}`);
+  }
+  return text;
+}
+
+function incidentTimestamp(value: unknown, field: string): string {
+  const text = requiredIncidentText(value, field, 40);
+  const timestamp = Date.parse(text);
+  if (!Number.isFinite(timestamp)) throw new Error(`Invalid NoxCue ${field}`);
+  return new Date(timestamp).toISOString();
+}
+
+function redactEmbeddedUrls(value: string): string {
+  return value.replace(/https?:\/\/[^\s<>)\]"']+/gi, (candidate) => {
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      return "[redacted-url]";
+    }
+  });
+}
+
+function escapeHtml(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+function markdown(value: unknown): string {
+  return escapeHtml(redactEmbeddedUrls(String(value ?? "")))
+    .replace(/([\\`*_{}[\]()#+.!|>-])/g, "\\$1")
+    .slice(0, 8_000);
+}
+
+function codeSpan(value: unknown): string {
+  return escapeHtml(redactEmbeddedUrls(String(value ?? ""))).replaceAll("`", "'").slice(0, 1_000);
+}
+
+function codeBlock(value: unknown): string {
+  return escapeHtml(redactEmbeddedUrls(String(value ?? ""))).replaceAll("```", "''' ").slice(0, 8_000);
+}
+
+function plainText(value: unknown): string {
+  return redactEmbeddedUrls(String(value ?? "")).replace(/[\r\n\t]+/g, " ").trim();
+}
+
+function safeOrigin(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function safePreviousIssueUrl(value: unknown): string {
+  const text = requiredIncidentText(value, "previousIssueUrl", 500);
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    throw new Error("Invalid NoxCue previousIssueUrl");
+  }
+  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
+    throw new Error("Invalid NoxCue previousIssueUrl");
+  }
+  return url.toString();
 }

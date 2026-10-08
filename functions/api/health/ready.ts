@@ -3,8 +3,21 @@ interface Env {
   BUILD_SHA?: string;
   NOXTICKET_SERVICE?: Fetcher;
   NOXSPOT_RESPONSE?: Fetcher;
-  NOXCUE_RESPONSE?: Fetcher;
+  NOXCUE_RESPONSE?: NoxCueService;
   NOXFEED_RESPONSE?: Fetcher;
+}
+
+interface NoxCueService extends Fetcher {
+  buildGitHubIncident(input: {
+    environment: string;
+    incidentKey: string;
+    title: string;
+    payloadJson: string;
+    sourceName: string;
+    firstSeenAt: string;
+    lastSeenAt: string;
+    occurrenceCount: number;
+  }, previous?: { url: string } | null): Promise<unknown>;
 }
 
 interface Context { env: Env }
@@ -30,7 +43,37 @@ async function probeService(service: Fetcher | undefined, url: string): Promise<
   }
 }
 
+async function probeNoxCue(service: NoxCueService | undefined, expectedBuildSha: string): Promise<ServiceProbe> {
+  const health = await probeService(service, "https://noxcue.internal/health");
+  if (!health.ok || !health.buildSha || health.buildSha !== expectedBuildSha || !service) return { ...health, ok: false };
+  try {
+    const occurredAt = "2026-01-01T00:00:00.000Z";
+    const result = await service.buildGitHubIncident({
+      environment: "production",
+      incidentKey: "readiness/synthetic",
+      title: "Synthetic readiness probe",
+      payloadJson: JSON.stringify({
+        impact: "Synthetic readiness probe.",
+        diagnosis: { possibleCauses: [], possibleFixes: [] },
+      }),
+      sourceName: "NoxHere readiness",
+      firstSeenAt: occurredAt,
+      lastSeenAt: occurredAt,
+      occurrenceCount: 1,
+    });
+    const presentation = result as { contract?: unknown; kind?: unknown; marker?: unknown; body?: unknown } | null;
+    const capable = presentation?.contract === "noxcue.response"
+      && presentation.kind === "github_incident"
+      && typeof presentation.marker === "string"
+      && typeof presentation.body === "string";
+    return { ...health, ok: capable };
+  } catch {
+    return { ...health, ok: false };
+  }
+}
+
 export async function onRequestGet(context: Context): Promise<Response> {
+  const expectedBuildSha = context.env.BUILD_SHA ?? "development";
   const checks: Record<string, boolean> = {
     database: false,
     scheduledWorker: false,
@@ -64,7 +107,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
   const [ticket, spot, cue, feed] = await Promise.all([
     probeService(context.env.NOXTICKET_SERVICE, "https://noxticket.internal/health"),
     probeService(context.env.NOXSPOT_RESPONSE, "https://noxspot.internal/health"),
-    probeService(context.env.NOXCUE_RESPONSE, "https://noxcue.internal/health"),
+    probeNoxCue(context.env.NOXCUE_RESPONSE, expectedBuildSha),
     probeService(context.env.NOXFEED_RESPONSE, "https://noxfeed.internal/health"),
   ]);
   checks.noxticket = ticket.ok;
@@ -72,7 +115,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
   checks.noxcue = cue.ok;
   checks.noxfeed = feed.ok;
   const versions = {
-    noxhere: context.env.BUILD_SHA ?? "development",
+    noxhere: expectedBuildSha,
     ...(ticket.buildSha ? { noxticket: ticket.buildSha } : {}),
     ...(spot.buildSha ? { noxspot: spot.buildSha } : {}),
     ...(cue.buildSha ? { noxcue: cue.buildSha } : {}),

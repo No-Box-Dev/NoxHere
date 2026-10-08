@@ -6,10 +6,13 @@ if (!platformOrigin || !spotOrigin || !expectedSha) {
 async function ready() {
   const response = await fetch(new URL("/api/health/ready", platformOrigin), { headers: { "Cache-Control": "no-cache" } });
   const body = await response.json();
-  return body?.checks?.database === true
+  return response.ok
+    && body?.checks?.database === true
     && body?.checks?.noxspot === true
+    && body?.checks?.noxcue === true
     && body?.versions?.noxhere === expectedSha
-    && body?.versions?.noxspot === expectedSha;
+    && body?.versions?.noxspot === expectedSha
+    && body?.versions?.noxcue === expectedSha;
 }
 
 async function spotReady() {
