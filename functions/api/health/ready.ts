@@ -43,12 +43,26 @@ async function probeService(service: Fetcher | undefined, url: string): Promise<
   }
 }
 
+async function withServiceTimeout<T>(operation: Promise<T>): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(() => reject(new Error("service_timeout")), SERVICE_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 async function probeNoxCue(service: NoxCueService | undefined, expectedBuildSha: string): Promise<ServiceProbe> {
   const health = await probeService(service, "https://noxcue.internal/health");
   if (!health.ok || !health.buildSha || health.buildSha !== expectedBuildSha || !service) return { ...health, ok: false };
   try {
     const occurredAt = "2026-01-01T00:00:00.000Z";
-    const result = await service.buildGitHubIncident({
+    const result = await withServiceTimeout(service.buildGitHubIncident({
       environment: "production",
       incidentKey: "readiness/synthetic",
       title: "Synthetic readiness probe",
@@ -60,7 +74,7 @@ async function probeNoxCue(service: NoxCueService | undefined, expectedBuildSha:
       firstSeenAt: occurredAt,
       lastSeenAt: occurredAt,
       occurrenceCount: 1,
-    });
+    }));
     const presentation = result as { contract?: unknown; kind?: unknown; marker?: unknown; body?: unknown } | null;
     const capable = presentation?.contract === "noxcue.response"
       && presentation.kind === "github_incident"

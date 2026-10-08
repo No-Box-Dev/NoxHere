@@ -6,19 +6,21 @@ function service(ok = true, buildSha = "service-sha"): Fetcher {
   return { fetch: vi.fn(async () => Response.json({ buildSha }, { status: ok ? 200 : 503 })) } as unknown as Fetcher;
 }
 
-function cueService(options: { ok?: boolean; buildSha?: string; rpc?: boolean } = {}) {
+function cueService(options: { ok?: boolean; buildSha?: string; rpc?: boolean | "hang" } = {}) {
   return {
     fetch: vi.fn(async () => Response.json(
       { buildSha: options.buildSha ?? "connect-sha" },
       { status: options.ok === false ? 503 : 200 },
     )),
     ...(options.rpc === false ? {} : {
-      buildGitHubIncident: vi.fn(async () => ({
-        contract: "noxcue.response",
-        kind: "github_incident",
-        marker: "<!-- noxcue-key: production/readiness/synthetic -->",
-        body: "Synthetic readiness probe",
-      })),
+      buildGitHubIncident: options.rpc === "hang"
+        ? vi.fn(() => new Promise(() => undefined))
+        : vi.fn(async () => ({
+            contract: "noxcue.response",
+            kind: "github_incident",
+            marker: "<!-- noxcue-key: production/readiness/synthetic -->",
+            body: "Synthetic readiness probe",
+          })),
     }),
   };
 }
@@ -29,7 +31,7 @@ function context(options: {
   dbError?: boolean;
   serviceOk?: boolean;
   cueBuildSha?: string;
-  cueRpc?: boolean;
+  cueRpc?: boolean | "hang";
 } = {}) {
   const heartbeat = options.heartbeat === undefined
     ? { status: "healthy", last_succeeded_at: new Date().toISOString() }
@@ -108,5 +110,18 @@ describe("NoxHere health", () => {
     const response = await ready(context({ cueBuildSha: "older-sha" }));
     expect(response.status).toBe(503);
     expect(await response.json()).toMatchObject({ checks: { noxcue: false }, versions: { noxcue: "older-sha" } });
+  });
+
+  it("fails readiness promptly when the NoxCue incident RPC hangs", async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = ready(context({ cueRpc: "hang" }));
+      await vi.advanceTimersByTimeAsync(2_000);
+      const response = await pending;
+      expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({ checks: { noxcue: false } });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
