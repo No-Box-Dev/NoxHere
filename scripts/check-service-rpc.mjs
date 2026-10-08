@@ -1,9 +1,9 @@
 import { createTestHarness } from "wrangler";
 import process from "node:process";
 
-const [configPath, expectedService, workerName = expectedService] = process.argv.slice(2);
+const [configPath, expectedService, workerName = expectedService, expectedMethod] = process.argv.slice(2);
 if (!configPath || !expectedService) {
-  console.error("Usage: node scripts/check-service-rpc.mjs <service-wrangler-config> <service-id> [worker-name]");
+  console.error("Usage: node scripts/check-service-rpc.mjs <service-wrangler-config> <service-id> [worker-name] [expected-method]");
   process.exitCode = 2;
 } else {
   const server = createTestHarness({
@@ -32,9 +32,15 @@ if (!configPath || !expectedService) {
     if (!response.ok || manifest?.contract !== "nox.service-manifest" || manifest?.service?.id !== expectedService) {
       throw new Error(`Invalid ${expectedService} service manifest: ${JSON.stringify(manifest)}`);
     }
+    if (expectedMethod) {
+      const methodResponse = await server.fetch(`/health?method=${encodeURIComponent(expectedMethod)}`);
+      const result = await methodResponse.json();
+      if (!methodResponse.ok) throw new Error(`Invalid ${expectedService}.${expectedMethod} RPC: ${JSON.stringify(result)}`);
+    }
     console.log(JSON.stringify({
       service: expectedService,
       rpc: "pass",
+      ...(expectedMethod ? { method: expectedMethod } : {}),
       contract: manifest.contract,
       version: manifest.version,
       capabilities: manifest.service.capabilities.length,

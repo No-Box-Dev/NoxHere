@@ -5,6 +5,11 @@ import { narrateDailyStats } from "./narration";
 import { buildDigestResponse, buildTestResponse, type ActivityBreakdowns, type MetricComparisons } from "./response";
 import { runEndpointMonitors, testEndpointMonitor } from "./monitor";
 import { NOXCUE_SERVICE_MANIFEST } from "./service-manifest";
+import {
+  buildGitHubIncident,
+  type GitHubIncidentInput,
+  type PreviousGitHubIncident,
+} from "./incident-presentation";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -41,6 +46,10 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
 
   buildTestResponse(orgLogin: string) {
     return buildTestResponse(orgLogin);
+  }
+
+  buildGitHubIncident(input: GitHubIncidentInput, previous: PreviousGitHubIncident | null = null) {
+    return buildGitHubIncident(input, previous);
   }
 
   async testEndpointMonitor(orgId: number, sourceId: string) {
