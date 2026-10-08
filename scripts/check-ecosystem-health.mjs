@@ -29,5 +29,8 @@ if (readiness?.status !== "ok" || Object.values(readiness?.checks ?? {}).some((v
 if (expectedService && expectedSha && readiness?.versions?.[expectedService] !== expectedSha) {
   throw new Error(`${expectedService} is ${readiness?.versions?.[expectedService] ?? "unknown"}; expected ${expectedSha}`);
 }
+if (expectedSha && readiness?.versions?.noxcue !== expectedSha) {
+  throw new Error(`noxcue is ${readiness?.versions?.noxcue ?? "unknown"}; expected ${expectedSha}`);
+}
 
 console.log(JSON.stringify({ origin, platform: platform.buildSha, versions: readiness.versions, status: "ready" }));

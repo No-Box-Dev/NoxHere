@@ -62,7 +62,7 @@ jobs:
       - name: Deploy staging Connect capability
         run: npx wrangler deploy --config services/connect/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
       - name: Deploy staging Cue capability
-        run: npx wrangler deploy --config services/cue/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/cue/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging Feed capability
         run: npx wrangler deploy --config services/feed/wrangler.toml --env staging --message "$DEPLOY_SHA"
       - name: Deploy staging Ticket capability
@@ -89,7 +89,7 @@ jobs:
       - name: Deploy production Connect capability
         run: npx wrangler deploy --config services/connect/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
       - name: Deploy production Cue capability
-        run: npx wrangler deploy --config services/cue/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/cue/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production Feed capability
         run: npx wrangler deploy --config services/feed/wrangler.toml --env="" --message "$DEPLOY_SHA"
       - name: Deploy production Ticket capability

@@ -19,11 +19,13 @@ import {
   getRepositoryIssue, updateRepositoryIssue,
 } from "../github-issues.js";
 import { publishGitHubTransport } from "../transport-outbox";
+import { buildGitHubIncident as buildActualGitHubIncident } from "../../../services/cue/src/response";
 
 const baseRow = {
   id: "incident-1", org_id: 1, project_id: "project-1", source_id: "source-1",
   environment: "production", incident_key: "auth.signup/dependency_unavailable/auth/auth_503/createaccount",
   title: "Sign up is unavailable", enabled: 1, environments_json: '["production"]',
+  source_name: "Playnist",
   comment_on_repeat: 0, repeat_interval_minutes: 360, repo: "playnist", github_login: "acme",
   first_seen_at: "2026-09-05T00:00:00Z", last_seen_at: "2026-09-05T00:01:00Z",
   occurrence_count: 2, processing_occurrence_count: 2, github_issue_number: null,
@@ -37,7 +39,7 @@ const baseRow = {
   }),
 };
 
-function environment(row) {
+function environment(row, incidentBuilder) {
   const statements = [];
   const db = {
     prepare(sql) {
@@ -55,7 +57,10 @@ function environment(row) {
     },
     batch: vi.fn().mockResolvedValue([]),
   };
-  const buildGitHubIncident = vi.fn(async (input, previous) => ({
+  const buildGitHubIncident = incidentBuilder ?? vi.fn(async (input, previous) => ({
+    contract: "noxcue.response",
+    version: 1,
+    kind: "github_incident",
     marker: `<!-- noxcue-key: ${input.environment}/${input.incidentKey} -->`,
     title: `[NoxCue] ${input.title}`,
     body: `Incident key: \`${input.incidentKey}\`\n${previous?.url ? `Previous occurrence: ${previous.url}\n` : ""}has not changed the application or attempted a fix`,
@@ -81,6 +86,24 @@ describe("NoxCue GitHub issue routing", () => {
       }) }),
     }));
     expect(publishGitHubTransport.mock.calls[0][1].input.issue.body).toContain("has not changed the application or attempted a fix");
+  });
+
+  it("runs the real NoxConnect caller against NoxCue's actual presentation builder", async () => {
+    const actualBuilder = vi.fn(async (input, previous) => buildActualGitHubIncident(input, previous));
+    const { env } = environment(baseRow, actualBuilder);
+    findIssueByBodyMarker.mockResolvedValue(null);
+
+    await createOrUpdateNoxCueGitHubIssue(env, { incidentId: "incident-1" });
+
+    expect(actualBuilder).toHaveBeenCalledOnce();
+    expect(publishGitHubTransport).toHaveBeenCalledWith(env, expect.objectContaining({
+      operation: "github.issue.create",
+      input: expect.objectContaining({ issue: expect.objectContaining({
+        title: "[NoxCue] Sign up is unavailable",
+        body: expect.stringContaining("People cannot create accounts"),
+        labels: expect.arrayContaining([expect.objectContaining({ name: "noxcue" })]),
+      }) }),
+    }));
   });
 
   it("deduplicates against the mapped open issue without a noisy update inside the interval", async () => {

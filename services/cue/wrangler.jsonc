@@ -50,6 +50,7 @@
     }
   ],
   "vars": {
+    "BUILD_SHA": "development",
     "ENVIRONMENT": "production",
     "PUBLIC_BASE_URL": "https://noxcue.jasper-414.workers.dev",
     "NARRATION_MODEL": "claude-sonnet-4-6"
@@ -58,6 +59,7 @@
     "staging": {
       "name": "noxcue-staging",
       "vars": {
+        "BUILD_SHA": "development",
         "ENVIRONMENT": "staging",
         "PUBLIC_BASE_URL": "https://noxcue-staging.jasper-414.workers.dev",
         "NARRATION_MODEL": "claude-sonnet-4-6"

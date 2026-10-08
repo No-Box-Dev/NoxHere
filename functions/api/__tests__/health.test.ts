@@ -2,11 +2,37 @@ import { describe, expect, it, vi } from "vitest";
 import { onRequestGet as live } from "../health/live";
 import { onRequestGet as ready } from "../health/ready";
 
-function service(ok = true): Fetcher {
-  return { fetch: vi.fn(async () => Response.json({ buildSha: "service-sha" }, { status: ok ? 200 : 503 })) } as unknown as Fetcher;
+function service(ok = true, buildSha = "service-sha"): Fetcher {
+  return { fetch: vi.fn(async () => Response.json({ buildSha }, { status: ok ? 200 : 503 })) } as unknown as Fetcher;
 }
 
-function context(options: { heartbeat?: { status: string; last_succeeded_at: string } | null; stale?: number; dbError?: boolean; serviceOk?: boolean } = {}) {
+function cueService(options: { ok?: boolean; buildSha?: string; rpc?: boolean | "hang" } = {}) {
+  return {
+    fetch: vi.fn(async () => Response.json(
+      { buildSha: options.buildSha ?? "connect-sha" },
+      { status: options.ok === false ? 503 : 200 },
+    )),
+    ...(options.rpc === false ? {} : {
+      buildGitHubIncident: options.rpc === "hang"
+        ? vi.fn(() => new Promise(() => undefined))
+        : vi.fn(async () => ({
+            contract: "noxcue.response",
+            kind: "github_incident",
+            marker: "<!-- noxcue-key: production/readiness/synthetic -->",
+            body: "Synthetic readiness probe",
+          })),
+    }),
+  };
+}
+
+function context(options: {
+  heartbeat?: { status: string; last_succeeded_at: string } | null;
+  stale?: number;
+  dbError?: boolean;
+  serviceOk?: boolean;
+  cueBuildSha?: string;
+  cueRpc?: boolean | "hang";
+} = {}) {
   const heartbeat = options.heartbeat === undefined
     ? { status: "healthy", last_succeeded_at: new Date().toISOString() }
     : options.heartbeat;
@@ -22,7 +48,7 @@ function context(options: { heartbeat?: { status: string; last_succeeded_at: str
       BUILD_SHA: "connect-sha",
       NOXTICKET_SERVICE: service(options.serviceOk ?? true),
       NOXSPOT_RESPONSE: service(options.serviceOk ?? true),
-      NOXCUE_RESPONSE: service(options.serviceOk ?? true),
+      NOXCUE_RESPONSE: cueService({ ok: options.serviceOk ?? true, buildSha: options.cueBuildSha, rpc: options.cueRpc }),
       NOXFEED_RESPONSE: service(options.serviceOk ?? true),
     },
   } as never;
@@ -42,7 +68,7 @@ describe("NoxHere health", () => {
       status: "ok",
       checks: { database: true, scheduledWorker: true, deliveryQueue: true, noxticket: true, noxspot: true, noxcue: true, noxfeed: true },
       service: "noxhere",
-      versions: { noxhere: "connect-sha", noxticket: "service-sha", noxspot: "service-sha", noxcue: "service-sha", noxfeed: "service-sha" },
+      versions: { noxhere: "connect-sha", noxticket: "service-sha", noxspot: "service-sha", noxcue: "connect-sha", noxfeed: "service-sha" },
     });
   });
 
@@ -72,5 +98,30 @@ describe("NoxHere health", () => {
     const response = await ready(context({ serviceOk: false }));
     expect(response.status).toBe(503);
     expect(await response.json()).toMatchObject({ checks: { noxticket: false, noxspot: false, noxcue: false, noxfeed: false } });
+  });
+
+  it("is not ready when NoxCue lacks the required incident RPC", async () => {
+    const response = await ready(context({ cueRpc: false }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ checks: { noxcue: false } });
+  });
+
+  it("is not ready when NoxCue is from a different release", async () => {
+    const response = await ready(context({ cueBuildSha: "older-sha" }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ checks: { noxcue: false }, versions: { noxcue: "older-sha" } });
+  });
+
+  it("fails readiness promptly when the NoxCue incident RPC hangs", async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = ready(context({ cueRpc: "hang" }));
+      await vi.advanceTimersByTimeAsync(2_000);
+      const response = await pending;
+      expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({ checks: { noxcue: false } });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

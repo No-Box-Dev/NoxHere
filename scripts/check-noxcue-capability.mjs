@@ -23,6 +23,28 @@ if (!noxCueConfig) {
     if (response?.contract !== "noxcue.response" || !JSON.stringify(response).includes("12 new users")) {
       throw new Error(`NoxCue capability RPC failed: ${JSON.stringify(response)}`);
     }
-    console.log(JSON.stringify({ service: "noxcue", rpc: "pass", capability: "project-scoped managed AI", credentialInProduct: false }));
+    const incident = await noxCue.buildGitHubIncident({
+      environment: "production",
+      incidentKey: "capability/synthetic",
+      title: "Synthetic capability check",
+      payloadJson: JSON.stringify({
+        impact: "Synthetic capability check.",
+        diagnosis: { possibleCauses: [], possibleFixes: [] },
+      }),
+      sourceName: "NoxCue capability check",
+      firstSeenAt: "2026-01-01T00:00:00.000Z",
+      lastSeenAt: "2026-01-01T00:00:00.000Z",
+      occurrenceCount: 1,
+    });
+    if (incident?.contract !== "noxcue.response" || incident?.kind !== "github_incident"
+      || typeof incident?.marker !== "string" || typeof incident?.body !== "string") {
+      throw new Error(`NoxCue incident RPC failed: ${JSON.stringify(incident)}`);
+    }
+    console.log(JSON.stringify({
+      service: "noxcue",
+      rpc: "pass",
+      capabilities: ["daily_digest", "github_incident"],
+      credentialInProduct: false,
+    }));
   } finally { await server.close(); }
 }

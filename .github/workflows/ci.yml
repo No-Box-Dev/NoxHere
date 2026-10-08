@@ -203,6 +203,9 @@ jobs:
         run: python3 -m pip install -e ../../packages/python-sdk
       - name: Verify Cue Worker, contracts, and build
         run: npm run check
+      - name: Verify NoxCue RPC capabilities through a real Worker harness
+        working-directory: ${{ github.workspace }}
+        run: npm run health:noxcue-capability -- services/cue/wrangler.jsonc
       - name: Verify TypeScript/Python SDK parity
         run: npm run sdk:parity
       - name: Build Python distribution
