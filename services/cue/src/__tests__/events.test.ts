@@ -167,6 +167,60 @@ describe("NoxCue event contract", () => {
     expect(String(sourceLookup?.[0])).toContain("alert_route.route_key = 'noxcue_alerts'");
     expect(String(sourceLookup?.[0]).indexOf("NULLIF(alert_route.channel_id"))
       .toBeLessThan(String(sourceLookup?.[0]).indexOf("NULLIF(source.slack_channel_id"));
+    const groupUpsert = prepare.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO cue_error_groups"));
+    expect(String(groupUpsert?.[0])).toContain("status = CASE WHEN cue_error_groups.status = 'resolved' THEN 'open'");
+    expect(String(groupUpsert?.[0])).toContain("resolved_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL");
+    expect(batch).toHaveBeenCalledOnce();
+    expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_transport" }));
+  });
+
+  it("reopens and immediately notifies a resolved incident when it regresses", async () => {
+    const queue = { send: vi.fn(async () => undefined) };
+    const batch = vi.fn(async () => []);
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn(() => statement),
+        first: vi.fn(async () => {
+          if (sql.includes("FROM cue_source_keys")) return {
+            key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
+            source_id: "source-1", source_name: "Checkout", project_id: "project-1",
+            allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
+            error_cooldown_minutes: 60, environment: "production", alerts_enabled: 1,
+            aggregate_only_slack: 0, slack_channel_id: "C123", slack_connection_id: "conn-1",
+          };
+          if (sql.includes("SELECT occurrence_count, last_notified_at, status")) return {
+            occurrence_count: 4,
+            last_notified_at: new Date().toISOString(),
+            status: "resolved",
+          };
+          if (sql.includes("INSERT INTO transport_outbox")) return {
+            id: "transport-regression", org_id: 7, project_id: "project-1", provider: "slack",
+            operation: "slack.message.send", idempotency_key: "noxcue:regression", command_json: "{}",
+            status: "pending", attempt_count: 0, max_attempts: 5, receipt_json: null,
+          };
+          return null;
+        }),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
+      method: "POST",
+      headers: {
+        Origin: "https://app.example.com",
+        "Content-Type": "application/json",
+        "X-Nox-Ingest-Key": `nox_pub_${"a".repeat(43)}`,
+      },
+      body: JSON.stringify({ type: "error.occurred", title: "Payment failed" }),
+    }), {
+      NOX_DB: { prepare, batch }, NOX_TASKS: queue,
+      CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
+      CUE_USER_EVENT_RATE_LIMITER: allow, CUE_ORG_RATE_LIMITER: allow,
+    } as unknown as Env);
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ accepted: true, queued: true, notificationSuppressed: false });
     expect(batch).toHaveBeenCalledOnce();
     expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_transport" }));
   });

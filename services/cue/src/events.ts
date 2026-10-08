@@ -516,12 +516,18 @@ async function storeError(
   };
   const fingerprint = errorIncidentKey(normalizedEvent);
   const group = await env.NOX_DB.prepare(
-    `SELECT occurrence_count, last_notified_at FROM cue_error_groups
+    `SELECT occurrence_count, last_notified_at, status FROM cue_error_groups
       WHERE source_id = ? AND fingerprint = ?`,
-  ).bind(source.source_id, fingerprint).first<{ occurrence_count: number; last_notified_at: string | null }>();
+  ).bind(source.source_id, fingerprint).first<{
+    occurrence_count: number;
+    last_notified_at: string | null;
+    status: "open" | "acknowledged" | "resolved";
+  }>();
   const cooldownMs = source.error_cooldown_minutes * 60_000;
   const shouldNotify = source.aggregate_only_slack !== 1 && Boolean(source.slack_channel_id) && (
-    !group?.last_notified_at || receivedAt.valueOf() - Date.parse(group.last_notified_at) >= cooldownMs
+    group?.status === "resolved"
+    || !group?.last_notified_at
+    || receivedAt.valueOf() - Date.parse(group.last_notified_at) >= cooldownMs
   );
   const occurrence = (group?.occurrence_count ?? 0) + 1;
   const payload = { ...normalizedEvent, data: { ...normalizedEvent.data, fingerprint },
@@ -538,6 +544,11 @@ async function storeError(
          component = excluded.component, environment = excluded.environment,
          last_seen_at = excluded.last_seen_at,
          occurrence_count = cue_error_groups.occurrence_count + 1,
+         status = CASE WHEN cue_error_groups.status = 'resolved' THEN 'open' ELSE cue_error_groups.status END,
+         acknowledged_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_at END,
+         acknowledged_by = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_by END,
+         resolved_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.resolved_at END,
+         resolved_by = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.resolved_by END,
          last_notified_at = COALESCE(excluded.last_notified_at, cue_error_groups.last_notified_at)`,
     ).bind(
       source.org_id, source.source_id, fingerprint, normalizedEvent.title, normalizedEvent.data.errorCode ?? null,
