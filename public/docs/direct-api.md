@@ -5,6 +5,32 @@ available through the HTTPS API described by [`/openapi.json`](/openapi.json).
 The hosted base URL is `https://app.noxhere.com`; self-hosted installations use
 their own gateway URL.
 
+## Official SDKs
+
+Install the unified Python SDK from
+[`noxhere` on PyPI](https://pypi.org/project/noxhere/):
+
+```bash
+python -m pip install --upgrade noxhere
+```
+
+```python
+from noxhere import NoxHereClient
+
+nox = NoxHereClient(token="nox_sk_...")
+services = nox.workspace.list_nox_services()
+```
+
+The TypeScript package is
+[`@noxhere/sdk` on npm](https://www.npmjs.com/package/@noxhere/sdk):
+
+```bash
+npm install @noxhere/sdk
+```
+
+New Python integrations should use `noxhere`; the former `noxcue` package is
+only a compatibility forwarder.
+
 ## Authentication
 
 Use the credential intended for the caller:
