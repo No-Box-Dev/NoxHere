@@ -105,6 +105,25 @@ export async function postRawJson<T>(path: string, body: unknown, scope?: Reques
   return response.json() as Promise<T>;
 }
 
+export async function putRawJson<T>(path: string, body: unknown, scope?: RequestScope): Promise<T> {
+  const response = await checkedResponse(await fetch(path, {
+    method: "PUT",
+    headers: requestHeaders(scope, true),
+    credentials: "same-origin",
+    body: JSON.stringify(body),
+  }));
+  return response.json() as Promise<T>;
+}
+
+export async function deleteRawJson<T>(path: string, scope?: RequestScope): Promise<T> {
+  const response = await checkedResponse(await fetch(path, {
+    method: "DELETE",
+    headers: requestHeaders(scope, true),
+    credentials: "same-origin",
+  }));
+  return response.json() as Promise<T>;
+}
+
 export async function patchJson<T>(path: string, body: unknown, schema: z.ZodType<T>, scope?: RequestScope): Promise<T> {
   const response = await fetch(path, {
     method: "PATCH",

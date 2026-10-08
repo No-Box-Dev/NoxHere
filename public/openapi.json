@@ -1488,6 +1488,88 @@
         "x-project-scope": "optional"
       }
     },
+    "/api/v1/integrations/slack/messages": {
+      "post": {
+        "operationId": "sendSlackMessage",
+        "summary": "Send a Slack message through an existing connection",
+        "description": "Uses the selected encrypted Slack installation. Supports text, Block Kit, image blocks, attachments, metadata, threads, unfurls, author overrides, and client message IDs.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlackMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackMessageDelivery"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "slack:write"
+      }
+    },
     "/api/v1/integrations/slack/test": {
       "post": {
         "operationId": "testSlackRoute",
@@ -2317,6 +2399,65 @@
       }
     },
     "/api/v1/cues/sources/{sourceId}/keys": {
+      "get": {
+        "operationId": "listNoxCueKeys",
+        "summary": "List NoxCue key metadata, usage, and audit history",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key lifecycle metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:read"
+      },
       "post": {
         "operationId": "createNoxCueKey",
         "summary": "Create a one-time NoxCue browser or server ingest key",
@@ -2455,6 +2596,211 @@
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:write"
+      }
+    },
+    "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate": {
+      "post": {
+        "operationId": "rotateNoxCueKey",
+        "summary": "Rotate a NoxCue ingest key with a 24-hour overlap",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          },
+          {
+            "$ref": "#/components/parameters/keyId"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Replacement key shown once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:write"
+      }
+    },
+    "/api/v1/cues/sources/{sourceId}/cards": {
+      "get": {
+        "operationId": "listNoxCueCards",
+        "summary": "List source-scoped NoxCue report card configuration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured report cards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "x-project-scope": "optional",
+        "x-automation-scope": "noxcue:read"
+      },
+      "put": {
+        "operationId": "updateNoxCueCards",
+        "summary": "Replace source-scoped NoxCue report card configuration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoxCueCardSelection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cards updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxCue"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
         "security": [
           {
             "browserSession": [],
@@ -3722,6 +4068,393 @@
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/planning/assist": {
+      "post": {
+        "operationId": "draftPlanningItem",
+        "summary": "Draft a Planning feature or task with managed AI",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanningAssistRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A draft that must be explicitly accepted before creation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningAssistResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "operationId": "listPlanningTasks",
+        "summary": "List Planning tasks",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "owner",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "completed",
+                "all"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "featureNumber",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "string",
+                  "const": "general"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Planning tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanningTask"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "createPlanningTask",
+        "summary": "Create a Planning task",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanningTaskCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Planning task created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningTask"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/tasks/{id}": {
+      "patch": {
+        "operationId": "updatePlanningTask",
+        "summary": "Update a Planning task",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanningTaskPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Planning task updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningTask"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      },
+      "delete": {
+        "operationId": "deletePlanningTask",
+        "summary": "Delete a Planning task",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Planning task deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxConnect"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "destructive",
         "security": [
           {
             "browserSession": [],
@@ -5482,6 +6215,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/NoxCueActivityEvent"
+                  },
+                  {
+                    "$ref": "#/components/schemas/NoxCueTrackedEvent"
                   }
                 ]
               }
@@ -10616,6 +11352,165 @@
           }
         }
       },
+      "SlackMessageRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "connectionId",
+          "channelId",
+          "message"
+        ],
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "channelId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "message": {
+            "$ref": "#/components/schemas/SlackMessagePayload"
+          }
+        }
+      },
+      "SlackMessagePayload": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 40000
+          },
+          "markdown_text": {
+            "type": "string",
+            "maxLength": 12000
+          },
+          "blocks": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "event_type",
+              "event_payload"
+            ],
+            "properties": {
+              "event_type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "event_payload": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "thread_ts": {
+            "type": "string",
+            "pattern": "^\\d{1,20}\\.\\d{1,20}$"
+          },
+          "reply_broadcast": {
+            "type": "boolean"
+          },
+          "mrkdwn": {
+            "type": "boolean"
+          },
+          "parse": {
+            "type": "string",
+            "enum": [
+              "none",
+              "full"
+            ]
+          },
+          "link_names": {
+            "type": "boolean"
+          },
+          "unfurl_links": {
+            "type": "boolean"
+          },
+          "unfurl_media": {
+            "type": "boolean"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "icon_emoji": {
+            "type": "string",
+            "pattern": "^:[a-zA-Z0-9_+-]+:$"
+          },
+          "icon_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "client_msg_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SlackMessageDelivery": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "apiVersion",
+          "delivery"
+        ],
+        "properties": {
+          "apiVersion": {
+            "const": 1
+          },
+          "delivery": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "connectionId",
+              "channelId",
+              "messageTs",
+              "sentAt"
+            ],
+            "properties": {
+              "status": {
+                "const": "sent"
+              },
+              "connectionId": {
+                "type": "string"
+              },
+              "channelId": {
+                "type": "string"
+              },
+              "messageTs": {
+                "type": "string"
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
       "NoxSpotSiteCreate": {
         "type": "object",
         "required": [
@@ -10740,6 +11635,17 @@
             "enum": [
               "development",
               "release",
+              null
+            ]
+          },
+          "captureMode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "screenshot",
+              "dom",
               null
             ]
           },
@@ -10937,8 +11843,24 @@
             "type": "string",
             "maxLength": 120
           },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "production",
+              "staging",
+              "development",
+              "preview",
+              "test",
+              "local"
+            ],
+            "default": "production"
+          },
           "enabled": {
             "type": "boolean"
+          },
+          "alertsEnabled": {
+            "type": "boolean",
+            "default": true
           },
           "projectId": {
             "type": [
@@ -10979,6 +11901,38 @@
               "description": "Exact HTTPS origin; localhost HTTP is allowed for development."
             }
           },
+          "allowedEvents": {
+            "type": "array",
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,5}$"
+            }
+          },
+          "reportTitle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "productionStats": {
+            "type": "boolean",
+            "default": false,
+            "description": "May only be true for a production source."
+          },
+          "retentionDays": {
+            "type": "integer",
+            "minimum": 7,
+            "maximum": 730,
+            "default": 62
+          },
+          "aggregateOnlySlack": {
+            "type": "boolean",
+            "default": false
+          },
           "healthEnabled": {
             "type": "boolean",
             "default": false
@@ -10990,6 +11944,56 @@
             ],
             "format": "uri",
             "maxLength": 2048
+          }
+        }
+      },
+      "NoxCueCardSelection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cards"
+        ],
+        "properties": {
+          "cards": {
+            "type": "array",
+            "maxItems": 14,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "metricKey"
+              ],
+              "properties": {
+                "metricKey": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,6}$"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "dailyLabel": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "cumulativeLabel": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "perActiveEnabled": {
+                  "type": "boolean",
+                  "default": false
+                }
+              }
+            }
           }
         }
       },
@@ -11249,6 +12253,275 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "PlanningTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "note",
+          "owner",
+          "createdBy",
+          "color",
+          "status",
+          "featureNumber",
+          "stageId",
+          "position",
+          "createdAt",
+          "updatedAt",
+          "completedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,39}$"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "color": {
+            "$ref": "#/components/schemas/PlanningTaskColor"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "completed"
+            ]
+          },
+          "featureNumber": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "stageId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "PlanningTaskColor": {
+        "type": "string",
+        "enum": [
+          "gray",
+          "blue",
+          "purple",
+          "green",
+          "yellow",
+          "orange",
+          "red",
+          "pink"
+        ]
+      },
+      "PlanningTaskCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,39}$"
+          },
+          "color": {
+            "$ref": "#/components/schemas/PlanningTaskColor"
+          },
+          "featureNumber": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "stageId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "default": "todo"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "PlanningTaskPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,39}$"
+          },
+          "color": {
+            "$ref": "#/components/schemas/PlanningTaskColor"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "completed"
+            ]
+          },
+          "featureNumber": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "stageId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "PlanningAssistFeature": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "number",
+          "title"
+        ],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "owners": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PlanningAssistRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "prompt"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "feature",
+              "task"
+            ]
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "owner": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "features": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "$ref": "#/components/schemas/PlanningAssistFeature"
+            }
+          }
+        }
+      },
+      "PlanningAssistResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "draft"
+        ],
+        "properties": {
+          "draft": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "title",
+              "featureNumber"
+            ],
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "featureNumber": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1
+              }
+            }
           }
         }
       },
@@ -12183,9 +13456,70 @@
           },
           "userId": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Stable app identifier; NoxCue stores only a source-scoped hash."
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "SDK-generated HMAC pseudonym; raw application identifiers are rejected."
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        }
+      },
+      "NoxCueTrackedEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "eventId",
+          "name"
+        ],
+        "properties": {
+          "version": {
+            "const": 1,
+            "default": 1
+          },
+          "type": {
+            "const": "activity.tracked"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "environment": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,5}$"
+          },
+          "value": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1000000000,
+            "default": 1
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "Required for trusted non-website events and forbidden for public browser events."
+          },
+          "attributes": {
+            "type": "object",
+            "maxProperties": 96,
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
           },
           "occurredAt": {
             "type": "string",
@@ -12237,9 +13571,8 @@
           },
           "userId": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Optional actor identity. NoxCue stores only a source-scoped hash; browser identity never contributes to authoritative active-user totals."
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "Optional SDK-generated HMAC pseudonym."
           },
           "reason": {
             "type": "string"
@@ -12326,8 +13659,8 @@
               },
               "affectedUser": {
                 "type": "string",
-                "maxLength": 200,
-                "description": "Opaque identifier; NoxCue stores only a source-scoped hash."
+                "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+                "description": "SDK-generated HMAC pseudonym; raw application identifiers are rejected."
               },
               "fatal": {
                 "type": "boolean",
@@ -12362,9 +13695,8 @@
           },
           "userId": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Stable app identifier; NoxCue stores only a source-scoped SHA-256 hash."
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "SDK-generated HMAC pseudonym; raw application identifiers are rejected."
           },
           "occurredAt": {
             "type": "string",
@@ -12592,7 +13924,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(services:read|developer-feedback:write|(noxfeed|noxspot|noxcue):(read|write))$"
+              "pattern": "^(services:read|developer-feedback:write|slack:write|(noxfeed|noxspot|noxcue):(read|write))$"
             }
           },
           "expiresInDays": {

@@ -10,6 +10,8 @@ import {
 } from "../events";
 import { cueFeatureResultSchema } from "../feature-health";
 
+const PROTECTED_USER = "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40";
+
 describe("NoxCue event contract", () => {
   it("accepts bounded structured error diagnostics", () => {
     const parsed = cueErrorEventSchema.parse({
@@ -48,16 +50,17 @@ describe("NoxCue event contract", () => {
     })).toMatchObject({ version: 1, level: "error" });
     expect(cueUserRegisteredEventSchema.parse({
       type: "user.registered",
-      userId: "user-7",
+      userId: PROTECTED_USER,
       occurredAt: "2026-08-29T02:00:00Z",
       context: { environment: "production", release: "playnist@abc123", runtime: "server", sdkVersion: "0.1.1" },
     })).toMatchObject({
       type: "user.registered",
-      userId: "user-7",
+      userId: PROTECTED_USER,
       context: { release: "playnist@abc123", sdkVersion: "0.1.1" },
     });
-    expect(cueUserActiveEventSchema.parse({ type: "user.active", userId: "user-7" }))
-      .toMatchObject({ type: "user.active", userId: "user-7" });
+    expect(cueUserActiveEventSchema.parse({ type: "user.active", userId: PROTECTED_USER }))
+      .toMatchObject({ type: "user.active", userId: PROTECTED_USER });
+    expect(cueUserActiveEventSchema.safeParse({ type: "user.active", userId: "raw-user-7" }).success).toBe(false);
   });
 
   it("rejects telemetry, aggregate snapshots, arbitrary events, and unknown fields", () => {
@@ -90,16 +93,16 @@ describe("NoxCue event contract", () => {
 
   it("accepts only registered-shape custom activity events with an idempotent event ID", () => {
     expect(cueActivityEventSchema.safeParse({
-      type: "activity.occurred", metric: "custom.journals.added", userId: "user-7",
+      type: "activity.occurred", metric: "custom.journals.added", userId: PROTECTED_USER,
       eventId: "89195f9a-4a26-44e6-a147-9f2d003bc7f5",
       context: { environment: "production", release: "playnist@abc123", runtime: "server", sdkVersion: "0.1.1" },
     }).success).toBe(true);
     expect(cueActivityEventSchema.safeParse({
-      type: "activity.occurred", metric: "journals.added", userId: "user-7",
+      type: "activity.occurred", metric: "journals.added", userId: PROTECTED_USER,
       eventId: "89195f9a-4a26-44e6-a147-9f2d003bc7f5",
     }).success).toBe(false);
     expect(cueActivityEventSchema.safeParse({
-      type: "activity.occurred", metric: "custom.journals.added", userId: "user-7",
+      type: "activity.occurred", metric: "custom.journals.added", userId: PROTECTED_USER,
     }).success).toBe(false);
   });
 
@@ -188,7 +191,7 @@ describe("NoxCue event contract", () => {
     const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": `nox_secret_${"a".repeat(43)}` },
-      body: JSON.stringify({ type: "user.registered", environment: "staging", userId: "user-7" }),
+      body: JSON.stringify({ type: "user.registered", environment: "staging", userId: PROTECTED_USER }),
     }), {
       NOX_DB: { prepare, batch }, NOX_TASKS: { send: vi.fn() },
       CUE_IP_RATE_LIMITER: allow, CUE_ERROR_RATE_LIMITER: allow,
@@ -298,7 +301,7 @@ describe("NoxCue event contract", () => {
     const response = await handleCueEvent(new Request("https://api.noxcue.dev/v1/events", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": `nox_secret_${"a".repeat(43)}` },
-      body: JSON.stringify({ type, userId: "raw-user-7", occurredAt: "2026-08-29T02:00:00Z" }),
+      body: JSON.stringify({ type, userId: PROTECTED_USER, occurredAt: "2026-08-29T02:00:00Z" }),
     }), env);
 
     expect(response.status).toBe(202);
@@ -310,7 +313,7 @@ describe("NoxCue event contract", () => {
     }
     const inserted = bindings.find((values) => values.includes("source-1") && values.includes("2026-08-29"));
     expect(inserted).toBeDefined();
-    expect(inserted).not.toContain("raw-user-7");
+    expect(inserted).not.toContain(PROTECTED_USER);
   });
 
   it("stores a registered activity once without storing the raw user ID", async () => {
@@ -343,7 +346,7 @@ describe("NoxCue event contract", () => {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": `nox_secret_${"a".repeat(43)}` },
       body: JSON.stringify({
-        type: "activity.occurred", metric: "custom.journals.added", userId: "raw-user-7",
+        type: "activity.occurred", metric: "custom.journals.added", userId: PROTECTED_USER,
         eventId: "89195f9a-4a26-44e6-a147-9f2d003bc7f5", occurredAt: "2026-08-29T02:00:00Z",
       }),
     }), env);
@@ -353,6 +356,6 @@ describe("NoxCue event contract", () => {
     expect(prepare.mock.calls.some(([sql]) => String(sql).includes("INSERT OR IGNORE INTO cue_activity_events"))).toBe(true);
     const activityBindings = bindings.find((values) => values.includes("custom.journals.added") && values.includes("2026-08-29"));
     expect(activityBindings).toBeDefined();
-    expect(activityBindings).not.toContain("raw-user-7");
+    expect(activityBindings).not.toContain(PROTECTED_USER);
   });
 });

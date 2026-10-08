@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 const shortText = (max: number) => z.string().trim().min(1).max(max);
+const eventName = z.string().trim().min(3).max(120)
+  .regex(/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,5}$/);
 const exactOrigin = z.string().trim().max(300).refine((value) => {
   try {
     const url = new URL(value);
@@ -34,11 +36,19 @@ export const cueSourceInputSchema = z.object({
   slackChannelId: z.string().trim().min(1).max(100).nullable().default(null),
   slackConnectionId: z.string().trim().min(1).max(100).nullable().default(null),
   allowedOrigins: z.array(exactOrigin).max(10).default([]),
+  allowedEvents: z.array(eventName).max(100).default([]),
+  reportTitle: z.string().trim().min(1).max(160).nullable().default(null),
+  productionStats: z.boolean().default(false),
+  retentionDays: z.number().int().min(7).max(730).default(62),
+  aggregateOnlySlack: z.boolean().default(false),
   healthEnabled: z.boolean().default(false),
   healthUrl: z.string().trim().max(2_048).refine(safeHealthUrl, "Use a public HTTPS URL without credentials or a custom port").nullable().default(null),
 }).strict().superRefine((value, ctx) => {
   if (value.healthEnabled && !value.healthUrl) {
     ctx.addIssue({ code: "custom", path: ["healthUrl"], message: "Add a health URL before enabling checks" });
+  }
+  if (value.productionStats && value.environment !== "production") {
+    ctx.addIssue({ code: "custom", path: ["productionStats"], message: "Only production sources can use a production statistics destination" });
   }
 });
 

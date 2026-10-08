@@ -30,16 +30,24 @@ describe("NoxHere platform routes", () => {
             { login: "jasper", avatar_url: "https://example.com/jasper.png", kind: "human" },
             { login: "hidden", avatar_url: "https://example.com/hidden.png", kind: "human" },
           ] },
-          { results: [{ login: "jasper", count: 2 }] },
-          { results: [{ login: "jasper", count: 3 }] },
+          { results: [
+            { id: 1, repo: "playnist", number: 1, title: "One", state: "open", author: "JASPER", author_avatar: null, draft: 0, html_url: "https://example.com/pr/1", updated_at: "2026-10-08" },
+            { id: 2, repo: "playnist", number: 2, title: "Two", state: "open", author: "jasper", author_avatar: null, draft: 1, html_url: "https://example.com/pr/2", updated_at: "2026-10-08" },
+          ] },
+          { results: [
+            { id: 3, repo: "playnist", number: 3, title: "Three", state: "open", assignees_json: '[{"login":"jasper"}]', html_url: "https://example.com/issues/3", updated_at: "2026-10-08" },
+          ] },
         ];
       },
     };
     const response = await currentSummary({ env: { DB: db }, data: { orgId: 7, orgLogin: "acme", projectId: "project-1" } } as never);
-    await expect(response.json()).resolves.toEqual({ people: [{
-      member: { login: "jasper", avatar_url: "https://example.com/jasper.png", kind: "human" },
-      counts: { prs: 2, issues: 3 },
-    }] });
+    await expect(response.json()).resolves.toMatchObject({
+      members: [{ login: "jasper", avatar_url: "https://example.com/jasper.png", kind: "human" }],
+      prs: [{ number: 1 }, { number: 2 }],
+      issues: [{ number: 3, assignees: [{ login: "jasper" }] }],
+      excludedMembers: ["hidden"],
+      people: [{ member: { login: "jasper" }, counts: { prs: 2, issues: 1 } }],
+    });
   });
 
   it("maps shared search results to owning NoxHere service routes", async () => {

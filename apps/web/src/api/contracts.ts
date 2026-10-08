@@ -28,6 +28,11 @@ export const projectSettingsSchema = z.object({
     label: z.string(),
     color: z.string(),
   })).optional(),
+  taskBoardStages: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    color: z.string(),
+  })).optional(),
 }).loose().nullable();
 
 export const slackRoutingSchema = z.object({
@@ -63,6 +68,36 @@ export const slackChannelsSchema = z.object({
     is_member: z.boolean(),
   })),
 });
+
+export const slackMessageDeliverySchema = z.object({
+  apiVersion: z.literal(1),
+  delivery: z.object({
+    status: z.literal("sent"),
+    connectionId: z.string(),
+    channelId: z.string(),
+    messageTs: z.string(),
+    sentAt: z.string(),
+  }),
+});
+
+export type SlackMessagePayload = {
+  text?: string;
+  markdown_text?: string;
+  blocks?: Record<string, unknown>[];
+  attachments?: Record<string, unknown>[];
+  metadata?: { event_type: string; event_payload: Record<string, unknown> };
+  thread_ts?: string;
+  reply_broadcast?: boolean;
+  mrkdwn?: boolean;
+  parse?: "none" | "full";
+  link_names?: boolean;
+  unfurl_links?: boolean;
+  unfurl_media?: boolean;
+  username?: string;
+  icon_emoji?: string;
+  icon_url?: string;
+  client_msg_id?: string;
+};
 
 const guestInviteSchema = z.object({
   id: z.string(),
@@ -234,6 +269,22 @@ export const ticketFeatureAttachmentSchema = z.object({
   kind: z.enum(["image", "pdf"]),
 });
 
+export const planningTaskSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  note: z.string(),
+  owner: z.string(),
+  createdBy: z.string(),
+  color: z.enum(["gray", "blue", "purple", "green", "yellow", "orange", "red", "pink"]),
+  status: z.enum(["open", "completed"]),
+  featureNumber: z.number().int().positive().nullable(),
+  stageId: z.string(),
+  position: z.number().int().nonnegative(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  completedAt: z.string().nullable(),
+});
+
 export type Bootstrap = z.infer<typeof bootstrapSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type ProjectRouting = z.infer<typeof projectRoutingSchema>;
@@ -245,6 +296,7 @@ export type ProjectSettings = NonNullable<z.infer<typeof projectSettingsSchema>>
 export type SlackRouting = z.infer<typeof slackRoutingSchema>;
 export type SlackStatus = z.infer<typeof slackStatusSchema>;
 export type SlackChannels = z.infer<typeof slackChannelsSchema>;
+export type SlackMessageDelivery = z.infer<typeof slackMessageDeliverySchema>;
 export type ServiceId = z.infer<typeof serviceIdSchema>;
 export type CueDashboard = z.infer<typeof cueDashboardSchema>;
 export type CueAction = z.infer<typeof cueActionSchema>;
@@ -255,4 +307,5 @@ export type CueAlert = z.infer<typeof cueAlertSchema>;
 export type CueAlertRule = z.infer<typeof cueAlertRuleSchema>;
 export type RetrievalResult = z.infer<typeof retrievalResultSchema>;
 export type TicketFeatureRecord = z.infer<typeof ticketFeatureSchema>;
+export type PlanningTask = z.infer<typeof planningTaskSchema>;
 export type TicketFeatureAttachment = z.infer<typeof ticketFeatureAttachmentSchema>;

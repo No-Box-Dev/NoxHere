@@ -108,7 +108,7 @@ describe("@noxhere/sdk", () => {
     expect(headers.get("authorization")).toBeNull();
     expect(headers.get("x-org")).toBeNull();
     expect(headers.get("x-project-id")).toBeNull();
-    expect(headers.get("x-noxhere-sdk")).toBe("typescript/0.2.0");
+    expect(headers.get("x-noxhere-sdk")).toBe("typescript/0.2.1");
 
     await client.feedback.reopenResolvedNoxSpotReport({ path: { token: "secret-token" }, body: new FormData() });
     expect(observed.at(-1)).toContain("[redacted]");

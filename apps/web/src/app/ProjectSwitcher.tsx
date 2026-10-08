@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import type { Project } from "../api/contracts";
 import { platformApi } from "../api/platform";
 
@@ -7,10 +8,12 @@ type ProjectSwitcherProps = {
   organizationId: string;
   projects: Project[];
   selectedId: string;
+  canCreate: boolean;
+  placement?: "sidebar" | "topbar";
   onSwitch: (projectId: string) => void;
 };
 
-export function ProjectSwitcher({ organizationId, projects, selectedId, onSwitch }: ProjectSwitcherProps) {
+export function ProjectSwitcher({ organizationId, projects, selectedId, canCreate, placement = "sidebar", onSwitch }: ProjectSwitcherProps) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
@@ -51,8 +54,11 @@ export function ProjectSwitcher({ organizationId, projects, selectedId, onSwitch
   };
 
   return (
-    <details className="project-switcher" ref={detailsRef}>
-      <summary aria-label="Open project switcher" role="button"><span>{selected?.name ?? "Choose project"}</span><b>⌄</b></summary>
+    <details className={`project-switcher project-switcher-${placement}`} ref={detailsRef}>
+      <summary aria-label="Open project switcher" role="button">
+        {placement === "topbar" ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h6l2 2h9v9h-17z" /></svg> : null}
+        <span>{placement === "topbar" ? "Projects" : selected?.name ?? "Choose project"}</span><b>⌄</b>
+      </summary>
       <div className="project-menu">
         <div className="project-options">
           {projects.map((project) => (
@@ -64,11 +70,12 @@ export function ProjectSwitcher({ organizationId, projects, selectedId, onSwitch
           ))}
         </div>
         <footer>
-          {creating ? <form className="project-onboarding" onSubmit={(event) => { event.preventDefault(); save(); }}>
+          <Link className="project-all-link" to="/?choose=1" aria-label="All workspaces and projects" onClick={closeMenu}>Switch workspace or project</Link>
+          {canCreate && creating ? <form className="project-onboarding" onSubmit={(event) => { event.preventDefault(); save(); }}>
             <label><span>Project name</span><input aria-label="New project name" maxLength={100} value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="Project name" autoFocus /></label>
             <fieldset><legend>Repositories <small>All available repositories are included by default.</small></legend>{routing.isLoading ? <p>Loading repositories…</p> : availableRepositories.length ? <div>{availableRepositories.map((repo) => <label key={repo}><input type="checkbox" checked={selectedRepositories.includes(repo)} onChange={() => setDraftRepositories((current) => { const selection = current ?? availableRepositories; return selection.includes(repo) ? selection.filter((item) => item !== repo) : [...selection, repo]; })} />{repo}</label>)}</div> : <p>No unassigned repositories. You can move repositories from another project in Project Settings.</p>}</fieldset>
             <div><button className="mini-button primary" disabled={create.isPending || !draftName.trim()}>{create.isPending ? "Creating…" : "Create project"}</button><button type="button" className="mini-button" onClick={() => { setCreating(false); setDraftName(""); setDraftRepositories(null); create.reset(); }}>Cancel</button></div>
-          </form> : <button type="button" className="project-create" onClick={() => setCreating(true)}>+ New project</button>}
+          </form> : canCreate ? <button type="button" className="project-create" onClick={() => setCreating(true)}>+ New project</button> : null}
           {create.error ? <small role="alert">{create.error.message}</small> : null}
         </footer>
       </div>

@@ -6,6 +6,7 @@ import { deleteFeatureAttachment, getFeatureAttachment, listFeatureAttachments, 
 import { activityMessage, featureAddedMessage, testMessage } from "./messages";
 import { NOXTICKET_MANIFEST } from "./manifest";
 import { checkReadiness } from "./readiness";
+import { createTask, deleteTask, listTasks, updateTask, type TaskFilters } from "./tasks";
 import {
   createSpec,
   getSpec,
@@ -62,6 +63,10 @@ export default class NoxTicketService extends WorkerEntrypoint<Env> {
   listFeatures(scope: TicketScope, state?: string) { return listFeatures(this.env.DB, scope, state); }
   createFeature(scope: TicketScope, input: unknown) { return createFeature(this.env.DB, scope, input); }
   updateFeature(scope: TicketScope, number: number, input: unknown) { return updateFeature(this.env.DB, scope, number, input); }
+  listTasks(scope: TicketScope, filters?: TaskFilters) { return listTasks(this.env.DB, scope, filters); }
+  createTask(scope: TicketScope, input: unknown) { return createTask(this.env.DB, scope, input); }
+  updateTask(scope: TicketScope, id: string, input: unknown) { return updateTask(this.env.DB, scope, id, input); }
+  deleteTask(scope: TicketScope, id: string) { return deleteTask(this.env.DB, scope, id); }
   listFeatureAttachments(scope: TicketScope, featureId: number) { return listFeatureAttachments(this.env.DB, scope, featureId); }
   putFeatureAttachment(scope: TicketScope, featureId: number, filename: string, bytes: ArrayBuffer) { return putFeatureAttachment(this.env.DB, this.env.SPEC_ATTACHMENTS, scope, featureId, filename, bytes); }
   getFeatureAttachment(scope: TicketScope, featureId: number, attachmentId: number) { return getFeatureAttachment(this.env.DB, this.env.SPEC_ATTACHMENTS, scope, featureId, attachmentId); }

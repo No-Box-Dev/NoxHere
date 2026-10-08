@@ -11,6 +11,7 @@ export const NATIVE_REFRESH_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const API_TOKEN_SCOPES = [
   "services:read",
   "developer-feedback:write",
+  "slack:write",
   "noxfeed:read", "noxfeed:write",
   "noxspot:read", "noxspot:write",
   "noxcue:read", "noxcue:write",
@@ -386,6 +387,7 @@ export async function revokeBrowserSession(request: Request, db: D1Database): Pr
 export function requiredScope(pathname: string, method: string): string | null {
   const access = ["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase()) ? "read" : "write";
   if (pathname === "/api/v1/developer-feedback" && access === "write") return "developer-feedback:write";
+  if (pathname === "/api/v1/integrations/slack/messages" && access === "write") return "slack:write";
   const service = pathname.match(/^\/api\/v1\/services\/([^/]+)/)?.[1];
   if (service && service !== "noxconnect") return `${service}:${access}`;
   if (pathname === "/api/v1/services" && access === "read") return "services:read";
@@ -398,7 +400,7 @@ export function requiredScope(pathname: string, method: string): string | null {
 export function serviceForPath(pathname: string): string | null {
   const serviceControl = pathname.match(/^\/api\/v1\/services\/(noxticket|noxfeed|noxspot|noxcue)(?:\/|$)/)?.[1];
   if (serviceControl) return serviceControl;
-  if (/^\/api\/(?:v1\/)?(features|specs|assign|issue-state)(?:\/|$)/.test(pathname)) return "noxticket";
+  if (/^\/api\/(?:v1\/)?(features|tasks|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return "noxticket";
   if (pathname === "/api/v1/feed" || /^\/api\/(?:v1\/)?(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(pathname)) return "noxfeed";
   if (/^\/api\/(?:v1\/)?spots(?:\/|$)/.test(pathname)) return "noxspot";
   if (/^\/api\/(?:v1\/)?cues(?:\/|$)/.test(pathname)) return "noxcue";

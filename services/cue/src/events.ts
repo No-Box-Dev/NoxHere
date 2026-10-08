@@ -11,6 +11,9 @@ import { errorIncidentKey, stageGithubIncident } from "./github-incidents";
 import { publishSlackTransport } from "../../../functions/lib/transport-outbox";
 
 const MAX_BODY_BYTES = 32_768;
+const protectedIdentity = z.string().regex(/^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$/);
+const eventName = z.string().trim().min(3).max(120)
+  .regex(/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,5}$/);
 const shortText = (max: number) => z.string().trim().min(1).max(max);
 const optionalText = (max: number) => z.string().trim().max(max).optional();
 const diagnosticValueSchema = z.union([
@@ -44,7 +47,7 @@ export const cueErrorEventSchema = z.object({
     fingerprint: optionalText(200),
     component: optionalText(120),
     environment: optionalText(80),
-    affectedUser: optionalText(200),
+    affectedUser: protectedIdentity.optional(),
     fatal: z.boolean().default(false),
     unhandled: z.boolean().default(false),
     attributes: diagnosticAttributesSchema.optional(),
@@ -53,7 +56,7 @@ export const cueErrorEventSchema = z.object({
 
 const userEventFields = {
   ...commonFields,
-  userId: shortText(200),
+  userId: protectedIdentity,
   occurredAt: z.string().datetime({ offset: true }).optional(),
   context: diagnosticContextSchema.optional(),
 };
@@ -74,7 +77,19 @@ export const cueActivityEventSchema = z.object({
   eventId: z.string().uuid(),
   metric: z.string().trim().min(8).max(120)
     .regex(/^custom\.[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){0,4}$/),
-  userId: shortText(200),
+  userId: protectedIdentity,
+  occurredAt: z.string().datetime({ offset: true }).optional(),
+  context: diagnosticContextSchema.optional(),
+}).strict();
+
+export const cueTrackedEventSchema = z.object({
+  ...commonFields,
+  type: z.literal("activity.tracked"),
+  eventId: z.string().uuid(),
+  name: eventName,
+  value: z.number().finite().positive().max(1_000_000_000).default(1),
+  userId: protectedIdentity.optional(),
+  attributes: diagnosticAttributesSchema.optional(),
   occurredAt: z.string().datetime({ offset: true }).optional(),
   context: diagnosticContextSchema.optional(),
 }).strict();
@@ -84,12 +99,14 @@ export const cueEventSchema = z.discriminatedUnion("type", [
   cueUserRegisteredEventSchema,
   cueUserActiveEventSchema,
   cueActivityEventSchema,
+  cueTrackedEventSchema,
   cueFeatureResultSchema,
 ]);
 type CueEvent = z.infer<typeof cueEventSchema>;
 export type CueErrorEvent = z.infer<typeof cueErrorEventSchema>;
 type CueUserEvent = z.infer<typeof cueUserRegisteredEventSchema> | z.infer<typeof cueUserActiveEventSchema>;
 type CueActivityEvent = z.infer<typeof cueActivityEventSchema>;
+type CueTrackedEvent = z.infer<typeof cueTrackedEventSchema>;
 
 interface CueSourceRow {
   key_id: string;
@@ -100,10 +117,12 @@ interface CueSourceRow {
   source_name: string;
   project_id: string | null;
   allowed_origins_json: string;
+  allowed_events_json: string;
   timezone: string;
   error_cooldown_minutes: number;
   environment: CueEnvironment;
   alerts_enabled: number;
+  aggregate_only_slack: number;
   slack_channel_id: string | null;
   slack_connection_id: string | null;
 }
@@ -194,8 +213,8 @@ async function findSource(env: Env, providedKey: string): Promise<CueSourceRow |
   return env.NOX_DB.prepare(
     `SELECT key.id AS key_id, key.kind AS key_kind, source.org_id, source.owner_id,
             source.id AS source_id, source.name AS source_name, source.project_id,
-            source.allowed_origins_json, source.timezone, source.error_cooldown_minutes,
-            source.environment, source.alerts_enabled,
+            source.allowed_origins_json, source.allowed_events_json, source.timezone, source.error_cooldown_minutes,
+            source.environment, source.alerts_enabled, source.aggregate_only_slack,
             CASE WHEN source.alerts_enabled = 1 THEN COALESCE(
               NULLIF(alert_route.channel_id, ''),
               NULLIF(legacy_project_route.channel_id, ''),
@@ -228,7 +247,9 @@ async function findSource(env: Env, providedKey: string): Promise<CueSourceRow |
         AND legacy_project_route.project_id = source.project_id
         AND legacy_project_route.route_key = 'noxcue'
         AND routing_settings.enabled = 1
-      WHERE key.key_hash = ? AND key.revoked_at IS NULL AND source.enabled = 1
+      WHERE key.key_hash = ? AND key.revoked_at IS NULL
+        AND (key.valid_until IS NULL OR key.valid_until > strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        AND source.enabled = 1
         AND COALESCE(json_extract(config.data, '$.apps.noxcue'), 1) != 0`,
   ).bind(keyHash).first<CueSourceRow>();
 }
@@ -236,6 +257,15 @@ async function findSource(env: Env, providedKey: string): Promise<CueSourceRow |
 function parseAllowedOrigins(raw: string): string[] {
   try {
     const parsed = z.array(z.string().url().max(300)).max(20).safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseAllowedEvents(raw: string): string[] {
+  try {
+    const parsed = z.array(eventName).max(100).safeParse(JSON.parse(raw));
     return parsed.success ? parsed.data : [];
   } catch {
     return [];
@@ -285,6 +315,9 @@ async function eventIdFor(sourceId: string, timezone: string, environment: CueEn
     if (event.eventId) return event.eventId;
     if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
     return crypto.randomUUID();
+  }
+  if (event.type === "activity.tracked" && event.idempotencyKey) {
+    return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
   }
   if (event.eventId) return event.eventId;
   if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
@@ -396,6 +429,27 @@ async function storeActivityEvent(
   return { eventId, queued: false, duplicate: Number(result.meta.changes ?? 0) === 0, period };
 }
 
+async function storeTrackedEvent(
+  env: Env,
+  source: CueSourceRow,
+  event: CueTrackedEvent,
+  eventId: string,
+): Promise<StoredResult> {
+  const occurredAt = event.occurredAt ? new Date(event.occurredAt) : new Date();
+  if (occurredAt.valueOf() > Date.now() + 5 * 60_000) throw new Error("invalid_occurred_at");
+  const period = localPeriodAt(occurredAt, source.timezone);
+  const subjectHash = event.userId ? await hash(`${source.source_id}\u0000${event.userId}`) : null;
+  const result = await env.NOX_DB.prepare(
+    `INSERT OR IGNORE INTO cue_tracked_events
+       (org_id, source_id, event_id, name, value, subject_hash, period, attributes_json, occurred_at, received_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    source.org_id, source.source_id, eventId, event.name, event.value, subjectHash, period,
+    JSON.stringify(event.attributes ?? {}), occurredAt.toISOString(), new Date().toISOString(),
+  ).run();
+  return { eventId, queued: false, duplicate: Number(result.meta.changes ?? 0) === 0, period };
+}
+
 function diagnoseError(event: CueErrorEvent) {
   const status = event.error?.status;
   const code = event.data.errorCode ?? event.error?.code ?? "unknown";
@@ -466,7 +520,7 @@ async function storeError(
       WHERE source_id = ? AND fingerprint = ?`,
   ).bind(source.source_id, fingerprint).first<{ occurrence_count: number; last_notified_at: string | null }>();
   const cooldownMs = source.error_cooldown_minutes * 60_000;
-  const shouldNotify = Boolean(source.slack_channel_id) && (
+  const shouldNotify = source.aggregate_only_slack !== 1 && Boolean(source.slack_channel_id) && (
     !group?.last_notified_at || receivedAt.valueOf() - Date.parse(group.last_notified_at) >= cooldownMs
   );
   const occurrence = (group?.occurrence_count ?? 0) + 1;
@@ -521,7 +575,7 @@ async function storeError(
     : Promise.resolve(null);
   const [queued, githubQueued] = await Promise.all([
     slackPublication.then((publication) => publication?.queued ?? false),
-    githubEligible ? stageGithubIncident(env, source, {
+    githubEligible && source.aggregate_only_slack !== 1 ? stageGithubIncident(env, source, {
       key: fingerprint,
       kind: "error",
       title: normalizedEvent.title,
@@ -570,6 +624,9 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
   const providedKey = request.headers.get("X-Nox-Ingest-Key")?.trim() ?? "";
   const source = await findSource(env, providedKey);
   if (!source) return jsonResponse({ error: "invalid_ingest_key" }, 401, origin);
+  if (origin && source.key_kind === "secret") {
+    return jsonResponse({ error: "secret_key_not_allowed_from_browser" }, 403, origin);
+  }
   if (origin && !parseAllowedOrigins(source.allowed_origins_json).includes(origin)) {
     return jsonResponse({ error: "origin_not_allowed" }, 403, origin);
   }
@@ -591,20 +648,31 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
     const isUserEvent = event.type === "user.registered" || event.type === "user.active";
     const isFeatureEvent = event.type === "feature.result";
     const isActivityEvent = event.type === "activity.occurred";
+    const isTrackedEvent = event.type === "activity.tracked";
     if ((isUserEvent || isActivityEvent) && source.key_kind !== "secret") {
       return jsonResponse({ error: "secret_key_required" }, 403, origin);
     }
-    if ((isFeatureEvent || event.type === "error.occurred") && source.key_kind === "publishable" && !origin) {
+    if ((isFeatureEvent || isTrackedEvent || event.type === "error.occurred") && source.key_kind === "publishable" && !origin) {
       return jsonResponse({ error: "origin_required" }, 403, null);
     }
     if (event.type === "error.occurred" && event.data.fingerprint && source.key_kind !== "secret") {
       return jsonResponse({ error: "explicit_incident_key_requires_secret_key" }, 403, origin);
     }
+    if (isTrackedEvent) {
+      if (source.key_kind === "publishable") {
+        if (event.userId) return jsonResponse({ error: "identity_not_allowed" }, 403, origin);
+        if (!event.name.startsWith("website.") || !parseAllowedEvents(source.allowed_events_json).includes(event.name)) {
+          return jsonResponse({ error: "event_not_allowed" }, 403, origin);
+        }
+      } else if (!event.name.startsWith("website.") && !event.userId) {
+        return jsonResponse({ error: "protected_identity_required" }, 400, origin);
+      }
+    }
     const [sourceLimit, orgLimit] = await Promise.all([
-      isUserEvent || isFeatureEvent || isActivityEvent
+      isUserEvent || isFeatureEvent || isActivityEvent || isTrackedEvent
         ? env.CUE_USER_EVENT_RATE_LIMITER.limit({ key: `source:${source.source_id}` })
         : env.CUE_ERROR_RATE_LIMITER.limit({ key: `source:${source.source_id}` }),
-      isUserEvent || isFeatureEvent || isActivityEvent
+      isUserEvent || isFeatureEvent || isActivityEvent || isTrackedEvent
         ? Promise.resolve({ success: true })
         : env.CUE_ORG_RATE_LIMITER.limit({ key: `org:${source.org_id}` }),
     ]);
@@ -630,6 +698,8 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
               classification: "unregistered" as const,
               requestedMetric: event.metric,
             }
+      : isTrackedEvent
+        ? await storeTrackedEvent(env, source, event, eventId)
       : isFeatureEvent
         ? definition
           ? await storeFeatureResult(env, source, event, eventId, definition)
@@ -642,6 +712,14 @@ export async function handleCueEvent(request: Request, env: Env): Promise<Respon
     await env.NOX_DB.prepare(
       `UPDATE cue_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
     ).bind(new Date().toISOString(), source.key_id).run();
+    await env.NOX_DB.prepare(
+      `INSERT INTO cue_source_key_daily_usage
+         (org_id, source_id, key_id, period, request_count, first_used_at, last_used_at)
+       VALUES (?, ?, ?, date('now'), 1, ?, ?)
+       ON CONFLICT(key_id, period) DO UPDATE SET
+         request_count = cue_source_key_daily_usage.request_count + 1,
+         last_used_at = excluded.last_used_at`,
+    ).bind(source.org_id, source.source_id, source.key_id, new Date().toISOString(), new Date().toISOString()).run();
     return jsonResponse({ accepted: true, stored: true, environment: source.environment, ...result }, 202, origin);
   } catch (error) {
     const { code, status } = inputError(error);

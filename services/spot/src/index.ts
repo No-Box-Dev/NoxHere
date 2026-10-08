@@ -331,6 +331,11 @@ app.get("/responses/:siteId/:objectId", (context) => {
   return serveSiteScreenshot(context, siteId, `responses/${siteId}/${context.req.param("objectId")}`);
 });
 
+// Site-specific loaders are served from /widget/:siteId.js, so their lazy
+// core URL resolves beside them. Keep this exact route ahead of the catch-all
+// site route or the core filename is mistaken for a site ID and returns 404.
+app.get("/widget/noxspot-core.min.js", (context) => serveObject(context, "noxspot-core.min.js"));
+
 app.get("/widget/:siteId{.+\\.js$}", async (context) => {
   const siteId = context.req.param("siteId").replace(/\.js$/, "");
   const [site, loader] = await Promise.all([

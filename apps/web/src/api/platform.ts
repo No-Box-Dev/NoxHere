@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackRoutingSchema, slackStatusSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
-import type { Bootstrap, CueAction, CueActions, CueAlert, CueAlertRule, CueDashboard, CueStatEvent, GithubMember, GuestAccess, GuestInvite, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackRouting, SlackStatus, TicketFeatureAttachment, TicketFeatureRecord } from "./contracts";
+import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
+import type { Bootstrap, CueAction, CueActions, CueAlert, CueAlertRule, CueDashboard, CueStatEvent, GithubMember, GuestAccess, GuestInvite, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TicketFeatureAttachment, TicketFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
@@ -9,9 +9,13 @@ export interface PlatformApi {
   projectRouting(organizationId: string, signal?: AbortSignal): Promise<ProjectRoutingResponse>;
   setProjectRouting(organizationId: string, project: ProjectRouting): Promise<void>;
   ticketFeatures(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TicketFeatureRecord[]>;
-  createTicketFeature(organizationId: string, projectId: string, input: { title: string; status?: string; backlog?: boolean; priority?: number; description?: string; links?: Array<{ url: string; label?: string }> }): Promise<TicketFeatureRecord>;
+  createTicketFeature(organizationId: string, projectId: string, input: { title: string; status?: string; backlog?: boolean; priority?: number; owners?: string[]; description?: string; links?: Array<{ url: string; label?: string }> }): Promise<TicketFeatureRecord>;
   updateTicketFeature(organizationId: string, projectId: string, featureId: number, input: { title?: string; status?: string; owners?: string[]; description?: string; links?: Array<{ url: string; label?: string }>; backlog?: boolean; priority?: number; state?: "open" | "closed" }): Promise<TicketFeatureRecord>;
   deleteTicketFeature(organizationId: string, projectId: string, featureId: number): Promise<void>;
+  planningTasks(organizationId: string, projectId: string, signal?: AbortSignal): Promise<PlanningTask[]>;
+  createPlanningTask(organizationId: string, projectId: string, input: { title: string; note?: string; owner?: string; color?: PlanningTask["color"]; featureNumber?: number | null; stageId?: string }): Promise<PlanningTask>;
+  updatePlanningTask(organizationId: string, projectId: string, taskId: string, input: Partial<Pick<PlanningTask, "title" | "note" | "owner" | "color" | "status" | "featureNumber" | "stageId" | "position">>): Promise<PlanningTask>;
+  deletePlanningTask(organizationId: string, projectId: string, taskId: string): Promise<void>;
   ticketFeatureAttachments(organizationId: string, projectId: string, featureId: number, signal?: AbortSignal): Promise<TicketFeatureAttachment[]>;
   uploadTicketFeatureAttachment(organizationId: string, projectId: string, featureId: number, file: File): Promise<TicketFeatureAttachment>;
   ticketFeatureAttachmentBlob(organizationId: string, projectId: string, featureId: number, attachmentId: number, signal?: AbortSignal): Promise<Blob>;
@@ -31,6 +35,7 @@ export interface PlatformApi {
   slackRouting(organizationId: string, projectId: string, signal?: AbortSignal): Promise<SlackRouting>;
   slackStatus(organizationId: string, projectId: string, signal?: AbortSignal): Promise<SlackStatus>;
   slackChannels(organizationId: string, projectId: string, connectionId: string, signal?: AbortSignal): Promise<SlackChannels>;
+  sendSlackMessage(organizationId: string, projectId: string, connectionId: string, channelId: string, message: SlackMessagePayload): Promise<SlackMessageDelivery>;
   setNoxTicketSlackChannel(organizationId: string, projectId: string, connectionId: string | null, channelId: string | null): Promise<SlackRouting>;
   testNoxTicketSlackChannel(organizationId: string, projectId: string, connectionId: string, channelId: string): Promise<void>;
 }
@@ -93,6 +98,12 @@ export const platformApi: PlatformApi = {
   deleteTicketFeature: async (organizationId, projectId, featureId) => {
     await deleteJson(`/api/v1/features/${featureId}`, z.object({ ok: z.literal(true) }).loose(), { organizationId, projectId });
   },
+  planningTasks: (organizationId, projectId, signal) => getJson("/api/v1/tasks?status=all", planningTaskSchema.array(), signal, { organizationId, projectId }),
+  createPlanningTask: (organizationId, projectId, input) => postJson("/api/v1/tasks", input, planningTaskSchema, { organizationId, projectId }),
+  updatePlanningTask: (organizationId, projectId, taskId, input) => patchJson(`/api/v1/tasks/${encodeURIComponent(taskId)}`, input, planningTaskSchema, { organizationId, projectId }),
+  deletePlanningTask: async (organizationId, projectId, taskId) => {
+    await deleteJson(`/api/v1/tasks/${encodeURIComponent(taskId)}`, z.object({ ok: z.literal(true) }), { organizationId, projectId });
+  },
   ticketFeatureAttachments: async (organizationId, projectId, featureId, signal) => {
     const result = await getJson(`/api/v1/features/${featureId}/attachments`, z.object({ attachments: ticketFeatureAttachmentSchema.array() }), signal, { organizationId, projectId });
     return result.attachments;
@@ -128,6 +139,7 @@ export const platformApi: PlatformApi = {
   slackRouting: (organizationId, projectId, signal) => getJson("/api/v1/integrations/slack/routing", slackRoutingSchema, signal, { organizationId, projectId }),
   slackStatus: (organizationId, projectId, signal) => getJson("/api/v1/slack/status", slackStatusSchema, signal, { organizationId, projectId }),
   slackChannels: (organizationId, projectId, connectionId, signal) => getJson(`/api/v1/slack/channels?connectionId=${encodeURIComponent(connectionId)}`, slackChannelsSchema, signal, { organizationId, projectId }),
+  sendSlackMessage: (organizationId, projectId, connectionId, channelId, message) => postJson("/api/v1/integrations/slack/messages", { connectionId, channelId, message }, slackMessageDeliverySchema, { organizationId, projectId }),
   setNoxTicketSlackChannel: (organizationId, projectId, connectionId, channelId) => patchJson("/api/v1/integrations/slack/routing", { routes: { noxticket: channelId }, connections: { noxticket: connectionId } }, slackRoutingSchema, { organizationId, projectId }),
   testNoxTicketSlackChannel: async (organizationId, projectId, connectionId, channelId) => {
     await postJson("/api/v1/slack/test", { connectionId, channelId, kind: "noxticket" }, z.object({ ok: z.literal(true) }).loose(), { organizationId, projectId });

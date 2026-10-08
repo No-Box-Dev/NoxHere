@@ -126,6 +126,12 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "download_feature_attachment", method: "GET", path: "/api/v1/features/{number}/attachments/{attachmentId}", authentication: "member", description: "Download a feature attachment." },
         { id: "delete_feature_attachment", method: "DELETE", path: "/api/v1/features/{number}/attachments/{attachmentId}", authentication: "member", description: "Delete a feature attachment." },
       ] },
+      { id: "tasks", name: "Tasks", description: "Create personal tasks and optionally keep them attached to a feature.", access: "member", operations: [
+        { id: "list_tasks", method: "GET", path: "/api/v1/tasks", authentication: "member", description: "List project tasks by person, state, or feature." },
+        { id: "create_task", method: "POST", path: "/api/v1/tasks", authentication: "member", description: "Create a general or feature-linked task." },
+        { id: "update_task", method: "PATCH", path: "/api/v1/tasks/{id}", authentication: "member", description: "Update, complete, reassign, recolor, or relink a task." },
+        { id: "delete_task", method: "DELETE", path: "/api/v1/tasks/{id}", authentication: "member", description: "Delete a task." },
+      ] },
       { id: "workflow", name: "Workflow", description: "Configure the stages used by the feature board.", access: "admin", operations: [
         { id: "get_ticket_config", method: "GET", path: "/api/v1/services/noxticket/config", authentication: "member", description: "Read the feature repository and workflow stages." },
         { id: "patch_ticket_config", method: "PATCH", path: "/api/v1/services/noxticket/config", authentication: "admin", description: "Update the feature repository or workflow stages with If-Match." },
@@ -148,7 +154,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
       ] },
     ],
     setupSections: [
-      { id: "workflow", name: "Workflow", capabilityIds: ["features", "workflow"] },
+      { id: "workflow", name: "Workflow", capabilityIds: ["features", "tasks", "workflow"] },
       { id: "storage", name: "Storage", capabilityIds: ["specs"] },
       { id: "delivery", name: "Delivery", capabilityIds: ["ticket_delivery"] },
     ],

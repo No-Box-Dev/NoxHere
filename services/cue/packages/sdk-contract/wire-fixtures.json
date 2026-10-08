@@ -8,10 +8,10 @@
       "version": 1,
       "environment": "production",
       "type": "user.registered",
-      "userId": "user-42",
+      "userId": "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40",
       "occurredAt": "2026-01-02T03:04:05.000Z",
       "idempotencyKey": "signup:user-42",
-      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.2.0"}
+      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.2.1"}
     }
   },
   {
@@ -25,9 +25,9 @@
       "eventId": "event-fixed",
       "type": "activity.occurred",
       "metric": "custom.journals.added",
-      "userId": "user-42",
+      "userId": "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40",
       "occurredAt": "2026-01-02T03:04:05.000Z",
-      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.2.0"}
+      "context": {"environment": "production", "release": "app@abc123", "runtime": "server", "sdkVersion": "0.2.1"}
     }
   }
 ]

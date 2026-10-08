@@ -1,0 +1,16 @@
+[
+  {
+    "name": "records parsed",
+    "event": "records.parsed",
+    "userId": "user-42",
+    "value": 3,
+    "protectedIdentity": "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40"
+  },
+  {
+    "name": "paid subscription",
+    "event": "subscription.paid_started",
+    "userId": "café-user",
+    "value": 1,
+    "protectedIdentity": "h1_primary_oo5jm2f49W43w7VQ4KdKMEmT4w68Ire6CACVE6N8lO0"
+  }
+]

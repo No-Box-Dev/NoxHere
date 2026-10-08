@@ -52,7 +52,7 @@ def _default_transport(base_url: str) -> AuthTransport:
         request = Request(
             urljoin(base_url.rstrip("/") + "/", path.lstrip("/")),
             data=json.dumps(payload, separators=(",", ":")).encode(),
-            headers={"Accept": "application/json", "Content-Type": "application/json", "X-NoxHere-SDK": "python/0.2.0"},
+            headers={"Accept": "application/json", "Content-Type": "application/json", "X-NoxHere-SDK": "python/0.2.1"},
             method="POST",
         )
         try:

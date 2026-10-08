@@ -40,7 +40,7 @@ export default class NoxCueService extends WorkerEntrypoint<Env> {
         service: "NoxCue",
         message: "Detect app health failures, preserve safe evidence, and show developers possible fixes to investigate.",
         ingest: "POST /v1/events",
-        types: ["user.registered", "user.active", "activity.occurred", "feature.result", "error.occurred"],
+        types: ["activity.tracked", "user.registered", "user.active", "activity.occurred", "feature.result", "error.occurred"],
       });
     }
     return jsonError("not_found", 404);

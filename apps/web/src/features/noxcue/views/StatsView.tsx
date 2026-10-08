@@ -32,19 +32,31 @@ export function StatsView({ organizationId, projectId }: StatsViewProps) {
 
 function StatsDashboard({ organizationId, projectId }: StatsViewProps) {
   const [configuring, setConfiguring] = useState(false);
+  const [range, setRange] = useState("30d");
   const dashboard = useQuery({
-    queryKey: ["cue", organizationId, projectId, "dashboard", "30d"],
-    queryFn: ({ signal }) => platformApi.cueDashboard(organizationId, projectId, "30d", signal),
+    queryKey: ["cue", organizationId, projectId, "dashboard", range],
+    queryFn: ({ signal }) => platformApi.cueDashboard(organizationId, projectId, range, signal),
   });
+
+  const exportCsv = () => {
+    if (!dashboard.data) return;
+    const quote = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+    const rows = [["Metric", "Value", "Change", "Context"], ...dashboard.data.stats.map((stat) => [stat.name, stat.value, stat.change, stat.context])];
+    const blob = new Blob([rows.map((row) => row.map(quote).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `noxcue-${projectId}-${range}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <AsyncState loading={dashboard.isLoading} error={dashboard.error}>
       {dashboard.data ? <>
         <div className="toolbar">
-          <select name="timeRange" aria-label="Time range" defaultValue="30d"><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select>
-          <select name="environment" aria-label="Environment"><option>All environments</option><option>Production</option><option>Staging</option></select>
-          <select name="comparison" aria-label="Comparison"><option>Compare previous period</option><option>Compare previous year</option><option>No comparison</option></select>
-          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag><button className="button" onClick={() => setConfiguring(true)}>Configure actions</button><button className="button">Export</button>
+          <select name="timeRange" aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select>
+          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag><button className="button" onClick={() => setConfiguring(true)}>Configure actions</button><button className="button" onClick={exportCsv}>Export CSV</button>
         </div>
         <div className="stat-grid">
           {dashboard.data.stats.map((stat) => <StatCard key={stat.id} stat={stat} />)}
@@ -148,18 +160,23 @@ function StatCard({ stat }: { stat: CueStat }) {
 }
 
 function StatEvents({ organizationId, projectId }: StatsViewProps) {
+  const [type, setType] = useState("all");
+  const [environment, setEnvironment] = useState("all");
   const events = useQuery({
     queryKey: ["cue", organizationId, projectId, "stat-events"],
     queryFn: ({ signal }) => platformApi.cueStatEvents(organizationId, projectId, signal),
   });
 
+  const filtered = (events.data ?? []).filter((event) => (type === "all" || event.type === type) && (environment === "all" || event.environment.toLowerCase() === environment));
+  const eventTypes = [...new Set((events.data ?? []).map((event) => event.type))];
+  const environments = [...new Set((events.data ?? []).map((event) => event.environment))];
   return (
     <AsyncState loading={events.isLoading} error={events.error}>
-      <div className="toolbar"><select name="eventType" aria-label="Event type"><option>All stat events</option><option>New user</option><option>User active</option><option>Custom activity</option></select><select name="eventEnvironment" aria-label="Environment"><option>All environments</option><option>Production</option><option>Staging</option></select><span className="toolbar-spacer" /><span>Showing today</span><StatusTag tone="positive">Receiving</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
+      <div className="toolbar"><select name="eventType" aria-label="Event type" value={type} onChange={(event) => setType(event.target.value)}><option value="all">All stat events</option>{eventTypes.map((value) => <option value={value} key={value}>{value}</option>)}</select><select name="eventEnvironment" aria-label="Environment" value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="all">All environments</option>{environments.map((value) => <option value={value.toLowerCase()} key={value}>{value}</option>)}</select><span className="toolbar-spacer" /><span>{filtered.length} events</span><StatusTag tone="positive">Receiving</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
       <div className="list-surface">
-        {events.data?.map((event) => <ListRow key={event.id} symbol="↗" tone="positive" title={event.name} description={<span className="mono">{event.type} · {event.subject} · {event.environment}</span>} meta={<><StatusTag tone="positive">Accepted</StatusTag><span>{event.receivedAt}</span></>} />)}
+        {filtered.map((event) => <ListRow key={event.id} symbol="↗" tone="positive" title={event.name} description={<span className="mono">{event.type} · {event.subject} · {event.environment}</span>} meta={<><StatusTag tone="positive">Accepted</StatusTag><span>{event.receivedAt}</span></>} />)}
       </div>
-      <div className="callout"><div><b>Events become stats</b><p>These accepted triggers feed the aggregated dashboard and daily report. They are not alerts.</p></div><button className="button">Choose tracked stats</button></div>
+      <div className="callout"><div><b>Events become stats</b><p>These accepted triggers feed the aggregated dashboard and daily report. Configure the tracked activities from the dashboard.</p></div></div>
     </AsyncState>
   );
 }

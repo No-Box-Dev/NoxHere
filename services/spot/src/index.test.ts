@@ -65,6 +65,16 @@ describe("public capture Worker", () => {
     expect(denied.status).toBe(403);
   });
 
+  it("serves the lazy widget core beside site-specific loaders", async () => {
+    await env.ASSETS.put("noxspot-core.min.js", "window.__NoxSpotCore = {}", {
+      httpMetadata: { contentType: "application/javascript" },
+    });
+    const response = await SELF.fetch("https://capture.test/widget/noxspot-core.min.js");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toContain("application/javascript");
+    expect(await response.text()).toBe("window.__NoxSpotCore = {}");
+  });
+
   it("opens a valid reporter response page without mutating the issue", async () => {
     const token = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG";
     const hash = await tokenHash(token);

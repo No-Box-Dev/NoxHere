@@ -267,6 +267,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "createPlanningTask",
+    "method": "POST",
+    "path": "/api/v1/tasks",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "createProject",
     "method": "POST",
     "path": "/api/v1/projects",
@@ -376,6 +393,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "deletePlanningTask",
+    "method": "DELETE",
+    "path": "/api/v1/tasks/{id}",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "deleteSpecAttachment",
     "method": "DELETE",
     "path": "/api/v1/specs/{specId}/attachments/{attachmentId}",
@@ -449,6 +481,23 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/octet-stream"
+    ],
+    "servers": []
+  },
+  {
+    "id": "draftPlanningItem",
+    "method": "POST",
+    "path": "/api/v1/planning/assist",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
     ],
     "servers": []
   },
@@ -1331,6 +1380,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "listNoxCueCards",
+    "method": "GET",
+    "path": "/api/v1/cues/sources/{sourceId}/cards",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "listNoxCueCustomMetrics",
     "method": "GET",
     "path": "/api/v1/cues/sources/{sourceId}/custom-metrics",
@@ -1364,6 +1428,21 @@ export const operationDefinitions = [
     "id": "listNoxCueFeatures",
     "method": "GET",
     "path": "/api/v1/cues/sources/{sourceId}/features",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listNoxCueKeys",
+    "method": "GET",
+    "path": "/api/v1/cues/sources/{sourceId}/keys",
     "namespace": "incidents",
     "authentication": "member",
     "automationScope": "noxcue:read",
@@ -1426,6 +1505,21 @@ export const operationDefinitions = [
     "path": "/api/v1/op-failures",
     "namespace": "workspace",
     "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listPlanningTasks",
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "namespace": "workspace",
+    "authentication": "member",
     "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "safe_read",
@@ -1886,6 +1980,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "rotateNoxCueKey",
+    "method": "POST",
+    "path": "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "searchWorkspace",
     "method": "GET",
     "path": "/api/v1/search",
@@ -1895,6 +2004,23 @@ export const operationDefinitions = [
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "sendSlackMessage",
+    "method": "POST",
+    "path": "/api/v1/integrations/slack/messages",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": "slack:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
     "responseContentTypes": [
       "application/json"
     ],
@@ -2164,6 +2290,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "updateNoxCueCards",
+    "method": "PUT",
+    "path": "/api/v1/cues/sources/{sourceId}/cards",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "noxcue:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "updateNoxCueCustomFeature",
     "method": "PUT",
     "path": "/api/v1/cues/sources/{sourceId}/features/{featureKey}",
@@ -2289,6 +2432,23 @@ export const operationDefinitions = [
     "namespace": "feedback",
     "authentication": "admin",
     "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updatePlanningTask",
+    "method": "PATCH",
+    "path": "/api/v1/tasks/{id}",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [

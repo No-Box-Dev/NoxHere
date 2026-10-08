@@ -54,10 +54,18 @@ from noxhere.telemetry import NoxCueClient
 
 with NoxCueClient(
     key=os.environ["NOXHERE_TELEMETRY_KEY"],
+    identity_hash_key=os.environ["NOXHERE_IDENTITY_HASH_KEY"],
     environment="production",
 ) as telemetry:
-    telemetry.user.registered("user-42")
+    telemetry.track("user.registered", user_id="user-42")
+    telemetry.track("records.parsed", user_id="user-42", value=3)
 ```
+
+`track()` queues delivery and returns immediately; leaving the context flushes
+the queue. Identifiers are HMAC-SHA256 protected before JSON serialization and
+the original value is never transmitted. Keep the identity key stable—changing
+it resets user continuity. Compatibility helpers such as `user.registered()`
+and `activity()` delegate to the same contract.
 
 `noxcue` remains available as a deprecated forwarding package for existing
 applications; new code should import `noxhere.telemetry`.

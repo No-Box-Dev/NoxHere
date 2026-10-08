@@ -5,6 +5,7 @@ import { getRawJson } from "../../api/http";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
 import { NoxSpotMessaging } from "./NoxSpotMessaging";
+import { NoxSpotWidgets } from "./NoxSpotWidgets";
 
 const tabs = [["issues", "Open"], ["resolved", "Resolved"], ["widgets", "Widgets"], ["messaging", "Messaging"]] as const;
 const SPOT_POLL_INTERVAL_MS = 10_000;
@@ -41,7 +42,7 @@ type SpotIssue = {
 type SpotPage = { issues?: SpotIssue[]; nextCursor?: string | null };
 
 export default function NoxSpotPage() {
-  const { organizationId = "no-box-dev", projectId = "playnist", view = "issues" } = useParams();
+  const { organizationId = "", projectId = "", view = "issues" } = useParams();
   const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const isGuest = bootstrap.actor.accessLevel === "guest";
@@ -89,7 +90,7 @@ export default function NoxSpotPage() {
       {visible.length ? <div className="spot-reports">{visible.map((issue) => <SpotReport key={`${issue.repo}-${issue.number}`} issue={issue} resolved={view === "resolved"} />)}</div> : <Empty title={`No ${view === "issues" ? "open" : "resolved"} issues`} detail={source === "all" ? "Issues from GitHub and Feedback will appear here." : `No ${source === "noxspot" ? "Feedback" : "GitHub"} issues match this view.`} />}
       {query.hasNextPage ? <div className="feed-pagination"><button type="button" className="button" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? "Loading…" : "Load more"}</button></div> : null}
     </> : null}
-    {view === "widgets" ? <Empty title="No widget configuration returned" detail="Widget installations will appear when the feedback settings API supplies them." /> : null}
+    {view === "widgets" ? <NoxSpotWidgets organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}
     {view === "messaging" ? <NoxSpotMessaging organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}
   </div></section>;
 }

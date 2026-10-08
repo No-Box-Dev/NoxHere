@@ -3,6 +3,8 @@ import { createNoxCue } from "../../packages/sdk/src/telemetry/server.js";
 interface NoxCueEnv {
   NOXCUE_INGEST?: Fetcher;
   NOXCUE_INGEST_KEY?: string;
+  NOXHERE_IDENTITY_HASH_KEY?: string;
+  NOXHERE_IDENTITY_KEY_ID?: string;
 }
 
 interface NoxCueContext {
@@ -30,6 +32,8 @@ export function createNoxCueServer(env: NoxCueEnv, key = env.NOXCUE_INGEST_KEY?.
   if (!env.NOXCUE_INGEST || !key) return null;
   return createNoxCue({
     key,
+    identityHashKey: env.NOXHERE_IDENTITY_HASH_KEY,
+    identityKeyId: env.NOXHERE_IDENTITY_KEY_ID,
     environment: "production",
     endpoint: NOXCUE_ENDPOINT,
     fetch: serviceFetch(env.NOXCUE_INGEST),

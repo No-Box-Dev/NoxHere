@@ -123,6 +123,9 @@ class NoxCueActivityEvent(TypedDict, total=False):
     userId: Required[str]
     version: NotRequired[Literal[1]]
 
+class NoxCueCardSelection(TypedDict, total=False):
+    cards: Required[list["NoxCueCardSelectionCards"]]
+
 class NoxCueCustomFeatureInput(TypedDict, total=False):
     failureMessage: Required[str]
     key: Required[str]
@@ -188,17 +191,37 @@ class NoxCueProjectMetricSelection(TypedDict, total=False):
     enabledMetricKeys: Required[list[Literal['users.new', 'users.total', 'users.active.daily', 'users.active.weekly', 'users.active.monthly', 'users.stickiness.dau_mau']]]
 
 class NoxCueSourceInput(TypedDict, total=False):
+    aggregateOnlySlack: NotRequired[bool]
+    alertsEnabled: NotRequired[bool]
+    allowedEvents: NotRequired[list[str]]
     allowedOrigins: NotRequired[list[str]]
     digestEnabled: Required[bool]
     digestTimeLocal: Required[str]
     enabled: Required[bool]
+    environment: NotRequired[Literal['production', 'staging', 'development', 'preview', 'test', 'local']]
     healthEnabled: NotRequired[bool]
     healthUrl: NotRequired[Union[str, None]]
     name: Required[str]
+    productionStats: NotRequired[bool]
     projectId: Required[Union[str, None]]
+    reportTitle: NotRequired[Union[str, None]]
+    retentionDays: NotRequired[int]
     slackChannelId: Required[Union[str, None]]
     slackConnectionId: Required[Union[str, None]]
     timezone: Required[str]
+
+class NoxCueTrackedEvent(TypedDict, total=False):
+    attributes: NotRequired[dict[str, Union[str, float, bool]]]
+    context: NotRequired["JsonValue"]
+    environment: NotRequired[str]
+    eventId: Required[str]
+    idempotencyKey: NotRequired[str]
+    name: Required[str]
+    occurredAt: NotRequired[str]
+    type: Required[Literal['activity.tracked']]
+    userId: NotRequired[str]
+    value: NotRequired[float]
+    version: NotRequired[Literal[1]]
 
 class NoxCueUserEvent(TypedDict, total=False):
     occurredAt: NotRequired[str]
@@ -231,6 +254,7 @@ class NoxSpotBlock(TypedDict, total=False):
 class NoxSpotEnvironment(TypedDict, total=False):
     buttonColor: NotRequired[Union[str, None]]
     buttonText: NotRequired[Union[str, None]]
+    captureMode: NotRequired[Literal['screenshot', 'dom', None]]
     enabled: NotRequired[bool]
     name: Required[str]
     url: Required[str]
@@ -304,6 +328,56 @@ class PaginatedRecords(TypedDict, total=False):
     page: Required[int]
     pageSize: Required[int]
     totalCount: Required[int]
+
+class PlanningAssistFeature(TypedDict, total=False):
+    number: Required[int]
+    owners: NotRequired[list[str]]
+    title: Required[str]
+
+class PlanningAssistRequest(TypedDict, total=False):
+    features: NotRequired[list["PlanningAssistFeature"]]
+    kind: Required[Literal['feature', 'task']]
+    owner: NotRequired[str]
+    prompt: Required[str]
+
+class PlanningAssistResponse(TypedDict, total=False):
+    draft: Required["PlanningAssistResponseDraft"]
+
+class PlanningTask(TypedDict, total=False):
+    color: Required["PlanningTaskColor"]
+    completedAt: Required[Union[str, None]]
+    createdAt: Required[str]
+    createdBy: Required[str]
+    featureNumber: Required[Union[int, None]]
+    id: Required[str]
+    note: Required[str]
+    owner: Required[str]
+    position: Required[int]
+    stageId: Required[str]
+    status: Required[Literal['open', 'completed']]
+    title: Required[str]
+    updatedAt: Required[str]
+
+PlanningTaskColor: TypeAlias = Literal['gray', 'blue', 'purple', 'green', 'yellow', 'orange', 'red', 'pink']
+
+class PlanningTaskCreate(TypedDict, total=False):
+    color: NotRequired["PlanningTaskColor"]
+    featureNumber: NotRequired[Union[int, None]]
+    note: NotRequired[str]
+    owner: NotRequired[str]
+    position: NotRequired[int]
+    stageId: NotRequired[str]
+    title: Required[str]
+
+class PlanningTaskPatch(TypedDict, total=False):
+    color: NotRequired["PlanningTaskColor"]
+    featureNumber: NotRequired[Union[int, None]]
+    note: NotRequired[str]
+    owner: NotRequired[str]
+    position: NotRequired[int]
+    stageId: NotRequired[str]
+    status: NotRequired[Literal['open', 'completed']]
+    title: NotRequired[str]
 
 class ProjectDestination(TypedDict, total=False):
     channelId: Required[str]
@@ -411,6 +485,33 @@ class SetupStep(TypedDict, total=False):
     state: Required[Literal['available', 'blocked', 'complete']]
     title: Required[str]
 
+class SlackMessageDelivery(TypedDict, total=False):
+    apiVersion: Required[Literal[1]]
+    delivery: Required["SlackMessageDeliveryDelivery"]
+
+class SlackMessagePayload(TypedDict, total=False):
+    attachments: NotRequired[list[dict[str, Any]]]
+    blocks: NotRequired[list[dict[str, Any]]]
+    client_msg_id: NotRequired[str]
+    icon_emoji: NotRequired[str]
+    icon_url: NotRequired[str]
+    link_names: NotRequired[bool]
+    markdown_text: NotRequired[str]
+    metadata: NotRequired["SlackMessagePayloadMetadata"]
+    mrkdwn: NotRequired[bool]
+    parse: NotRequired[Literal['none', 'full']]
+    reply_broadcast: NotRequired[bool]
+    text: NotRequired[str]
+    thread_ts: NotRequired[str]
+    unfurl_links: NotRequired[bool]
+    unfurl_media: NotRequired[bool]
+    username: NotRequired[str]
+
+class SlackMessageRequest(TypedDict, total=False):
+    channelId: Required[str]
+    connectionId: Required[str]
+    message: Required["SlackMessagePayload"]
+
 class SlackProjectAssignment(TypedDict, total=False):
     projectId: Required[Union[str, None]]
 
@@ -498,6 +599,9 @@ class DeleteNoxCueSourcePath(TypedDict, total=False):
 
 class DeleteNoxSpotSitePath(TypedDict, total=False):
     siteId: Required[str]
+
+class DeletePlanningTaskPath(TypedDict, total=False):
+    id: Required[str]
 
 class DeleteSpecAttachmentPath(TypedDict, total=False):
     specId: Required[int]
@@ -619,6 +723,9 @@ class ListIssuesQuery(TypedDict, total=False):
     sort: NotRequired[str]
     sort_dir: NotRequired[Literal['asc', 'desc']]
 
+class ListNoxCueCardsPath(TypedDict, total=False):
+    sourceId: Required[str]
+
 class ListNoxCueCustomMetricsPath(TypedDict, total=False):
     sourceId: Required[str]
 
@@ -628,6 +735,14 @@ class ListNoxCueEventsQuery(TypedDict, total=False):
 
 class ListNoxCueFeaturesPath(TypedDict, total=False):
     sourceId: Required[str]
+
+class ListNoxCueKeysPath(TypedDict, total=False):
+    sourceId: Required[str]
+
+class ListPlanningTasksQuery(TypedDict, total=False):
+    owner: NotRequired[str]
+    status: NotRequired[Literal['open', 'completed', 'all']]
+    featureNumber: NotRequired[Union[int, Literal['general']]]
 
 class ListPullRequestsQuery(TypedDict, total=False):
     state: NotRequired[str]
@@ -702,6 +817,10 @@ class RevokeNoxCueKeyPath(TypedDict, total=False):
 class RotateApiTokenPath(TypedDict, total=False):
     id: Required[str]
 
+class RotateNoxCueKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+    keyId: Required[str]
+
 SearchWorkspaceQuery = TypedDict('SearchWorkspaceQuery', {'q': NotRequired[str], 'tools': NotRequired[str], 'kinds': NotRequired[str], 'repos': NotRequired[str], 'assignees': NotRequired[str], 'statuses': NotRequired[str], 'tags': NotRequired[str], 'exclude': NotRequired[str], 'from': NotRequired[str], 'to': NotRequired[str], 'limit': NotRequired[int]}, total=False)
 
 class StartConnectionPath(TypedDict, total=False):
@@ -728,6 +847,9 @@ class UpdateCueProjectActionsPath(TypedDict, total=False):
 
 class UpdateFeaturePath(TypedDict, total=False):
     number: Required[int]
+
+class UpdateNoxCueCardsPath(TypedDict, total=False):
+    sourceId: Required[str]
 
 class UpdateNoxCueCustomFeaturePath(TypedDict, total=False):
     sourceId: Required[str]
@@ -767,6 +889,9 @@ class UpdateNoxSpotResolutionTemplateBody(TypedDict, total=False):
 
 class UpdateNoxSpotSitePath(TypedDict, total=False):
     siteId: Required[str]
+
+class UpdatePlanningTaskPath(TypedDict, total=False):
+    id: Required[str]
 
 class UpdateProjectIncidentPath(TypedDict, total=False):
     projectId: Required[str]
@@ -811,6 +936,13 @@ class NoxConnectConfigPatchEnabledServices(TypedDict, total=False):
     noxspot: NotRequired[bool]
     noxticket: NotRequired[bool]
 
+class NoxCueCardSelectionCards(TypedDict, total=False):
+    cumulativeLabel: NotRequired[Union[str, None]]
+    dailyLabel: NotRequired[Union[str, None]]
+    enabled: NotRequired[bool]
+    metricKey: Required[str]
+    perActiveEnabled: NotRequired[bool]
+
 class NoxCueErrorData(TypedDict, total=False):
     affectedUser: NotRequired[str]
     component: NotRequired[str]
@@ -841,6 +973,10 @@ class NoxSpotResolutionTemplateAppearance(TypedDict, total=False):
 
 class NoxTicketConfigPatchWorkflow(TypedDict, total=False):
     stages: Required[list["NoxTicketConfigPatchWorkflowStages"]]
+
+class PlanningAssistResponseDraft(TypedDict, total=False):
+    featureNumber: Required[Union[int, None]]
+    title: Required[str]
 
 class ProjectRoutingInputRoutes(TypedDict, total=False):
     noxCue: Required["ProjectDestination"]
@@ -881,6 +1017,17 @@ class ServiceSetupDetailSections(TypedDict, total=False):
     id: Required[str]
     name: Required[str]
     state: Required[Literal['ready', 'blocked', 'disabled']]
+
+class SlackMessageDeliveryDelivery(TypedDict, total=False):
+    channelId: Required[str]
+    connectionId: Required[str]
+    messageTs: Required[str]
+    sentAt: Required[str]
+    status: Required[Literal['sent']]
+
+class SlackMessagePayloadMetadata(TypedDict, total=False):
+    event_payload: Required[dict[str, Any]]
+    event_type: Required[str]
 
 class SpecInputLinks(TypedDict, total=False):
     label: NotRequired[str]

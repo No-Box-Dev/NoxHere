@@ -1,6 +1,7 @@
 import { DEFAULT_NOXSPOT_BLOCKS } from "../../../packages/contracts/noxspot-defaults";
 
 export type WidgetMode = "development" | "release";
+export type CaptureMode = "screenshot" | "dom";
 
 export interface WidgetEnvironment {
   name: string;
@@ -8,6 +9,7 @@ export interface WidgetEnvironment {
   buttonColor?: string | null;
   buttonText?: string | null;
   widgetMode?: WidgetMode | null;
+  captureMode?: CaptureMode | null;
   enabled?: boolean;
 }
 
@@ -134,6 +136,7 @@ export function publicWidgetConfig(site: CaptureSite, origin: string | null) {
     buttonColor: matched?.buttonColor || stored.buttonColor || "#FE795D",
     buttonText: matched?.buttonText || stored.buttonText || "Report issue",
     widgetMode: matched?.widgetMode || (stored.widgetMode === "release" ? "release" : "development"),
+    captureMode: matched?.captureMode === "screenshot" ? "screenshot" : "dom",
     autoErrorLogging: stored.autoErrorLogging === true,
     environment: environmentName,
     // The current widget matches environments client-side. Return only the
@@ -151,6 +154,7 @@ export function legacyWidgetConfig(site: CaptureSite) {
     buttonColor: stored.buttonColor || "#FE795D",
     buttonText: stored.buttonText || "Report issue",
     widgetMode: stored.widgetMode === "release" ? "release" : "development",
+    captureMode: "dom" as CaptureMode,
     autoErrorLogging: stored.autoErrorLogging === true,
     environments: Array.isArray(stored.environments) ? stored.environments : [],
     blocks: Array.isArray(stored.blocks) && stored.blocks.length ? stored.blocks : DEFAULT_NOXSPOT_BLOCKS,

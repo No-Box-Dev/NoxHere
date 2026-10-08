@@ -201,6 +201,9 @@ jobs:
       - run: npm ci
       - name: Install unified Python SDK for compatibility tests
         run: python3 -m pip install -e ../../packages/python-sdk
+      - name: Enforce active NoxCue telemetry milestone
+        working-directory: ${{ github.workspace }}
+        run: npm run telemetry:milestones:verify
       - name: Verify Cue Worker, contracts, and build
         run: npm run check
       - name: Verify NoxCue RPC capabilities through a real Worker harness

@@ -451,13 +451,13 @@ async function main() {
   const event = await request("ingest a real NoxCue event through the NoxConnect binding", "/api/v1/cues/public/events", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": keyValue },
-    body: JSON.stringify({ version: 1, type: "user.registered", userId: "local-e2e-user", idempotencyKey: "local-e2e-registration" }),
+    body: JSON.stringify({ version: 1, type: "user.registered", userId: "h1_local-e2e_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", idempotencyKey: "local-e2e-registration" }),
   }, 202);
   if (!event.body?.accepted || event.body?.stored !== true) throw new Error("NoxCue did not persist the event");
   const duplicate = await request("NoxCue ingestion is idempotent", "/api/v1/cues/public/events", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": keyValue },
-    body: JSON.stringify({ version: 1, type: "user.registered", userId: "local-e2e-user", idempotencyKey: "local-e2e-registration" }),
+    body: JSON.stringify({ version: 1, type: "user.registered", userId: "h1_local-e2e_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", idempotencyKey: "local-e2e-registration" }),
   }, 202);
   if (duplicate.body?.duplicate !== true) throw new Error("NoxCue duplicate was not detected");
   const metrics = await request("read persisted NoxCue metrics", `/api/v1/cues/metrics?sourceId=${encodeURIComponent(sourceId)}&days=1`, signedOptions(sessionAuth));

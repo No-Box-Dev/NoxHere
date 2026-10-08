@@ -37,6 +37,11 @@ interface SourceRow {
   last_registration_at: string | null;
   last_activity_at: string | null;
   allowed_origins_json: string;
+  allowed_events_json: string;
+  report_title: string | null;
+  production_stats: number;
+  retention_days: number;
+  aggregate_only_slack: number;
   health_enabled: number | null;
   health_url: string | null;
   health_status: "waiting" | "healthy" | "issue" | null;
@@ -71,7 +76,9 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     db.prepare(
       `SELECT source.id, source.name, source.environment, source.project_id, project.name AS project_name,
               source.enabled, source.alerts_enabled, source.timezone, source.digest_enabled, source.digest_time_local,
-              source.allowed_origins_json, monitor.enabled AS health_enabled, monitor.url AS health_url,
+              source.allowed_origins_json, source.allowed_events_json, source.report_title,
+              source.production_stats, source.retention_days, source.aggregate_only_slack,
+              monitor.enabled AS health_enabled, monitor.url AS health_url,
               monitor.status AS health_status, monitor.last_checked_at AS health_last_checked_at,
               monitor.last_error AS health_last_error, monitor.last_status_code AS health_last_status_code,
               monitor.last_latency_ms AS health_last_latency_ms,
@@ -185,6 +192,11 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       digestEnabled: source.digest_enabled === 1,
       digestTimeLocal: source.digest_time_local,
       allowedOrigins: JSON.parse(source.allowed_origins_json || "[]"),
+      allowedEvents: JSON.parse(source.allowed_events_json || "[]"),
+      reportTitle: source.report_title,
+      productionStats: source.production_stats === 1,
+      retentionDays: source.retention_days,
+      aggregateOnlySlack: source.aggregate_only_slack === 1,
       healthEnabled: source.health_enabled === 1,
       healthUrl: source.health_url,
       healthStatus: source.health_status ?? "waiting",
@@ -257,14 +269,17 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const id = crypto.randomUUID();
   await db.prepare(
     `INSERT INTO cue_sources
-       (id, org_id, owner_id, project_id, name, environment, enabled, alerts_enabled, allowed_origins_json, timezone,
+       (id, org_id, owner_id, project_id, name, environment, enabled, alerts_enabled, allowed_origins_json,
+        allowed_events_json, report_title, production_stats, retention_days, aggregate_only_slack, timezone,
         digest_enabled, digest_time_local, error_cooldown_minutes, slack_channel_id,
         slack_connection_id, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 15, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 15, ?, ?, ?)`,
   ).bind(
     id, orgId, orgLogin, targetProjectId, parsed.data.name, parsed.data.environment,
     parsed.data.enabled ? 1 : 0, parsed.data.alertsEnabled ? 1 : 0,
-    JSON.stringify(parsed.data.allowedOrigins), parsed.data.timezone,
+    JSON.stringify(parsed.data.allowedOrigins), JSON.stringify(parsed.data.allowedEvents), parsed.data.reportTitle,
+    parsed.data.productionStats ? 1 : 0, parsed.data.retentionDays, parsed.data.aggregateOnlySlack ? 1 : 0,
+    parsed.data.timezone,
     parsed.data.digestEnabled ? 1 : 0, parsed.data.digestTimeLocal,
     parsed.data.slackChannelId, slackConnectionId, userLogin,
   ).run();
@@ -272,5 +287,14 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     `INSERT INTO cue_endpoint_monitors (org_id, source_id, enabled, url, updated_at)
      VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))`,
   ).bind(orgId, id, parsed.data.healthEnabled ? 1 : 0, parsed.data.healthUrl).run();
+  await db.prepare(
+    `INSERT INTO cue_source_audit (id, org_id, source_id, action, actor, details_json)
+     VALUES (?, ?, ?, 'created', ?, ?)`,
+  ).bind(crypto.randomUUID(), orgId, id, userLogin, JSON.stringify({
+    projectId: targetProjectId,
+    environment: parsed.data.environment,
+    retentionDays: parsed.data.retentionDays,
+    aggregateOnlySlack: parsed.data.aggregateOnlySlack,
+  })).run();
   return jsonResponse({ id, projectId: targetProjectId }, 201);
 }

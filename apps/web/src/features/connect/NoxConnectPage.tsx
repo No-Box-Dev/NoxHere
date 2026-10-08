@@ -11,7 +11,7 @@ type ConnectSection = "services" | "connections" | "people" | "repositories";
 const serviceRows = [["ticket", "P", "Planning", "Planning and delivery"], ["feed", "A", "Activity", "Engineering activity and releases"], ["spot", "F", "Feedback", "Reports and reporter messaging"], ["cue", "I", "Incidents", "Product health and alerts"]] as const;
 
 export default function NoxConnectPage() {
-  const { organizationId = "no-box-dev", projectId = "playnist", view = "overview" } = useParams();
+  const { organizationId = "", projectId = "", view = "overview" } = useParams();
   const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
   const project = bootstrap.projects.find((item) => item.id === projectId) ?? bootstrap.projects[0];
   const projectName = project?.name ?? projectId;

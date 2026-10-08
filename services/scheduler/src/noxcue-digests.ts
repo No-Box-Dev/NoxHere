@@ -1,7 +1,7 @@
 import { publishSlackTransport } from "../../../functions/lib/transport-outbox";
 import { getNoxCueDigestResponse } from "../../../functions/lib/noxcue-response.js";
 import { loadNoxCueDigestData, storeNoxCueDerivedMetrics } from "../../../functions/lib/noxcue-digest-data.js";
-import { loadEnabledNoxCueMetricKeys, selectNoxCueDigestMetrics } from "../../../functions/lib/noxcue-project-metrics.js";
+import { loadEnabledNoxCueMetricKeys, loadNoxCueSourceCards, selectNoxCueDigestMetrics } from "../../../functions/lib/noxcue-project-metrics.js";
 
 const MAX_SOURCES_PER_TICK = 100;
 
@@ -35,6 +35,7 @@ interface DigestSource {
   environment: string;
   timezone: string;
   digest_time_local: string;
+  report_title: string | null;
   source_channel_id: string | null;
   source_connection_id: string | null;
   project_channel_id: string | null;
@@ -46,6 +47,14 @@ interface DigestSource {
 }
 
 type SlackDestination = { channelId: string; connectionId: string };
+
+export function sourceReportTitle(source: Pick<DigestSource, "name" | "environment" | "report_title">) {
+  const environment = source.environment.charAt(0).toUpperCase() + source.environment.slice(1);
+  const fallback = source.name.toLowerCase().includes(source.environment.toLowerCase())
+    ? source.name
+    : `${source.name} · ${environment}`;
+  return source.report_title?.trim() || fallback;
+}
 
 export function resolveDigestSlackDestination(source: DigestSource): SlackDestination | null {
   const candidates = [
@@ -106,11 +115,18 @@ async function createDigest(
 
   const enabledKeys = await loadEnabledNoxCueMetricKeys(env.DB, source.org_id, source.project_id, source.id);
   const selected = selectNoxCueDigestMetrics(digest, enabledKeys);
+  const cards = await loadNoxCueSourceCards(env.DB, source.org_id, source.id) as Array<{
+    metric_key: string;
+    daily_label: string | null;
+    cumulative_label: string | null;
+  }>;
+  if (cards.length > 0) {
+    selected.metricLabels = Object.fromEntries(cards.map((card) => [
+      String(card.metric_key), String(card.daily_label || card.cumulative_label || selected.metricLabels[String(card.metric_key)] || ""),
+    ]));
+  }
 
-  const environment = source.environment.charAt(0).toUpperCase() + source.environment.slice(1);
-  const displayName = source.name.toLowerCase().includes(source.environment.toLowerCase())
-    ? source.name
-    : `${source.name} · ${environment}`;
+  const displayName = sourceReportTitle(source);
   const response = await getNoxCueDigestResponse(
     env,
     displayName,
@@ -148,7 +164,7 @@ async function createDigest(
 export async function runNoxCueDigests(env: DigestEnv, nowMs = Date.now()) {
   const { results } = await env.DB.prepare(
     `SELECT source.id, source.org_id, source.owner_id, source.project_id, source.name, source.environment, source.timezone,
-            source.digest_time_local,
+            source.digest_time_local, source.report_title,
             NULLIF(source.slack_channel_id, '') AS source_channel_id,
             NULLIF(source.slack_connection_id, '') AS source_connection_id,
             NULLIF(project_route.channel_id, '') AS project_channel_id,
@@ -195,9 +211,14 @@ export async function runNoxCueDigests(env: DigestEnv, nowMs = Date.now()) {
       }));
     }
   }
-  await env.DB.prepare(
-    "DELETE FROM cue_user_active_days WHERE period < date('now', '-62 days')",
-  ).run();
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM cue_user_active_days
+      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM cue_sources WHERE id = cue_user_active_days.source_id), 62) || ' days')`),
+    env.DB.prepare(`DELETE FROM cue_activity_events
+      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM cue_sources WHERE id = cue_activity_events.source_id), 62) || ' days')`),
+    env.DB.prepare(`DELETE FROM cue_tracked_events
+      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM cue_sources WHERE id = cue_tracked_events.source_id), 62) || ' days')`),
+  ]);
   await env.DB.prepare(
     "DELETE FROM cue_error_receipts WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
   ).run();

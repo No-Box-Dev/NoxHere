@@ -47,10 +47,12 @@ import { createNoxCue } from "@noxhere/sdk/telemetry/server";
 
 const telemetry = createNoxCue({
   key: process.env.NOXHERE_TELEMETRY_KEY!,
+  identityHashKey: process.env.NOXHERE_IDENTITY_HASH_KEY!,
   environment: "production",
 });
 
-await telemetry.user.registered("user-42");
+await telemetry.track("user.registered", { userId: "user-42" });
+await telemetry.track("records.parsed", { userId: "user-42", value: 3 });
 
 // Request-scoped identity adds only the opaque id to telemetry evidence.
 const userTelemetry = telemetry.forUser("user-42");
@@ -60,6 +62,11 @@ await userTelemetry.auth.login(() => authenticate());
 Browser applications import `@noxhere/sdk/telemetry/browser` and use a
 `nox_pub_…` key. The compatibility function remains named `createNoxCue`, but
 the implementation and wire contract now live only in this package.
+
+Browser tracking accepts only the configured anonymous `website.*` events and
+never creates cookies, sessions, fingerprints, or persistent identifiers.
+Server identities are HMAC-SHA256 protected before serialization. Keep the
+identity key stable—changing it resets user continuity.
 
 `@noxhere/sdk/events` builds the shared versioned event envelope and rejects
 oversized data or credential/private-identity fields. Its registered event

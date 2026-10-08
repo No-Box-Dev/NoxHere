@@ -51,23 +51,30 @@ class ModelGenerator:
             self.schemas[normalized] = schema
         return normalized
 
-    def expression(self, schema: dict[str, Any] | None, hint: str | None = None) -> str:
+    def expression(
+        self,
+        schema: dict[str, Any] | None,
+        hint: str | None = None,
+        *,
+        qualify_refs: bool = False,
+    ) -> str:
         if not schema:
             return "Any"
         if "$ref" in schema:
-            return f'"{ref_name(schema["$ref"])}"'
+            name = ref_name(schema["$ref"])
+            return f"models.{name}" if qualify_refs else f'"{name}"'
         if "const" in schema:
             return f"Literal[{schema['const']!r}]"
         if schema.get("enum"):
             return f"Literal[{', '.join(repr(value) for value in schema['enum'])}]"
         variants = schema.get("oneOf") or schema.get("anyOf")
         if variants:
-            return f"Union[{', '.join(self.expression(item, hint) for item in variants)}]"
+            return f"Union[{', '.join(self.expression(item, hint, qualify_refs=qualify_refs) for item in variants)}]"
         if schema.get("allOf"):
-            return f"Union[{', '.join(self.expression(item, hint) for item in schema['allOf'])}]"
+            return f"Union[{', '.join(self.expression(item, hint, qualify_refs=qualify_refs) for item in schema['allOf'])}]"
         schema_type = schema.get("type")
         if isinstance(schema_type, list):
-            return f"Union[{', '.join(self.expression({**schema, 'type': item}, hint) for item in schema_type)}]"
+            return f"Union[{', '.join(self.expression({**schema, 'type': item}, hint, qualify_refs=qualify_refs) for item in schema_type)}]"
         if schema_type == "null":
             return "None"
         if schema_type == "boolean":
@@ -79,12 +86,13 @@ class ModelGenerator:
         if schema_type == "string":
             return "bytes" if schema.get("format") == "binary" else "str"
         if schema_type == "array":
-            return f"list[{self.expression(schema.get('items'), hint)}]"
+            return f"list[{self.expression(schema.get('items'), hint, qualify_refs=qualify_refs)}]"
         if schema_type == "object" or "properties" in schema or "additionalProperties" in schema:
             if hint and schema.get("properties"):
-                return f'"{self.register(hint, schema)}"'
+                name = self.register(hint, schema)
+                return f"models.{name}" if qualify_refs else f'"{name}"'
             additional = schema.get("additionalProperties")
-            value = self.expression(additional) if isinstance(additional, dict) else "Any"
+            value = self.expression(additional, qualify_refs=qualify_refs) if isinstance(additional, dict) else "Any"
             return f"dict[str, {value}]"
         return "Any"
 
@@ -190,7 +198,7 @@ def response_type(operation: dict[str, Any]) -> str:
         elif schema.get("properties"):
             results.append(f"models.{models.register(pascal(operation['id']) + 'Response', schema)}")
         else:
-            results.append(models.expression(schema))
+            results.append(models.expression(schema, qualify_refs=True))
     return " | ".join(dict.fromkeys(results or ["None"]))
 
 

@@ -96,7 +96,7 @@ export function createNativeAuth(options: NativeAuthOptions): NativeAuth {
   };
   const post = async (path: string, body: Record<string, unknown>) => responseJson(await request(endpoint(baseUrl, path), {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json", "X-NoxHere-SDK": "typescript/0.2.0" },
+    headers: { Accept: "application/json", "Content-Type": "application/json", "X-NoxHere-SDK": "typescript/0.2.1" },
     body: JSON.stringify(body),
   }));
 

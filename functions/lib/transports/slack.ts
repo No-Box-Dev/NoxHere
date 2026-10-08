@@ -21,6 +21,25 @@ interface SlackTransportEnvironment {
   SLACK_ACCEPT_LEGACY_INSTALLS?: string;
 }
 
+export interface SlackMessagePayload {
+  text?: string;
+  markdown_text?: string;
+  blocks?: Record<string, unknown>[];
+  attachments?: Record<string, unknown>[];
+  metadata?: { event_type: string; event_payload: Record<string, unknown> };
+  thread_ts?: string;
+  reply_broadcast?: boolean;
+  mrkdwn?: boolean;
+  parse?: "none" | "full";
+  link_names?: boolean;
+  unfurl_links?: boolean;
+  unfurl_media?: boolean;
+  username?: string;
+  icon_emoji?: string;
+  icon_url?: string;
+  client_msg_id?: string;
+}
+
 const ROUTES: Record<SlackCommand["route"], {
   projectRoute?: ProjectRouteKey;
   legacyRoute: string;
@@ -107,7 +126,7 @@ async function resolveDestination(env: SlackTransportEnvironment, command: Slack
 
 export async function deliverResolvedSlackMessage(
   env: SlackTransportEnvironment,
-  input: { orgId: number; connectionId?: string | null; channelId: string; messageId?: string; message: { text: string; client_msg_id?: string; blocks?: Record<string, unknown>[] } },
+  input: { orgId: number; connectionId?: string | null; channelId: string; messageId?: string; message: SlackMessagePayload },
 ) {
   const install = await resolveSlackInstall(env, input.orgId, input.connectionId ?? null);
   if (!install) {

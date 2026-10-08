@@ -10,8 +10,9 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
+  attestations: write
 
 jobs:
   verify-and-publish:
@@ -47,6 +48,16 @@ jobs:
       - run: cd packages/python-sdk && ../sdk/node_modules/.bin/pyright
       - run: python3 -m pip install build && python3 -m build packages/python-sdk
       - run: swift test --package-path packages/swift-sdk
+      - name: Build release archives and checksums
+        run: |
+          mkdir -p dist/sdk
+          npm pack --prefix packages/sdk --pack-destination "$PWD/dist/sdk"
+          cp packages/python-sdk/dist/* dist/sdk/
+          (cd dist/sdk && sha256sum * > SHA256SUMS)
+      - name: Attest SDK release provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/sdk/*
       - name: Publish @noxhere/sdk to npm
         working-directory: packages/sdk
         run: |
@@ -62,3 +73,8 @@ jobs:
         with:
           packages-dir: packages/python-sdk/dist/
           skip-existing: true
+      - name: Publish signed release metadata
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/sdk/* --verify-tag --generate-notes

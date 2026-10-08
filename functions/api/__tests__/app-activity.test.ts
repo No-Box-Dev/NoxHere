@@ -25,6 +25,7 @@ function makeContext(existing: { registered_at: string; last_active_period: stri
         DB: db,
         NOXCUE_INGEST_KEY: `nox_secret_${"a".repeat(40)}`,
         NOXCUE_NOXFEED_INGEST_KEY: `nox_secret_${"b".repeat(40)}`,
+        NOXHERE_IDENTITY_HASH_KEY: "identity-secret-key-that-is-at-least-32-bytes",
         NOXCUE_INGEST: { fetch },
       },
       data: { userLogin: "Alice" },
@@ -49,7 +50,7 @@ describe("POST /api/app-activity", () => {
     expect(state.fetch).toHaveBeenCalledOnce();
     expect(await state.requests[0]!.json()).toMatchObject({
       type: "user.registered",
-      userId: "Alice",
+      userId: "h1_primary_j4qar7Kpm3K3iUdOzKhKHtulpoo6u_2DZ-ElmSFlLp0",
     });
     expect(state.requests[0]!.headers.get("X-Nox-Ingest-Key")).toBe(`nox_secret_${"a".repeat(40)}`);
     expect(state.writes.some(({ sql }) => sql.includes("INSERT INTO noxcue_app_user_activity"))).toBe(true);
@@ -70,7 +71,10 @@ describe("POST /api/app-activity", () => {
     const response = await onRequestPost(state.context as never);
 
     expect(response.status).toBe(202);
-    expect(await state.requests[0]!.json()).toMatchObject({ type: "user.active", userId: "Alice" });
+    expect(await state.requests[0]!.json()).toMatchObject({
+      type: "user.active",
+      userId: "h1_primary_j4qar7Kpm3K3iUdOzKhKHtulpoo6u_2DZ-ElmSFlLp0",
+    });
     expect(state.writes.some(({ sql }) => sql.includes("UPDATE noxcue_app_user_activity"))).toBe(true);
   });
 

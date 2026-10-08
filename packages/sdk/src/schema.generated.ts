@@ -576,6 +576,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cues/sources/{sourceId}/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List source-scoped NoxCue report card configuration */
+        get: operations["listNoxCueCards"];
+        /** Replace source-scoped NoxCue report card configuration */
+        put: operations["updateNoxCueCards"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cues/sources/{sourceId}/custom-metrics": {
         parameters: {
             query?: never;
@@ -680,7 +698,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List NoxCue key metadata, usage, and audit history */
+        get: operations["listNoxCueKeys"];
         put?: never;
         /**
          * Create a one-time NoxCue browser or server ingest key
@@ -705,6 +724,23 @@ export interface paths {
         post?: never;
         /** Revoke a NoxCue ingest key */
         delete: operations["revokeNoxCueKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate a NoxCue ingest key with a 24-hour overlap */
+        post: operations["rotateNoxCueKey"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1133,6 +1169,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/slack/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a Slack message through an existing connection
+         * @description Uses the selected encrypted Slack installation. Supports text, Block Kit, image blocks, attachments, metadata, threads, unfurls, author overrides, and client message IDs.
+         */
+        post: operations["sendSlackMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integrations/slack/routing": {
         parameters: {
             query?: never;
@@ -1354,6 +1410,23 @@ export interface paths {
         get: operations["getOperatorUsage"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/planning/assist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Draft a Planning feature or task with managed AI */
+        post: operations["draftPlanningItem"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2251,6 +2324,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Planning tasks */
+        get: operations["listPlanningTasks"];
+        put?: never;
+        /** Create a Planning task */
+        post: operations["createPlanningTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a Planning task */
+        delete: operations["deletePlanningTask"];
+        options?: never;
+        head?: never;
+        /** Update a Planning task */
+        patch: operations["updatePlanningTask"];
+        trace?: never;
+    };
     "/api/v1/teams": {
         parameters: {
             query?: never;
@@ -2446,13 +2555,24 @@ export interface components {
             occurredAt?: string;
             /** @constant */
             type: "activity.occurred";
-            /** @description Stable app identifier; NoxCue stores only a source-scoped hash. */
+            /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
             userId: string;
             /**
              * @default 1
              * @constant
              */
             version: 1;
+        };
+        NoxCueCardSelection: {
+            cards: {
+                cumulativeLabel?: string | null;
+                dailyLabel?: string | null;
+                /** @default true */
+                enabled: boolean;
+                metricKey: string;
+                /** @default false */
+                perActiveEnabled: boolean;
+            }[];
         };
         NoxCueCustomFeatureInput: {
             /** @description Default user-impact text shown with the actual bounded technical error. */
@@ -2476,7 +2596,7 @@ export interface components {
         };
         NoxCueError: {
             data?: {
-                /** @description Opaque identifier; NoxCue stores only a source-scoped hash. */
+                /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
                 affectedUser?: string;
                 component?: string;
                 environment?: string;
@@ -2521,7 +2641,7 @@ export interface components {
             test: boolean;
             /** @constant */
             type: "feature.result";
-            /** @description Optional actor identity. NoxCue stores only a source-scoped hash; browser identity never contributes to authoritative active-user totals. */
+            /** @description Optional SDK-generated HMAC pseudonym. */
             userId?: string;
             /**
              * @default 1
@@ -2552,27 +2672,69 @@ export interface components {
             enabledMetricKeys: ("users.new" | "users.total" | "users.active.daily" | "users.active.weekly" | "users.active.monthly" | "users.stickiness.dau_mau")[];
         };
         NoxCueSourceInput: {
+            /** @default false */
+            aggregateOnlySlack: boolean;
+            /** @default true */
+            alertsEnabled: boolean;
+            allowedEvents?: string[];
             allowedOrigins?: string[];
             digestEnabled: boolean;
             digestTimeLocal: string;
             enabled: boolean;
+            /**
+             * @default production
+             * @enum {string}
+             */
+            environment: "production" | "staging" | "development" | "preview" | "test" | "local";
             /** @default false */
             healthEnabled: boolean;
             /** Format: uri */
             healthUrl?: string | null;
             name: string;
+            /**
+             * @description May only be true for a production source.
+             * @default false
+             */
+            productionStats: boolean;
             projectId: string | null;
+            reportTitle?: string | null;
+            /** @default 62 */
+            retentionDays: number;
             slackChannelId: string | null;
             slackConnectionId: string | null;
             /** @description IANA timezone used for completed daily periods. */
             timezone: string;
+        };
+        NoxCueTrackedEvent: {
+            attributes?: {
+                [key: string]: string | number | boolean;
+            };
+            context?: components["schemas"]["JsonValue"];
+            environment?: string;
+            /** Format: uuid */
+            eventId: string;
+            idempotencyKey?: string;
+            name: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** @constant */
+            type: "activity.tracked";
+            /** @description Required for trusted non-website events and forbidden for public browser events. */
+            userId?: string;
+            /** @default 1 */
+            value: number;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
         };
         NoxCueUserEvent: {
             /** Format: date-time */
             occurredAt?: string;
             /** @enum {string} */
             type: "user.registered" | "user.active";
-            /** @description Stable app identifier; NoxCue stores only a source-scoped SHA-256 hash. */
+            /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
             userId: string;
             /**
              * @default 1
@@ -2613,6 +2775,8 @@ export interface components {
         NoxSpotEnvironment: {
             buttonColor?: string | null;
             buttonText?: string | null;
+            /** @enum {string|null} */
+            captureMode?: "screenshot" | "dom" | null;
             enabled?: boolean;
             name: string;
             url: string;
@@ -2735,6 +2899,67 @@ export interface components {
             totalCount: number;
         } & {
             [key: string]: unknown;
+        };
+        PlanningAssistFeature: {
+            number: number;
+            owners?: string[];
+            title: string;
+        };
+        PlanningAssistRequest: {
+            features?: components["schemas"]["PlanningAssistFeature"][];
+            /** @enum {string} */
+            kind: "feature" | "task";
+            owner?: string;
+            prompt: string;
+        };
+        PlanningAssistResponse: {
+            draft: {
+                featureNumber: number | null;
+                title: string;
+            };
+        };
+        PlanningTask: {
+            color: components["schemas"]["PlanningTaskColor"];
+            /** Format: date-time */
+            completedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: string;
+            featureNumber: number | null;
+            /** Format: uuid */
+            id: string;
+            note: string;
+            owner: string;
+            position: number;
+            stageId: string;
+            /** @enum {string} */
+            status: "open" | "completed";
+            title: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @enum {string} */
+        PlanningTaskColor: "gray" | "blue" | "purple" | "green" | "yellow" | "orange" | "red" | "pink";
+        PlanningTaskCreate: {
+            color?: components["schemas"]["PlanningTaskColor"];
+            featureNumber?: number | null;
+            note?: string;
+            owner?: string;
+            position?: number;
+            /** @default todo */
+            stageId: string;
+            title: string;
+        };
+        PlanningTaskPatch: {
+            color?: components["schemas"]["PlanningTaskColor"];
+            featureNumber?: number | null;
+            note?: string;
+            owner?: string;
+            position?: number;
+            stageId?: string;
+            /** @enum {string} */
+            status?: "open" | "completed";
+            title?: string;
         };
         ProjectDestination: {
             channelId: string;
@@ -2900,6 +3125,54 @@ export interface components {
             /** @enum {string} */
             state: "available" | "blocked" | "complete";
             title: string;
+        };
+        SlackMessageDelivery: {
+            /** @constant */
+            apiVersion: 1;
+            delivery: {
+                channelId: string;
+                connectionId: string;
+                messageTs: string;
+                /** Format: date-time */
+                sentAt: string;
+                /** @constant */
+                status: "sent";
+            };
+        };
+        SlackMessagePayload: {
+            attachments?: {
+                [key: string]: unknown;
+            }[];
+            blocks?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: uuid */
+            client_msg_id?: string;
+            icon_emoji?: string;
+            /** Format: uri */
+            icon_url?: string;
+            link_names?: boolean;
+            markdown_text?: string;
+            metadata?: {
+                event_payload: {
+                    [key: string]: unknown;
+                };
+                event_type: string;
+            };
+            mrkdwn?: boolean;
+            /** @enum {string} */
+            parse?: "none" | "full";
+            reply_broadcast?: boolean;
+            text?: string;
+            thread_ts?: string;
+            unfurl_links?: boolean;
+            unfurl_media?: boolean;
+            username?: string;
+        };
+        SlackMessageRequest: {
+            channelId: string;
+            connectionId: string;
+            message: components["schemas"]["SlackMessagePayload"];
         };
         SlackProjectAssignment: {
             /** @description Project to own this workspace. Null is allowed only while it is the organization's sole workspace. */
@@ -4122,7 +4395,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NoxCueUserEvent"] | components["schemas"]["NoxCueError"] | components["schemas"]["NoxCueFeatureResult"] | components["schemas"]["NoxCueActivityEvent"];
+                "application/json": components["schemas"]["NoxCueUserEvent"] | components["schemas"]["NoxCueError"] | components["schemas"]["NoxCueFeatureResult"] | components["schemas"]["NoxCueActivityEvent"] | components["schemas"]["NoxCueTrackedEvent"];
             };
         };
         responses: {
@@ -4264,6 +4537,72 @@ export interface operations {
             400: components["responses"]["V1Error"];
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+        };
+    };
+    listNoxCueCards: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configured report cards */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+        };
+    };
+    updateNoxCueCards: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoxCueCardSelection"];
+            };
+        };
+        responses: {
+            /** @description Cards updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["V1Error"];
         };
@@ -4566,6 +4905,36 @@ export interface operations {
             429: components["responses"]["V1Error"];
         };
     };
+    listNoxCueKeys: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key lifecycle metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+        };
+    };
     createNoxCueKey: {
         parameters: {
             query?: never;
@@ -4631,6 +5000,38 @@ export interface operations {
             400: components["responses"]["V1Error"];
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+        };
+    };
+    rotateNoxCueKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                keyId: components["parameters"]["keyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Replacement key shown once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["V1Error"];
         };
@@ -5447,6 +5848,42 @@ export interface operations {
             429: components["responses"]["V1Error"];
         };
     };
+    sendSlackMessage: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlackMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Message sent */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlackMessageDelivery"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            413: components["responses"]["V1Error"];
+            415: components["responses"]["V1Error"];
+            422: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            502: components["responses"]["V1Error"];
+        };
+    };
     getSlackRouting: {
         parameters: {
             query?: never;
@@ -5871,6 +6308,40 @@ export interface operations {
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["V1Error"];
+        };
+    };
+    draftPlanningItem: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningAssistRequest"];
+            };
+        };
+        responses: {
+            /** @description A draft that must be explicitly accepted before creation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningAssistResponse"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            502: components["responses"]["V1Error"];
+            503: components["responses"]["V1Error"];
         };
     };
     listProjects: {
@@ -7888,6 +8359,142 @@ export interface operations {
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["V1Error"];
+        };
+    };
+    listPlanningTasks: {
+        parameters: {
+            query?: {
+                owner?: string;
+                status?: "open" | "completed" | "all";
+                featureNumber?: number | "general";
+            };
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planning tasks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningTask"][];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            503: components["responses"]["V1Error"];
+        };
+    };
+    createPlanningTask: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningTaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Planning task created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningTask"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            422: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            503: components["responses"]["V1Error"];
+        };
+    };
+    deletePlanningTask: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planning task deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationReceipt"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            503: components["responses"]["V1Error"];
+        };
+    };
+    updatePlanningTask: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningTaskPatch"];
+            };
+        };
+        responses: {
+            /** @description Planning task updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningTask"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            422: components["responses"]["V1Error"];
+            429: components["responses"]["V1Error"];
+            503: components["responses"]["V1Error"];
         };
     };
     listGitHubTeams: {
