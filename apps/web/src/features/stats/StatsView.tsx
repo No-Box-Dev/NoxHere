@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import type { CueStat } from "../../../api/contracts";
-import { platformApi } from "../../../api/platform";
-import { AsyncState } from "../../../components/AsyncState";
-import { ListRow } from "../../../components/ListRow";
-import { SegmentedControl } from "../../../components/SegmentedControl";
-import { Sparkline } from "../../../components/Sparkline";
-import { StatusTag } from "../../../components/StatusTag";
+import type { CueStat } from "../../api/contracts";
+import { platformApi } from "../../api/platform";
+import { AsyncState } from "../../components/AsyncState";
+import { ListRow } from "../../components/ListRow";
+import { SegmentedControl } from "../../components/SegmentedControl";
+import { Sparkline } from "../../components/Sparkline";
+import { StatusTag } from "../../components/StatusTag";
 
 type StatsViewProps = { organizationId: string; projectId: string };
 type StatsSubview = "dashboard" | "events";
@@ -46,7 +46,7 @@ function StatsDashboard({ organizationId, projectId }: StatsViewProps) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `noxcue-${projectId}-${range}.csv`;
+    link.download = `noxhere-stats-${projectId}-${range}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -127,8 +127,8 @@ function EngagementActionsEditor({ organizationId, projectId, onClose, initialAc
             </section>)}
           </div>
           {actions.length < 3 ? <button type="button" className="button cue-add-action" onClick={() => setActions((current) => [...current, { label: "", key: "" }])}>+ Add activity</button> : null}
-          <aside className="cue-template-output"><div><b>What NoxCue creates automatically</b><p>Each action gets a daily total plus a rolling {windowDays}-day engagement card with actions per active user, participation, and actions per participant.</p></div><pre><code>{snippet || "Your tracking calls will appear here."}</code></pre><button type="button" className="mini-button" disabled={!snippet} onClick={() => void navigator.clipboard.writeText(snippet).then(() => setCopied(true))}>{copied ? "Copied" : "Copy setup code"}</button></aside>
-          <p className="cue-advanced-note">Need more than three? Additional custom activity metrics remain available through the API and advanced NoxCue settings.</p>
+          <aside className="cue-template-output"><div><b>What Stats creates automatically</b><p>Each action gets a daily total plus a rolling {windowDays}-day engagement card with actions per active user, participation, and actions per participant.</p></div><pre><code>{snippet || "Your tracking calls will appear here."}</code></pre><button type="button" className="mini-button" disabled={!snippet} onClick={() => void navigator.clipboard.writeText(snippet).then(() => setCopied(true))}>{copied ? "Copied" : "Copy setup code"}</button></aside>
+          <p className="cue-advanced-note">Need more than three? Additional custom activity metrics remain available through the API and advanced Stats settings.</p>
           {save.error ? <p className="form-error">{save.error.message}</p> : null}
       </main>
       <footer><button type="button" className="button" onClick={onClose}>Cancel</button><button type="button" className="button primary-button" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save actions"}</button></footer>

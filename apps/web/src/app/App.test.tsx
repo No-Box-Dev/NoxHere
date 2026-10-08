@@ -250,6 +250,7 @@ describe("NoxConnect API-backed platform", () => {
     expect(await screen.findByRole("link", { name: "Planning" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Activity" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feedback" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Stats" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxConnect" })).toBeInTheDocument();
@@ -918,8 +919,8 @@ describe("NoxConnect API-backed platform", () => {
     expect(await screen.findByDisplayValue("Playnist Support")).toBeInTheDocument();
   });
 
-  it("scopes Incident requests to both the organization and project", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/cue/stats");
+  it("scopes Stats requests to both the organization and project", async () => {
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/stats/overview");
     expect(await screen.findByRole("button", { name: "Configure actions" })).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
       `/api/v1/projects/${project.id}/cue/dashboard?range=30d`,
@@ -940,7 +941,7 @@ describe("NoxConnect API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/cue/stats");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/stats/overview");
     await user.click(await screen.findByRole("button", { name: "Configure actions" }));
     const dialog = await screen.findByRole("dialog", { name: "Engagement actions" });
     expect(within(dialog).getByDisplayValue("custom.comments.written")).toBeInTheDocument();
@@ -967,13 +968,28 @@ describe("NoxConnect API-backed platform", () => {
       return baseFetch(input, init);
     });
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/cue/stats");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/stats/overview");
     expect(await screen.findByText("Comments per active user")).toBeInTheDocument();
     expect(screen.getByText("5.00")).toBeInTheDocument();
     expect(document.querySelector(".stat-equation")).toHaveTextContent("100 comments ÷ 20 active users");
     expect(screen.getByText("50.0%")).toBeInTheDocument();
     expect(screen.getByText("10.00")).toBeInTheDocument();
     expect(screen.getByText("↑ 25.0% vs previous 7 days")).toBeInTheDocument();
+  });
+
+  it("keeps Stats and Incidents separate while redirecting former NoxCue links", async () => {
+    const stats = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/stats/overview`);
+    expect(await screen.findByRole("navigation", { name: "Stats views" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Incident views" })).not.toBeInTheDocument();
+    stats.unmount();
+
+    const incidents = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/incidents/alerts`);
+    expect(await screen.findByRole("tablist", { name: "Alert views" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Stats views" })).not.toBeInTheDocument();
+    incidents.unmount();
+
+    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/cue/stats`);
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/stats/overview`));
   });
 
   it("hands NoxKey management off to the separate app", async () => {
@@ -998,7 +1014,7 @@ describe("NoxConnect API-backed platform", () => {
     const toggle = await screen.findByRole("button", { name: "Toggle Capabilities" });
     await user.click(toggle);
     expect(screen.getByText("Always available")).toBeInTheDocument();
-    expect(within(toggle.closest("details")!).getAllByText("Available")).toHaveLength(4);
+    expect(within(toggle.closest("details")!).getAllByText("Available")).toHaveLength(5);
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
     expect(vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes("/services/"))).toBe(false);
   });
@@ -1069,6 +1085,19 @@ describe("NoxConnect API-backed platform", () => {
     expect(fetch).toHaveBeenCalledWith("/api/v1/me", expect.objectContaining({
       headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
     }));
+  });
+
+  it("preserves former NoxCue guest access across Stats and Incidents", async () => {
+    const memberFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["noxcue"] });
+      return memberFetch(input, init);
+    });
+    renderApp(<App />, `/no-box-dev/${project.id}/stats/overview`);
+    expect(await screen.findByRole("link", { name: "Stats" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Planning" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
   });
 
   it("lets an admin track members without changing their access", async () => {

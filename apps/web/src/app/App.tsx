@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { AuthBoundary } from "./AuthBoundary";
 import { PlatformShell } from "./PlatformShell";
 
-const NoxCuePage = lazy(() => import("../features/noxcue/NoxCuePage"));
+const StatsPage = lazy(() => import("../features/stats/StatsPage"));
+const IncidentsPage = lazy(() => import("../features/incidents/IncidentsPage"));
 const NoxConnectPage = lazy(() => import("../features/connect/NoxConnectPage"));
 const NoxTicketPage = lazy(() => import("../features/ticket/NoxTicketPage"));
 const NoxFeedPage = lazy(() => import("../features/feed/NoxFeedPage"));
@@ -19,7 +20,9 @@ export function App() {
           <Route path="/" element={null} />
           <Route path="/:organizationId/select/:service/:view" element={<Navigate replace to="/" />} />
           <Route path="/:organizationId/:projectId" element={<PlatformShell />}>
-            <Route path="cue/:section" element={<NoxCuePage />} />
+            <Route path="stats/:section" element={<StatsPage />} />
+            <Route path="incidents/:section" element={<IncidentsPage />} />
+            <Route path="cue/:section" element={<LegacyCueRoute />} />
             <Route path="connect/:view" element={<NoxConnectPage />} />
             <Route path="ticket/:view" element={<NoxTicketPage />} />
             <Route path="feed/:view" element={<NoxFeedPage />} />
@@ -34,4 +37,11 @@ export function App() {
       </Suspense>
     </AuthBoundary>
   );
+}
+
+function LegacyCueRoute() {
+  const { organizationId = "", projectId = "", section = "stats" } = useParams();
+  const location = useLocation();
+  const destination = section === "alerts" ? "incidents/alerts" : section === "sources" ? "stats/sources" : "stats/overview";
+  return <Navigate replace to={`/${organizationId}/${projectId}/${destination}${location.search}`} />;
 }

@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { platformApi } from "../../../api/platform";
-import { AsyncState } from "../../../components/AsyncState";
-import { ListRow } from "../../../components/ListRow";
-import { SegmentedControl } from "../../../components/SegmentedControl";
-import { StatusTag } from "../../../components/StatusTag";
+import { platformApi } from "../../api/platform";
+import { AsyncState } from "../../components/AsyncState";
+import { ListRow } from "../../components/ListRow";
+import { SegmentedControl } from "../../components/SegmentedControl";
+import { StatusTag } from "../../components/StatusTag";
 
-type AlertsViewProps = { organizationId: string; projectId: string };
+type IncidentsViewProps = { organizationId: string; projectId: string };
 type AlertsSubview = "log" | "rules";
 
 const segments = [
@@ -14,7 +14,7 @@ const segments = [
   { id: "rules", label: "Alert rules", description: "What is being watched" },
 ] as const;
 
-export function AlertsView({ organizationId, projectId }: AlertsViewProps) {
+export function IncidentsView({ organizationId, projectId }: IncidentsViewProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const selected = searchParams.get("view") === "rules" ? "rules" : "log";
   const select = (view: AlertsSubview) => setSearchParams(view === "log" ? {} : { view });
@@ -27,7 +27,7 @@ export function AlertsView({ organizationId, projectId }: AlertsViewProps) {
   );
 }
 
-function AlertLog({ organizationId, projectId }: AlertsViewProps) {
+function AlertLog({ organizationId, projectId }: IncidentsViewProps) {
   const alerts = useQuery({
     queryKey: ["cue", organizationId, projectId, "alerts"],
     queryFn: ({ signal }) => platformApi.cueAlerts(organizationId, projectId, signal),
@@ -46,7 +46,7 @@ function AlertLog({ organizationId, projectId }: AlertsViewProps) {
   );
 }
 
-function AlertRules({ organizationId, projectId }: AlertsViewProps) {
+function AlertRules({ organizationId, projectId }: IncidentsViewProps) {
   const rules = useQuery({
     queryKey: ["cue", organizationId, projectId, "alert-rules"],
     queryFn: ({ signal }) => platformApi.cueAlertRules(organizationId, projectId, signal),
