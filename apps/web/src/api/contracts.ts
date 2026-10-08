@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const serviceIdSchema = z.enum(["connect", "ticket", "feed", "spot", "cue", "mail", "key"]);
+const serviceIdSchema = z.enum(["connect", "ticket", "feed", "spot", "stats", "incidents", "mail", "key"]);
 
 const projectConnectionSchema = z.object({
   id: z.string(),

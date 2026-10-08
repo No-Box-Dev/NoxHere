@@ -59,8 +59,8 @@ export const platformApi: PlatformApi = {
       : []);
     const integration = connectionsRaw as { github?: { connected?: boolean }; slack?: { connected?: boolean; teamName?: string | null } } | null;
     const guestServices = profile.accessLevel === "guest" ? new Set((profile.allowedServices ?? []).flatMap((id) => {
-      const mapped = ({ noxticket: "ticket", noxfeed: "feed", noxspot: "spot", noxcue: "cue" } as Record<string, ServiceId | undefined>)[id];
-      return mapped ? [mapped] : [];
+      const mapped = ({ noxticket: ["ticket"], noxfeed: ["feed"], noxspot: ["spot"], noxcue: ["stats", "incidents"] } as Record<string, ServiceId[] | undefined>)[id];
+      return mapped ?? [];
     })) : null;
     const projects: Project[] = projectRows.flatMap((row) => {
       if (row.archived === 1 || row.routing_enabled === 0) return [];

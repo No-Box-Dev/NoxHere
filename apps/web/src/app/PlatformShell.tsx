@@ -114,7 +114,8 @@ function ServiceIcon({ service }: { service: (typeof services)[number] }) {
       {service.id === "ticket" ? <><path d="M6 4v16M6 7h5a3 3 0 0 1 3 3v1a3 3 0 0 0 3 3h1" /><path d="m16 12 2 2 3-3" /></> : null}
       {service.id === "feed" ? <><path d="M6 7h12M6 12h12M6 17h8" /><circle cx="18" cy="17" r="1" /></> : null}
       {service.id === "spot" ? <><path d="M5 5.5h14v10H9l-4 3v-13Z" /><path d="M8 9h8M8 12h5" /></> : null}
-      {service.id === "cue" ? <><path d="M5 19V9M10 19V5M15 19v-7M20 19V8" /><path d="m5 8 5-4 5 7 5-4" /></> : null}
+      {service.id === "stats" ? <><path d="M5 19V9M10 19V5M15 19v-7M20 19V8" /><path d="m5 8 5-4 5 7 5-4" /></> : null}
+      {service.id === "incidents" ? <><path d="M12 4 21 20H3L12 4Z" /><path d="M12 9v5M12 17h.01" /></> : null}
       {service.id === "connect" ? <><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="7" r="2.5" /><circle cx="18" cy="17" r="2.5" /><path d="m8.5 11 7-3M8.5 13l7 3" /></> : null}
       {service.id === "key" ? <><circle cx="8" cy="12" r="3" /><path d="M11 12h9M17 12v3M20 12v2" /></> : null}
       {service.id === "mail" ? <><rect x="4" y="6" width="16" height="12" rx="2" /><path d="m5 8 7 5 7-5" /></> : null}

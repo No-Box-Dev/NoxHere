@@ -8,7 +8,7 @@ import { StatusTag } from "../../components/StatusTag";
 import { ProjectRepositories } from "../../components/ProjectRepositories";
 
 type ConnectSection = "services" | "connections" | "people" | "repositories";
-const serviceRows = [["ticket", "P", "Planning", "Planning and delivery"], ["feed", "A", "Activity", "Engineering activity and releases"], ["spot", "F", "Feedback", "Reports and reporter messaging"], ["cue", "I", "Incidents", "Product health and alerts"]] as const;
+const serviceRows = [["ticket", "P", "Planning", "Planning and delivery"], ["feed", "A", "Activity", "Engineering activity and releases"], ["spot", "F", "Feedback", "Reports and reporter messaging"], ["stats", "S", "Stats", "Product metrics and telemetry sources"], ["incidents", "I", "Incidents", "Product health and alerts"]] as const;
 
 export default function NoxConnectPage() {
   const { organizationId = "", projectId = "", view = "overview" } = useParams();
@@ -97,11 +97,11 @@ function GuestRow({ guest, status, pending = false }: { guest: GuestInvite; stat
 }
 
 function serviceName(id: "ticket" | "feed" | "spot" | "cue") {
-  return ({ ticket: "Planning", feed: "Activity", spot: "Feedback", cue: "Incidents" } as const)[id];
+  return ({ ticket: "Planning", feed: "Activity", spot: "Feedback", cue: "Stats and Incidents" } as const)[id];
 }
 
 function serviceNameFromApi(id: NonNullable<GuestInvite["service"]>) {
-  return ({ noxticket: "Planning", noxfeed: "Activity", noxspot: "Feedback", noxcue: "Incidents" } as const)[id];
+  return ({ noxticket: "Planning", noxfeed: "Activity", noxspot: "Feedback", noxcue: "Stats and Incidents" } as const)[id];
 }
 
 function repositoryNames(project?: Project) { return project?.connections.filter((connection) => connection.provider === "github").map((connection) => connection.label.split("/").at(-1) ?? connection.label) ?? []; }
