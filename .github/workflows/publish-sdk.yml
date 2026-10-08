@@ -51,7 +51,7 @@ jobs:
       - name: Build release archives and checksums
         run: |
           mkdir -p dist/sdk
-          npm pack --prefix packages/sdk --pack-destination "$PWD/dist/sdk"
+          npm pack ./packages/sdk --pack-destination "$PWD/dist/sdk"
           cp packages/python-sdk/dist/* dist/sdk/
           (cd dist/sdk && sha256sum * > SHA256SUMS)
       - name: Attest SDK release provenance
