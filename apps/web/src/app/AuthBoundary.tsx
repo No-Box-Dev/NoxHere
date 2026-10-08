@@ -1,19 +1,15 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "react-router-dom";
-import { ApiError, AUTH_REQUIRED_EVENT } from "../api/http";
+import { Navigate, useLocation } from "react-router-dom";
+import { AUTH_REQUIRED_EVENT } from "../api/http";
 import { platformApi } from "../api/platform";
-import { services } from "./service-registry";
-
-type Profile = {
-  user: { login: string; email?: string | null };
-  orgs: Array<{ login: string; role?: "guest" | "member" | "admin" }>;
-};
+import { WorkspaceProjectSelector, type WorkspaceProfile } from "./WorkspaceProjectSelector";
+import { readLastProject } from "./last-project";
 
 const githubClientId = import.meta.env.VITE_GITHUB_APP_CLIENT_ID || "Iv23liSD7Nx3fmV1OQfr";
 
 export function AuthBoundary({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<WorkspaceProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [initialScope] = useState(() => {
@@ -21,7 +17,6 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     return { organizationId: parts[0] ?? "", projectId: parts[1] === "select" ? "" : parts[1] ?? "" };
   });
   const location = useLocation();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -36,7 +31,7 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
       .then(async (response) => {
         if (response.status === 401) return null;
         if (!response.ok) throw new Error("Could not verify your Nox session");
-        return response.json() as Promise<Profile>;
+        return response.json() as Promise<WorkspaceProfile>;
       })
       .then(setProfile)
       .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not verify your Nox session"))
@@ -53,48 +48,17 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(AUTH_REQUIRED_EVENT, requireAuthentication);
   }, []);
 
-  useEffect(() => {
-    if (!profile || location.pathname !== "/") return;
-    const preferred = profile.orgs[0];
-    if (!preferred) return;
-
-    const organizationId = preferred.login.toLowerCase();
-    const controller = new AbortController();
-    void platformApi.bootstrap(organizationId, "", controller.signal).then((bootstrap) => {
-      const project = bootstrap.projects[0];
-      if (!project) {
-        setError("No project is available for this workspace");
-        return;
-      }
-
-      const guestService = services.find((service) => !service.hidden && bootstrap.actor.allowedServiceIds.includes(service.id));
-      if (bootstrap.actor.accessLevel === "guest" && !guestService) {
-        setError("No project capability is available for this account");
-        return;
-      }
-
-      // The project list and actor access do not change when the canonical
-      // project ID is added to the route. Seed that query so login performs
-      // one bootstrap request instead of immediately fetching the same data
-      // again after navigation.
-      queryClient.setQueryData(["platform", "bootstrap", organizationId, project.id], bootstrap);
-      const destination = bootstrap.actor.accessLevel === "guest" && guestService
-        ? `${guestService.id}/${guestService.defaultView}`
-        : "connect/overview";
-      void navigate(`/${encodeURIComponent(organizationId)}/${encodeURIComponent(project.id)}/${destination}`, { replace: true });
-    }).catch((cause: unknown) => {
-      if (cause instanceof DOMException && cause.name === "AbortError") return;
-      if (cause instanceof ApiError && cause.status === 401) return;
-      setError(cause instanceof Error ? cause.message : "Could not open your Nox workspace");
-    });
-    return () => controller.abort();
-  }, [location.pathname, navigate, profile, queryClient]);
-
   if (loading) return <div className="state-message" role="status"><span className="spinner" />Loading…</div>;
   if (error) return <div className="state-message error" role="alert"><b>Could not open Nox</b><span>{error}</span><button className="button secondary" onClick={() => window.location.reload()}>Retry</button></div>;
   if (!profile) return <Login />;
   if (!profile.orgs.length) return <div className="state-message"><b>No workspace access</b><span>Ask an administrator to invite this email or add your GitHub account.</span></div>;
-  if (location.pathname === "/") return <div className="state-message" role="status"><span className="spinner" />Opening your project…</div>;
+  if (location.pathname === "/") {
+    const chooseProject = new URLSearchParams(location.search).get("choose") === "1";
+    const lastProject = chooseProject ? null : readLastProject(profile.user.login);
+    const canOpenLastProject = lastProject && profile.orgs.some((organization) => organization.login.toLowerCase() === lastProject.organizationId.toLowerCase());
+    if (canOpenLastProject) return <Navigate replace to={`/${encodeURIComponent(lastProject.organizationId)}/${encodeURIComponent(lastProject.projectId)}/connect/overview`} />;
+    return <WorkspaceProjectSelector profile={profile} />;
+  }
   return children;
 }
 

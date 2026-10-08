@@ -170,7 +170,7 @@ async function payload(response: Response): Promise<unknown> {
   return response.arrayBuffer();
 }
 
-const SDK_VERSION = "0.2.0";
+const SDK_VERSION = "0.2.1";
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RETRY_DELAY_MS = 250;
 const MAX_RETRY_AFTER_MS = 30_000;

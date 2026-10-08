@@ -23,6 +23,7 @@ const EnvironmentInput = z.object({
   buttonColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
   buttonText: z.string().trim().min(1).max(40).nullable().optional(),
   widgetMode: z.enum(["development", "release"]).nullable().optional(),
+  captureMode: z.enum(["screenshot", "dom"]).nullable().optional(),
   enabled: z.boolean().optional(),
 });
 

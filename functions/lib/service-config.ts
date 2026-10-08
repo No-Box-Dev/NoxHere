@@ -92,7 +92,7 @@ export function serviceConfigLinks(service: ServiceId) {
   const base = `/api/v1/services/${service}`;
   const resources: Record<ServiceId, Record<string, string>> = {
     noxconnect: { connections: "/api/v1/integrations/connections", repositories: "/api/v1/projects", people: "/api/v1/actors" },
-    noxticket: { features: "/api/v1/features", specifications: "/api/v1/specs" },
+    noxticket: { features: "/api/v1/features", tasks: "/api/v1/tasks", specifications: "/api/v1/specs" },
     noxfeed: { feed: "/api/v1/feed", aiSettings: "/api/v1/llm-settings" },
     noxspot: { sites: "/api/v1/spots/sites" },
     noxcue: { sources: "/api/v1/cues/sources", metrics: "/api/v1/cues/metrics" },

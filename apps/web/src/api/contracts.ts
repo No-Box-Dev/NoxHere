@@ -28,6 +28,11 @@ export const projectSettingsSchema = z.object({
     label: z.string(),
     color: z.string(),
   })).optional(),
+  taskBoardStages: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    color: z.string(),
+  })).optional(),
 }).loose().nullable();
 
 export const slackRoutingSchema = z.object({
@@ -264,6 +269,22 @@ export const ticketFeatureAttachmentSchema = z.object({
   kind: z.enum(["image", "pdf"]),
 });
 
+export const planningTaskSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  note: z.string(),
+  owner: z.string(),
+  createdBy: z.string(),
+  color: z.enum(["gray", "blue", "purple", "green", "yellow", "orange", "red", "pink"]),
+  status: z.enum(["open", "completed"]),
+  featureNumber: z.number().int().positive().nullable(),
+  stageId: z.string(),
+  position: z.number().int().nonnegative(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  completedAt: z.string().nullable(),
+});
+
 export type Bootstrap = z.infer<typeof bootstrapSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type ProjectRouting = z.infer<typeof projectRoutingSchema>;
@@ -286,4 +307,5 @@ export type CueAlert = z.infer<typeof cueAlertSchema>;
 export type CueAlertRule = z.infer<typeof cueAlertRuleSchema>;
 export type RetrievalResult = z.infer<typeof retrievalResultSchema>;
 export type TicketFeatureRecord = z.infer<typeof ticketFeatureSchema>;
+export type PlanningTask = z.infer<typeof planningTaskSchema>;
 export type TicketFeatureAttachment = z.infer<typeof ticketFeatureAttachmentSchema>;

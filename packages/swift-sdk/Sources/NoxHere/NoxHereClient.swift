@@ -111,7 +111,7 @@ public struct NoxHereClient: Sendable {
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = operation.method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("swift/0.2.0", forHTTPHeaderField: "X-NoxHere-SDK")
+        request.setValue("swift/0.2.1", forHTTPHeaderField: "X-NoxHere-SDK")
         if usesPlatformAuthentication, let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         if usesPlatformAuthentication, let organization { request.setValue(organization, forHTTPHeaderField: "X-Org") }
         if usesPlatformAuthentication, let projectID { request.setValue(projectID, forHTTPHeaderField: "X-Project-ID") }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { deleteRawJson, getRawJson, postRawJson } from "../../api/http";
+import { useConfirmDialog } from "../../components/ConfirmDialog";
 
 type TokenRecord = {
   id: string; name: string; environment: "live" | "test"; projectId: string; projectName?: string | null;
@@ -11,6 +12,7 @@ type SecretResponse = { token: string; warning: string };
 const SERVICE_SCOPES = ["noxfeed", "noxspot", "noxcue"] as const;
 
 export function ApiTokens({ organizationId, projectId, projectName, isAdmin }: { organizationId: string; projectId: string; projectName: string; isAdmin: boolean }) {
+  const { confirm, confirmation } = useConfirmDialog();
   const scope = { organizationId, projectId };
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
@@ -44,7 +46,8 @@ export function ApiTokens({ organizationId, projectId, projectName, isAdmin }: {
       {create.error ? <small role="alert">{create.error.message}</small> : null}
     </section>
     <section className="settings-card"><header><div><b>Active tokens</b><p>Only prefixes and metadata remain visible after creation.</p></div><button type="button" className="mini-button" onClick={() => void tokens.refetch()}>Refresh</button></header>
-      {tokens.isLoading ? <p>Loading tokens…</p> : tokens.isError ? <p role="alert">Could not load API tokens.</p> : active.length ? <div className="list-surface">{active.map((token) => <div className="list-row" key={token.id}><span className="row-symbol">K</span><span className="list-copy"><b>{token.name}</b><small><code>{token.prefix}…</code> · {token.environment} · expires {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString() : "never"}<br />{token.scopes.join(", ")}</small></span><span className="list-meta"><button className="mini-button" disabled={rotate.isPending} onClick={() => { if (window.confirm(`Rotate ${token.name}? The current token will stop working after the overlap window.`)) rotate.mutate(token.id); }}>Rotate</button><button className="mini-button destructive" disabled={revoke.isPending} onClick={() => { if (window.confirm(`Revoke ${token.name}?`)) revoke.mutate(token.id); }}>Revoke</button></span></div>)}</div> : <div className="connect-empty"><b>No active automation tokens</b><p>Create one when an internal service or automation needs API access.</p></div>}
+      {tokens.isLoading ? <p>Loading tokens…</p> : tokens.isError ? <p role="alert">Could not load API tokens.</p> : active.length ? <div className="list-surface">{active.map((token) => <div className="list-row" key={token.id}><span className="row-symbol">K</span><span className="list-copy"><b>{token.name}</b><small><code>{token.prefix}…</code> · {token.environment} · expires {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString() : "never"}<br />{token.scopes.join(", ")}</small></span><span className="list-meta"><button className="mini-button" disabled={rotate.isPending} onClick={() => void confirm({ title: "Rotate automation token?", detail: `${token.name} will receive a new secret and the current secret will stop working after the overlap window.`, confirmLabel: "Rotate token" }).then((confirmed) => { if (confirmed) rotate.mutate(token.id); })}>Rotate</button><button className="mini-button destructive" disabled={revoke.isPending} onClick={() => void confirm({ title: "Revoke automation token?", detail: `${token.name} will stop working immediately.`, confirmLabel: "Revoke token", destructive: true }).then((confirmed) => { if (confirmed) revoke.mutate(token.id); })}>Revoke</button></span></div>)}</div> : <div className="connect-empty"><b>No active automation tokens</b><p>Create one when an internal service or automation needs API access.</p></div>}
     </section>
+    {confirmation}
   </div>;
 }

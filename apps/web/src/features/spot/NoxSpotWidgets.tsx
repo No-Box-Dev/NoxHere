@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { deleteRawJson, getRawJson, patchRawJson, postRawJson, type RequestScope } from "../../api/http";
 import { platformApi } from "../../api/platform";
+import { useConfirmDialog } from "../../components/ConfirmDialog";
 
 type WidgetEnvironment = {
   name: string;
@@ -9,6 +10,7 @@ type WidgetEnvironment = {
   buttonColor?: string | null;
   buttonText?: string | null;
   widgetMode?: "development" | "release" | null;
+  captureMode?: "screenshot" | "dom" | null;
   enabled?: boolean;
 };
 
@@ -76,6 +78,7 @@ export function NoxSpotWidgets({ organizationId, projectId, isAdmin }: { organiz
 }
 
 function WidgetSiteCard({ site, scope, isAdmin }: { site: WidgetSite; scope: RequestScope; isAdmin: boolean }) {
+  const { confirm, confirmation } = useConfirmDialog();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [slackDraft, setSlackDraft] = useState(site.slackChannelId ?? "");
@@ -99,7 +102,8 @@ function WidgetSiteCard({ site, scope, isAdmin }: { site: WidgetSite; scope: Req
     }}>{copied ? "Copied" : "Copy"}</button></div></section>
     {site.slackPendingCount || site.slackBlockedCount ? <div className="widget-delivery-health"><span>{site.slackPendingCount ?? 0} pending · {site.slackBlockedCount ?? 0} blocked</span>{site.slackLastError ? <small>{site.slackLastError}</small> : null}{isAdmin ? <button className="mini-button" disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "Retrying…" : "Retry deliveries"}</button> : null}</div> : null}
     {isAdmin ? <div className="widget-slack-route"><label>Slack destination<select value={slackDraft} disabled={!connection} onChange={(event) => setSlackDraft(event.target.value)}><option value="">Use organization fallback</option>{(channels.data?.channels ?? []).filter((channel) => !channel.is_archived).map((channel) => <option value={channel.id} key={channel.id}>#{channel.name}</option>)}</select></label><button className="button" disabled={update.isPending || slackDraft === (site.slackChannelId ?? "")} onClick={() => update.mutate({ slackChannelId: slackDraft || null, slackConnectionId: slackDraft ? connection?.id : null })}>Save Slack route</button><button className="button" disabled={!slackDraft || testSlack.isPending} onClick={() => testSlack.mutate()}>{testSlack.isPending ? "Testing…" : "Send test"}</button>{testSlack.isSuccess ? <small role="status">Test delivered.</small> : testSlack.error ? <small role="alert">{testSlack.error.message}</small> : null}</div> : null}
-    {isAdmin ? <><WidgetEditor key={`${site.id}:${site.updatedAt ?? ""}`} site={site} pending={update.isPending} error={update.error} onSave={(body) => update.mutate(body)} /><button type="button" className="mini-button destructive widget-delete" disabled={remove.isPending} onClick={() => { if (window.confirm(`Delete ${site.name}? Its widget will stop loading and its stored screenshots will be removed.`)) remove.mutate(); }}>{remove.isPending ? "Deleting…" : "Delete capture site"}</button></> : null}
+    {isAdmin ? <><WidgetEditor key={`${site.id}:${site.updatedAt ?? ""}`} site={site} pending={update.isPending} error={update.error} onSave={(body) => update.mutate(body)} /><button type="button" className="mini-button destructive widget-delete" disabled={remove.isPending} onClick={() => void confirm({ title: "Delete capture site?", detail: `${site.name} will stop loading and its stored screenshots will be removed.`, confirmLabel: "Delete site", destructive: true }).then((confirmed) => { if (confirmed) remove.mutate(); })}>{remove.isPending ? "Deleting…" : "Delete capture site"}</button></> : null}
+    {confirmation}
   </article>;
 }
 
@@ -133,6 +137,7 @@ function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pend
           <label>Name<input value={environment.name} maxLength={60} onChange={(event) => setEnvironments((current) => current.map((item, currentIndex) => currentIndex === index ? { ...item, name: event.target.value } : item))} /></label>
           <label>Origin<input value={environment.url} maxLength={500} placeholder="https://app.example.com" onChange={(event) => setEnvironments((current) => current.map((item, currentIndex) => currentIndex === index ? { ...item, url: event.target.value } : item))} /></label>
           <label className="widget-check"><input type="checkbox" checked={environment.enabled !== false} onChange={(event) => setEnvironments((current) => current.map((item, currentIndex) => currentIndex === index ? { ...item, enabled: event.target.checked } : item))} /> Enabled</label>
+          <label>Capture<select aria-label={`${environment.name} capture mode`} value={environment.captureMode ?? "dom"} onChange={(event) => setEnvironments((current) => current.map((item, currentIndex) => currentIndex === index ? { ...item, captureMode: event.target.value as "screenshot" | "dom" } : item))}><option value="dom">Screenshot + DOM selector</option><option value="screenshot">Screenshot only</option></select></label>
           <button type="button" className="widget-remove" onClick={() => setEnvironments((current) => current.filter((_, currentIndex) => currentIndex !== index))}>Remove</button>
         </div>)}
       </div>

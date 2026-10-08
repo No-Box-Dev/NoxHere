@@ -267,6 +267,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "createPlanningTask",
+    "method": "POST",
+    "path": "/api/v1/tasks",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "createProject",
     "method": "POST",
     "path": "/api/v1/projects",
@@ -376,6 +393,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "deletePlanningTask",
+    "method": "DELETE",
+    "path": "/api/v1/tasks/{id}",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "deleteSpecAttachment",
     "method": "DELETE",
     "path": "/api/v1/specs/{specId}/attachments/{attachmentId}",
@@ -449,6 +481,23 @@ export const operationDefinitions = [
     "requestContentTypes": [],
     "responseContentTypes": [
       "application/octet-stream"
+    ],
+    "servers": []
+  },
+  {
+    "id": "draftPlanningItem",
+    "method": "POST",
+    "path": "/api/v1/planning/assist",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
     ],
     "servers": []
   },
@@ -1466,6 +1515,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "listPlanningTasks",
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "listProjects",
     "method": "GET",
     "path": "/api/v1/projects",
@@ -2368,6 +2432,23 @@ export const operationDefinitions = [
     "namespace": "feedback",
     "authentication": "admin",
     "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updatePlanningTask",
+    "method": "PATCH",
+    "path": "/api/v1/tasks/{id}",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [

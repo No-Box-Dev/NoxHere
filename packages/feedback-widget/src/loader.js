@@ -48,6 +48,7 @@ const config = {
   shortcut: DEFAULT_SHORTCUT,
   members: [],
   blocks: DEFAULT_BLOCKS,
+  captureMode: 'dom',
 };
 
 // Same env-scope rule as categories: NULL/empty environments means "all envs".
@@ -307,6 +308,7 @@ async function fetchConfig() {
 
     const data = await response.json();
     config.autoErrorLogging = !!data.autoErrorLogging;
+    config.captureMode = data.captureMode === 'screenshot' ? 'screenshot' : 'dom';
     const rawCategories = Array.isArray(data.categories) ? data.categories : [];
     const rawBlocks = Array.isArray(data.blocks) ? data.blocks : [];
 
@@ -340,7 +342,10 @@ async function fetchConfig() {
     // (older deploy, fetch hiccup), fall back so the widget still renders a
     // usable form.
     const filteredBlocks = filterByEnvironment(rawBlocks, matchedEnvName);
-    config.blocks = filteredBlocks.length ? filteredBlocks : DEFAULT_BLOCKS;
+    const effectiveBlocks = filteredBlocks.length ? filteredBlocks : DEFAULT_BLOCKS;
+    config.blocks = config.captureMode === 'dom'
+      ? (hasBlock(effectiveBlocks, 'element_picker') ? effectiveBlocks : [...effectiveBlocks, { id: 'capture-element-picker', type: 'element_picker', required: false }])
+      : effectiveBlocks.filter((block) => block?.type !== 'element_picker');
 
     if (config.autoErrorLogging) {
       autoErrorCleanup = autoReportErrors(config.siteId, API_URL);

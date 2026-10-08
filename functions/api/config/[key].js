@@ -179,6 +179,11 @@ export async function onRequestPut(context) {
     }
   }
 
+  if (key === "settings" && body && typeof body === "object" && body.taskBoardStages !== undefined) {
+    const result = validateBoardStages(body.taskBoardStages);
+    if (!result.ok) return errorResponse(result.error.replaceAll("boardStages", "taskBoardStages"), 422);
+  }
+
   if (slackWasSupplied && body?.slack && typeof body.slack === "object") {
     const routes = SLACK_ROUTES.flatMap(([channelKey, connectionKey]) => {
       const channelId = typeof body.slack[channelKey] === "string" ? body.slack[channelKey].trim() : "";

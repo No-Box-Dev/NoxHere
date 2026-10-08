@@ -129,7 +129,7 @@ describe("Nox service capabilities API", () => {
       "workflow", "storage", "delivery",
     ]);
     expect(body.service.capabilities.map((capability: { id: string }) => capability.id)).toEqual([
-      "features", "workflow", "specs", "ticket_delivery",
+      "features", "tasks", "workflow", "specs", "ticket_delivery",
     ]);
   });
 

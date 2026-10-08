@@ -254,6 +254,7 @@ class NoxSpotBlock(TypedDict, total=False):
 class NoxSpotEnvironment(TypedDict, total=False):
     buttonColor: NotRequired[Union[str, None]]
     buttonText: NotRequired[Union[str, None]]
+    captureMode: NotRequired[Literal['screenshot', 'dom', None]]
     enabled: NotRequired[bool]
     name: Required[str]
     url: Required[str]
@@ -327,6 +328,56 @@ class PaginatedRecords(TypedDict, total=False):
     page: Required[int]
     pageSize: Required[int]
     totalCount: Required[int]
+
+class PlanningAssistFeature(TypedDict, total=False):
+    number: Required[int]
+    owners: NotRequired[list[str]]
+    title: Required[str]
+
+class PlanningAssistRequest(TypedDict, total=False):
+    features: NotRequired[list["PlanningAssistFeature"]]
+    kind: Required[Literal['feature', 'task']]
+    owner: NotRequired[str]
+    prompt: Required[str]
+
+class PlanningAssistResponse(TypedDict, total=False):
+    draft: Required["PlanningAssistResponseDraft"]
+
+class PlanningTask(TypedDict, total=False):
+    color: Required["PlanningTaskColor"]
+    completedAt: Required[Union[str, None]]
+    createdAt: Required[str]
+    createdBy: Required[str]
+    featureNumber: Required[Union[int, None]]
+    id: Required[str]
+    note: Required[str]
+    owner: Required[str]
+    position: Required[int]
+    stageId: Required[str]
+    status: Required[Literal['open', 'completed']]
+    title: Required[str]
+    updatedAt: Required[str]
+
+PlanningTaskColor: TypeAlias = Literal['gray', 'blue', 'purple', 'green', 'yellow', 'orange', 'red', 'pink']
+
+class PlanningTaskCreate(TypedDict, total=False):
+    color: NotRequired["PlanningTaskColor"]
+    featureNumber: NotRequired[Union[int, None]]
+    note: NotRequired[str]
+    owner: NotRequired[str]
+    position: NotRequired[int]
+    stageId: NotRequired[str]
+    title: Required[str]
+
+class PlanningTaskPatch(TypedDict, total=False):
+    color: NotRequired["PlanningTaskColor"]
+    featureNumber: NotRequired[Union[int, None]]
+    note: NotRequired[str]
+    owner: NotRequired[str]
+    position: NotRequired[int]
+    stageId: NotRequired[str]
+    status: NotRequired[Literal['open', 'completed']]
+    title: NotRequired[str]
 
 class ProjectDestination(TypedDict, total=False):
     channelId: Required[str]
@@ -549,6 +600,9 @@ class DeleteNoxCueSourcePath(TypedDict, total=False):
 class DeleteNoxSpotSitePath(TypedDict, total=False):
     siteId: Required[str]
 
+class DeletePlanningTaskPath(TypedDict, total=False):
+    id: Required[str]
+
 class DeleteSpecAttachmentPath(TypedDict, total=False):
     specId: Required[int]
     attachmentId: Required[int]
@@ -684,6 +738,11 @@ class ListNoxCueFeaturesPath(TypedDict, total=False):
 
 class ListNoxCueKeysPath(TypedDict, total=False):
     sourceId: Required[str]
+
+class ListPlanningTasksQuery(TypedDict, total=False):
+    owner: NotRequired[str]
+    status: NotRequired[Literal['open', 'completed', 'all']]
+    featureNumber: NotRequired[Union[int, Literal['general']]]
 
 class ListPullRequestsQuery(TypedDict, total=False):
     state: NotRequired[str]
@@ -831,6 +890,9 @@ class UpdateNoxSpotResolutionTemplateBody(TypedDict, total=False):
 class UpdateNoxSpotSitePath(TypedDict, total=False):
     siteId: Required[str]
 
+class UpdatePlanningTaskPath(TypedDict, total=False):
+    id: Required[str]
+
 class UpdateProjectIncidentPath(TypedDict, total=False):
     projectId: Required[str]
     incidentId: Required[str]
@@ -911,6 +973,10 @@ class NoxSpotResolutionTemplateAppearance(TypedDict, total=False):
 
 class NoxTicketConfigPatchWorkflow(TypedDict, total=False):
     stages: Required[list["NoxTicketConfigPatchWorkflowStages"]]
+
+class PlanningAssistResponseDraft(TypedDict, total=False):
+    featureNumber: Required[Union[int, None]]
+    title: Required[str]
 
 class ProjectRoutingInputRoutes(TypedDict, total=False):
     noxCue: Required["ProjectDestination"]

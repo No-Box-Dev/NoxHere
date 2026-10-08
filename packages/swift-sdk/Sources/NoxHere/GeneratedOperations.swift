@@ -28,7 +28,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 155
+    public static let operationCount = 160
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -46,6 +46,7 @@ public enum NoxHereOperations {
         "createNoxCueKey": .init(id: "createNoxCueKey", method: "POST", path: "/api/v1/cues/sources/{sourceId}/keys", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "createNoxCueSource": .init(id: "createNoxCueSource", method: "POST", path: "/api/v1/cues/sources", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "createNoxSpotSite": .init(id: "createNoxSpotSite", method: "POST", path: "/api/v1/spots/sites", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
+        "createPlanningTask": .init(id: "createPlanningTask", method: "POST", path: "/api/v1/tasks", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "createProject": .init(id: "createProject", method: "POST", path: "/api/v1/projects", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "createSpec": .init(id: "createSpec", method: "POST", path: "/api/v1/specs", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
         "deleteFeatureAttachment": .init(id: "deleteFeatureAttachment", method: "DELETE", path: "/api/v1/features/{number}/attachments/{attachmentId}", resource: .planning, changeSafety: .destructive, servers: []),
@@ -53,11 +54,13 @@ public enum NoxHereOperations {
         "deleteNoxCueCustomMetric": .init(id: "deleteNoxCueCustomMetric", method: "DELETE", path: "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}", resource: .incidents, changeSafety: .destructive, servers: []),
         "deleteNoxCueSource": .init(id: "deleteNoxCueSource", method: "DELETE", path: "/api/v1/cues/sources/{sourceId}", resource: .incidents, changeSafety: .destructive, servers: []),
         "deleteNoxSpotSite": .init(id: "deleteNoxSpotSite", method: "DELETE", path: "/api/v1/spots/sites/{siteId}", resource: .feedback, changeSafety: .destructive, servers: []),
+        "deletePlanningTask": .init(id: "deletePlanningTask", method: "DELETE", path: "/api/v1/tasks/{id}", resource: .workspace, changeSafety: .destructive, servers: []),
         "deleteSpecAttachment": .init(id: "deleteSpecAttachment", method: "DELETE", path: "/api/v1/specs/{specId}/attachments/{attachmentId}", resource: .planning, changeSafety: .destructive, servers: []),
         "disconnectConnection": .init(id: "disconnectConnection", method: "POST", path: "/api/v1/integrations/connections/{provider}/disconnect", resource: .workspace, changeSafety: .destructive, servers: []),
         "disconnectSlackWorkspace": .init(id: "disconnectSlackWorkspace", method: "POST", path: "/api/v1/slack/disconnect", resource: .workspace, changeSafety: .destructive, servers: []),
         "downloadFeatureAttachment": .init(id: "downloadFeatureAttachment", method: "GET", path: "/api/v1/features/{number}/attachments/{attachmentId}", resource: .planning, changeSafety: .safeRead, servers: []),
         "downloadSpecAttachment": .init(id: "downloadSpecAttachment", method: "GET", path: "/api/v1/specs/{specId}/attachments/{attachmentId}", resource: .planning, changeSafety: .safeRead, servers: []),
+        "draftPlanningItem": .init(id: "draftPlanningItem", method: "POST", path: "/api/v1/planning/assist", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "exchangeLegacyNativeCredential": .init(id: "exchangeLegacyNativeCredential", method: "POST", path: "/api/v1/auth/native/exchange", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "getActor": .init(id: "getActor", method: "GET", path: "/api/v1/actors/{actorId}", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getAiSettings": .init(id: "getAiSettings", method: "GET", path: "/api/v1/llm-settings", resource: .activity, changeSafety: .safeRead, servers: []),
@@ -125,6 +128,7 @@ public enum NoxHereOperations {
         "listNoxServices": .init(id: "listNoxServices", method: "GET", path: "/api/v1/services", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listNoxSpotSites": .init(id: "listNoxSpotSites", method: "GET", path: "/api/v1/spots/sites", resource: .feedback, changeSafety: .safeRead, servers: []),
         "listOperationFailures": .init(id: "listOperationFailures", method: "GET", path: "/api/v1/op-failures", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "listPlanningTasks": .init(id: "listPlanningTasks", method: "GET", path: "/api/v1/tasks", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listProjects": .init(id: "listProjects", method: "GET", path: "/api/v1/projects", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listPullRequests": .init(id: "listPullRequests", method: "GET", path: "/api/v1/prs", resource: .activity, changeSafety: .safeRead, servers: []),
         "listRepositories": .init(id: "listRepositories", method: "GET", path: "/api/v1/repos", resource: .workspace, changeSafety: .safeRead, servers: []),
@@ -180,6 +184,7 @@ public enum NoxHereOperations {
         "updateNoxSpotReport": .init(id: "updateNoxSpotReport", method: "PATCH", path: "/api/v1/spots/reports/{reportId}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateNoxSpotResolutionTemplate": .init(id: "updateNoxSpotResolutionTemplate", method: "PATCH", path: "/api/v1/spots/sites/{siteId}/resolution-template", resource: .feedback, changeSafety: .conditionalWrite, servers: []),
         "updateNoxSpotSite": .init(id: "updateNoxSpotSite", method: "PATCH", path: "/api/v1/spots/sites/{siteId}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updatePlanningTask": .init(id: "updatePlanningTask", method: "PATCH", path: "/api/v1/tasks/{id}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateProjectIncident": .init(id: "updateProjectIncident", method: "PATCH", path: "/api/v1/projects/{projectId}/incidents/{incidentId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateProjectRouting": .init(id: "updateProjectRouting", method: "PUT", path: "/api/v1/projects/{projectId}/routing", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateSpec": .init(id: "updateSpec", method: "PATCH", path: "/api/v1/specs/{specId}", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),

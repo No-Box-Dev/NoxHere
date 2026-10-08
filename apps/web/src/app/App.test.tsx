@@ -23,7 +23,20 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+function memoryStorage(): Storage {
+  const values = new Map<string, string>();
+  return {
+    get length() { return values.size; },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => [...values.keys()][index] ?? null,
+    removeItem: (key) => { values.delete(key); },
+    setItem: (key, value) => { values.set(key, value); },
+  };
+}
+
 beforeEach(() => {
+  vi.stubGlobal("localStorage", memoryStorage());
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url === "/api/auth/profile") return json({ user: { login: "JasperNoBoxDev", email: "jasper@noboxdev.com" }, orgs: [{ login: "No-Box-Dev", role: "admin" }] });
@@ -71,7 +84,14 @@ beforeEach(() => {
     ]);
     if (url === "/api/v1/config/settings" && init?.method === "PUT") return json({ ok: true });
     if (url === "/api/v1/config/settings") return json({ excludedMembers: ["memenoboxdev"] });
+    if (url === "/api/v1/feed/current-summary") return json({
+      prs: [],
+      issues: [],
+      members: [{ login: "JasperNoBoxDev", avatar_url: "https://avatars.githubusercontent.com/u/196446605?v=4", kind: "human" }],
+      excludedMembers: ["memenoboxdev"],
+    });
     if (url.startsWith("/api/v1/features?state=all")) return json([]);
+    if (url === "/api/v1/tasks?status=all") return json([]);
     if (url.startsWith("/api/v1/specs")) return json({ specs: [] });
     if (url.startsWith("/api/v1/prs") || url.startsWith("/api/v1/issues")) return json({ data: [], totalCount: 0, page: 1, pageSize: 100 });
     if (url.startsWith("/api/v1/spots/project-overview")) return json({ issues: [] });
@@ -136,22 +156,91 @@ describe("NoxConnect API-backed platform", () => {
     });
   });
 
-  it("opens the first authorized project after login without using a placeholder project URL", async () => {
+  it("always shows a workspace and project selector after login", async () => {
+    const user = userEvent.setup();
     renderApp(<><App /><CurrentRoute /></>, "/");
 
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(
-      "/no-box-dev/proj_no-box-dev_playnist/connect/overview",
-    ));
-    expect(await screen.findByRole("link", { name: "NoxConnect" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Workspace" })).toHaveValue("no-box-dev");
+    expect(await screen.findByRole("combobox", { name: "Project" })).toHaveValue(project.id);
+    expect(screen.getByTestId("current-route")).toHaveTextContent("/");
+    await user.click(screen.getByRole("button", { name: "Open project" }));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
     expect(vi.mocked(fetch).mock.calls.some(([, init]) => new Headers(init?.headers).get("X-Project-ID") === "select")).toBe(false);
   });
 
-  it("repairs the former placeholder project URL", async () => {
+  it("opens the last valid project for the signed-in person without showing the chooser", async () => {
+    localStorage.setItem("noxhere.last-project.jaspernoboxdev", JSON.stringify({ organizationId: "no-box-dev", projectId: project.id }));
+    renderApp(<><App /><CurrentRoute /></>, "/");
+
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
+    expect(screen.queryByRole("heading", { name: "Choose a project" })).not.toBeInTheDocument();
+  });
+
+  it("lets an admin create the first project in an empty workspace", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/auth/profile") return json({ user: { login: "JasperNoBoxDev" }, orgs: [{ login: "JasperNoBoxDev", role: "admin" }, { login: "No-Box-Dev", role: "admin" }] });
+      if (url.startsWith("/api/v1/projects") && init?.method !== "POST" && new Headers(init?.headers).get("X-Org") === "jaspernoboxdev") return json({ projects: [] });
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+
+    renderApp(<><App /><CurrentRoute /></>, "/");
+    const workspaceSelector = await screen.findByRole("combobox", { name: "Workspace" });
+    expect(workspaceSelector).toHaveValue("jaspernoboxdev");
+    expect(await screen.findByText("No projects yet")).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "New project name" }), "First project");
+    await user.click(screen.getByRole("button", { name: "Create project" }));
+
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/jaspernoboxdev/proj_created/connect/overview"));
+    expect(fetch).toHaveBeenCalledWith("/api/v1/projects", expect.objectContaining({
+      method: "POST",
+      headers: expect.objectContaining({ "X-Org": "jaspernoboxdev" }),
+      body: JSON.stringify({ name: "First project" }),
+    }));
+  });
+
+  it("keeps the workspace selector reachable from every project", async () => {
+    const user = userEvent.setup();
+    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/connect/overview`);
+
+    await user.click(await screen.findByRole("link", { name: "All workspaces and projects" }));
+    expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
+    expect(screen.getByTestId("current-route")).toHaveTextContent("/");
+  });
+
+  it("uses permanent NoxHere branding and keeps project selection in the top bar", async () => {
+    renderApp(<App />, `/no-box-dev/${project.id}/connect/overview`);
+
+    expect(await screen.findByRole("link", { name: "NoxHere home" })).toHaveTextContent("NoxHere");
+    expect(screen.getByRole("button", { name: "Open project switcher" })).toHaveTextContent("Projects");
+    expect(screen.queryByText(project.name)?.closest(".brand-row")).toBeNull();
+  });
+
+  it("returns an unknown project URL to the chooser instead of selecting the first project", async () => {
+    renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/unknown-project/connect/overview");
+
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/"));
+    expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
+  });
+
+  it("remembers the selected project separately for the signed-in person", async () => {
+    renderApp(<App />, `/no-box-dev/${project.id}/connect/overview`);
+
+    await screen.findByRole("link", { name: "NoxHere home" });
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("noxhere.last-project.jaspernoboxdev") ?? "null")).toEqual({
+      organizationId: "no-box-dev",
+      projectId: project.id,
+    }));
+  });
+
+  it("returns the former placeholder project URL to the project selector", async () => {
     renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/select/connect/overview");
 
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(
-      "/no-box-dev/proj_no-box-dev_playnist/connect/overview",
-    ));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/"));
+    expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
     expect(vi.mocked(fetch).mock.calls.some(([, init]) => new Headers(init?.headers).get("X-Project-ID") === "select")).toBe(false);
   });
 
@@ -293,16 +382,97 @@ describe("NoxConnect API-backed platform", () => {
     expect(await screen.findByText("Ready to complete")).toBeInTheDocument();
   });
 
-  it("uses one Planning menu for Features, Backlog, Completed, and Settings", async () => {
+  it("uses one Planning menu for Features, Tasks, Backlog, Completed, and Settings", async () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
 
     const planningMenu = await screen.findByRole("navigation", { name: "Service views" });
     expect(within(planningMenu).getByRole("link", { name: "Features" })).toHaveClass("active");
+    expect(within(planningMenu).getByRole("link", { name: "Tasks" })).toBeInTheDocument();
     expect(within(planningMenu).getByRole("link", { name: "Backlog" })).toBeInTheDocument();
     expect(within(planningMenu).getByRole("link", { name: "Completed" })).toBeInTheDocument();
     expect(within(planningMenu).getByRole("link", { name: "Settings" })).toBeInTheDocument();
     expect(within(planningMenu).queryByRole("link", { name: "Activity" })).not.toBeInTheDocument();
     expect(screen.queryByRole("tablist", { name: "Feature views" })).not.toBeInTheDocument();
+  });
+
+  it("defaults both boards to the signed-in person and can switch the Tasks board to a teammate", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/features?state=all") return json([
+        { number: 31, title: "My feature", state: "open", status: "todo", backlog: false, priority: 3, owners: ["JasperNoBoxDev"], description: "", links: [] },
+        { number: 32, title: "Teammate feature", state: "open", status: "todo", backlog: false, priority: 3, owners: ["memenoboxdev"], description: "", links: [] },
+      ]);
+      if (String(input) === "/api/v1/tasks?status=all") return json([
+        { id: "11111111-1111-4111-8111-111111111111", title: "My task", note: "", owner: "JasperNoBoxDev", createdBy: "JasperNoBoxDev", color: "blue", status: "open", featureNumber: null, stageId: "todo", position: 0, createdAt: "2026-10-07T00:00:00Z", updatedAt: "2026-10-07T00:00:00Z", completedAt: null },
+        { id: "22222222-2222-4222-8222-222222222222", title: "Teammate task", note: "", owner: "memenoboxdev", createdBy: "JasperNoBoxDev", color: "pink", status: "open", featureNumber: null, stageId: "todo", position: 0, createdAt: "2026-10-07T00:00:00Z", updatedAt: "2026-10-07T00:00:00Z", completedAt: null },
+      ]);
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+
+    expect(await screen.findByRole("combobox", { name: "Planning for person" })).toHaveValue("JasperNoBoxDev (you)");
+    expect(screen.getByText("My feature")).toBeInTheDocument();
+    expect(screen.queryByText("Teammate feature")).not.toBeInTheDocument();
+    expect(screen.queryByText("My task")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Tasks" }));
+    expect(await screen.findByRole("combobox", { name: "Tasks for person" })).toHaveValue("JasperNoBoxDev (you)");
+    expect(screen.getByText("My task")).toBeInTheDocument();
+    expect(screen.queryByText("Teammate task")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: "Tasks for person" }));
+    await user.click(screen.getByRole("option", { name: "memenoboxdev" }));
+    expect(screen.getByText("Teammate task")).toBeInTheDocument();
+    expect(screen.queryByText("My task")).not.toBeInTheDocument();
+  });
+
+  it("adds a task and optionally ties it to a feature", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    const feature = { number: 9, title: "New checkout", state: "open", status: "todo", backlog: false, priority: 3, owners: ["JasperNoBoxDev"], description: "", links: [], updatedAt: "2026-10-07T00:00:00Z" };
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/features?state=all") return json([feature]);
+      if (url === "/api/v1/tasks?status=all") return json([]);
+      if (url === "/api/v1/tasks" && init?.method === "POST") {
+        const body = JSON.parse(String(init.body));
+        return json({ id: "44444444-4444-4444-8444-444444444444", note: "", createdBy: "JasperNoBoxDev", color: "gray", status: "open", position: 0, createdAt: "2026-10-07T00:00:00Z", updatedAt: "2026-10-07T00:00:00Z", completedAt: null, ...body }, 201);
+      }
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/tasks");
+    await user.click(await screen.findByRole("button", { name: "New task" }));
+    await user.type(screen.getByRole("textbox", { name: "Task title" }), "Check mobile payment");
+    await user.click(screen.getByRole("combobox", { name: "Tie task to feature" }));
+    await user.click(screen.getByRole("option", { name: "#9 New checkout" }));
+    await user.click(screen.getByRole("button", { name: "Add task" }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/tasks", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ title: "Check mobile payment", owner: "JasperNoBoxDev", featureNumber: 9, stageId: "todo" }),
+    })));
+    const taskCard = (await screen.findByText("Check mobile payment")).closest(".task-card");
+    expect(within(taskCard as HTMLElement).getByText("Feature #9 · New checkout")).toBeInTheDocument();
+    expect(within(taskCard as HTMLElement).getByText("JasperNoBoxDev")).toBeInTheDocument();
+  });
+
+  it("places linked task cards in their task stage and preserves their position", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    const feature = { number: 7, title: "Sticky feature", state: "open", status: "todo", backlog: false, priority: 3, owners: [], description: "", links: [], updatedAt: "2026-10-07T00:00:00Z" };
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/features?state=all") return json([feature]);
+      if (url === "/api/v1/tasks?status=all") return json([
+        { id: "33333333-3333-4333-8333-333333333333", title: "Sticky task", note: "", owner: "JasperNoBoxDev", createdBy: "JasperNoBoxDev", color: "green", status: "open", featureNumber: 7, stageId: "todo", position: 0, createdAt: "2026-10-07T00:00:00Z", updatedAt: "2026-10-07T00:00:00Z", completedAt: null },
+        { id: "55555555-5555-4555-8555-555555555555", title: "Alpha task", note: "", owner: "JasperNoBoxDev", createdBy: "JasperNoBoxDev", color: "blue", status: "open", featureNumber: 7, stageId: "todo", position: 1, createdAt: "2026-10-07T00:00:00Z", updatedAt: "2026-10-07T00:00:00Z", completedAt: null },
+      ]);
+      if (url === "/api/v1/features/7" && init?.method === "PATCH") return json({ ...feature, ...JSON.parse(String(init.body)) });
+      return baseFetch(input, init);
+    });
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/tasks");
+    const todo = (await screen.findByText("To do")).closest("section")!;
+    expect(within(todo).getByText("Sticky task")).toBeInTheDocument();
+    expect([...todo.querySelectorAll(".ticket-card-title")].map((item) => item.textContent)).toEqual(["Sticky task", "Alpha task"]);
+    expect(within(todo).getAllByText("Feature #7 · Sticky feature")).toHaveLength(2);
   });
 
   it("deletes a feature directly from its Backlog row", async () => {
@@ -314,11 +484,11 @@ describe("NoxConnect API-backed platform", () => {
       if (url === "/api/v1/features/9" && init?.method === "DELETE") return json({ ok: true });
       return baseFetch(input, init);
     });
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
 
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board?view=backlog");
     await user.click(await screen.findByRole("button", { name: "Delete Parked idea" }));
+    await user.click(screen.getByRole("button", { name: "Delete feature" }));
 
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/features/9", expect.objectContaining({ method: "DELETE" })));
     expect(screen.queryByText("Parked idea")).not.toBeInTheDocument();
@@ -448,7 +618,8 @@ describe("NoxConnect API-backed platform", () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
     await user.click(await screen.findByText("Sharing"));
     const dialog = screen.getByRole("dialog", { name: "Feature Sharing" });
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Owner" }), "JasperNoBoxDev");
+    await user.click(within(dialog).getByRole("combobox", { name: "Feature owner" }));
+    await user.click(within(dialog).getByRole("option", { name: "JasperNoBoxDev" }));
     await user.selectOptions(within(dialog).getByRole("combobox", { name: "Placement" }), "backlog");
     await user.click(within(dialog).getByRole("button", { name: "Priority 3 · Medium for Sharing" }));
     await user.click(within(dialog).getByRole("option", { name: "2 · High" }));
@@ -535,8 +706,12 @@ describe("NoxConnect API-backed platform", () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.startsWith("/api/v1/prs?")) return json({ data: [{ id: 1, repo: "playnist", number: 10, title: "Ship player", state: "open", author: "JasperNoBoxDev" }] });
-      if (url.startsWith("/api/v1/issues?")) return json({ data: [{ id: 2, repo: "playnist", number: 11, title: "Fix player", state: "open", assignees: [{ login: "JasperNoBoxDev" }] }] });
+      if (url === "/api/v1/feed/current-summary") return json({
+        prs: [{ id: 1, repo: "playnist", number: 10, title: "Ship player", state: "open", author: "JasperNoBoxDev" }],
+        issues: [{ id: 2, repo: "playnist", number: 11, title: "Fix player", state: "open", assignees: [{ login: "JasperNoBoxDev" }] }],
+        members: [{ login: "JasperNoBoxDev", avatar_url: "", kind: "human" }],
+        excludedMembers: [],
+      });
       if (url.startsWith("/api/v1/features?state=all")) return json([{ id: 3, number: 12, title: "Player controls", state: "open", assignees: [{ login: "JasperNoBoxDev" }], labels: [] }]);
       return baseFetch(input, init);
     });

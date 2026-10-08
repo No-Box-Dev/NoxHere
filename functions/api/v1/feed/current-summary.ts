@@ -12,7 +12,8 @@ interface MemberRow {
   kind: string;
 }
 
-interface CountRow { login: string; count: number }
+interface PullRequestRow { id: number; repo: string; number: number; title: string; state: string; author: string; author_avatar: string | null; draft: number; html_url: string; updated_at: string }
+interface IssueRow { id: number; repo: string; number: number; title: string; state: string; assignees_json: string; html_url: string; updated_at: string }
 
 export async function onRequestGet(context: Ctx): Promise<Response> {
   const { orgId, orgLogin, projectId } = getCtx(context);
@@ -36,25 +37,28 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       "SELECT login, avatar_url, kind FROM members WHERE org_id = ? AND kind != 'bot' ORDER BY login",
     ).bind(orgId),
     context.env.DB.prepare(
-      `SELECT LOWER(author) AS login, COUNT(*) AS count FROM pull_requests
-        WHERE org_id = ? AND state = 'open' AND ${repoSql}
-        GROUP BY LOWER(author)`,
+      `SELECT id, repo, number, title, state, author, author_avatar, draft, html_url, updated_at
+         FROM pull_requests WHERE org_id = ? AND state = 'open' AND ${repoSql}
+        ORDER BY updated_at DESC`,
     ).bind(orgId, ...activeRepos),
     context.env.DB.prepare(
-      `SELECT LOWER(json_extract(assignee.value, '$.login')) AS login, COUNT(DISTINCT issue.id) AS count
-         FROM issues issue, json_each(COALESCE(issue.assignees_json, '[]')) assignee
-        WHERE issue.org_id = ? AND issue.state = 'open' AND ${activeRepos.length ? `issue.repo IN (${activeRepos.map(() => "?").join(",")})` : "0"}
-        GROUP BY LOWER(json_extract(assignee.value, '$.login'))`,
+      `SELECT id, repo, number, title, state, assignees_json, html_url, updated_at
+         FROM issues issue WHERE issue.org_id = ? AND issue.state = 'open' AND ${activeRepos.length ? `issue.repo IN (${activeRepos.map(() => "?").join(",")})` : "0"}
+        ORDER BY updated_at DESC`,
     ).bind(orgId, ...activeRepos),
   ]);
   const excluded = new Set(excludedMembers.map((login) => login.toLowerCase()));
-  const prCounts = new Map(((pullRequests.results ?? []) as unknown as CountRow[]).map((row) => [String(row.login), Number(row.count ?? 0)]));
-  const issueCounts = new Map(((issues.results ?? []) as unknown as CountRow[]).map((row) => [String(row.login), Number(row.count ?? 0)]));
-  const people = ((members.results ?? []) as unknown as MemberRow[])
+  const memberRows = (members.results as MemberRow[])
     .filter((member) => !excluded.has(member.login.toLowerCase()))
-    .map((member) => ({
-      member: { login: member.login, avatar_url: member.avatar_url, kind: member.kind === "bot" ? "bot" : "human" },
-      counts: { prs: prCounts.get(member.login.toLowerCase()) ?? 0, issues: issueCounts.get(member.login.toLowerCase()) ?? 0 },
-    }));
-  return jsonResponse({ people });
+    .map((member) => ({ login: member.login, avatar_url: member.avatar_url, kind: member.kind === "bot" ? "bot" : "human" }));
+  const prs = (pullRequests.results as PullRequestRow[]).map((row) => ({ ...row, draft: row.draft === 1 }));
+  const issueRows = (issues.results as IssueRow[]).map((row) => ({ ...row, assignees: JSON.parse(row.assignees_json || "[]") }));
+  const people = memberRows.map((member) => ({
+    member,
+    counts: {
+      prs: prs.filter((item) => item.author.toLowerCase() === member.login.toLowerCase()).length,
+      issues: issueRows.filter((item) => item.assignees.some((assignee: { login?: string }) => assignee.login?.toLowerCase() === member.login.toLowerCase())).length,
+    },
+  }));
+  return jsonResponse({ people, members: memberRows, prs, issues: issueRows, excludedMembers });
 }

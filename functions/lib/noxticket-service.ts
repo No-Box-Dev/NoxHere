@@ -25,6 +25,10 @@ export interface NoxTicketServiceBinding {
   listFeatures(scope: NoxTicketScope, state?: string): Promise<NoxTicketServiceResult>;
   createFeature(scope: NoxTicketScope, input: unknown): Promise<NoxTicketServiceResult>;
   updateFeature(scope: NoxTicketScope, number: number, input: unknown): Promise<NoxTicketServiceResult>;
+  listTasks(scope: NoxTicketScope, filters?: { owner?: string; status?: "open" | "completed" | "all"; featureNumber?: number | "general" }): Promise<NoxTicketServiceResult>;
+  createTask(scope: NoxTicketScope, input: unknown): Promise<NoxTicketServiceResult>;
+  updateTask(scope: NoxTicketScope, id: string, input: unknown): Promise<NoxTicketServiceResult>;
+  deleteTask(scope: NoxTicketScope, id: string): Promise<NoxTicketServiceResult>;
   listFeatureAttachments(scope: NoxTicketScope, featureId: number): Promise<NoxTicketServiceResult>;
   putFeatureAttachment(scope: NoxTicketScope, featureId: number, filename: string, bytes: ArrayBuffer): Promise<NoxTicketServiceResult>;
   getFeatureAttachment(scope: NoxTicketScope, featureId: number, attachmentId: number): Promise<Response>;

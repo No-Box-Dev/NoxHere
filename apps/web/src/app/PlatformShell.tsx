@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { platformApi } from "../api/platform";
@@ -6,6 +6,7 @@ import { AsyncState } from "../components/AsyncState";
 import { PlatformRetrieval } from "./PlatformRetrieval";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { serviceById, services, type ServiceId } from "./service-registry";
+import { clearLastProject, saveLastProject } from "./last-project";
 
 function browserStorage() {
   try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
@@ -24,11 +25,19 @@ export function PlatformShell() {
   const service = serviceById.get(routeSegment as ServiceId) ?? serviceById.get("connect")!;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => browserStorage()?.getItem("noxhere.sidebar.collapsed") === "true");
   const selectedProject = bootstrap.data?.projects.find((project) => project.id === projectId);
-  const fallbackProject = bootstrap.data?.projects[0];
   const isGuest = bootstrap.data?.actor.accessLevel === "guest";
   const visibleServices = services.filter((item) => !item.hidden && (!isGuest || bootstrap.data?.actor.allowedServiceIds.includes(item.id)));
   const guestFallback = visibleServices[0];
   const guestRouteForbidden = Boolean(isGuest && routeSegment && (routeSegment === "settings" || !visibleServices.some((item) => item.id === routeSegment)));
+
+  useEffect(() => {
+    if (!bootstrap.data) return;
+    if (selectedProject) {
+      saveLastProject(bootstrap.data.actor.id, { organizationId: bootstrap.data.organization.id, projectId: selectedProject.id });
+    } else {
+      clearLastProject(bootstrap.data.actor.id, { organizationId, projectId });
+    }
+  }, [bootstrap.data, organizationId, projectId, selectedProject]);
 
   const toggleSidebar = () => setSidebarCollapsed((current) => {
     browserStorage()?.setItem("noxhere.sidebar.collapsed", String(!current));
@@ -44,12 +53,12 @@ export function PlatformShell() {
   return (
     <AsyncState loading={bootstrap.isLoading} error={bootstrap.error}>
       {bootstrap.data ? (
-        !selectedProject && fallbackProject ? <Navigate replace to={`/${bootstrap.data.organization.id}/${fallbackProject.id}/${isGuest && guestFallback ? `${guestFallback.id}/${guestFallback.defaultView}` : "connect/overview"}`} />
+        !selectedProject ? <Navigate replace to="/?choose=1" />
           : guestRouteForbidden && guestFallback ? <Navigate replace to={`/${bootstrap.data.organization.id}/${projectId}/${guestFallback.id}/${guestFallback.defaultView}`} />
           : <div className={`platform ${sidebarCollapsed ? "sidebar-collapsed" : ""}`} style={{ "--service": service.color, "--service-soft": service.softColor } as CSSProperties}>
           <aside className="sidebar">
             <div className="brand-row">
-              <ProjectSwitcher organizationId={bootstrap.data.organization.id} projects={bootstrap.data.projects} selectedId={projectId} onSwitch={switchProject} />
+              <Link className="platform-brand" to="/" aria-label="NoxHere home"><span>N</span><strong>NoxHere</strong></Link>
             </div>
             <button type="button" className="sidebar-collapse" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>{sidebarCollapsed ? "›" : "‹"}</button>
             <div className="sidebar-rule" />
@@ -70,6 +79,12 @@ export function PlatformShell() {
           <main className="main-canvas">
             <header className="platform-topbar">
               <PlatformRetrieval projectId={projectId} />
+              <div className="topbar-actions">
+              <ProjectSwitcher organizationId={bootstrap.data.organization.id} projects={bootstrap.data.projects} selectedId={projectId} canCreate={bootstrap.data.actor.isAdmin} placement="topbar" onSwitch={switchProject} />
+              <a className="topbar-projects" href="/docs/" target="_blank" rel="noreferrer" aria-label="Open API documentation">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13H6z" /><path d="M14 4v4h4M9 12h6M9 16h6" /></svg>
+                <span>API docs</span>
+              </a>
               {!isGuest ? <Link
                 className="topbar-settings"
                 to={`/${bootstrap.data.organization.id}/${projectId}/settings`}
@@ -81,6 +96,7 @@ export function PlatformShell() {
                 </svg>
                 <span>Settings</span>
               </Link> : null}
+              </div>
             </header>
             <div className="page-canvas">
               <Outlet context={{ bootstrap: bootstrap.data, service }} />

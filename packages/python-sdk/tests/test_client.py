@@ -112,7 +112,7 @@ class ClientTest(unittest.TestCase):
         scoped = NoxHereClient(token="nox_sk_secret", transport=public, on_request=lambda event: observed.append(str(event["url"]))).with_context(organization="No-Box-Dev", project_id="project-1")
         scoped.feedback.get_public_nox_spot_config(path={"siteId": "site-1"})
         self.assertEqual(public.calls[0][1], "https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config")
-        self.assertEqual(public.calls[0][2]["X-NoxHere-SDK"], "python/0.2.0")
+        self.assertEqual(public.calls[0][2]["X-NoxHere-SDK"], "python/0.2.1")
         self.assertNotIn("Authorization", public.calls[0][2])
         self.assertNotIn("X-Org", public.calls[0][2])
         self.assertNotIn("X-Project-ID", public.calls[0][2])

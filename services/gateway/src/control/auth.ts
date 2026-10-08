@@ -400,7 +400,7 @@ export function requiredScope(pathname: string, method: string): string | null {
 export function serviceForPath(pathname: string): string | null {
   const serviceControl = pathname.match(/^\/api\/v1\/services\/(noxticket|noxfeed|noxspot|noxcue)(?:\/|$)/)?.[1];
   if (serviceControl) return serviceControl;
-  if (/^\/api\/(?:v1\/)?(features|specs|assign|issue-state)(?:\/|$)/.test(pathname)) return "noxticket";
+  if (/^\/api\/(?:v1\/)?(features|tasks|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return "noxticket";
   if (pathname === "/api/v1/feed" || /^\/api\/(?:v1\/)?(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(pathname)) return "noxfeed";
   if (/^\/api\/(?:v1\/)?spots(?:\/|$)/.test(pathname)) return "noxspot";
   if (/^\/api\/(?:v1\/)?cues(?:\/|$)/.test(pathname)) return "noxcue";

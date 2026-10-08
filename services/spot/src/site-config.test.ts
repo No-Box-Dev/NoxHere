@@ -14,7 +14,7 @@ const site: CaptureSite = {
     buttonColor: "#111111",
     buttonText: "Feedback",
     environments: [
-      { name: "Production", url: "app.example.com", buttonColor: "#222222", enabled: true },
+      { name: "Production", url: "app.example.com", buttonColor: "#222222", captureMode: "screenshot", enabled: true },
       { name: "Disabled", url: "disabled.example.com", enabled: false },
     ],
     blocks: [
@@ -50,7 +50,13 @@ describe("site configuration", () => {
   it("returns only the effective environment and its blocks", () => {
     const config = publicWidgetConfig(site, "https://app.example.com");
     expect(config.buttonColor).toBe("#222222");
+    expect(config.captureMode).toBe("screenshot");
     expect(config.environments).toHaveLength(1);
     expect(config.blocks.map((block) => block.id)).toEqual(["all", "prod"]);
+  });
+
+  it("keeps DOM selection enabled for existing environments", () => {
+    const config = publicWidgetConfig({ ...site, widget_config: JSON.stringify({ environments: [{ name: "Production", url: "app.example.com" }] }) }, "https://app.example.com");
+    expect(config.captureMode).toBe("dom");
   });
 });
