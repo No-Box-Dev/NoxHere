@@ -61,8 +61,8 @@ directly over HTTPS; an SDK is never required. See the
 `requests` examples. The generated SDKs provide typed convenience clients over
 the same contract:
 
-- TypeScript: [`@noxhere/sdk`](./packages/sdk) with focused `feedback` and `incidents` entry points.
-- Python: [`noxhere`](./packages/python-sdk) with matching resource namespaces.
+- TypeScript: [`@noxhere/sdk`](https://www.npmjs.com/package/@noxhere/sdk) with focused `feedback` and `incidents` entry points (`npm install @noxhere/sdk`).
+- Python: [`noxhere`](https://pypi.org/project/noxhere/) with matching resource namespaces (`python -m pip install --upgrade noxhere`).
 
 Both expose `workspace`, `activity`, `planning`, `feedback`, and `incidents`.
 The former product names remain as compatibility aliases only.

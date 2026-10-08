@@ -94,6 +94,12 @@
         <p class="section-kicker">Quickstart</p>
         <h2>Discover your workspace</h2>
         <p class="section-intro">Use the HTTP API directly or choose an SDK. Both paths call the same OpenAPI contract. Create a scoped token under NoxHere → API access while signed in as an organization admin, choose exactly one enabled project, copy it once, and keep it in your runtime's secret store. The token cannot read or change resources assigned to another project.</p>
+        <div class="code-block">
+          <div class="code-head"><span>terminal · install the official SDKs</span><button class="copy-button" type="button" data-copy="install-sdks">Copy</button></div>
+          <pre id="install-sdks"><code>python -m pip install --upgrade noxhere
+npm install @noxhere/sdk</code></pre>
+        </div>
+        <p class="section-note">Python package: <a href="https://pypi.org/project/noxhere/" rel="external">noxhere on PyPI ↗</a>. TypeScript package: <a href="https://www.npmjs.com/package/@noxhere/sdk" rel="external">@noxhere/sdk on npm ↗</a>. SDKs are optional; direct HTTPS calls remain fully supported.</p>
         <div class="callout caution standalone-callout">
           <h3>Use the credential made for the caller</h3>
           <p>Browsers use an opaque HttpOnly session and CSRF proof. Automation uses a scoped <code>nox_sk_…</code> token. Ingestion uses a source key. Never extract a browser cookie or reuse a GitHub or Slack provider token.</p>

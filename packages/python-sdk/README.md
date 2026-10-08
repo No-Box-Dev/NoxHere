@@ -3,6 +3,12 @@
 The unified Python client for every NoxHere resource. Its complete operation
 catalog is generated from the same OpenAPI contract as `@noxhere/sdk`.
 
+Install the official distribution from [PyPI](https://pypi.org/project/noxhere/):
+
+```bash
+python -m pip install --upgrade noxhere
+```
+
 ```python
 from noxhere import NoxHereClient
 
