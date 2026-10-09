@@ -1,7 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { completedPeriodAt, summarizeNoxCueDigestRows } from "../noxcue-digest-data.js";
+import { completedPeriodAt, storeNoxCueDerivedMetrics, summarizeNoxCueDigestRows } from "../noxcue-digest-data.js";
 
 describe("NoxCue digest history", () => {
+  it("persists only catalogued metrics so catalog drift cannot block delivery", async () => {
+    const statements = [];
+    const db = {
+      prepare(sql) {
+        const statement = {
+          sql,
+          args: [],
+          bind(...args) { this.args = args; return this; },
+        };
+        statements.push(statement);
+        return statement;
+      },
+      async batch(batch) { return batch.map(() => ({ success: true })); },
+    };
+
+    await storeNoxCueDerivedMetrics(db, 2, "playnist", "2026-10-08", {
+      "users.active.daily": 0,
+      "future.metric": 1,
+      "custom.journals": 2,
+    });
+
+    expect(statements).toHaveLength(2);
+    expect(statements[0].sql).toContain("FROM cue_metric_definitions definition");
+    expect(statements[0].sql).toContain("WHERE definition.key = ?");
+    expect(statements[1].args.at(-1)).toBe("future.metric");
+  });
+
   it("selects the previous completed day in the source timezone", () => {
     expect(completedPeriodAt("Asia/Kuala_Lumpur", new Date("2026-08-29T16:30:00Z")))
       .toBe("2026-08-29");

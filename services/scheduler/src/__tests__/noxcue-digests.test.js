@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 const publishSlackTransport = vi.hoisted(() => vi.fn(async () => ({ outboxId: "delivery-1", status: "queued", queued: true })));
 vi.mock("../../../../functions/lib/transport-outbox", () => ({ publishSlackTransport }));
 import {
+  digestPeriodsToAttempt,
   localDateTime,
   previousPeriod,
   resolveDigestSlackDestination,
@@ -20,6 +21,20 @@ describe("NoxCue daily digest periods", () => {
 
   it("handles month boundaries", () => {
     expect(previousPeriod("2026-03-01")).toBe("2026-02-28");
+  });
+
+  it("catches up missed digest periods oldest first", () => {
+    expect(digestPeriodsToAttempt("2026-10-08", "2026-10-06")).toEqual([
+      "2026-10-07",
+      "2026-10-08",
+    ]);
+  });
+
+  it("bounds catch-up to seven completed days", () => {
+    expect(digestPeriodsToAttempt("2026-10-08", "2026-09-01")).toEqual([
+      "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05",
+      "2026-10-06", "2026-10-07", "2026-10-08",
+    ]);
   });
 
   it("keeps each Slack channel paired with its own connection", () => {
