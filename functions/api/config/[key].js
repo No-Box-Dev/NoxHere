@@ -182,6 +182,9 @@ export async function onRequestPut(context) {
   if (key === "settings" && body && typeof body === "object" && body.taskBoardStages !== undefined) {
     const result = validateBoardStages(body.taskBoardStages);
     if (!result.ok) return errorResponse(result.error.replaceAll("boardStages", "taskBoardStages"), 422);
+    if (body.taskBoardStages.filter((stage) => stage.completed === true).length !== 1) {
+      return errorResponse("taskBoardStages must mark exactly one stage as completed", 422);
+    }
   }
 
   if (slackWasSupplied && body?.slack && typeof body.slack === "object") {

@@ -12,7 +12,7 @@ import { StatusTag } from "../../components/StatusTag";
 
 const tabs = [["board", "Features"], ["tasks", "Tasks"], ["backlog", "Backlog"], ["completed", "Completed"], ["settings", "Settings"]] as const;
 
-type Stage = { id: string; label: string; color: string };
+type Stage = { id: string; label: string; color: string; completed?: boolean };
 type FeatureLink = { url: string; label?: string };
 type Priority = 1 | 2 | 3 | 4 | 5;
 type TicketFeature = { id: number; title: string; status: string; owners: string[]; description: string; links: FeatureLink[]; backlog: boolean; priority: Priority; closed: boolean; updated: string; history: string[] };
@@ -74,7 +74,8 @@ export default function NoxTicketPage() {
   }, [featureQuery.data, projectId]);
   useEffect(() => {
     setStages(settingsQuery.data?.boardStages?.length ? settingsQuery.data.boardStages : productionStages);
-    setTaskStages(settingsQuery.data?.taskBoardStages?.length ? settingsQuery.data.taskBoardStages : defaultTaskStages);
+    const savedTaskStages = settingsQuery.data?.taskBoardStages;
+    setTaskStages(savedTaskStages?.length ? ensureCompletedStage(savedTaskStages) : defaultTaskStages);
   }, [projectId, settingsQuery.data]);
   /* eslint-enable react-hooks/set-state-in-effect */
   const saveStages = useMutation({
@@ -103,14 +104,14 @@ export default function NoxTicketPage() {
     onError: (_error, { previous }) => setFeatures((current) => current.map((feature) => feature.id === previous.id ? previous : feature)),
   });
   const createFeatureMutation = useMutation({
-    mutationFn: ({ title, backlog, status, owner }: { title: string; backlog: boolean; status: string; owner: string; optimisticId: number }) => platformApi.createTicketFeature(organizationId, projectId, { title, backlog, status, owners: [owner] }),
+    mutationFn: ({ title, description, backlog, status, owner }: { title: string; description: string; backlog: boolean; status: string; owner: string; optimisticId: number }) => platformApi.createTicketFeature(organizationId, projectId, { title, description, backlog, status, owners: [owner] }),
     onSuccess: (record, { optimisticId }) => {
       const feature = mapFeature(record);
       setFeatures((current) => current.filter((item) => item.id !== feature.id).map((item) => item.id === optimisticId ? feature : item));
     },
     onError: (_error, { optimisticId }) => setFeatures((current) => current.filter((feature) => feature.id !== optimisticId)),
   });
-  const createFeature = (title: string, backlog: boolean, owner: string) => {
+  const createFeature = (title: string, backlog: boolean, owner: string, description = "") => {
     const optimisticId = nextOptimisticFeatureId.current--;
     const status = stages[0]?.id ?? "todo";
     setFeatures((current) => [...current, {
@@ -118,7 +119,7 @@ export default function NoxTicketPage() {
       title,
       status,
       owners: [owner],
-      description: "",
+      description,
       links: [],
       backlog,
       priority: 3,
@@ -126,7 +127,7 @@ export default function NoxTicketPage() {
       updated: "Now",
       history: ["Created · now"],
     }]);
-    createFeatureMutation.mutate({ title, backlog, status, owner, optimisticId });
+    createFeatureMutation.mutate({ title, description, backlog, status, owner, optimisticId });
   };
   const deleteFeatureMutation = useMutation({
     mutationFn: (feature: TicketFeature) => platformApi.deleteTicketFeature(organizationId, projectId, feature.id),
@@ -175,8 +176,13 @@ const defaultTaskStages: Stage[] = [
   { id: "todo", label: "To do", color: "#94a3b8" },
   { id: "in-progress", label: "In progress", color: "#8b83b8" },
   { id: "blocked", label: "Blocked", color: "#c77b63" },
-  { id: "done", label: "Completed", color: "#6e9970" },
+  { id: "done", label: "Completed", color: "#6e9970", completed: true },
 ];
+
+function ensureCompletedStage(stages: Stage[]): Stage[] {
+  if (stages.some((stage) => stage.completed)) return stages;
+  return stages.map((stage, index) => ({ ...stage, completed: index === stages.length - 1 }));
+}
 
 function mapFeature(record: TicketFeatureRecord): TicketFeature {
   const labels = record.labels.map((label) => typeof label === "string" ? label : label.name);
@@ -217,7 +223,7 @@ function DataNotice({ title, detail }: { title: string; detail: string }) {
   return <div className="empty-view data-notice" role="status"><h2>{title}</h2><p>{detail}</p></div>;
 }
 
-function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, actor, members, createFeature, saveFeature, deleteFeature, saving }: { organizationId: string; projectId: string; mode: FeatureView; stages: Stage[]; features: TicketFeature[]; actor: string; members: string[]; createFeature: (title: string, backlog: boolean, owner: string) => void; saveFeature: (feature: TicketFeature) => void; deleteFeature: (feature: TicketFeature) => void; saving: boolean }) {
+function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, actor, members, createFeature, saveFeature, deleteFeature, saving }: { organizationId: string; projectId: string; mode: FeatureView; stages: Stage[]; features: TicketFeature[]; actor: string; members: string[]; createFeature: (title: string, backlog: boolean, owner: string, description?: string) => void; saveFeature: (feature: TicketFeature) => void; deleteFeature: (feature: TicketFeature) => void; saving: boolean }) {
   const { confirm, confirmation } = useConfirmDialog();
   const [queries, setQueries] = useState<Record<FeatureView, string>>(() => ({ board: "", backlog: "", completed: "" }));
   const query = queries[mode];
@@ -257,7 +263,7 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
       <select aria-label="Sort features" value={sort} onChange={(event) => setSort(event.target.value as "updated" | "title")}><option value="updated">Default</option><option value="title">Title A–Z</option></select>
       <span className="toolbar-spacer" />{mode === "board" ? <button type="button" className="button" disabled={productionCount === 0 || saving} onClick={completeProduction}>{saving ? "Moving…" : `Move production to completed${productionCount ? ` (${productionCount})` : ""}`}</button> : null}<button type="button" className="button primary-button" onClick={() => setAdding(true)}>New feature</button>
     </div>
-    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="feature" owner={person} features={features} onApply={(draft) => createFeature(draft.title, mode === "backlog", person)} />
+    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="feature" owner={person} features={features} onApply={(draft) => createFeature(draft.title, mode === "backlog", person, draft.description)} />
     {adding ? <form className="ticket-create-row" onSubmit={addFeature}><input autoFocus aria-label="Feature title" value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder={mode === "backlog" ? "Add to backlog…" : "Feature title…"} /><button className="button primary-button">Create feature</button><button type="button" className="button" onClick={() => setAdding(false)}>Cancel</button></form> : null}
     {mode === "board" ? <div className="ticket-board full-board">{stages.map((stage) => { const items = active.filter((feature) => feature.status === stage.id); return <section className="ticket-column" key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, stage.id)}><header><span className="stage-title"><i style={{ background: stage.color }} /><b>{stage.label}</b></span><span>{items.length}</span></header>{items.map((feature) => <div draggable onDragStart={(event) => { event.dataTransfer.setData("text/plain", String(feature.id)); event.dataTransfer.effectAllowed = "move"; }} key={feature.id}><FeatureCard organizationId={organizationId} projectId={projectId} feature={feature} members={members} onOpen={() => setSelectedId(feature.id)} onPriority={(priority) => saveFeature({ ...feature, priority, updated: "Now" })} onAssign={(owner) => saveFeature({ ...feature, owners: owner ? [owner] : [], updated: "Now" })} onMoveToBacklog={() => saveFeature({ ...feature, backlog: true, updated: "Now", history: ["Moved to Backlog · now", ...feature.history] })} onDelete={() => deleteFeature(feature)} /></div>)}<button type="button" className="ticket-add" onClick={() => setAdding(true)}>＋ Add feature</button></section>; })}</div> : null}
     {mode === "backlog" ? <div className="ticket-list">{backlog.map((feature) => <div className="list-row ticket-backlog-row" key={feature.id}><PriorityFlag feature={feature} onChange={(priority) => saveFeature({ ...feature, priority, updated: "Now" })} /><button type="button" className="list-copy row-open-button" onClick={() => setSelectedId(feature.id)}><b>{feature.title}</b><small>#{feature.id} · {feature.links.length} {feature.links.length === 1 ? "link" : "links"} · {feature.owners.join(", ") || "Unassigned"}</small></button><span className="list-meta"><AttachmentUploadButton organizationId={organizationId} projectId={projectId} feature={feature} /><button className="mini-button" onClick={() => saveFeature({ ...feature, backlog: false, updated: "Now", history: ["Moved to Features · now", ...feature.history] })}>Move to features</button><button type="button" className="ticket-card-action destructive" aria-label={`Delete ${feature.title}`} title="Delete" onClick={() => void confirm({ title: "Delete feature?", detail: `“${feature.title}” will be removed from planning.`, confirmLabel: "Delete feature", destructive: true }).then((confirmed) => { if (confirmed) deleteFeature(feature); })}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" /></svg></button></span></div>)}</div> : null}
@@ -278,7 +284,7 @@ function TasksBoard({ organizationId, projectId, stages, features, tasks, actor,
   const visibleTasks = useMemo(() => tasks
     .filter((task) => task.owner.toLowerCase() === person.toLowerCase() && (!normalizedQuery || `${task.title} ${task.note}`.toLowerCase().includes(normalizedQuery)))
     .sort(byTitle), [normalizedQuery, person, tasks]);
-  const doneStage = stages.at(-1)?.id ?? "done";
+  const doneStage = stages.find((stage) => stage.completed)?.id ?? stages.at(-1)?.id ?? "done";
   const stageForTask = (task: PlanningTask) => task.status === "completed" ? doneStage : stages.some((stage) => stage.id === task.stageId) ? task.stageId : stages[0]?.id;
   const drop = (event: DragEvent, stageId: string, position: number) => {
     event.preventDefault();
@@ -293,40 +299,48 @@ function TasksBoard({ organizationId, projectId, stages, features, tasks, actor,
       <span className="toolbar-spacer" />
       <button type="button" className="button primary-button" onClick={() => setAdding(true)}>New task</button>
     </div>
-    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="task" owner={person} features={features} onApply={(draft) => createTask({ title: draft.title, owner: person, featureNumber: draft.featureNumber, stageId: stages[0]?.id ?? "todo" })} />
-    {adding ? <div className="board-task-composer"><TaskComposer owner={person} initialStageId={stages[0]?.id ?? "todo"} features={features} onCreate={(input) => { createTask(input); setAdding(false); }} saving={saving} /><button type="button" className="button" onClick={() => setAdding(false)}>Cancel</button></div> : null}
+    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="task" owner={person} features={features} onApply={(draft) => createTask({ title: draft.title, note: draft.description, owner: person, featureNumber: draft.featureNumber, stageId: stages[0]?.id ?? "todo" })} />
+    {adding ? <div className="board-task-composer"><TaskComposer owner={person} initialStageId={stages[0]?.id ?? "todo"} features={features} onCreate={(input) => { createTask(input); setAdding(false); }} onCancel={() => setAdding(false)} saving={saving} /></div> : null}
     <div className="ticket-board task-board">{stages.map((stage) => {
       const items = visibleTasks.filter((task) => stageForTask(task) === stage.id).sort((a, b) => a.position - b.position || byTitle(a, b));
-      return <section className="ticket-column" key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, stage.id, items.length)}><header><span className="stage-title"><i style={{ background: stage.color }} /><b>{stage.label}</b></span><span>{items.length}</span></header>{items.map((task, index) => <div draggable onDragStart={(event) => { event.dataTransfer.setData("text/plain", task.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.stopPropagation(); drop(event, stage.id, index); }} key={task.id}><TaskCard task={task} feature={task.featureNumber === null ? null : featureByNumber.get(task.featureNumber) ?? null} color={stage.color} onToggle={() => updateTask(task.id, task.status === "open" ? { status: "completed", stageId: doneStage } : { status: "open", stageId: stages[0]?.id ?? "todo" })} onDelete={() => deleteTask(task.id)} /></div>)}</section>;
+      return <section className="ticket-column" key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, stage.id, items.length)}><header><span className="stage-title"><i style={{ background: stage.color }} /><b>{stage.label}</b></span><span>{items.length}</span></header>{items.map((task, index) => <div draggable onDragStart={(event) => { event.dataTransfer.setData("text/plain", task.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.stopPropagation(); drop(event, stage.id, index); }} key={task.id}><TaskCard task={task} feature={task.featureNumber === null ? null : featureByNumber.get(task.featureNumber) ?? null} color={stage.color} onDelete={() => deleteTask(task.id)} /></div>)}</section>;
     })}</div>
   </>;
 }
 
-type PlanningDraft = { title: string; featureNumber: number | null };
+type PlanningDraft = { title: string; description: string; featureNumber: number | null; message: string };
+type PlanningMessage = { role: "user" | "assistant"; content: string };
 
 function PlanningAiBar({ organizationId, projectId, kind, owner, features, onApply }: { organizationId: string; projectId: string; kind: "feature" | "task"; owner: string; features: TicketFeature[]; onApply: (draft: PlanningDraft) => void }) {
   const [prompt, setPrompt] = useState("");
   const [draft, setDraft] = useState<PlanningDraft | null>(null);
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<PlanningMessage[]>([]);
   const assist = useMutation({
     mutationFn: () => postRawJson<{ draft: PlanningDraft }>("/api/v1/planning/assist", {
       kind,
       prompt: prompt.trim(),
+      messages,
       owner,
       features: features.filter((feature) => !feature.closed).slice(0, 30).map((feature) => ({ number: feature.id, title: feature.title, owners: feature.owners })),
     }, { organizationId, projectId }),
-    onSuccess: (result) => setDraft(result.draft),
+    onSuccess: (result) => {
+      setMessages((current) => [...current, { role: "user", content: prompt.trim() }, { role: "assistant", content: result.draft.message }]);
+      setDraft(result.draft);
+      setPrompt("");
+    },
   });
   const submit = (event: FormEvent) => { event.preventDefault(); if (prompt.trim()) assist.mutate(); };
-  const apply = () => { if (!draft) return; onApply(draft); setPrompt(""); setDraft(null); assist.reset(); };
-  return <form className="planning-ai-bar" onSubmit={submit}>
+  const close = () => { setOpen(false); setPrompt(""); setDraft(null); setMessages([]); assist.reset(); };
+  const apply = () => { if (!draft) return; onApply(draft); close(); };
+  return <><div className="planning-ai-bar">
     <span className="planning-ai-mark" aria-hidden="true">✦</span>
-    <input aria-label={`Ask AI to draft a ${kind}`} value={prompt} maxLength={500} onChange={(event) => { setPrompt(event.target.value); setDraft(null); assist.reset(); }} placeholder={`Describe a ${kind} and let AI draft it…`} />
-    {draft ? <><span className="planning-ai-draft" title={draft.title}>{draft.title}</span><button type="button" className="button primary-button" onClick={apply}>Create</button><button type="button" className="button" onClick={() => setDraft(null)}>Cancel</button></> : <button className="button" disabled={!prompt.trim() || assist.isPending}>{assist.isPending ? "Drafting…" : "Draft"}</button>}
-    {assist.isError ? <span className="form-error" role="alert">{assist.error.message}</span> : null}
-  </form>;
+    <span>Plan a {kind} with AI, refine it in chat, and create it when the description is ready.</span>
+    <button type="button" className="button" onClick={() => setOpen(true)}>Open AI planner</button>
+  </div>{open ? <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}><section className="planning-ai-dialog" role="dialog" aria-modal="true" aria-labelledby={`planning-ai-${kind}-title`}><header><div><span className="eyebrow">AI PLANNER</span><h2 id={`planning-ai-${kind}-title`}>Draft a {kind}</h2></div><button type="button" className="dialog-close" aria-label="Close AI planner" onClick={close}>×</button></header><div className="planning-ai-conversation">{messages.length ? messages.map((message, index) => <p className={`planning-ai-message ${message.role}`} key={index}><b>{message.role === "user" ? "You" : "Nox"}</b>{message.content}</p>) : <p className="section-note">Describe the outcome you need. You can keep chatting to refine the title, description, and linked feature.</p>}</div>{draft ? <div className="planning-ai-preview"><label>Title<input value={draft.title} maxLength={200} onChange={(event) => setDraft((current) => current ? { ...current, title: event.target.value } : current)} /></label><label>Description<textarea value={draft.description} maxLength={1_200} rows={6} onChange={(event) => setDraft((current) => current ? { ...current, description: event.target.value } : current)} /></label>{draft.featureNumber ? <small>Linked to feature #{draft.featureNumber}</small> : null}</div> : null}<form className="planning-ai-prompt" onSubmit={submit}><textarea autoFocus aria-label={`Ask AI to draft a ${kind}`} value={prompt} maxLength={2_000} rows={3} onChange={(event) => { setPrompt(event.target.value); assist.reset(); }} placeholder={messages.length ? "Ask for a change or add more context…" : `Describe the ${kind}, desired outcome, and acceptance criteria…`} />{assist.isError ? <span className="form-error" role="alert">{assist.error.message}</span> : null}<footer><button type="button" className="button" onClick={close}>Cancel</button>{draft ? <button type="button" className="button primary-button" disabled={!draft.title.trim()} onClick={apply}>Create {kind}</button> : null}<button className="button" disabled={!prompt.trim() || assist.isPending}>{assist.isPending ? "Thinking…" : messages.length ? "Refine draft" : "Create draft"}</button></footer></form></section></div> : null}</>;
 }
 
-function TaskComposer({ owner, initialStageId, features, onCreate, saving }: { owner: string; initialStageId: string; features: TicketFeature[]; onCreate: (input: TaskInput) => void; saving: boolean }) {
+function TaskComposer({ owner, initialStageId, features, onCreate, onCancel, saving }: { owner: string; initialStageId: string; features: TicketFeature[]; onCreate: (input: TaskInput) => void; onCancel: () => void; saving: boolean }) {
   const [title, setTitle] = useState("");
   const [feature, setFeature] = useState("");
   const featureOptions = useMemo(() => features.filter((item) => !item.closed).sort((a, b) => Number(!featureOwnedBy(a, owner.toLowerCase())) - Number(!featureOwnedBy(b, owner.toLowerCase())) || byTitle(a, b)).map((item) => ({ value: String(item.id), label: `#${item.id} ${item.title}`, keywords: item.owners.join(" ") })), [features, owner]);
@@ -335,10 +349,11 @@ function TaskComposer({ owner, initialStageId, features, onCreate, saving }: { o
     <input aria-label="Task title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={`Add a task for ${owner}…`} maxLength={200} />
     <SearchableSelect ariaLabel="Tie task to feature" value={feature} onChange={setFeature} options={featureOptions} emptyLabel="General task" placeholder="Search features…" />
     <button className="button primary-button" disabled={!title.trim() || saving}>Add task</button>
+    <button type="button" className="button" onClick={onCancel}>Cancel</button>
   </form>;
 }
 
-function TaskCard({ task, feature, color, onToggle, onDelete }: { task: PlanningTask; feature: TicketFeature | null; color: string; onToggle: () => void; onDelete: () => void }) {
+function TaskCard({ task, feature, color, onDelete }: { task: PlanningTask; feature: TicketFeature | null; color: string; onDelete: () => void }) {
   const { confirm, confirmation } = useConfirmDialog();
   const [actionsOpen, setActionsOpen] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
@@ -351,14 +366,13 @@ function TaskCard({ task, feature, color, onToggle, onDelete }: { task: Planning
     return () => { document.removeEventListener("pointerdown", closeOnOutsidePress); document.removeEventListener("keydown", closeOnEscape); };
   }, [actionsOpen]);
   return <article className="ticket-card interactive-card task-card">
-    <div className="ticket-card-heading"><button type="button" className="ticket-card-title" aria-label={`${task.status === "open" ? "Complete" : "Reopen"} ${task.title}`} onClick={onToggle}>{task.title}</button><div className="ticket-card-actions" ref={actionsRef}>
+    <div className="ticket-card-heading"><span className="ticket-card-title">{task.title}</span><div className="ticket-card-actions" ref={actionsRef}>
       <button type="button" className="ticket-card-action ticket-card-more" aria-label={`More actions for ${task.title}`} aria-haspopup="menu" aria-expanded={actionsOpen} onClick={() => setActionsOpen((current) => !current)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></svg></button>
       {actionsOpen ? <div className="ticket-card-menu" role="menu">
-        <button type="button" role="menuitem" onClick={() => { setActionsOpen(false); onToggle(); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg><span>{task.status === "open" ? "Mark complete" : "Reopen task"}</span></button>
         <button type="button" role="menuitem" className="destructive" onClick={() => { setActionsOpen(false); void confirm({ title: "Delete task?", detail: `“${task.title}” will be permanently removed.`, confirmLabel: "Delete task", destructive: true }).then((confirmed) => { if (confirmed) onDelete(); }); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" /></svg><span>Delete task</span></button>
       </div> : null}
     </div></div>
-    <div className="ticket-card-meta"><button type="button" className="task-card-status" style={{ color }} aria-label={`${task.status === "open" ? "Complete" : "Reopen"} ${task.title}`} onClick={onToggle}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg><span>{task.status === "completed" ? "Done" : "Open"}</span></button><div className="ticket-card-assignment">
+    <div className="ticket-card-meta"><span className="task-card-status" style={{ color }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg><span>{task.status === "completed" ? "Done" : "Open"}</span></span><div className="ticket-card-assignment">
       <span className="ticket-assignee">{task.owner}</span>
     </div></div>
     {feature ? <small className="task-card-feature">Feature #{feature.id} · {feature.title}</small> : null}
@@ -529,15 +543,16 @@ function formatBytes(bytes: number) {
 function TicketSettings({ organizationId, projectId, repository, stages, setStages, saveStages, savingStages, stageSaveError, taskStages, setTaskStages, saveTaskStages, savingTaskStages, taskStageSaveError }: { organizationId: string; projectId: string; repository: string | null; stages: Stage[]; setStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveStages: (stages: Stage[]) => void; savingStages: boolean; stageSaveError: Error | null; taskStages: Stage[]; setTaskStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveTaskStages: (stages: Stage[]) => void; savingTaskStages: boolean; taskStageSaveError: Error | null }) {
   return <><NoxTicketSlackRoute organizationId={organizationId} projectId={projectId} />
     <StageSettings title="Feature board stages" detail="The last stage is treated as production when you clean the feature board." stages={stages} setStages={setStages} saveStages={saveStages} saving={savingStages} error={stageSaveError} />
-    <StageSettings title="Task board stages" detail="Tasks move independently from features. The last stage completes a task." stages={taskStages} setStages={setTaskStages} saveStages={saveTaskStages} saving={savingTaskStages} error={taskStageSaveError} />
+    <StageSettings title="Task board stages" detail="Tasks move independently from features. Choose the one stage that completes a task." stages={taskStages} setStages={setTaskStages} saveStages={saveTaskStages} saving={savingTaskStages} error={taskStageSaveError} completionSelectable />
     <div className="settings-section"><div className="settings-section-head"><div><b>Feature repository</b><p>Planning stores features as GitHub-backed records in the connected project repository.</p></div><StatusTag tone={repository ? "positive" : "warning"}>{repository ? "Connected" : "Not configured"}</StatusTag></div><div className="list-surface"><ListRow symbol="R" tone={repository ? "positive" : "neutral"} title={repository ?? "No GitHub repository connected"} description="Feature source selected from repositories connected through NoxConnect" meta={<StatusTag>GitHub</StatusTag>} /></div></div></>;
 }
 
-function StageSettings({ title, detail, stages, setStages, saveStages, saving, error }: { title: string; detail: string; stages: Stage[]; setStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveStages: (stages: Stage[]) => void; saving: boolean; error: Error | null }) {
+function StageSettings({ title, detail, stages, setStages, saveStages, saving, error, completionSelectable = false }: { title: string; detail: string; stages: Stage[]; setStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveStages: (stages: Stage[]) => void; saving: boolean; error: Error | null; completionSelectable?: boolean }) {
   const update = (id: string, patch: Partial<Stage>) => setStages((current) => current.map((stage) => stage.id === id ? { ...stage, ...patch } : stage));
   const move = (index: number, direction: -1 | 1) => { const next = [...stages]; const target = index + direction; if (target < 0 || target >= next.length) return; [next[index], next[target]] = [next[target], next[index]]; saveStages(next); };
-  const add = () => saveStages([...stages, { id: `stage-${Date.now()}`, label: "New stage", color: "#9a938d" }]);
-  return <div className="settings-section"><div className="settings-section-head"><div><b>{title}</b><p>{detail}</p></div><button className="button" disabled={saving} onClick={add}>Add stage</button></div><div className="list-surface stage-editor">{stages.map((stage, index) => <div className="stage-editor-row" key={stage.id}><input type="color" aria-label={`${stage.label} color`} value={stage.color} disabled={saving} onChange={(event) => saveStages(stages.map((item) => item.id === stage.id ? { ...item, color: event.target.value } : item))} /><input aria-label={`Stage ${index + 1} name`} value={stage.label} disabled={saving} onChange={(event) => update(stage.id, { label: event.target.value })} onBlur={() => saveStages(stages)} /><span>{index === stages.length - 1 ? "Done stage" : index === 0 ? "Starting stage" : "Active stage"}</span><button className="mini-button" disabled={saving || index === 0} onClick={() => move(index, -1)} aria-label={`Move ${stage.label} left`}>←</button><button className="mini-button" disabled={saving || index === stages.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${stage.label} right`}>→</button><button className="mini-button" disabled={saving || stages.length <= 1} onClick={() => saveStages(stages.filter((item) => item.id !== stage.id))}>Remove</button></div>)}</div>{saving ? <p className="form-success" role="status">Saving board stages…</p> : null}{error ? <p className="form-error" role="alert">{error.message}</p> : null}</div>;
+  const add = () => saveStages([...stages, { id: `stage-${Date.now()}`, label: "New stage", color: "#9a938d", ...(completionSelectable ? { completed: false } : {}) }]);
+  const markCompleted = (id: string) => saveStages(stages.map((stage) => ({ ...stage, completed: stage.id === id })));
+  return <div className="settings-section"><div className="settings-section-head"><div><b>{title}</b><p>{detail}</p></div><button className="button" disabled={saving} onClick={add}>Add stage</button></div><div className="list-surface stage-editor">{stages.map((stage, index) => <div className="stage-editor-row" key={stage.id}><input type="color" aria-label={`${stage.label} color`} value={stage.color} disabled={saving} onChange={(event) => saveStages(stages.map((item) => item.id === stage.id ? { ...item, color: event.target.value } : item))} /><input aria-label={`Stage ${index + 1} name`} value={stage.label} disabled={saving} onChange={(event) => update(stage.id, { label: event.target.value })} onBlur={() => saveStages(stages)} />{completionSelectable ? <label className="stage-complete-choice"><input type="radio" name="task-completed-stage" checked={stage.completed === true} disabled={saving} onChange={() => markCompleted(stage.id)} /> Completes task</label> : <span>{index === 0 ? "Starting stage" : "Active stage"}</span>}<button className="mini-button" disabled={saving || index === 0} onClick={() => move(index, -1)} aria-label={`Move ${stage.label} left`}>←</button><button className="mini-button" disabled={saving || index === stages.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${stage.label} right`}>→</button><button className="mini-button" disabled={saving || stages.length <= 1 || stage.completed === true} onClick={() => saveStages(stages.filter((item) => item.id !== stage.id))}>Remove</button></div>)}</div>{saving ? <p className="form-success" role="status">Saving board stages…</p> : null}{error ? <p className="form-error" role="alert">{error.message}</p> : null}</div>;
 }
 
 function NoxTicketSlackRoute({ organizationId, projectId }: { organizationId: string; projectId: string }) {

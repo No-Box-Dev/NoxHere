@@ -1,6 +1,6 @@
 # NoxHere API
 
-NoxHere is the public product, identity, CLI, and API. One account session works across organizations, projects, and the Feed, Ticket, Spot, Cue, and Connect capabilities.
+NoxHere is the public product, identity, CLI, and API. One account session works across organizations and projects with Planning, Activity, Feedback, Stats, and Incidents capabilities. NoxConnect is private provider-connection plumbing.
 
 - [Machine-readable API description](/openapi.json)
 - [Developer documentation](/developers)
@@ -9,10 +9,11 @@ NoxHere is the public product, identity, CLI, and API. One account session works
 - [Planning capabilities (`noxticket` compatibility ID)](/api/v1/services/noxticket)
 - [Activity capabilities (`noxfeed` compatibility ID)](/api/v1/services/noxfeed)
 - [Feedback capabilities (`noxspot` compatibility ID)](/api/v1/services/noxspot)
-- [Incidents capabilities (`noxcue` compatibility ID)](/api/v1/services/noxcue)
+- [Stats and Incidents capabilities (`noxcue` compatibility ID)](/api/v1/services/noxcue)
 - [Per-service setup, config, and health contract](/docs/ai-setup.md#safe-configuration-updates)
 - [Agent setup guide](/docs/ai-setup.md)
 - [Direct HTTP guide and SDK-equivalent examples](/docs/direct-api.md)
+- [Telemetry data governance](/docs/data-governance.md)
 - [Python SDK on PyPI](https://pypi.org/project/noxhere/)
 - [TypeScript SDK on npm](https://www.npmjs.com/package/@noxhere/sdk)
 - [Resumable setup state](/api/v1/integrations/setup)

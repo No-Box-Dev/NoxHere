@@ -255,6 +255,27 @@ describe("PUT /api/config/settings — boardStages validation", () => {
     expect(res.status).toBe(200);
     expect(db._calls.run).toHaveLength(1);
   });
+
+  it("requires exactly one completed task stage", async () => {
+    for (const taskBoardStages of [
+      validStages,
+      validStages.map((stage) => ({ ...stage, completed: true })),
+    ]) {
+      const res = await onRequestPut(makeCtx({ db: makeDb(), params: { key: "settings" }, method: "PUT", body: { taskBoardStages } }));
+      expect(res.status).toBe(422);
+      expect((await res.json()).error).toContain("exactly one");
+    }
+  });
+
+  it("saves a task pipeline with one explicit completion stage", async () => {
+    const db = makeDb();
+    const res = await onRequestPut(makeCtx({
+      db, params: { key: "settings" }, method: "PUT",
+      body: { taskBoardStages: validStages.map((stage) => ({ ...stage, completed: stage.id === "done" })) },
+    }));
+    expect(res.status).toBe(200);
+    expect(db._calls.run).toHaveLength(1);
+  });
 });
 
 describe("PUT /api/config/settings — app toggles", () => {

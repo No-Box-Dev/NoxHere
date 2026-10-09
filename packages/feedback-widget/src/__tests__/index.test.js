@@ -135,6 +135,16 @@ describe('init', () => {
     identify(null);
     expect(document.getElementById('noxspot-reporter').value).toBe('');
   });
+
+  it('passes an explicitly initialized reporter into the capture form', async () => {
+    const open = vi.fn();
+    window.__NoxSpotCore = { open, cleanup: vi.fn() };
+    init({ siteId: 'test-site', reporter: { name: 'Ada', email: 'ada@example.com', notifyOnResolution: true } });
+    document.querySelector('.noxspot-trigger').click();
+    await vi.waitFor(() => expect(open).toHaveBeenCalled());
+    expect(open.mock.calls[0][0].callbacks.reporter).toEqual({ name: 'Ada', email: 'ada@example.com', avatarUrl: '', notifyOnResolution: true });
+    delete window.__NoxSpotCore;
+  });
 });
 
 describe('keyboard shortcut', () => {

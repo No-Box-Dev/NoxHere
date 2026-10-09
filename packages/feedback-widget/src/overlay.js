@@ -33,7 +33,7 @@ let viewportMetaAdded = false;
  * Show the overlay. Accepts a capture object or a Promise resolving to one —
  * when given a Promise, the overlay renders immediately with a loading state
  * and hydrates the image + element map once the capture resolves.
- * @param {Object|Promise} captureOrPromise - { dataUrl, elementMap, viewport } or Promise<...>
+ * @param {Object|Promise} captureOrPromise - { dataUrl, elementMap, viewport, captureError? } or Promise<...>
  * @param {Object} options - Options
  * @param {Function} options.onClose - Callback when overlay is closed
  * @param {Function} options.onSubmit - Callback when form is submitted
@@ -176,6 +176,9 @@ export function showOverlay(captureOrPromise, options = {}) {
   capturePromise.then((capture) => {
     if (!overlayElement || !capture) return;
     hydrateCapture(capture);
+    if (capture.captureError && options.onCaptureError) {
+      options.onCaptureError(new Error(capture.captureError.message));
+    }
   }).catch((err) => {
     if (!overlayElement) return;
     const errCb = options.onCaptureError;
@@ -202,6 +205,17 @@ function hydrateCapture(capture) {
   const toolbarTools = overlayElement.querySelector('.noxspot-toolbar-tools');
   const thumbImg = overlayElement.querySelector('.noxspot-mobile-thumbnail img');
   const thumbContainer = overlayElement.querySelector('.noxspot-mobile-thumbnail');
+
+  if (!capture.dataUrl) {
+    captureReady = true;
+    if (loading) {
+      loading.classList.add('noxspot-canvas-unavailable');
+      loading.innerHTML = '<strong>Screenshot unavailable</strong><span>You can still send your feedback.</span>';
+    }
+    if (thumbContainer) thumbContainer.style.display = 'none';
+    debugLog('[NoxSpot] Capture unavailable; form remains usable');
+    return;
+  }
 
   if (thumbImg) thumbImg.src = capture.dataUrl;
   if (thumbContainer && overlayElement.classList.contains('noxspot-mobile') && mobileStep === 2) {
@@ -946,13 +960,17 @@ function buildContext() {
  * just stack them manually — no DOM rasterization needed here.
  */
 function captureCanvasArea() {
+  if (!screenshotData || !overlayElement) return null;
   const img = overlayElement.querySelector('.noxspot-screenshot');
   const drawingCanvas = overlayElement.querySelector('.noxspot-drawing-canvas');
+
+  if (!img?.naturalWidth || !img?.naturalHeight) return null;
 
   const mergeCanvas = document.createElement('canvas');
   mergeCanvas.width = img.naturalWidth;
   mergeCanvas.height = img.naturalHeight;
   const ctx = mergeCanvas.getContext('2d');
+  if (!ctx) return null;
 
   // Draw screenshot
   ctx.drawImage(img, 0, 0);

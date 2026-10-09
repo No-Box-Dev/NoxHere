@@ -38,6 +38,22 @@ const SKIP_STYLE_PROPS = new Set([
 
 const IMAGE_FETCH_TIMEOUT_MS = 3000;
 const RASTERIZE_TIMEOUT_MS = 10_000;
+const CAPTURE_NODE_LIMIT = 8_000;
+const CAPTURE_SYNC_TIME_LIMIT_MS = 1_500;
+const CAPTURE_SERIALIZED_BYTE_LIMIT = 8_000_000;
+const VIEWPORT_OVERSCAN_PX = 200;
+
+function captureNow() {
+  return typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+}
+
+function captureLimit(message) {
+  const error = new Error(message);
+  error.code = 'capture_limit_exceeded';
+  return error;
+}
 
 /**
  * Capture the current viewport as a PNG data URL.
@@ -54,10 +70,12 @@ export async function captureViewport(options = {}) {
   const background = options.backgroundColor || resolveBackground();
 
   const pairs = [];
-  const bodyClone = cloneNode(document.body, filter, pairs);
+  const budget = { nodes: 0, startedAt: captureNow(), viewportHeight: height };
+  const bodyClone = cloneNode(document.body, filter, pairs, budget);
   if (!bodyClone) throw new Error('Body node rejected by filter');
 
   for (const [source, clone] of pairs) {
+    assertWithinCaptureBudget(budget);
     flattenComputedStyle(source, clone);
     preserveFormState(source, clone);
   }
@@ -71,6 +89,7 @@ export async function captureViewport(options = {}) {
   // iterator reach the scrolled element's children next and overwrite
   // their transforms via flattenComputedStyle.
   for (const [source, clone] of pairs) {
+    assertWithinCaptureBudget(budget);
     applyScrollOffset(source, clone);
   }
 
@@ -109,6 +128,9 @@ export async function captureViewport(options = {}) {
   auditRemainingExternalUrls(wrapper);
 
   const svgString = buildSvg(wrapper, width, height);
+  if (svgString.length > CAPTURE_SERIALIZED_BYTE_LIMIT) {
+    throw captureLimit('Page capture exceeded the serialized size limit');
+  }
   const dataUrl = await rasterizeSvg(svgString, width, height, background);
 
   debugLog('[NoxSpot] Rasterize captured', {
@@ -130,11 +152,22 @@ function resolveBackground() {
   return '#ffffff';
 }
 
-function cloneNode(source, filter, pairs) {
+function assertWithinCaptureBudget(budget) {
+  if (budget.nodes > CAPTURE_NODE_LIMIT) {
+    throw captureLimit('Page capture exceeded the node limit');
+  }
+  if (captureNow() - budget.startedAt > CAPTURE_SYNC_TIME_LIMIT_MS) {
+    throw captureLimit('Page capture exceeded the synchronous time limit');
+  }
+}
+
+function cloneNode(source, filter, pairs, budget) {
   if (!source) return null;
 
   if (source.nodeType === Node.TEXT_NODE) return source.cloneNode(false);
   if (source.nodeType !== Node.ELEMENT_NODE) return null;
+  budget.nodes += 1;
+  assertWithinCaptureBudget(budget);
   // tagName is uppercase for HTML and lowercase for SVG/MathML — uppercase
   // before lookup so `<svg><style>...` and `<svg><script>...` get skipped
   // too. Without this, an SVG <style> with cross-origin url() refs survives
@@ -147,19 +180,54 @@ function cloneNode(source, filter, pairs) {
   // them as blank for cross-origin protection, even when same-origin.
   // cloneIframe inlines same-origin contents into a sized div so the
   // screenshot includes them, and renders a placeholder for cross-origin.
-  if (tag === 'IFRAME') return cloneIframe(source, filter, pairs);
+  if (tag === 'IFRAME') return cloneIframe(source, filter, pairs, budget);
 
   const clone = source.cloneNode(false);
   pairs.push([source, clone]);
 
-  for (const child of source.childNodes) {
-    const childClone = cloneNode(child, filter, pairs);
-    if (childClone) clone.appendChild(childClone);
-  }
+  cloneChildren(source, clone, filter, pairs, budget);
   return clone;
 }
 
-function cloneIframe(iframe, filter, pairs) {
+function cloneChildren(source, clone, filter, pairs, budget) {
+  const tableSection = ['TABLE', 'THEAD', 'TBODY', 'TFOOT'].includes(source.tagName?.toUpperCase());
+  let skippedRowHeight = 0;
+  let skippedColumnCount = 1;
+
+  const flushSkippedRows = () => {
+    if (!skippedRowHeight) return;
+    const row = source.ownerDocument.createElement('tr');
+    const cell = source.ownerDocument.createElement('td');
+    row.setAttribute('aria-hidden', 'true');
+    row.setAttribute('data-noxspot-spacer', 'true');
+    cell.colSpan = skippedColumnCount;
+    cell.style.cssText = `height:${skippedRowHeight}px;padding:0;border:0;visibility:hidden;`;
+    row.appendChild(cell);
+    clone.appendChild(row);
+    skippedRowHeight = 0;
+    skippedColumnCount = 1;
+  };
+
+  for (const child of source.childNodes) {
+    if (tableSection && child.nodeType === Node.ELEMENT_NODE && child.tagName?.toUpperCase() === 'TR' && rowOutsideViewport(child, budget.viewportHeight)) {
+      const rect = child.getBoundingClientRect();
+      skippedRowHeight += Math.max(0, rect.height || child.offsetHeight || 0);
+      skippedColumnCount = Math.max(skippedColumnCount, child.children?.length || 1);
+      continue;
+    }
+    flushSkippedRows();
+    const childClone = cloneNode(child, filter, pairs, budget);
+    if (childClone) clone.appendChild(childClone);
+  }
+  flushSkippedRows();
+}
+
+function rowOutsideViewport(row, viewportHeight) {
+  const rect = row.getBoundingClientRect();
+  return rect.bottom < -VIEWPORT_OVERSCAN_PX || rect.top > viewportHeight + VIEWPORT_OVERSCAN_PX;
+}
+
+function cloneIframe(iframe, filter, pairs, budget) {
   const rect = iframe.getBoundingClientRect();
   const wrapper = document.createElementNS(XHTML_NS, 'div');
   wrapper.setAttribute('xmlns', XHTML_NS);
@@ -208,7 +276,7 @@ function cloneIframe(iframe, filter, pairs) {
   // Same-origin: clone the inner body. The recursive cloneNode call pushes
   // pairs into the same array, so the captureViewport flatten loop later
   // copies computed styles for everything inside the iframe too.
-  const bodyClone = cloneNode(innerDoc.body, filter, pairs);
+  const bodyClone = cloneNode(innerDoc.body, filter, pairs, budget);
   if (!bodyClone) return wrapper;
 
   // Translate by the iframe's inner scroll position so the visible region

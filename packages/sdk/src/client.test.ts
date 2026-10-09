@@ -8,7 +8,9 @@ describe("@noxhere/sdk", () => {
     expect(new Set(operationDefinitions.map((item) => item.id)).size).toBe(operationDefinitions.length);
     const client = createNoxHere({ fetch: vi.fn() as typeof fetch });
     expect(Object.keys(client.operations)).toHaveLength(operationDefinitions.length);
-    expect(client.cue).toBe(client.incidents);
+    expect(client.cue).not.toBe(client.incidents);
+    expect(client.cue.getNoxCueDailyHealth).toBe(client.stats.getNoxCueDailyHealth);
+    expect(client.cue.getProjectIncidents).toBe(client.incidents.getProjectIncidents);
     expect(client.spot).toBe(client.feedback);
   });
 
@@ -18,6 +20,8 @@ describe("@noxhere/sdk", () => {
       path: { repo: string; number: number };
     }>();
     expectTypeOf(client.activity.getIssue).returns.toMatchTypeOf<Promise<Record<string, unknown>>>();
+    expectTypeOf(client.stats.getNoxCueDailyHealth).toBeFunction();
+    expectTypeOf(client.incidents.getProjectIncidents).toBeFunction();
 
     const compileTimeAssertions = () => {
       // @ts-expect-error Required OpenAPI path parameters cannot be omitted.

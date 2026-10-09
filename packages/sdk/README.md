@@ -7,57 +7,62 @@ repository's canonical OpenAPI contract and is grouped by functionality:
 import { createNoxHere } from "@noxhere/sdk";
 
 const nox = createNoxHere({ token: process.env.NOXHERE_TOKEN });
-const projects = await nox.workspace.listProjects();
-const incidents = await nox.incidents.getProjectIncidents({
-  path: { projectId: "project-1" },
-});
+const services = await nox.workspace.listNoxServices();
 ```
 
 The SDK is optional. The equivalent operation can always be called directly:
 
 ```ts
 const response = await fetch(
-  `https://app.noxhere.com/api/v1/projects/${projectId}/incidents`,
+  "https://app.noxhere.com/api/v1/services",
   { headers: { Authorization: `Bearer ${process.env.NOXHERE_API_TOKEN}` } },
 );
 if (!response.ok) throw await response.json();
-const incidents = await response.json();
+const services = await response.json();
 ```
 
 See the repository's [direct HTTP guide](../../public/docs/direct-api.md) and the
 OpenAPI-generated operation examples in the developer reference.
 
-Namespaces are `workspace`, `activity`, `planning`, `feedback`, and
-`incidents`. Compatibility aliases `connect`, `feed`, `ticket`, `spot`, and
-`cue` point to the same objects. Every operation is also available by its
+Namespaces are `workspace`, `activity`, `planning`, `feedback`, `stats`, and
+`incidents`. Compatibility aliases `connect`, `feed`, `ticket`, and `spot`
+point to the corresponding objects. The deprecated `cue` facade combines the
+`stats` and `incidents` operations so existing integrations continue to work.
+Every operation is also available by its
 OpenAPI operation ID through `nox.operations` and `nox.request()`.
 
 Path parameters, queries, request bodies, responses, and exported component
 models are generated from the same checked OpenAPI contract. Invalid operation
 names and malformed inputs fail during TypeScript compilation.
 
-Use `@noxhere/sdk/incidents` for the focused incident client or
+Use `@noxhere/sdk/stats` or `@noxhere/sdk/incidents` for focused clients, or
 `@noxhere/sdk/feedback` for a focused public feedback client.
 
 Telemetry is part of the same SDK, with runtime-specific entry points so a
 secret ingest key can never be included in a browser bundle:
 
 ```ts
-import { createNoxCue } from "@noxhere/sdk/telemetry/server";
+import { createNoxCueFromEnv } from "@noxhere/sdk/telemetry/server";
 
-const telemetry = createNoxCue({
-  key: process.env.NOXHERE_TELEMETRY_KEY!,
-  identityHashKey: process.env.NOXHERE_IDENTITY_HASH_KEY!,
-  environment: "production",
-});
+const telemetry = createNoxCueFromEnv();
 
-await telemetry.track("user.registered", { userId: "user-42" });
-await telemetry.track("records.parsed", { userId: "user-42", value: 3 });
+await telemetry.user.registered("user-42");
+await telemetry.events.recordParsed("user-42", "record-7");
 
 // Request-scoped identity adds only the opaque id to telemetry evidence.
 const userTelemetry = telemetry.forUser("user-42");
 await userTelemetry.auth.login(() => authenticate());
 ```
+
+Environment bootstrap reads `NOXHERE_INGEST_KEY`,
+`NOXHERE_IDENTITY_HASH_KEY`, `NOXHERE_IDENTITY_KEY_ID`,
+`NOXHERE_ENVIRONMENT`, and `NOXHERE_RELEASE`. Set
+`NOXHERE_TELEMETRY_MODE=memory` for a network-free test client and inspect
+`capturedEvents()`. Delivery retries respect `Retry-After`, use a versioned user
+agent, and report failure results without changing application outcomes. The
+optional `createNoxCueSpanProcessor()` bridge accepts only OpenTelemetry spans
+explicitly marked with `noxhere.event.name` and `noxhere.user.id`; it never
+captures request spans automatically.
 
 Browser applications import `@noxhere/sdk/telemetry/browser` and use a
 `nox_pub_…` key. The compatibility function remains named `createNoxCue`, but

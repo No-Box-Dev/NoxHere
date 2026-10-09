@@ -65,6 +65,9 @@ export function validateBoardStages(stages) {
     if (typeof stage.color !== "string" || !HEX_COLOR_RE.test(stage.color)) {
       return { ok: false, error: `Invalid stage color for "${stage.id}" (expected #RRGGBB)` };
     }
+    if (stage.completed !== undefined && typeof stage.completed !== "boolean") {
+      return { ok: false, error: `Invalid completed flag for "${stage.id}"` };
+    }
   }
   return { ok: true };
 }

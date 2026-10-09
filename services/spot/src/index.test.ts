@@ -75,6 +75,16 @@ describe("public capture Worker", () => {
     expect(await response.text()).toBe("window.__NoxSpotCore = {}");
   });
 
+  it("serves legacy direct loader aliases instead of treating them as site ids", async () => {
+    await env.ASSETS.put("noxspot.min.js", "window.NoxSpot = {}", { httpMetadata: { contentType: "application/javascript" } });
+    await env.ASSETS.put("blindspot.min.js", "window.Blindspot = {}", { httpMetadata: { contentType: "application/javascript" } });
+    for (const path of ["/widget/noxspot.min.js", "/widget/blindspot.min.js", "/noxspot.min.js", "/blindspot.min.js"]) {
+      const response = await SELF.fetch(`https://capture.test${path}`);
+      expect(response.status, path).toBe(200);
+      expect(await response.text(), path).toContain("window.");
+    }
+  });
+
   it("opens a valid reporter response page without mutating the issue", async () => {
     const token = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG";
     const hash = await tokenHash(token);

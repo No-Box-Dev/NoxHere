@@ -144,7 +144,8 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .sidebar-collapsed .service-icon { width: 28px; height: 28px; }
 .sidebar-collapsed .sidebar-account { grid-template-columns: 1fr; justify-items: center; padding-inline: 0; }
 .sidebar-collapsed .retrieval-panel { left: 86px; width: min(620px, calc(100vw - 118px)); }
-.sidebar-account { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 8px; margin-top: auto; padding: 8px; border-top: 1px solid var(--line); color: var(--muted); }
+.sidebar-account { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 8px; margin-top: auto; padding: 8px; border-top: 1px solid var(--line); color: var(--muted); text-decoration: none; }
+.sidebar-account:hover { color: var(--ink); }
 .sidebar-account > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--service-soft); color: var(--service); font-size: 8px; font-weight: 800; }
 .sidebar-account small { font-size: 8px; }
 
@@ -261,10 +262,10 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .ticket-card { position: relative; z-index: 0; margin-bottom: 8px; min-height: 90px; overflow: visible; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: var(--shadow); }
 .planning-person-picker { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 9px; font-weight: 700; white-space: nowrap; }
 .planning-person-picker select { min-width: 170px; height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--body); font-size: 9px; }
-.task-composer { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(180px, 260px) auto; align-items: center; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); box-shadow: var(--shadow); }
+.task-composer { display: grid; grid-template-columns: minmax(260px, 640px) minmax(180px, 260px) auto auto; align-items: center; gap: 8px; width: min(100%, 1080px); padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); box-shadow: var(--shadow); }
 .task-color-picker { border-left-width: 5px; }
 .board-task-composer { display: flex; align-items: center; gap: 8px; margin: -3px 0 13px; }
-.board-task-composer .task-composer { min-width: 0; flex: 1; }
+.board-task-composer .task-composer { min-width: 0; }
 .task-card-status { display: flex; align-items: center; justify-content: center; gap: 4px; width: 43px; height: 30px; padding: 0 5px; border: 1px solid color-mix(in srgb, currentColor 32%, transparent); border-radius: 8px; background: color-mix(in srgb, currentColor 10%, #fff); color: inherit; font-size: 7px; font-weight: 800; }
 .task-card-status:hover { background: color-mix(in srgb, currentColor 16%, #fff); transform: translateY(-1px); }
 .task-card-status svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
@@ -423,6 +424,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .stage-editor-row input[type="color"] { width: 28px; height: 28px; padding: 2px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
 .stage-editor-row input[type="text"], .stage-editor-row input:not([type]) { height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--body); font-size: 9px; }
 .stage-editor-row > span { color: var(--muted); font-size: 8px; }
+.stage-complete-choice { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 8px; white-space: nowrap; }
 .feed-view { max-width: 1080px; }
 .feed-group { margin-bottom: 18px; }
 .feed-group > header { display: flex; align-items: center; gap: 8px; margin: 0 1px 8px; }
@@ -811,3 +813,14 @@ button.list-row:hover { background: var(--service-soft); }
 .planning-ai-bar > input { background: transparent; border: 0; flex: 1; min-width: 180px; outline: 0; }
 .planning-ai-draft { flex: 1; font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .planning-ai-bar .form-error { margin: 0; }
+.planning-ai-dialog { width: min(720px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 32px)); overflow: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); box-shadow: var(--shadow); }
+.planning-ai-dialog > header { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+.planning-ai-dialog h2 { margin: 3px 0 0; }
+.planning-ai-conversation { display: grid; gap: 8px; max-height: 220px; overflow: auto; padding: 16px 22px 0; }
+.planning-ai-message { display: grid; gap: 3px; max-width: 86%; margin: 0; padding: 10px 12px; border-radius: 11px; background: var(--soft); font-size: 13px; }
+.planning-ai-message.user { justify-self: end; background: var(--service-soft); }
+.planning-ai-preview { display: grid; gap: 12px; margin: 16px 22px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.planning-ai-preview label, .planning-ai-prompt { display: grid; gap: 6px; }
+.planning-ai-preview textarea, .planning-ai-prompt textarea { resize: vertical; }
+.planning-ai-prompt { padding: 0 22px 20px; }
+.planning-ai-prompt footer { display: flex; justify-content: flex-end; gap: 8px; }

@@ -35,6 +35,8 @@ export interface NoxCueOptions {
   /** Retries after the first attempt. Defaults to 2 and is capped at 3. */
   maxRetries?: number;
   enabled?: boolean;
+  /** In-memory delivery for tests; performs validation and identity protection without network I/O. */
+  mode?: "deliver" | "memory";
   /** Supplies the current opaque application identity without retaining profile data. */
   getUser?: () => NoxCueIdentity | null | undefined;
   fetch?: typeof fetch;
@@ -170,6 +172,16 @@ export interface ServerNoxCueClient extends BaseNoxCueClient<ServerErrorOptions>
     active(userId: string, options?: EventOptions): Promise<DeliveryResult>;
   };
   activity(metric: `custom.${string}`, userId: string, options?: ActivityOptions): Promise<DeliveryResult>;
+  /** Built-in typed metric calls for typo-safe application instrumentation. */
+  events: {
+    reportGenerated(userId: string, reportId?: string, options?: EventOptions): Promise<DeliveryResult>;
+    recordParsed(userId: string, recordId?: string, options?: EventOptions): Promise<DeliveryResult>;
+    trialStarted(userId: string, options?: EventOptions): Promise<DeliveryResult>;
+    paidStarted(userId: string, options?: EventOptions): Promise<DeliveryResult>;
+    subscriptionCancelled(userId: string, options?: EventOptions): Promise<DeliveryResult>;
+  };
+  /** Returns protected wire events when mode is memory. */
+  capturedEvents(): ReadonlyArray<Readonly<Record<string, unknown>>>;
 }
 
 export interface NoxCueAdapterOptions {

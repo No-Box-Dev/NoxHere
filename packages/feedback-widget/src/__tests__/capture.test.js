@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { shouldSkipDataAttr, resolveElementSource } from '../capture.js';
+import { describe, it, expect, vi } from 'vitest';
+import { shouldSkipDataAttr, resolveElementSource, captureElementMap, collectNearbyDataAttributes } from '../capture.js';
 
 describe('shouldSkipDataAttr', () => {
   it('skips framework state attrs', () => {
@@ -169,5 +169,58 @@ describe('resolveElementSource', () => {
       line: 42,
       column: 5,
     });
+  });
+});
+
+describe('bounded capture metadata', () => {
+  it('rejects off-screen table-row subtrees before reading every cell style', () => {
+    const table = document.createElement('table');
+    const body = document.createElement('tbody');
+    table.appendChild(body);
+    for (let rowIndex = 0; rowIndex < 2_000; rowIndex += 1) {
+      const row = document.createElement('tr');
+      row.dataset.row = String(rowIndex);
+      for (let column = 0; column < 8; column += 1) {
+        const cell = document.createElement('td');
+        cell.textContent = `${rowIndex}:${column}`;
+        row.appendChild(cell);
+      }
+      body.appendChild(row);
+    }
+    document.body.appendChild(table);
+
+    const originalRect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      if (this.tagName === 'TR') {
+        const row = Number(this.dataset.row);
+        const top = row === 0 ? 10 : 2_000 + row * 24;
+        return { top, bottom: top + 24, left: 0, right: 800, width: 800, height: 24, x: 0, y: top, toJSON() {} };
+      }
+      return { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0, x: 0, y: 0, toJSON() {} };
+    };
+    const styleSpy = vi.spyOn(window, 'getComputedStyle');
+
+    try {
+      expect(() => captureElementMap()).not.toThrow();
+      expect(styleSpy.mock.calls.length).toBeLessThan(100);
+    } finally {
+      styleSpy.mockRestore();
+      Element.prototype.getBoundingClientRect = originalRect;
+      table.remove();
+    }
+  });
+
+  it('collects nearby row data without scanning an entire table', () => {
+    const table = document.createElement('table');
+    table.innerHTML = `<tbody>${Array.from({ length: 250 }, (_, index) =>
+      `<tr data-row-id="${index}"><td><button${index === 200 ? ' id="target"' : ''}>Open</button></td></tr>`
+    ).join('')}</tbody>`;
+    document.body.appendChild(table);
+    const target = table.querySelector('#target');
+
+    const result = collectNearbyDataAttributes(target);
+
+    expect(result['data-row-id']).toBe('200');
+    table.remove();
   });
 });

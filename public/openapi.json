@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "NoxConnect API",
+    "title": "NoxHere API",
     "version": "1.0.0",
-    "description": "Capability-first API for understanding NoxConnect, discovering each Nox service, connecting providers, and configuring service setup.",
+    "description": "One API for NoxHere workspace, activity, planning, feedback, statistics, and incident capabilities.",
     "license": {
       "name": "Proprietary",
       "identifier": "LicenseRef-Proprietary"
@@ -12,7 +12,7 @@
   "servers": [
     {
       "url": "https://app.noxhere.com",
-      "description": "Hosted NoxConnect API"
+      "description": "Hosted NoxHere API"
     }
   ],
   "security": [
@@ -74,10 +74,11 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
-        "x-change-safety": "safe_read"
+        "x-change-safety": "safe_read",
+        "description": "Get effective public widget configuration for the request origin. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below."
       }
     },
     "/api/spots/public/v1/reports": {
@@ -164,7 +165,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -243,10 +244,11 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
-        "x-change-safety": "write_not_safe_to_retry"
+        "x-change-safety": "write_not_safe_to_retry",
+        "description": "Submit a bounded batch of automatic browser errors. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below."
       }
     },
     "/api/spots/public/v1/resolution-responses/{token}": {
@@ -326,7 +328,7 @@
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -360,11 +362,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -386,6 +388,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List Nox services, their focus, capabilities, and setup readiness. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "services:read"
       }
@@ -429,11 +432,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -447,6 +450,7 @@
             "organization": []
           }
         ],
+        "description": "Get capabilities and setup readiness for one Nox service. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -489,11 +493,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -507,6 +511,7 @@
             "organization": []
           }
         ],
+        "description": "Get setup state, sections, blockers, and capabilities for one service. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -557,11 +562,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -642,11 +647,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "conditional_write",
@@ -703,11 +708,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -721,6 +726,7 @@
             "organization": []
           }
         ],
+        "description": "Get service readiness and connection checks. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -752,7 +758,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "parameters": [
@@ -835,6 +841,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Get normalized current work, posts, and release notes. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxfeed:read"
       }
@@ -874,13 +881,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-browser-session-only": true,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -926,7 +933,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
@@ -942,7 +949,7 @@
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -1000,13 +1007,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-browser-session-only": true,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -1064,13 +1071,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-browser-session-only": true,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -1110,11 +1117,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -1133,6 +1140,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Get resumable setup state and next actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1164,11 +1172,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -1187,6 +1195,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "List provider connection state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1237,11 +1246,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -1295,11 +1304,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -1314,6 +1323,7 @@
             "organization": []
           }
         ],
+        "description": "Disconnect a provider. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1345,11 +1355,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -1368,6 +1378,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "List channels visible to the connected Nox bot. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1399,11 +1410,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -1422,6 +1433,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Get service-to-channel routing. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "patch": {
@@ -1461,11 +1473,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -1485,6 +1497,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Partially update service-to-channel routing. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1527,7 +1540,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "413": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/PayloadTooLarge"
           },
           "415": {
             "$ref": "#/components/responses/V1Error"
@@ -1536,14 +1549,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "502": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -1608,11 +1621,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -1632,6 +1645,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Send a test message through a saved or candidate route. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1663,11 +1677,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -1686,6 +1700,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "List active projects used by feature setup. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -1726,14 +1741,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -1784,11 +1799,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -1807,6 +1822,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "List NoxConnect projects, repository assignments, and product destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1862,11 +1878,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -1881,6 +1897,7 @@
             "organization": []
           }
         ],
+        "description": "Atomically update one project's repositories and named Slack destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1912,11 +1929,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -1938,6 +1955,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List NoxSpot sites. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxspot:read"
       },
@@ -1978,11 +1996,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2005,6 +2023,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Create a NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxspot:write"
       }
@@ -2055,11 +2074,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2077,6 +2096,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Update a NoxSpot site including its channel override. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxspot:write"
       },
@@ -2115,11 +2135,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -2137,6 +2157,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Delete a NoxSpot site and its screenshots. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxspot:write"
       }
@@ -2169,11 +2190,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -2195,6 +2216,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List NoxCue sources, linked projects, and ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:read"
       },
@@ -2235,11 +2257,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2262,6 +2284,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Create a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -2312,11 +2335,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2334,6 +2357,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Update a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       },
@@ -2372,11 +2396,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -2394,6 +2418,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Delete a NoxCue source and revoke its keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -2434,11 +2459,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -2455,6 +2480,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List NoxCue key metadata, usage, and audit history. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:read"
       },
@@ -2523,11 +2549,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2588,11 +2614,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -2610,6 +2636,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Revoke a NoxCue ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -2656,11 +2683,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2678,6 +2705,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Rotate a NoxCue ingest key with a 24-hour overlap. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -2721,11 +2749,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -2742,6 +2770,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:read"
       },
@@ -2793,11 +2822,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2815,6 +2844,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Replace source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -2856,11 +2886,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -2925,11 +2955,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -2947,6 +2977,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Register a custom NoxCue feature before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -3003,11 +3034,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3025,6 +3056,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Update or pause a registered custom feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       },
@@ -3069,11 +3101,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -3091,6 +3123,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Delete a custom feature definition while retaining historical results. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -3131,11 +3164,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -3152,6 +3185,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List registered custom activity metrics and event status. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:read"
       },
@@ -3200,11 +3234,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3222,6 +3256,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Register a custom activity metric before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -3278,11 +3313,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3300,6 +3335,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Rename or pause a registered custom activity metric. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       },
@@ -3344,11 +3380,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -3366,6 +3402,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Delete a custom metric definition while retaining historical events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -3406,11 +3443,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -3427,6 +3464,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List selectable metrics and their active event status for one project. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:read"
       },
@@ -3475,11 +3513,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3497,6 +3535,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Choose metrics included in one project's daily report. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:write"
       }
@@ -3543,11 +3582,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -3564,6 +3603,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Get stored NoxCue-derived user metrics and digest state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:read"
       }
@@ -3615,11 +3655,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3677,11 +3717,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -3696,6 +3736,7 @@
             "organization": []
           }
         ],
+        "description": "Stop tracking a project without deleting it. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "delete": {
@@ -3734,11 +3775,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -3753,6 +3794,7 @@
             "organization": []
           }
         ],
+        "description": "Resume tracking an eligible project. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -3799,11 +3841,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -3817,6 +3859,7 @@
             "organization": []
           }
         ],
+        "description": "List tracked repositories or include all discovered repositories. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -3871,11 +3914,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -3895,6 +3938,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Acknowledge newly discovered repositories. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -3926,11 +3970,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -3949,6 +3993,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "List organization people and identity overlays. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -3991,11 +4036,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4009,6 +4054,7 @@
             "organization": []
           }
         ],
+        "description": "Get one organization identity. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "patch": {
@@ -4060,11 +4106,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4079,6 +4125,7 @@
             "organization": []
           }
         ],
+        "description": "Update an organization identity overlay. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -4125,7 +4172,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "502": {
             "$ref": "#/components/responses/V1Error"
@@ -4135,7 +4182,7 @@
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4150,6 +4197,7 @@
             "organization": []
           }
         ],
+        "description": "Draft a Planning feature or task with managed AI. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -4225,14 +4273,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4246,6 +4294,7 @@
             "organization": []
           }
         ],
+        "description": "List Planning tasks. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -4293,14 +4342,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4315,6 +4364,7 @@
             "organization": []
           }
         ],
+        "description": "Create a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -4376,14 +4426,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4398,6 +4448,7 @@
             "organization": []
           }
         ],
+        "description": "Update a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "delete": {
@@ -4444,14 +4495,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -4466,6 +4517,7 @@
             "organization": []
           }
         ],
+        "description": "Delete a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -4510,14 +4562,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4531,6 +4583,7 @@
             "organization": []
           }
         ],
+        "description": "List NoxTicket features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -4576,14 +4629,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4603,6 +4656,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Create a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -4658,14 +4712,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4680,6 +4734,7 @@
             "organization": []
           }
         ],
+        "description": "Partially update a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "delete": {
@@ -4720,14 +4775,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -4742,6 +4797,7 @@
             "organization": []
           }
         ],
+        "description": "Close a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -4796,11 +4852,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4814,6 +4870,7 @@
             "organization": []
           }
         ],
+        "description": "List NoxTicket specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -4856,11 +4913,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -4880,6 +4937,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Create a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -4922,11 +4980,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -4940,6 +4998,7 @@
             "organization": []
           }
         ],
+        "description": "Get one specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "patch": {
@@ -4993,11 +5052,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -5012,6 +5071,7 @@
             "organization": []
           }
         ],
+        "description": "Partially update or relink a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -5052,11 +5112,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -5071,6 +5131,7 @@
             "organization": []
           }
         ],
+        "description": "Archive a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "delete": {
@@ -5109,11 +5170,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "admin",
         "x-change-safety": "destructive",
@@ -5128,6 +5189,7 @@
             "organization": []
           }
         ],
+        "description": "Restore a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -5167,11 +5229,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -5185,6 +5247,7 @@
             "organization": []
           }
         ],
+        "description": "List specification attachments. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -5241,17 +5304,17 @@
             "$ref": "#/components/responses/V1Error"
           },
           "413": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/PayloadTooLarge"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -5266,6 +5329,7 @@
             "organization": []
           }
         ],
+        "description": "Upload a bounded specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -5312,11 +5376,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -5330,6 +5394,7 @@
             "organization": []
           }
         ],
+        "description": "Download a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "delete": {
@@ -5373,11 +5438,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -5392,6 +5457,7 @@
             "organization": []
           }
         ],
+        "description": "Delete a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -5423,7 +5489,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "parameters": [
@@ -5512,6 +5578,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List tracked GitHub issues. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxfeed:read"
       }
@@ -5558,7 +5625,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
@@ -5579,6 +5646,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Get one tracked GitHub issue. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxfeed:read"
       }
@@ -5611,7 +5679,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "parameters": [
@@ -5687,6 +5755,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List tracked pull requests. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxfeed:read"
       }
@@ -5733,7 +5802,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
@@ -5754,6 +5823,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Get one tracked pull request. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxfeed:read"
       }
@@ -5811,7 +5881,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
@@ -5835,6 +5905,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Close a pull request through GitHub. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -5887,7 +5958,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
@@ -5905,6 +5976,7 @@
             "organization": []
           }
         ],
+        "description": "Get normalized monthly activity for one engineer. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -5937,7 +6009,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
@@ -5960,6 +6032,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Get organization AI execution settings. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "put": {
@@ -6013,7 +6086,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
@@ -6040,6 +6113,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
+        "description": "Set organization AI execution mode. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -6083,11 +6157,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -6105,6 +6179,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "Retry blocked deliveries for one NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxspot:write"
       }
@@ -6137,7 +6212,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "parameters": [
@@ -6168,7 +6243,7 @@
           }
         ],
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "safe_read",
@@ -6185,6 +6260,7 @@
             "noxApiToken": []
           }
         ],
+        "description": "List recent NoxCue events and Slack delivery state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
         "x-automation-scope": "noxcue:read"
       }
@@ -6220,6 +6296,33 @@
                     "$ref": "#/components/schemas/NoxCueTrackedEvent"
                   }
                 ]
+              },
+              "examples": {
+                "anonymousWebsiteActivity": {
+                  "summary": "Anonymous count-only browser activity",
+                  "value": {
+                    "version": 1,
+                    "type": "activity.tracked",
+                    "eventId": "8f7ec5e2-e8d3-4e08-a185-7fd4966e9529",
+                    "occurredAt": "2026-10-09T08:00:00.000Z",
+                    "environment": "production",
+                    "name": "website.signup_clicked",
+                    "value": 1
+                  }
+                },
+                "protectedServerActivity": {
+                  "summary": "Server activity with an SDK-protected identity",
+                  "value": {
+                    "version": 1,
+                    "type": "activity.tracked",
+                    "eventId": "21f7b6ad-3648-4515-b086-b7a2a69de1bf",
+                    "occurredAt": "2026-10-09T08:00:00.000Z",
+                    "environment": "production",
+                    "name": "custom.records.parsed",
+                    "userId": "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40",
+                    "value": 1
+                  }
+                }
               }
             }
           }
@@ -6248,18 +6351,18 @@
             "$ref": "#/components/responses/V1Error"
           },
           "413": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/PayloadTooLarge"
           },
           "415": {
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "description": "Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.",
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "ingest_key",
         "x-change-safety": "idempotent_with_event_key",
@@ -6329,14 +6432,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -6406,14 +6509,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -6480,14 +6583,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -6561,14 +6664,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
@@ -6626,11 +6729,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "native_refresh",
         "x-change-safety": "destructive"
@@ -6666,11 +6769,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -6733,11 +6836,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -6797,14 +6900,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": true,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read"
@@ -6849,14 +6952,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -6918,14 +7021,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "security": [
@@ -6977,14 +7080,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -7046,14 +7149,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -7112,14 +7215,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "security": [
@@ -7192,14 +7295,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -7255,7 +7358,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -7313,7 +7416,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -7382,7 +7485,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -7440,7 +7543,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -7498,7 +7601,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -7556,14 +7659,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -7614,14 +7717,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -7682,14 +7785,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "security": [
@@ -7741,14 +7844,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -7799,14 +7902,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -7857,7 +7960,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
@@ -7915,14 +8018,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "security": [
@@ -7981,14 +8084,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "platform_operator",
         "x-first-party-client": true,
         "x-organization-optional": true,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "platform_operator",
         "x-change-safety": "safe_read"
@@ -8044,7 +8147,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
@@ -8054,7 +8157,7 @@
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "x-change-safety": "write_not_safe_to_retry",
@@ -8116,14 +8219,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "security": [
@@ -8175,7 +8278,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -8337,14 +8440,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "security": [
@@ -8396,14 +8499,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -8464,14 +8567,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "security": [
@@ -8523,14 +8626,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -8589,14 +8692,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "security": [
@@ -8658,14 +8761,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "security": [
@@ -8717,14 +8820,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "security": [
@@ -8775,7 +8878,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -8783,7 +8886,7 @@
         "x-organization-optional": false,
         "x-guest-access": "read",
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
         "x-authentication": "member",
         "parameters": [
@@ -8887,11 +8990,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-required-role": "admin",
         "x-authentication": "admin",
@@ -8939,7 +9042,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -8947,7 +9050,7 @@
         "x-organization-optional": false,
         "x-guest-access": "read",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "member",
         "parameters": [
@@ -9046,12 +9149,12 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -9112,12 +9215,12 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -9219,12 +9322,12 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -9307,13 +9410,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
+        "description": "Render a safe preview of a draft resolution email template. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "admin",
         "x-project-scope": "optional",
         "security": [
@@ -9402,7 +9506,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
@@ -9410,7 +9514,7 @@
         },
         "x-required-role": "admin",
         "tags": [
-          "NoxSpot"
+          "Feedback"
         ],
         "x-authentication": "admin",
         "x-project-scope": "optional",
@@ -9472,14 +9576,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "parameters": [
@@ -9519,7 +9623,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/StatsDashboard"
                 }
               }
             }
@@ -9540,12 +9644,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
+        "description": "Read the project Cue dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9579,7 +9684,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/StatEventList"
                 }
               }
             }
@@ -9600,12 +9705,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
+        "description": "Read project Cue statistic events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9639,7 +9745,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/IncidentAlertList"
                 }
               }
             }
@@ -9660,12 +9766,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
+        "description": "Read project Cue alerts. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9699,7 +9806,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/IncidentAlertRuleList"
                 }
               }
             }
@@ -9720,12 +9827,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Incidents"
         ],
+        "description": "Read project Cue alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9770,7 +9878,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -9844,7 +9952,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "member",
@@ -9852,7 +9960,7 @@
         "x-organization-optional": true,
         "x-browser-session-only": true,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive"
@@ -9894,11 +10002,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -9912,6 +10020,7 @@
             "organization": []
           }
         ],
+        "description": "List attachments for one Planning feature.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -9968,17 +10077,17 @@
             "$ref": "#/components/responses/V1Error"
           },
           "413": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/PayloadTooLarge"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "write_not_safe_to_retry",
@@ -9993,6 +10102,7 @@
             "organization": []
           }
         ],
+        "description": "Upload a bounded attachment to one Planning feature.",
         "x-project-scope": "optional"
       }
     },
@@ -10039,11 +10149,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
@@ -10057,6 +10167,7 @@
             "organization": []
           }
         ],
+        "description": "Download one attachment from a Planning feature.",
         "x-project-scope": "optional"
       },
       "delete": {
@@ -10100,11 +10211,11 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxTicket"
+          "Planning"
         ],
         "x-authentication": "member",
         "x-change-safety": "destructive",
@@ -10119,6 +10230,7 @@
             "organization": []
           }
         ],
+        "description": "Delete one attachment from a Planning feature.",
         "x-project-scope": "optional"
       }
     },
@@ -10161,12 +10273,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
+        "description": "Read project activity. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10221,12 +10334,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
+        "description": "Read project issues. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10281,12 +10395,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
+        "description": "Read project feedback. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10320,7 +10435,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/ProjectIncidentOverview"
                 }
               }
             }
@@ -10341,12 +10456,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "Incidents"
         ],
+        "description": "Read project incidents. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10389,7 +10505,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/ProjectIncidentResponse"
                 }
               }
             }
@@ -10410,12 +10526,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "Incidents"
         ],
+        "description": "Read one project incident. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10455,7 +10572,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApiRecord"
+                "$ref": "#/components/schemas/ProjectIncidentUpdate"
               }
             }
           }
@@ -10466,7 +10583,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/ProjectIncidentResponse"
                 }
               }
             }
@@ -10487,12 +10604,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxConnect"
+          "Incidents"
         ],
+        "description": "Update one project incident. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10527,7 +10645,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/CueActions"
                 }
               }
             }
@@ -10548,12 +10666,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
+        "description": "Read project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10595,7 +10714,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiRecord"
+                  "$ref": "#/components/schemas/CueActions"
                 }
               }
             }
@@ -10616,12 +10735,13 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "tags": [
-          "NoxCue"
+          "Stats"
         ],
+        "description": "Update project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10667,14 +10787,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -10735,14 +10855,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -10805,14 +10925,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -10875,14 +10995,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           }
         },
         "x-required-role": "admin",
         "x-first-party-client": true,
         "x-organization-optional": false,
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "admin",
         "parameters": [
@@ -10944,7 +11064,7 @@
             "$ref": "#/components/responses/V1Error"
           },
           "413": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/PayloadTooLarge"
           },
           "415": {
             "$ref": "#/components/responses/V1Error"
@@ -10953,14 +11073,14 @@
             "$ref": "#/components/responses/V1Error"
           },
           "429": {
-            "$ref": "#/components/responses/V1Error"
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/V1Error"
           }
         },
         "tags": [
-          "NoxConnect"
+          "NoxHere"
         ],
         "x-authentication": "member",
         "parameters": [
@@ -14497,6 +14617,629 @@
             }
           }
         }
+      },
+      "StatCard": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "value",
+          "context",
+          "change",
+          "direction",
+          "points"
+        ],
+        "description": "One formatted statistics card and its ordered chart points.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable metric key."
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable card label."
+          },
+          "value": {
+            "type": "string",
+            "description": "Formatted current value."
+          },
+          "context": {
+            "type": "string",
+            "description": "Window or comparison context."
+          },
+          "change": {
+            "type": "string",
+            "description": "Formatted change from the comparison period."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "same"
+            ]
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Oldest-to-newest chart values."
+          },
+          "breakdown": {
+            "$ref": "#/components/schemas/StatCardBreakdown"
+          }
+        }
+      },
+      "StatCardBreakdown": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "actionLabel",
+          "windowDays",
+          "totalActions",
+          "activeUsers",
+          "participatingUsers",
+          "participationRate",
+          "actionsPerParticipant"
+        ],
+        "properties": {
+          "actionLabel": {
+            "type": "string"
+          },
+          "windowDays": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "totalActions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "activeUsers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "participatingUsers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "participationRate": {
+            "type": "number",
+            "minimum": 0
+          },
+          "actionsPerParticipant": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "StatsDashboard": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "range",
+          "dateLabel",
+          "reportStatus",
+          "stats"
+        ],
+        "description": "Production statistics dashboard for one project.",
+        "properties": {
+          "range": {
+            "type": "string"
+          },
+          "dateLabel": {
+            "type": "string"
+          },
+          "reportStatus": {
+            "type": "string"
+          },
+          "stats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatCard"
+            }
+          }
+        }
+      },
+      "CueAction": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slot",
+          "key",
+          "label"
+        ],
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "key": {
+            "type": "string",
+            "pattern": "^custom\\.[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){0,4}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        }
+      },
+      "CueActions": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "projectId",
+          "windowDays",
+          "actions",
+          "snippet"
+        ],
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "windowDays": {
+            "type": "integer",
+            "enum": [
+              7,
+              14,
+              30
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/CueAction"
+            }
+          },
+          "snippet": {
+            "type": "string"
+          }
+        }
+      },
+      "StatEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "type",
+          "subject",
+          "environment",
+          "receivedAt",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Truncated protected subject hash; never the original identifier."
+          },
+          "environment": {
+            "type": "string"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected"
+            ]
+          }
+        }
+      },
+      "StatEventList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/StatEvent"
+        }
+      },
+      "IncidentAlert": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "sourceId",
+          "fingerprint",
+          "title",
+          "environment",
+          "summary",
+          "status",
+          "occurrences",
+          "happenedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "resolved"
+            ]
+          },
+          "occurrences": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "happenedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IncidentAlertList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IncidentAlert"
+        }
+      },
+      "IncidentAlertRule": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "condition",
+          "environment",
+          "source",
+          "enabled"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "feature",
+              "error",
+              "health"
+            ]
+          },
+          "condition": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IncidentAlertRuleList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IncidentAlertRule"
+        }
+      },
+      "ProjectIncident": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "sourceId",
+          "fingerprint",
+          "title",
+          "errorCode",
+          "component",
+          "environment",
+          "firstSeenAt",
+          "lastSeenAt",
+          "occurrenceCount",
+          "status",
+          "acknowledgedAt",
+          "acknowledgedBy",
+          "resolvedAt",
+          "resolvedBy"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^inc_[a-f0-9]{32}$"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "component": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "environment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "firstSeenAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "occurrenceCount": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "acknowledged",
+              "resolved"
+            ]
+          },
+          "acknowledgedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "acknowledgedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resolvedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "resolvedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectIncidentResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "incident"
+        ],
+        "properties": {
+          "incident": {
+            "$ref": "#/components/schemas/ProjectIncident"
+          }
+        }
+      },
+      "ProjectIncidentUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "acknowledged",
+              "resolved"
+            ]
+          }
+        }
+      },
+      "ProjectIncidentOverview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "project",
+          "sources",
+          "metrics",
+          "errors"
+        ],
+        "description": "Incident overview for the selected project, including active sources and unresolved error groups.",
+        "properties": {
+          "project": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "id",
+                "name",
+                "environment"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "environment": {
+                  "type": "string"
+                },
+                "last_registration_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "last_activity_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "source_id",
+                "source_name",
+                "period",
+                "metric_key",
+                "value",
+                "origin"
+              ],
+              "properties": {
+                "source_id": {
+                  "type": "string"
+                },
+                "source_name": {
+                  "type": "string"
+                },
+                "period": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "metric_key": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "number"
+                },
+                "origin": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "id",
+                "source_id",
+                "source_name",
+                "fingerprint",
+                "title",
+                "environment",
+                "last_seen_at",
+                "occurrence_count"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "source_id": {
+                  "type": "string"
+                },
+                "source_name": {
+                  "type": "string"
+                },
+                "fingerprint": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "environment": {
+                  "type": "string"
+                },
+                "last_seen_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "occurrence_count": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        }
       }
     },
     "responses": {
@@ -14529,6 +15272,35 @@
             }
           }
         }
+      },
+      "RateLimited": {
+        "description": "Request rate limit exceeded. Wait for the Retry-After delay before retrying.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait before another request.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiV1Error"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "Request payload exceeds the operation's documented size limit.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiV1Error"
+            }
+          }
+        }
       }
     }
   },
@@ -14538,11 +15310,11 @@
   },
   "tags": [
     {
-      "name": "NoxConnect",
-      "description": "Connections, identity, repositories, projects, and shared delivery."
+      "name": "NoxHere",
+      "description": "Workspace connections, identity, repositories, projects, and shared delivery."
     },
     {
-      "name": "NoxTicket",
+      "name": "Planning",
       "description": "Features, workflow, specifications, and attachments."
     },
     {
@@ -14550,12 +15322,16 @@
       "description": "Current work, engineering activity, and narratives."
     },
     {
-      "name": "NoxSpot",
+      "name": "Feedback",
       "description": "Sites, website feedback capture, and screenshots."
     },
     {
-      "name": "NoxCue",
-      "description": "Event sources, ingest keys, customer-health events, and metrics."
+      "name": "Stats",
+      "description": "Telemetry sources, ingest keys, activity events, product metrics, and dashboards."
+    },
+    {
+      "name": "Incidents",
+      "description": "Feature health, error groups, alerts, and GitHub incident routing."
     }
   ]
 }

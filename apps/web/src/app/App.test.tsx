@@ -189,7 +189,8 @@ describe("NoxConnect API-backed platform", () => {
 
     renderApp(<><App /><CurrentRoute /></>, "/");
     const workspaceSelector = await screen.findByRole("combobox", { name: "Workspace" });
-    expect(workspaceSelector).toHaveValue("jaspernoboxdev");
+    expect(workspaceSelector).toHaveValue("no-box-dev");
+    await user.selectOptions(workspaceSelector, "jaspernoboxdev");
     expect(await screen.findByText("No projects yet")).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: "New project name" }), "First project");
     await user.click(screen.getByRole("button", { name: "Create project" }));
@@ -216,6 +217,7 @@ describe("NoxConnect API-backed platform", () => {
 
     expect(await screen.findByRole("link", { name: "NoxHere home" })).toHaveTextContent("NoxHere");
     expect(screen.getByRole("button", { name: "Open project switcher" })).toHaveTextContent("Projects");
+    expect(screen.getByRole("link", { name: "Open API documentation" })).toHaveAttribute("href", "/developers");
     expect(screen.queryByText(project.name)?.closest(".brand-row")).toBeNull();
   });
 

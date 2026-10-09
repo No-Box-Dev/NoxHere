@@ -35,6 +35,17 @@ class CapabilityOperation(TypedDict, total=False):
     method: Required[Literal['GET', 'POST', 'PUT', 'PATCH', 'DELETE']]
     path: Required[str]
 
+class CueAction(TypedDict, total=False):
+    key: Required[str]
+    label: Required[str]
+    slot: Required[int]
+
+class CueActions(TypedDict, total=False):
+    actions: Required[list["CueAction"]]
+    projectId: Required[str]
+    snippet: Required[str]
+    windowDays: Required[Literal[7, 14, 30]]
+
 class DeveloperFeedbackCreate(TypedDict, total=False):
     area: Required[Literal['api', 'documentation', 'sdk', 'product', 'other']]
     category: Required[Literal['bug', 'friction', 'suggestion', 'missing_capability', 'other']]
@@ -92,6 +103,30 @@ class FeedPullRequest(TypedDict, total=False):
     number: Required[int]
     title: Required[str]
     url: Required[str]
+
+class IncidentAlert(TypedDict, total=False):
+    environment: Required[str]
+    fingerprint: Required[str]
+    happenedAt: Required[str]
+    id: Required[str]
+    occurrences: Required[int]
+    sourceId: Required[str]
+    status: Required[Literal['active', 'resolved']]
+    summary: Required[str]
+    title: Required[str]
+
+IncidentAlertList: TypeAlias = list["IncidentAlert"]
+
+class IncidentAlertRule(TypedDict, total=False):
+    condition: Required[str]
+    enabled: Required[bool]
+    environment: Required[str]
+    id: Required[str]
+    kind: Required[Literal['feature', 'error', 'health']]
+    name: Required[str]
+    source: Required[str]
+
+IncidentAlertRuleList: TypeAlias = list["IncidentAlertRule"]
 
 JsonValue: TypeAlias = JsonPrimitive | list["JsonValue"] | dict[str, "JsonValue"]
 
@@ -383,6 +418,37 @@ class ProjectDestination(TypedDict, total=False):
     channelId: Required[str]
     connectionId: Required[str]
 
+class ProjectIncident(TypedDict, total=False):
+    acknowledgedAt: Required[Union[str, None]]
+    acknowledgedBy: Required[Union[str, None]]
+    component: Required[Union[str, None]]
+    environment: Required[Union[str, None]]
+    errorCode: Required[Union[str, None]]
+    fingerprint: Required[str]
+    firstSeenAt: Required[str]
+    id: Required[str]
+    lastSeenAt: Required[str]
+    occurrenceCount: Required[int]
+    resolvedAt: Required[Union[str, None]]
+    resolvedBy: Required[Union[str, None]]
+    sourceId: Required[str]
+    sourceName: NotRequired[str]
+    status: Required[Literal['open', 'acknowledged', 'resolved']]
+    title: Required[str]
+    updatedAt: NotRequired[str]
+
+class ProjectIncidentOverview(TypedDict, total=False):
+    errors: Required[list["ProjectIncidentOverviewErrors"]]
+    metrics: Required[list["ProjectIncidentOverviewMetrics"]]
+    project: Required[Union["ProjectIncidentOverviewProject", None]]
+    sources: Required[list["ProjectIncidentOverviewSources"]]
+
+class ProjectIncidentResponse(TypedDict, total=False):
+    incident: Required["ProjectIncident"]
+
+class ProjectIncidentUpdate(TypedDict, total=False):
+    status: Required[Literal['open', 'acknowledged', 'resolved']]
+
 class ProjectRoutingInput(TypedDict, total=False):
     enabled: Required[bool]
     repositories: Required[list[str]]
@@ -540,6 +606,42 @@ class SpecPatch(TypedDict, total=False):
 
 class StartConnectionBody(TypedDict, total=False):
     team: NotRequired[Union[str, None]]
+
+class StatCard(TypedDict, total=False):
+    breakdown: NotRequired["StatCardBreakdown"]
+    change: Required[str]
+    context: Required[str]
+    direction: Required[Literal['up', 'down', 'same']]
+    id: Required[str]
+    name: Required[str]
+    points: Required[list[float]]
+    value: Required[str]
+
+class StatCardBreakdown(TypedDict, total=False):
+    actionLabel: Required[str]
+    actionsPerParticipant: Required[float]
+    activeUsers: Required[int]
+    participatingUsers: Required[int]
+    participationRate: Required[float]
+    totalActions: Required[int]
+    windowDays: Required[int]
+
+class StatEvent(TypedDict, total=False):
+    environment: Required[str]
+    id: Required[str]
+    name: Required[str]
+    receivedAt: Required[str]
+    status: Required[Literal['accepted', 'rejected']]
+    subject: Required[str]
+    type: Required[str]
+
+StatEventList: TypeAlias = list["StatEvent"]
+
+class StatsDashboard(TypedDict, total=False):
+    dateLabel: Required[str]
+    range: Required[str]
+    reportStatus: Required[str]
+    stats: Required[list["StatCard"]]
 
 class UserAction(TypedDict, total=False):
     provider: Required[str]
@@ -977,6 +1079,35 @@ class NoxTicketConfigPatchWorkflow(TypedDict, total=False):
 class PlanningAssistResponseDraft(TypedDict, total=False):
     featureNumber: Required[Union[int, None]]
     title: Required[str]
+
+class ProjectIncidentOverviewErrors(TypedDict, total=False):
+    environment: Required[str]
+    fingerprint: Required[str]
+    id: Required[str]
+    last_seen_at: Required[str]
+    occurrence_count: Required[int]
+    source_id: Required[str]
+    source_name: Required[str]
+    title: Required[str]
+
+class ProjectIncidentOverviewMetrics(TypedDict, total=False):
+    metric_key: Required[str]
+    origin: Required[str]
+    period: Required[str]
+    source_id: Required[str]
+    source_name: Required[str]
+    value: Required[float]
+
+class ProjectIncidentOverviewProject(TypedDict, total=False):
+    id: Required[str]
+    name: Required[str]
+
+class ProjectIncidentOverviewSources(TypedDict, total=False):
+    environment: Required[str]
+    id: Required[str]
+    last_activity_at: NotRequired[Union[str, None]]
+    last_registration_at: NotRequired[Union[str, None]]
+    name: Required[str]
 
 class ProjectRoutingInputRoutes(TypedDict, total=False):
     noxCue: Required["ProjectDestination"]

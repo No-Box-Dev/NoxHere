@@ -9,6 +9,7 @@
 import { injectStyles } from './styles.js';
 import { captureScreenshot } from './capture.js';
 import { showOverlay, hideOverlay } from './overlay.js';
+import { hasBlock } from './utils.js';
 
 let stylesInjected = false;
 
@@ -35,15 +36,16 @@ function ensureStyles() {
  */
 function open({ mode, callbacks, onCaptureReady, onCaptureFailed }) {
   ensureStyles();
+  const capture = () => captureScreenshot({ includeElementMap: hasBlock(callbacks?.blocks, 'element_picker') });
 
   if (mode === 'click') {
-    showOverlay(captureScreenshot(), callbacks);
+    showOverlay(capture(), callbacks);
     return;
   }
 
   // Shortcut path: capture must finish before the overlay mounts, so that
   // transient UI (open <select>, menus) is still visible when we rasterize.
-  captureScreenshot()
+  capture()
     .then((capture) => {
       if (onCaptureReady) onCaptureReady();
       showOverlay(Promise.resolve(capture), callbacks);

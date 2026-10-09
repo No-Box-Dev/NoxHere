@@ -40,7 +40,8 @@
       <div class="nav-group">
         <p class="nav-label">Platform</p>
         <a href="#services">Services</a>
-        <a href="#noxcue-sdk">NoxCue SDK</a>
+        <a href="#noxcue-sdk">Telemetry SDK</a>
+        <a href="/docs/data-governance.md">Data governance</a>
         <a href="#control-plane">Control plane</a>
         <a href="#configuration">Configuration</a>
         <a href="#developer-feedback">Developer feedback</a>
@@ -56,8 +57,8 @@
     <main class="content" id="content">
       <section class="hero" aria-labelledby="page-title">
         <div class="eyebrow">API version 1 · Capability contract</div>
-        <h1 id="page-title">One API. Five focused <span class="gradient-word">services.</span></h1>
-        <p class="lede">NoxHere is one product with Feed, Ticket, Spot, Cue, and Connect capabilities. Its API authenticates and scopes every request without exposing provider credentials.</p>
+        <h1 id="page-title">One API. Clear <span class="gradient-word">capabilities.</span></h1>
+        <p class="lede">NoxHere is one product with Planning, Activity, Feedback, Stats, and Incidents capabilities. NoxConnect is its private provider-connection layer. The API authenticates and scopes every request without exposing provider credentials.</p>
         <div class="hero-actions">
           <a class="button accent" href="#quickstart">Make your first request →</a>
           <a class="button" href="/openapi.json">Download OpenAPI</a>
@@ -274,7 +275,7 @@ noxconnect whoami</code></pre>
           <pre id="noxspot-identify"><code><span class="token-comment">// The site-specific script auto-initializes NoxSpot.</span>
 <span class="token-comment">// Run this after it loads and whenever the signed-in user changes.</span>
 NoxSpot.identify({
-  <span class="token-key">id</span>: currentUser.id, <span class="token-comment">// Shared with NoxCue; NoxSpot does not submit it</span>
+  <span class="token-key">id</span>: currentUser.id, <span class="token-comment">// Used only by the host; NoxSpot does not submit it</span>
   <span class="token-key">name</span>: currentUser.name,
   <span class="token-key">email</span>: currentUser.email,
   <span class="token-key">avatarUrl</span>: currentUser.avatarUrl, <span class="token-comment">// Optional HTTPS URL</span>
@@ -287,8 +288,7 @@ NoxSpot.identify(null);</code></pre>
         </div>
         <div class="code-block">
           <div class="code-head"><span>browser · manual initialization</span><button class="copy-button" type="button" data-copy="noxspot-get-reporter">Copy</button></div>
-          <pre id="noxspot-get-reporter"><code><span class="token-comment">// Reuse this provider as NoxCue's getUser option.</span>
-const getUser = () =&gt; ({
+          <pre id="noxspot-get-reporter"><code>const getUser = () =&gt; ({
   <span class="token-key">id</span>: currentUser.id,
   <span class="token-key">name</span>: currentUser.name,
   <span class="token-key">email</span>: currentUser.email,
@@ -301,7 +301,7 @@ NoxSpot.init({
 });</code></pre>
         </div>
         <div class="callouts">
-          <article class="callout"><h3>Privacy boundary</h3><p>NoxSpot discards the shared opaque <code>id</code>. The reporter email and profile-picture URL are never copied into GitHub. NoxConnect encrypts and retains the email only when <code>notifyOnResolution</code> is true; the optional HTTPS avatar is visible only in authenticated NoxSpot views. NoxCue receives only the opaque ID and stores a source-scoped hash.</p></article>
+          <article class="callout"><h3>Privacy boundary</h3><p>NoxSpot discards the supplied <code>id</code>. The reporter email and profile-picture URL are never copied into GitHub. NoxConnect encrypts and retains the email only when <code>notifyOnResolution</code> is true; the optional HTTPS avatar is visible only in authenticated NoxSpot views. Telemetry identity is configured separately in the server SDK and is HMAC-protected before transmission.</p></article>
           <article class="callout"><h3>Consent boundary</h3><p>Omit <code>notifyOnResolution</code> to leave the widget checkbox under the reporter's control. A host may set it to true only when it has already obtained permission for that transactional update.</p></article>
         </div>
       </section>
@@ -326,24 +326,29 @@ NoxSpot.init({
             <div class="pills"><span class="pill">OAuth</span><span class="pill">Provider capabilities</span><span class="pill">Routing</span><span class="pill">Outbox + retries</span><span class="pill provider">Only service with provider secrets</span></div>
           </article>
           <article class="service-card">
-            <div class="service-top"><h3>NoxTicket</h3><span class="service-type">Product</span></div>
+            <div class="service-top"><h3>Planning</h3><span class="service-type">Capability</span></div>
             <p>Planning and delivery workflow backed by GitHub issues, feature stages, specifications, and attachments.</p>
             <div class="pills"><span class="pill">Features</span><span class="pill">Workflow</span><span class="pill">Specifications</span><span class="pill">Delivery</span></div>
           </article>
           <article class="service-card">
-            <div class="service-top"><h3>NoxFeed</h3><span class="service-type">Product</span></div>
+            <div class="service-top"><h3>Activity</h3><span class="service-type">Capability</span></div>
             <p>Current work and communication across issues, pull requests, engineering activity, posts, and release notes.</p>
             <div class="pills"><span class="pill">Current work</span><span class="pill">Activity</span><span class="pill">Narratives</span><span class="pill">Delivery</span></div>
           </article>
           <article class="service-card">
-            <div class="service-top"><h3>NoxSpot</h3><span class="service-type">Product</span></div>
+            <div class="service-top"><h3>Feedback</h3><span class="service-type">Capability</span></div>
             <p>Website feedback capture with sites, origin-bound widget configuration, reports, screenshots, and delivery.</p>
             <div class="pills"><span class="pill">Sites</span><span class="pill">Widget</span><span class="pill">Reports</span><span class="pill">Delivery</span></div>
           </article>
           <article class="service-card">
-            <div class="service-top"><h3>NoxCue</h3><span class="service-type">Product</span></div>
-            <p>Customer health monitoring from bounded lifecycle and error events through metrics and scheduled summaries.</p>
-            <div class="pills"><span class="pill">Sources</span><span class="pill">Ingest keys</span><span class="pill">Health metrics</span><span class="pill">GitHub incidents</span><span class="pill">Delivery</span></div>
+            <div class="service-top"><h3>Stats</h3><span class="service-type">Capability</span></div>
+            <p>Anonymous browser activity and protected server facts through product metrics, dashboards, and scheduled summaries.</p>
+            <div class="pills"><span class="pill">Sources</span><span class="pill">Ingest keys</span><span class="pill">Metrics</span><span class="pill">Dashboards</span></div>
+          </article>
+          <article class="service-card">
+            <div class="service-top"><h3>Incidents</h3><span class="service-type">Capability</span></div>
+            <p>Feature health, safe error evidence, alerts, status tracking, and optional GitHub issue routing.</p>
+            <div class="pills"><span class="pill">Feature health</span><span class="pill">Errors</span><span class="pill">Alerts</span><span class="pill">GitHub routing</span></div>
           </article>
         </div>
         <h3 class="service-map-title">Runtime and data map</h3>
@@ -368,12 +373,12 @@ NoxSpot.init({
       </section>
 
       <section class="section" id="noxcue-sdk">
-        <p class="section-kicker">NoxCue SDK</p>
+        <p class="section-kicker">Telemetry SDK</p>
         <h2>Know when the product experience breaks</h2>
         <p class="section-intro">NoxCue turns a few meaningful app outcomes into immediate, actionable alerts and a completed-day product pulse. It detects and preserves evidence; it never retries a user action, changes application state, or tries to replace logs, traces, and observability.</p>
 
         <ol class="flow" aria-label="NoxCue setup flow">
-          <li class="flow-step"><span class="flow-number">01</span><strong>Create a source</strong><span>In NoxHere, open NoxCue and create one source for each app environment. Link it to a project when the organization has more than one project.</span></li>
+          <li class="flow-step"><span class="flow-number">01</span><strong>Create a source</strong><span>In NoxHere, open Stats and create one source for each app environment. Link it to a project when the organization has more than one project.</span></li>
           <li class="flow-step"><span class="flow-number">02</span><strong>Choose delivery</strong><span>Select the Slack workspace and channels for daily statistics and immediate alerts. Optionally connect a GitHub repository for deduplicated incident issues.</span></li>
           <li class="flow-step"><span class="flow-number">03</span><strong>Create the right key</strong><span>Use an origin-restricted <code>nox_pub_…</code> publishable key in browsers or mobile clients. Keep a <code>nox_secret_…</code> key in the server's secret store for trusted user and activity facts.</span></li>
           <li class="flow-step"><span class="flow-number">04</span><strong>Add outcome calls</strong><span>Wrap critical user journeys such as sign-up, login, password reset, and email verification. Send registration and meaningful activity facts from the trusted server.</span></li>
@@ -400,21 +405,20 @@ const noxcue = createNoxCue({
   release: APP_VERSION,
 });
 
-<span class="token-comment">// Reuse this object with NoxSpot; NoxCue sends only the opaque id.</span>
-noxcue.identify({ id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl });
-
+<span class="token-comment">// Browser activity is count-only: no user ID, cookies, or fingerprint.</span>
 await noxcue.auth.signup(() =&gt; auth.signUp(input));</code></pre>
             </div>
           </article>
           <article class="callout">
             <h3>Trusted product facts</h3>
-            <p>Use a secret key on the server. NoxCue hashes user identifiers, deduplicates facts, and computes daily totals, active users, stickiness, comparisons, and registered custom metrics centrally.</p>
+            <p>Use a secret key and a separate identity key on the server. The SDK HMAC-protects user identifiers before serialization or transmission; NoxHere never receives the original identifier.</p>
             <div class="code-block compact-code">
               <div class="code-head"><span>typescript · server</span><button class="copy-button" type="button" data-copy="noxcue-server">Copy</button></div>
               <pre id="noxcue-server"><code>import { createNoxCue } from <span class="token-string">"@noxhere/sdk/telemetry/server"</span>;
 
 const noxcue = createNoxCue({
-  key: process.env.NOXCUE_INGEST_KEY!,
+  key: process.env.NOXHERE_TELEMETRY_KEY!,
+  identityHashKey: process.env.NOXHERE_IDENTITY_HASH_KEY!,
   environment: <span class="token-string">"production"</span>,
   release: process.env.APP_RELEASE,
 });
@@ -443,7 +447,7 @@ await noxcue.flush();</code></pre>
           <div class="principle-mark" aria-hidden="true">✓</div>
           <div>
             <h3>The SDK adds the evidence</h3>
-            <p>Every report includes occurrence time, source, environment, release, runtime, SDK version, duration, a safe URL, classification, and redacted error details. When identity is set, NoxCue adds only its opaque ID and replaces it with a source-scoped hash before storage. Secret-key actions mark that user active once per local day. Delivery uses short timeouts, bounded retries with the same event ID, and never makes NoxCue availability part of the app's success path.</p>
+            <p>Every report includes occurrence time, source, environment, release, runtime, SDK version, duration, a safe URL, classification, and redacted error details. The server SDK replaces identity with a versioned HMAC before creating the request body. Changing the identity key resets user continuity. Secret-key actions mark that protected user active once per local day. Delivery uses short timeouts, bounded retries with the same event ID, and never makes telemetry availability part of the app's success path.</p>
           </div>
         </div>
 

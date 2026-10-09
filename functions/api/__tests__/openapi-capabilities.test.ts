@@ -3,6 +3,8 @@ import { buildServiceCatalog } from "../../lib/service-capabilities";
 import openapiDocument from "../../../public/openapi.json";
 
 type Operation = {
+  description?: string;
+  tags?: string[];
   parameters?: Array<{ $ref?: string }>;
   responses?: Record<string, { $ref?: string; content?: unknown }>;
   security?: Array<Record<string, unknown>>;
@@ -74,8 +76,35 @@ describe("capability discovery and OpenAPI stay aligned", () => {
         if (!operation) continue;
         expect(operation["x-authentication"], `${method.toUpperCase()} ${path}`).toBeTruthy();
         expect(operation["x-change-safety"], `${method.toUpperCase()} ${path}`).toBeTruthy();
+        expect(operation.description, `${method.toUpperCase()} ${path}`).toBeTruthy();
       }
     }
+  });
+
+  it("separates Stats and Incidents and types their high-use responses", () => {
+    const responseRef = (path: string, method: (typeof methods)[number], status = "200") =>
+      (openapi.paths[path]?.[method]?.responses?.[status]?.content as Record<string, { schema?: { $ref?: string } }> | undefined)
+        ?.["application/json"]?.schema?.$ref;
+    expect(openapi.paths["/api/v1/projects/{projectId}/cue/dashboard"]?.get?.tags).toEqual(["Stats"]);
+    expect(responseRef("/api/v1/projects/{projectId}/cue/dashboard", "get")).toBe("#/components/schemas/StatsDashboard");
+    expect(openapi.paths["/api/v1/projects/{projectId}/incidents"]?.get?.tags).toEqual(["Incidents"]);
+    expect(responseRef("/api/v1/projects/{projectId}/incidents", "get")).toBe("#/components/schemas/ProjectIncidentOverview");
+    expect(responseRef("/api/v1/projects/{projectId}/incidents/{incidentId}", "get")).toBe("#/components/schemas/ProjectIncidentResponse");
+  });
+
+  it("documents rate limiting with Retry-After", () => {
+    const rateLimited = (openapiDocument as any).components.responses.RateLimited;
+    expect(rateLimited.headers["Retry-After"]).toBeDefined();
+    expect(openapi.paths["/api/v1/cues/public/events"]?.post?.responses?.["429"]?.$ref)
+      .toBe("#/components/responses/RateLimited");
+  });
+
+  it("publishes valid anonymous and protected telemetry examples", () => {
+    const examples = (openapiDocument as any).paths["/api/v1/cues/public/events"].post
+      .requestBody.content["application/json"].examples;
+    expect(examples.anonymousWebsiteActivity.value).not.toHaveProperty("userId");
+    expect(examples.anonymousWebsiteActivity.value.eventId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(examples.protectedServerActivity.value.userId).toMatch(/^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$/);
   });
 
   it("documents optional project context and exact automation support", () => {

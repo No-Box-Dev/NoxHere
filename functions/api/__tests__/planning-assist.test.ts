@@ -29,7 +29,7 @@ describe("Planning assistant API", () => {
   });
 
   it("returns a validated draft and only accepts a supplied feature number", async () => {
-    providers.complete.mockResolvedValue('{"title":"Check mobile checkout","featureNumber":9}');
+    providers.complete.mockResolvedValue('{"message":"I added a clear outcome.","title":"Check mobile checkout","description":"Verify checkout works on supported mobile browsers.","featureNumber":9}');
     const response = await onRequestPost(context({
       kind: "task",
       prompt: "mobile checkout is flaky",
@@ -37,14 +37,14 @@ describe("Planning assistant API", () => {
       features: [{ number: 9, title: "Checkout", owners: ["jasper"] }],
     }) as never);
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ draft: { title: "Check mobile checkout", featureNumber: 9 } });
-    expect(providers.complete).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ tag: "planning-assistant", maxTokens: 180 }));
+    await expect(response.json()).resolves.toEqual({ draft: { message: "I added a clear outcome.", title: "Check mobile checkout", description: "Verify checkout works on supported mobile browsers.", featureNumber: 9 } });
+    expect(providers.complete).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ tag: "planning-assistant", maxTokens: 520 }));
   });
 
   it("drops invented feature links from the model response", async () => {
-    providers.complete.mockResolvedValue('{"title":"Write the launch note","featureNumber":999}');
+    providers.complete.mockResolvedValue('{"title":"Write the launch note","description":"Draft and review the launch note.","featureNumber":999}');
     const response = await onRequestPost(context({ kind: "task", prompt: "write launch note", features: [] }) as never);
-    await expect(response.json()).resolves.toEqual({ draft: { title: "Write the launch note", featureNumber: null } });
+    await expect(response.json()).resolves.toEqual({ draft: { title: "Write the launch note", description: "Draft and review the launch note.", featureNumber: null, message: "Draft updated." } });
   });
 
   it("rejects invalid input before calling the model", async () => {

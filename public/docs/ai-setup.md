@@ -1,6 +1,6 @@
 # Nox setup for AI agents
 
-Use this workflow to configure NoxConnect without relying on the Settings UI. The canonical schema is [`/openapi.json`](/openapi.json), and current progress is always available from `GET /api/v1/integrations/setup`.
+Use this workflow to configure NoxHere without relying on the Settings UI. The canonical schema is [`/openapi.json`](/openapi.json), and current progress is always available from `GET /api/v1/integrations/setup`.
 
 ## Connect the agent
 
@@ -14,8 +14,10 @@ credential into chat. Provider consent remains a human browser action.
 
 ## Discover services and capabilities
 
-Start with `GET /api/v1/services`. It explains the role of NoxConnect and lists
-NoxTicket, NoxFeed, NoxSpot, and NoxCue separately. Each service includes:
+Start with `GET /api/v1/services`. It explains the private role of NoxConnect
+and exposes NoxHere's Planning, Activity, Feedback, Stats, and Incidents
+capabilities. Compatibility service IDs remain `noxticket`, `noxfeed`,
+`noxspot`, and `noxcue`. Each service includes:
 
 - its focus and description;
 - the capabilities it provides;
@@ -200,7 +202,7 @@ An optional `channelId` tests a candidate channel before saving it.
 After connections and organization routes are ready, feature-specific resources remain API-first:
 
 - NoxSpot sites: `GET`/`POST /api/v1/spots/sites` and `PATCH /api/v1/spots/sites/{siteId}`. Creating a site returns an anonymous-by-default install snippet; it does not grant NoxSpot access to the host website's login session or signup database. To prefill the signed-in reporter, the website owner must call `NoxSpot.identify({ name, email, avatarUrl })` after the widget loads and whenever the account changes, then call `NoxSpot.identify(null)` on sign-out. `avatarUrl` is optional and must be a bounded HTTPS URL. A manually initialized widget may instead use `NoxSpot.init({ siteId, getReporter: () => ({ name, email, avatarUrl }) })`. Set `notifyOnResolution: true` only when the host has already obtained consent; otherwise omit it so the reporter controls the widget checkbox. Reporter email and avatar are excluded from GitHub; the email is retained encrypted only with that consent, while the avatar is available only to authenticated NoxSpot views.
-- NoxCue sources: `GET/POST /api/v1/cues/sources`, project metrics: `GET/PUT /api/v1/cues/projects/{projectId}/metrics`, GitHub incident policy: `GET/PUT /api/v1/cues/github-issues`, keys: `POST /api/v1/cues/sources/{sourceId}/keys`, custom feature health under `/features`, and custom activity statistics under `/custom-metrics`. Register every `custom.*` name before ingest; linked staging and production sources share the project catalog, while an unlinked source stays isolated. Feature failures retain their actual technical error. Each custom activity event is idempotent and NoxCue derives total plus total per registered user. Unknown or paused names become bounded unregistered errors instead of creating definitions. GitHub incident routing additionally requires NoxConnect's GitHub connection and a repository linked to the selected project. A source destination overrides its linked project's `noxCue` route; otherwise the organization route is used. A newly created ingest key is returned only once; transfer it securely and never log it.
+- Stats sources: `GET/POST /api/v1/cues/sources`, project metrics: `GET/PUT /api/v1/cues/projects/{projectId}/metrics`, keys: `POST /api/v1/cues/sources/{sourceId}/keys`, cards, and custom activity statistics under `/custom-metrics`. Incidents owns custom feature health under `/features`, error status, alerts, and GitHub incident policy at `GET/PUT /api/v1/cues/github-issues`. The `/cues` path and `noxcue` scope remain compatibility transport names. Register every `custom.*` name before ingest; linked staging and production sources share the project catalog, while an unlinked source stays isolated. Feature failures retain their actual technical error. Each custom activity event is idempotent and Stats derives total plus total per registered user. Unknown or paused names become bounded unregistered errors instead of creating definitions. GitHub incident routing additionally requires NoxConnect's GitHub connection and a repository linked to the selected project. A source destination overrides its linked project's `noxCue` route; otherwise the organization route is used. A newly created ingest key is returned only once; transfer it securely and never log it.
 - Public NoxCue clients submit events to the stable same-origin gateway `POST /api/v1/cues/public/events`; it forwards to NoxCue through a private service binding. Put the source key in `X-Nox-Ingest-Key`, not the Nox bearer-token headers. Configure each source's workspace, channel, IANA timezone, and local delivery time through its source API. Reusing the same event identity is idempotent.
 - NoxFeed resolves each GitHub repository through NoxConnect project routing before using the organization `noxfeed_posts` or `noxfeed_release_notes` route.
 - NoxTicket uses the `noxticket` route.
@@ -222,6 +224,16 @@ On `429`, honor `Retry-After` and stop sending until that delay has elapsed. On
 token. One-time secrets and OAuth handoff URLs cannot be recovered after they
 have been displayed or expired; create a replacement through the advertised
 operation.
+
+Telemetry ingestion accepts at most 32 KiB per request. The deployed edge
+guards allow 1,000 requests/minute per IP and per user/activity/feature source,
+30 immediate errors/minute per source, and 60 error submissions/minute per
+organization. A limited request returns `429` with `Retry-After`. Browser keys
+also require an exact configured origin and event-name allowlist.
+
+See the [data-governance summary](/docs/data-governance.md) for identity
+protection, retention, deletion, aggregate-only delivery, and the contractual
+items that still require business approval.
 
 ## Share developer feedback
 

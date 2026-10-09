@@ -10,24 +10,54 @@ import { Sparkline } from "../../components/Sparkline";
 import { StatusTag } from "../../components/StatusTag";
 
 type StatsViewProps = { organizationId: string; projectId: string };
-type StatsSubview = "dashboard" | "events";
+type StatsSubview = "dashboard" | "productivity" | "events";
 
 const segments = [
   { id: "dashboard", label: "Dashboard", description: "Trends and totals" },
+  { id: "productivity", label: "Productivity", description: "Engineering delivery" },
   { id: "events", label: "Stat events", description: "Incoming triggers" },
 ] as const;
 
 export function StatsView({ organizationId, projectId }: StatsViewProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const selected = searchParams.get("view") === "events" ? "events" : "dashboard";
+  const requested = searchParams.get("view");
+  const selected: StatsSubview = requested === "events" || requested === "productivity" ? requested : "dashboard";
   const select = (view: StatsSubview) => setSearchParams(view === "dashboard" ? {} : { view });
 
   return (
     <div className="workspace-view">
       <SegmentedControl label="Stats views" value={selected} segments={segments} onChange={select} />
-      {selected === "dashboard" ? <StatsDashboard organizationId={organizationId} projectId={projectId} /> : <StatEvents organizationId={organizationId} projectId={projectId} />}
+      {selected === "dashboard" ? <StatsDashboard organizationId={organizationId} projectId={projectId} /> : selected === "productivity" ? <ProductivityStats organizationId={organizationId} projectId={projectId} /> : <StatEvents organizationId={organizationId} projectId={projectId} />}
     </div>
   );
+}
+
+function ProductivityStats({ organizationId, projectId }: StatsViewProps) {
+  const stats = useQuery({
+    queryKey: ["stats", organizationId, projectId, "productivity"],
+    queryFn: ({ signal }) => platformApi.engineerStats(organizationId, projectId, signal),
+  });
+  const people = stats.data ? [...new Set([
+    ...Object.keys(stats.data.openPRs), ...Object.keys(stats.data.reviewing), ...Object.keys(stats.data.approvalsGiven),
+    ...Object.keys(stats.data.mergesOfOthers), ...Object.keys(stats.data.assignedIssues), ...Object.keys(stats.data.prsLast4Weeks),
+    ...Object.keys(stats.data.commitsLast4Weeks), ...Object.keys(stats.data.issuesClosed),
+  ])].sort((left, right) => left.localeCompare(right)) : [];
+  const total = (values: Record<string, number>) => Object.values(values).reduce((sum, value) => sum + value, 0);
+  return <AsyncState loading={stats.isLoading} error={stats.error}>{stats.data ? <>
+    <div className="stat-grid productivity-summary">
+      <ProductivityCard label="Open pull requests" value={total(stats.data.openPRs)} />
+      <ProductivityCard label="PRs · last 4 weeks" value={total(stats.data.prsLast4Weeks)} />
+      <ProductivityCard label="Commits · last 4 weeks" value={total(stats.data.commitsLast4Weeks)} />
+      <ProductivityCard label="Reviews given" value={total(stats.data.approvalsGiven)} />
+      <ProductivityCard label="Issues closed" value={total(stats.data.issuesClosed)} />
+    </div>
+    <div className="list-surface productivity-list">{people.map((person) => <ListRow key={person} symbol={person.slice(0, 1).toUpperCase()} title={person} description={`${stats.data!.commitsLast4Weeks[person] ?? 0} commits · ${stats.data!.prsLast4Weeks[person] ?? 0} PRs · ${stats.data!.approvalsGiven[person] ?? 0} approvals · ${stats.data!.issuesClosed[person] ?? 0} issues closed in tracked history`} meta={<><StatusTag>{stats.data!.openPRs[person] ?? 0} open PRs</StatusTag><StatusTag>{stats.data!.reviewing[person] ?? 0} reviews waiting</StatusTag><StatusTag>{stats.data!.assignedIssues[person] ?? 0} assigned issues</StatusTag></>} />)}</div>
+    {!people.length ? <div className="empty-view"><h2>No productivity data yet</h2><p>Connect GitHub and sync project activity to populate engineering statistics.</p></div> : null}
+  </> : null}</AsyncState>;
+}
+
+function ProductivityCard({ label, value }: { label: string; value: number }) {
+  return <article className="stat-card"><span className="stat-card-head"><b>{label}</b><small>Tracked project data</small></span><span className="stat-value"><strong>{value.toLocaleString()}</strong></span></article>;
 }
 
 function StatsDashboard({ organizationId, projectId }: StatsViewProps) {

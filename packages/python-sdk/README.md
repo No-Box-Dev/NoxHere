@@ -13,8 +13,7 @@ python -m pip install --upgrade noxhere
 from noxhere import NoxHereClient
 
 nox = NoxHereClient(token="nox_sk_...")
-projects = nox.workspace.list_projects()
-incidents = nox.incidents.get_project_incidents(path={"projectId": "project-1"})
+services = nox.workspace.list_nox_services()
 ```
 
 The SDK is optional. The equivalent operation can always be called directly:
@@ -24,12 +23,12 @@ import os
 import requests
 
 response = requests.get(
-    f"https://app.noxhere.com/api/v1/projects/{project_id}/incidents",
+    "https://app.noxhere.com/api/v1/services",
     headers={"Authorization": f"Bearer {os.environ['NOXHERE_API_TOKEN']}"},
     timeout=10,
 )
 response.raise_for_status()
-incidents = response.json()
+services = response.json()
 ```
 
 See the repository's [direct HTTP guide](../../public/docs/direct-api.md) and the
@@ -46,9 +45,10 @@ nox = AsyncNoxHereClient(token="nox_sk_...")
 page = await nox.activity.get_nox_feed(query={"limit": 25})
 ```
 
-Namespaces are `workspace`, `activity`, `planning`, `feedback`, and
-`incidents`; `connect`, `feed`, `ticket`, `spot`, and `cue` are compatibility
-aliases. Use `noxhere.incidents.create_incident_client` or
+Namespaces are `workspace`, `activity`, `planning`, `feedback`, `stats`, and
+`incidents`; `connect`, `feed`, `ticket`, and `spot` are direct compatibility
+aliases. The deprecated `cue` facade combines Stats and Incidents operations.
+Use `noxhere.stats.create_stats_client`, `noxhere.incidents.create_incident_client`, or
 `noxhere.feedback.create_feedback_client` for focused clients.
 
 Server telemetry is available from the same distribution:
@@ -56,22 +56,26 @@ Server telemetry is available from the same distribution:
 ```python
 import os
 
-from noxhere.telemetry import NoxCueClient
+from noxhere.telemetry import create_noxcue
 
-with NoxCueClient(
-    key=os.environ["NOXHERE_TELEMETRY_KEY"],
-    identity_hash_key=os.environ["NOXHERE_IDENTITY_HASH_KEY"],
-    environment="production",
-) as telemetry:
-    telemetry.track("user.registered", user_id="user-42")
-    telemetry.track("records.parsed", user_id="user-42", value=3)
+with create_noxcue() as telemetry:
+    telemetry.user.registered("user-42")
+    telemetry.events.record_parsed("user-42", "record-7")
 ```
 
-`track()` queues delivery and returns immediately; leaving the context flushes
-the queue. Identifiers are HMAC-SHA256 protected before JSON serialization and
+`create_noxcue()` reads `NOXHERE_INGEST_KEY`, `NOXHERE_IDENTITY_HASH_KEY`,
+`NOXHERE_IDENTITY_KEY_ID`, `NOXHERE_ENVIRONMENT`, and `NOXHERE_RELEASE`.
+`track()` queues delivery and returns immediately; process shutdown or leaving
+the context flushes the queue. Delivery failures are returned or retained for
+`flush()` and never raised into the host application. Set
+`NOXHERE_TELEMETRY_MODE=memory` in tests, then inspect
+`telemetry.captured_events` without making network calls. Identifiers are
+HMAC-SHA256 protected before JSON serialization and
 the original value is never transmitted. Keep the identity key stable—changing
 it resets user continuity. Compatibility helpers such as `user.registered()`
-and `activity()` delegate to the same contract.
+and `activity()` delegate to the same contract. The typed `events` helpers keep
+built-in event names out of application strings while event timing remains an
+explicit decision at the call site.
 
 `noxcue` remains available as a deprecated forwarding package for existing
 applications; new code should import `noxhere.telemetry`.

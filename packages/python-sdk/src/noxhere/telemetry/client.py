@@ -12,6 +12,7 @@ import traceback
 import urllib.error
 import urllib.request
 import uuid
+import atexit
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -351,6 +352,30 @@ class UserAPI:
         )
 
 
+class EventsAPI:
+    """Typed names for the built-in product metrics; call sites stay explicit."""
+
+    def __init__(self, client: NoxCueClient) -> None:
+        self._client = client
+
+    def report_generated(self, user_id: str, report_id: str | None = None, **options: Any) -> DeliveryResult:
+        attributes = {"reportId": report_id} if report_id else None
+        return self._client.track("reports.generated", user_id=user_id, attributes=attributes, **options)
+
+    def record_parsed(self, user_id: str, record_id: str | None = None, **options: Any) -> DeliveryResult:
+        attributes = {"recordId": record_id} if record_id else None
+        return self._client.track("records.parsed", user_id=user_id, attributes=attributes, **options)
+
+    def trial_started(self, user_id: str, **options: Any) -> DeliveryResult:
+        return self._client.track("subscription.trial_started", user_id=user_id, **options)
+
+    def paid_started(self, user_id: str, **options: Any) -> DeliveryResult:
+        return self._client.track("subscription.paid_started", user_id=user_id, **options)
+
+    def subscription_cancelled(self, user_id: str, **options: Any) -> DeliveryResult:
+        return self._client.track("subscription.cancelled", user_id=user_id, **options)
+
+
 class NoxCueClient:
     """Thread-safe server client matching the TypeScript server SDK's wire behavior."""
 
@@ -366,6 +391,8 @@ class NoxCueClient:
         timeout_ms: int = DEFAULT_TIMEOUT_MS,
         max_retries: int = 2,
         enabled: bool = True,
+        dry_run: bool = False,
+        flush_at_exit: bool = True,
         get_user: Callable[[], Mapping[str, object] | None] | None = None,
         transport: Transport | None = None,
     ) -> None:
@@ -382,21 +409,28 @@ class NoxCueClient:
         self.timeout_ms = min(MAX_TIMEOUT_MS, max(250, timeout_ms))
         self.max_retries = min(3, max(0, round(max_retries)))
         self._enabled = enabled
+        self._dry_run = dry_run
+        self._captured_events: list[dict[str, object]] = []
         self._get_user = get_user
         self._identified_user_id: str | None = None
         self._closed = False
         self._transport = transport or _default_transport
         self._configured = (
+            (enabled and dry_run) or (
             enabled
             and key.startswith("nox_secret_")
             and len(key) >= len("nox_secret_") + 30
             and _valid_endpoint(self.endpoint)
+            )
         )
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="noxcue")
         self._pending: set[Future[DeliveryResult]] = set()
         self.feature = FeatureAPI(self)
         self.auth = AuthAPI(self.feature)
         self.user = UserAPI(self)
+        self.events = EventsAPI(self)
+        if flush_at_exit:
+            atexit.register(self.close)
 
     def __enter__(self) -> NoxCueClient:
         return self
@@ -405,9 +439,16 @@ class NoxCueClient:
         self.close()
 
     def close(self) -> None:
+        if self._closed:
+            return
         self.flush()
         self._closed = True
         self._executor.shutdown(wait=True)
+
+    @property
+    def captured_events(self) -> tuple[dict[str, object], ...]:
+        """Wire-ready events captured in dry-run mode without network delivery."""
+        return tuple(dict(event) for event in self._captured_events)
 
     def identify(self, user: Mapping[str, object] | None) -> None:
         """Retain only the opaque id from a shared user identity object."""
@@ -432,6 +473,8 @@ class NoxCueClient:
             timeout_ms=self.timeout_ms,
             max_retries=self.max_retries,
             enabled=self._enabled,
+            dry_run=self._dry_run,
+            flush_at_exit=False,
             get_user=lambda: {"id": user_id},
             transport=self._transport,
         )
@@ -498,6 +541,9 @@ class NoxCueClient:
         ).encode()
         if len(body) > MAX_BODY_BYTES:
             return DeliveryResult(False, cast(str, event_id), error="payload_too_large")
+        if self._dry_run:
+            self._captured_events.append(cast(dict[str, object], json.loads(body)))
+            return DeliveryResult(True, cast(str, event_id), status=202)
         total_attempts = self.max_retries + 1
         for attempt in range(total_attempts):
             request = urllib.request.Request(
@@ -507,6 +553,7 @@ class NoxCueClient:
                 headers={
                     "Content-Type": "application/json",
                     "X-Nox-Ingest-Key": self.key,
+                    "User-Agent": f"noxhere-python/{SDK_VERSION}",
                 },
             )
             try:
@@ -601,7 +648,14 @@ class NoxCueClient:
 
     def flush(self) -> list[DeliveryResult]:
         pending = list(self._pending)
-        return [future.result() for future in pending]
+        results: list[DeliveryResult] = []
+        for future in pending:
+            try:
+                results.append(future.result())
+            except Exception:
+                # Telemetry must never alter the host application's outcome.
+                results.append(DeliveryResult(False, str(uuid.uuid4()), error="network_error"))
+        return results
 
     def _feature_event(
         self,
@@ -789,4 +843,14 @@ class NoxCueClient:
 
 
 def create_noxcue(**options: Any) -> NoxCueClient:
-    return NoxCueClient(**options)
+    """Create one process client, reading standard environment variables by default."""
+    configured = dict(options)
+    configured.setdefault("key", os.environ.get("NOXHERE_INGEST_KEY") or os.environ.get("NOXCUE_INGEST_KEY") or "")
+    configured.setdefault("identity_hash_key", os.environ.get("NOXHERE_IDENTITY_HASH_KEY"))
+    configured.setdefault("identity_key_id", os.environ.get("NOXHERE_IDENTITY_KEY_ID"))
+    configured.setdefault("environment", os.environ.get("NOXHERE_ENVIRONMENT") or os.environ.get("NOXCUE_ENVIRONMENT"))
+    configured.setdefault("release", os.environ.get("NOXHERE_RELEASE") or os.environ.get("GITHUB_SHA"))
+    configured.setdefault("endpoint", os.environ.get("NOXHERE_INGEST_ENDPOINT") or DEFAULT_ENDPOINT)
+    configured.setdefault("enabled", (os.environ.get("NOXHERE_TELEMETRY_ENABLED", "true").lower() not in {"0", "false", "off"}))
+    configured.setdefault("dry_run", (os.environ.get("NOXHERE_TELEMETRY_MODE", "").lower() in {"dry-run", "memory", "test"}))
+    return NoxCueClient(**configured)

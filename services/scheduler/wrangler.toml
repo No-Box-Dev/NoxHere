@@ -55,7 +55,7 @@ migrations_dir = "../../migrations"
 # deploys, and label changes on issues created before the App was
 # installed. 30 min is a reasonable RPO without being chatty.
 [triggers]
-crons = ["*/30 * * * *"]
+crons = ["* * * * *", "*/30 * * * *"]
 
 [observability.logs]
 enabled = true
@@ -112,7 +112,7 @@ workers_dev = true
 binding = "CF_VERSION_METADATA"
 
 [env.staging.triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *", "*/5 * * * *"]
 
 [env.staging.vars]
 GITHUB_APP_ID = "3652510"
