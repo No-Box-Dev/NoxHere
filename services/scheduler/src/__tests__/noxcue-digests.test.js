@@ -7,6 +7,7 @@ import {
   previousPeriod,
   resolveDigestSlackDestination,
   runNoxCueDigests,
+  unavailableDigestMessage,
 } from "../noxcue-digests.js";
 
 describe("NoxCue daily digest periods", () => {
@@ -21,6 +22,13 @@ describe("NoxCue daily digest periods", () => {
 
   it("handles month boundaries", () => {
     expect(previousPeriod("2026-03-01")).toBe("2026-02-28");
+  });
+
+  it("omits values instead of presenting missing telemetry as zero", () => {
+    const message = unavailableDigestMessage("Playnist Production", "2026-10-08");
+    expect(message.text).toBe("Playnist Production: stats unavailable for 2026-10-08");
+    expect(JSON.stringify(message.blocks)).toContain("Values are omitted rather than shown as zero");
+    expect(JSON.stringify(message.blocks)).not.toContain("0%");
   });
 
   it("catches up missed digest periods oldest first", () => {

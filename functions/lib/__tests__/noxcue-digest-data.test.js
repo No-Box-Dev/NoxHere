@@ -104,6 +104,57 @@ describe("NoxCue digest history", () => {
     });
   });
 
+  it("does not turn a missing current event stream into zero engagement", async () => {
+    const db = {
+      prepare(sql) {
+        return {
+          bind() { return this; },
+          async first() { return null; },
+          async all() {
+            if (sql.includes("FROM cue_daily_metrics")) return { results: [] };
+            if (sql.includes("cue_custom_metrics") || sql.includes("cue_tracked_events")) return { results: [] };
+            return { results: [
+              { period: "2026-10-07", new_users: 0, total_users: 214, daily_active: 11, weekly_active: 64, monthly_active: 139 },
+              { period: "2026-10-08", new_users: 0, total_users: 214, daily_active: 0, weekly_active: 57, monthly_active: 133 },
+            ] };
+          },
+        };
+      },
+    };
+    const { loadNoxCueDigestData } = await import("../noxcue-digest-data.js");
+    const summary = await loadNoxCueDigestData(db, "playnist", "2026-10-08");
+    expect(summary).toMatchObject({ metrics: {}, hasData: false, derivedFromEvents: false });
+  });
+
+  it("omits missing historical event days from comparisons", async () => {
+    const periods = [
+      { period: "2026-10-06", new_users: 0, total_users: 214, daily_active: 21, weekly_active: 67, monthly_active: 148 },
+      { period: "2026-10-07", new_users: 0, total_users: 214, daily_active: 11, weekly_active: 64, monthly_active: 139 },
+      { period: "2026-10-08", new_users: 0, total_users: 214, daily_active: 0, weekly_active: 57, monthly_active: 133 },
+      { period: "2026-10-09", new_users: 0, total_users: 214, daily_active: 9, weekly_active: 54, monthly_active: 130 },
+    ];
+    const db = {
+      prepare(sql) {
+        return {
+          bind() { return this; },
+          async first() { return null; },
+          async all() {
+            if (sql.includes("cue_custom_metrics") || sql.includes("cue_tracked_events")) return { results: [] };
+            return { results: periods };
+          },
+        };
+      },
+    };
+    const { loadNoxCueDigestData } = await import("../noxcue-digest-data.js");
+    const summary = await loadNoxCueDigestData(db, "playnist", "2026-10-09");
+    expect(summary.comparisons["users.active.daily"].history).toEqual([
+      { period: "2026-10-06", value: 21 },
+      { period: "2026-10-07", value: 11 },
+      { period: "2026-10-09", value: 9 },
+    ]);
+    expect(summary.comparisons["users.active.daily"].yesterday).toBeNull();
+  });
+
   it("derives daily custom activity counts and rolling weekly activity per active user", async () => {
     const db = {
       prepare(sql) {

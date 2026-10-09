@@ -160,6 +160,25 @@ describe("NoxCue response policy", () => {
     expect(rendered).toContain("2.92");
   });
 
+  it("preserves the legacy report order when labels only describe custom activity", () => {
+    const response = buildDigestResponse("Playnist", "2026-10-07", {
+      "users.new": 0,
+      "users.total": 214,
+      "users.active.daily": 11,
+      "users.active.weekly": 64,
+      "users.active.monthly": 139,
+      "users.stickiness.dau_mau": 11 / 139,
+      "custom.comments.written": 1,
+    }, {}, "https://noxcue.example/chart.png", undefined, {
+      "custom.comments.written": "Comments written",
+    });
+    const image = response.message.blocks.find((block) => block.type === "image") as { alt_text: string };
+    const expectedOrder = ["New users", "Total users", "Daily active", "Weekly active", "Monthly active", "DAU / MAU", "Comments written"];
+    for (let index = 1; index < expectedOrder.length; index += 1) {
+      expect(image.alt_text.indexOf(expectedOrder[index - 1]!)).toBeLessThan(image.alt_text.indexOf(expectedOrder[index]!));
+    }
+  });
+
   it("keeps activity breadth and depth in the text fallback", () => {
     const response = buildDigestResponse("Playnist", "2026-10-02", {
       "custom.comments.written.per_mau": 1.06,

@@ -119,6 +119,21 @@ function configuredMinutes(value: string) {
   return hours * 60 + minutes;
 }
 
+export function unavailableDigestMessage(sourceName: string, period: string) {
+  const displayDate = new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC", month: "short", day: "numeric", year: "numeric",
+  }).format(new Date(`${period}T00:00:00Z`));
+  return {
+    text: `${sourceName}: stats unavailable for ${period}`,
+    blocks: [
+      { type: "header", text: { type: "plain_text", text: `📊 ${sourceName} · Daily pulse`, emoji: true } },
+      { type: "context", elements: [{ type: "mrkdwn", text: `${displayDate} · UTC · completed day` }] },
+      { type: "section", text: { type: "mrkdwn", text: "⚠️ *Stats unavailable*\nNo user or activity telemetry was received for this day. Values are omitted rather than shown as zero." } },
+      { type: "context", elements: [{ type: "mrkdwn", text: "NoxCue · Data completeness protected · check the source integration" }] },
+    ],
+  };
+}
+
 async function createDigest(
   env: DigestEnv,
   source: DigestSource,
@@ -132,7 +147,26 @@ async function createDigest(
 
   const digest = await loadNoxCueDigestData(env.DB, source.id, period);
   const { metrics, hasData, derivedFromEvents } = digest;
-  if (!hasData) return { skipped: "no_data" };
+  if (!hasData) {
+    const displayName = sourceReportTitle(source);
+    const delivery = await publishSlackTransport(env, {
+      orgId: source.org_id,
+      projectId: source.project_id,
+      route: "engagement",
+      routeContext: { kind: "source", id: source.id },
+      idempotencyKey: `noxcue:digest:${source.id}:${period}`,
+      message: unavailableDigestMessage(displayName, period),
+    });
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO cue_digest_runs
+         (id, org_id, source_id, period, transport_outbox_id, metrics_json)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      crypto.randomUUID(), source.org_id, source.id, period, delivery.outboxId,
+      JSON.stringify({ metrics: {}, comparisons: {}, completeness: "missing" }),
+    ).run();
+    return { created: true, queued: delivery.queued };
+  }
   if (derivedFromEvents) {
     await storeNoxCueDerivedMetrics(env.DB, source.org_id, source.id, period, metrics);
   }
