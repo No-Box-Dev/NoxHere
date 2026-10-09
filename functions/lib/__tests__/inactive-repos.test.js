@@ -12,6 +12,7 @@ import {
 function makeDb({
   settings = null,        // object | string | null — what config.data holds
   archivedProjects = [],  // repo names where projects.archived = 1
+  activelyAssignedRepos = [], // archived legacy rows routed to an active project
   ghArchivedRepos = [],   // repo names where repos.archived_at IS NOT NULL
   allRepos = [],          // repo names in `repos`
 } = {}) {
@@ -34,7 +35,8 @@ function makeDb({
           };
         }
         if (sql.includes("FROM projects")) {
-          return { results: archivedProjects.map((repo) => ({ repo })) };
+          const assigned = new Set(activelyAssignedRepos.map((repo) => repo.toLowerCase()));
+          return { results: archivedProjects.filter((repo) => !assigned.has(repo.toLowerCase())).map((repo) => ({ repo })) };
         }
         if (sql.includes("FROM repos WHERE org_id = ? AND (archived_at IS NOT NULL OR retired_at IS NOT NULL)")) {
           return { results: ghArchivedRepos.map((name) => ({ name })) };
@@ -86,6 +88,16 @@ describe("getInactiveRepoSet", () => {
     expect([...set].sort()).toEqual(
       ["archived-proj", "gh-archived", "noxconnect"].sort(),
     );
+  });
+
+  it("keeps a repository active when an active umbrella project owns it", async () => {
+    const db = makeDb({
+      archivedProjects: ["playnist-api", "retired-repo"],
+      activelyAssignedRepos: ["PLAYNIST-API"],
+    });
+    const set = await getInactiveRepoSet(db, 1, "acme");
+    expect(set.has("playnist-api")).toBe(false);
+    expect(set.has("retired-repo")).toBe(true);
   });
 
   it("throws loudly when settings JSON is corrupt", async () => {
@@ -154,6 +166,15 @@ describe("getActiveRepoNames", () => {
     });
     const out = await getActiveRepoNames(db, 1, "acme");
     expect(out.sort()).toEqual(["api", "web"]);
+  });
+
+  it("includes archived legacy repositories routed into an active umbrella project", async () => {
+    const db = makeDb({
+      archivedProjects: ["playnist-api"],
+      activelyAssignedRepos: ["playnist-api"],
+      allRepos: ["playnist", "playnist-api"],
+    });
+    expect(await getActiveRepoNames(db, 1, "acme")).toEqual(["playnist", "playnist-api"]);
   });
 
   it("returns [] when no repos exist", async () => {
