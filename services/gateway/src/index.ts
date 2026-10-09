@@ -219,7 +219,7 @@ export async function handleRequest(
         }));
       }
       const { mirrorAndOverlayResponse } = await import("./control/mirror");
-      return gatewayResponse(await mirrorAndOverlayResponse(request, response, control.db, auth));
+      return gatewayResponse(await mirrorAndOverlayResponse(request, response, control.db, auth, services.background));
     } catch (error) {
       console.error(JSON.stringify({
         message: "private connector call failed",

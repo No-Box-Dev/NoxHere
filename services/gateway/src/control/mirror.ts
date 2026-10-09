@@ -1,6 +1,7 @@
 import type { AuthContext } from "./auth";
 
 const MAX_CONTROL_RESPONSE_BYTES = 256 * 1024;
+const MAX_MIRROR_STATEMENTS_PER_BATCH = 75;
 
 interface ServiceBody {
   [key: string]: unknown;
@@ -11,6 +12,7 @@ export async function mirrorAndOverlayResponse(
   response: Response,
   db: D1Database,
   auth: AuthContext,
+  background?: (work: Promise<unknown>) => void,
 ): Promise<Response> {
   if (!response.ok) return response;
   const url = new URL(request.url);
@@ -24,7 +26,18 @@ export async function mirrorAndOverlayResponse(
   try { body = await response.clone().json<ServiceBody>(); }
   catch { return response; }
 
-  await mirrorProjects(request, body, db, auth);
+  const mirror = mirrorProjects(request, body, db, auth);
+  if (background) {
+    background(mirror.catch((error) => {
+      console.error(JSON.stringify({
+        event: "control_plane_mirror_failed",
+        path: url.pathname,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+    }));
+  } else {
+    await mirror;
+  }
   return response;
 }
 
@@ -44,6 +57,7 @@ async function mirrorProjects(
     return;
   }
   if (request.method === "GET" && Array.isArray(candidate.projects)) {
+    const statements: D1PreparedStatement[] = [];
     for (const raw of candidate.projects) {
       if (!raw || typeof raw !== "object") continue;
       const project = raw as Record<string, unknown>;
@@ -51,7 +65,10 @@ async function mirrorProjects(
       const repositories = Array.isArray(project.repositories)
         ? project.repositories.filter((repo): repo is string => typeof repo === "string")
         : [];
-      await persistProject(db, auth.orgId, project.id, project.name, Boolean(project.enabled), Boolean(project.archived), repositories);
+      statements.push(...projectStatements(db, auth.orgId, project.id, project.name, Boolean(project.enabled), Boolean(project.archived), repositories));
+    }
+    for (let index = 0; index < statements.length; index += MAX_MIRROR_STATEMENTS_PER_BATCH) {
+      await db.batch(statements.slice(index, index + MAX_MIRROR_STATEMENTS_PER_BATCH));
     }
   }
   if (request.method === "PUT" && candidate.ok === true
@@ -82,7 +99,19 @@ async function persistProject(
   archived: boolean,
   repositories: string[],
 ): Promise<void> {
-  await db.batch([
+  await db.batch(projectStatements(db, orgId, id, name, enabled, archived, repositories));
+}
+
+function projectStatements(
+  db: D1Database,
+  orgId: number,
+  id: string,
+  name: string,
+  enabled: boolean,
+  archived: boolean,
+  repositories: string[],
+): D1PreparedStatement[] {
+  return [
     db.prepare(
       `INSERT INTO projects (id, org_id, name, archived, enabled, updated_at)
        VALUES (?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
@@ -99,5 +128,5 @@ async function persistProject(
        VALUES (?, ?, ?)
        ON CONFLICT(org_id, repo) DO UPDATE SET project_id = excluded.project_id`,
     ).bind(orgId, repo, id)),
-  ]);
+  ];
 }
