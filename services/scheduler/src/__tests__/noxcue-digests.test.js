@@ -24,17 +24,22 @@ describe("NoxCue daily digest periods", () => {
   });
 
   it("catches up missed digest periods oldest first", () => {
-    expect(digestPeriodsToAttempt("2026-10-08", "2026-10-06")).toEqual([
+    expect(digestPeriodsToAttempt("2026-10-08", [
+      "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06",
+    ])).toEqual([
       "2026-10-07",
       "2026-10-08",
     ]);
   });
 
-  it("bounds catch-up to seven completed days", () => {
-    expect(digestPeriodsToAttempt("2026-10-08", "2026-09-01")).toEqual([
-      "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05",
-      "2026-10-06", "2026-10-07", "2026-10-08",
-    ]);
+  it("finds a missing period behind a newer completed digest", () => {
+    expect(digestPeriodsToAttempt("2026-10-08", [
+      "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06", "2026-10-08",
+    ])).toEqual(["2026-10-07"]);
+  });
+
+  it("does not backfill before a source's first digest", () => {
+    expect(digestPeriodsToAttempt("2026-10-08", ["2026-10-08"])).toEqual([]);
   });
 
   it("keeps each Slack channel paired with its own connection", () => {
@@ -65,6 +70,7 @@ describe("NoxCue daily digest periods", () => {
             project_channel_id: null, project_connection_id: null,
             organization_channel_id: null, organization_connection_id: null,
             fallback_channel_id: null, fallback_connection_id: null,
+            recent_digest_periods_json: "[]",
           }] };
           if (sql.includes("FROM cue_daily_metrics")) return { results: [
             { period: "2026-07-30", metric_key: "users.new", value: 70, origin: "reported" },
