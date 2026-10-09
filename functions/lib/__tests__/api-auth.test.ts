@@ -48,4 +48,17 @@ describe("API authentication primitives", () => {
     )).resolves.toEqual({ kind: "project", projectId: "proj_no-box-dev_noxhere" });
   });
 
+  it("does not interpret project collection routes as project resources", async () => {
+    await expect(apiTokenProjectResource(
+      {} as never,
+      "/api/v1/projects/routing",
+      7,
+    )).resolves.toBeNull();
+    await expect(apiTokenProjectResource(
+      {} as never,
+      "/api/v1/projects?view=bootstrap",
+      7,
+    )).resolves.toBeNull();
+  });
+
 });

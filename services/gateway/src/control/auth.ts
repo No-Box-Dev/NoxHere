@@ -411,8 +411,12 @@ export function requestProjectId(request: Request): string | null {
   const url = new URL(request.url);
   const header = request.headers.get("X-Project-ID")?.trim();
   const query = url.searchParams.get("project_id")?.trim();
-  const path = url.pathname.match(/^\/api\/(?:v1\/)?projects\/([^/]+)(?:\/|$)/)?.[1]
-    ?? url.pathname.match(/^\/api\/(?:v1\/)?cues\/projects\/([^/]+)(?:\/|$)/)?.[1];
+  // Collection routes such as /api/v1/projects/routing must never be treated
+  // as though the collection name were a project ID. Keep path extraction
+  // tied to the project-resource routes the platform actually exposes.
+  const path = url.pathname.match(
+    /^\/api\/(?:v1\/)?projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|cue)(?:\/|$)/,
+  )?.[1] ?? url.pathname.match(/^\/api\/(?:v1\/)?cues\/projects\/([^/]+)(?:\/|$)/)?.[1];
   return header || query || (path ? decodeURIComponent(path) : null);
 }
 
