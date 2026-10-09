@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { createNoxCue as createBrowserNoxCue } from "./browser.js";
-import { createNoxCue as createServerNoxCue } from "./server.js";
+import { createNoxCue as createServerNoxCue, createNoxCueFromEnv, createNoxCueSpanProcessor } from "./server.js";
 
 const browserKey = `nox_pub_${"a".repeat(32)}`;
 const serverKey = `nox_secret_${"b".repeat(32)}`;
@@ -53,6 +53,7 @@ describe("@noxhere/sdk telemetry", () => {
     const [url, init] = request.mock.calls[0]!;
     expect(url).toBe("https://app.noxhere.com/api/v1/cues/public/events");
     expect(init?.headers).toMatchObject({ "X-Nox-Ingest-Key": serverKey });
+    expect(init?.headers).toMatchObject({ "User-Agent": "noxhere-typescript/0.2.1" });
     expect(JSON.parse(String(init?.body))).toMatchObject({
       version: 1,
       type: "user.registered",
@@ -67,6 +68,36 @@ describe("@noxhere/sdk telemetry", () => {
         sdkVersion: "0.2.1",
       },
     });
+  });
+
+  it("supports environment bootstrap, typed events, and in-memory test delivery", async () => {
+    vi.stubEnv("NOXHERE_INGEST_KEY", serverKey);
+    vi.stubEnv("NOXHERE_IDENTITY_HASH_KEY", identityHashKey);
+    vi.stubEnv("NOXHERE_ENVIRONMENT", "test");
+    vi.stubEnv("NOXHERE_TELEMETRY_MODE", "memory");
+    const noxcue = createNoxCueFromEnv();
+
+    await expect(noxcue.events.reportGenerated("user-42", "report-7")).resolves.toMatchObject({ ok: true });
+    expect(noxcue.capturedEvents()).toHaveLength(1);
+    expect(noxcue.capturedEvents()[0]).toMatchObject({ name: "reports.generated", attributes: { reportId: "report-7" }, environment: "test" });
+    expect(JSON.stringify(noxcue.capturedEvents())).not.toContain("user-42");
+    vi.unstubAllEnvs();
+  });
+
+  it("bridges only explicitly marked OpenTelemetry spans", async () => {
+    const noxcue = createServerNoxCue({ key: serverKey, identityHashKey, mode: "memory" });
+    const processor = createNoxCueSpanProcessor(noxcue);
+    processor.onEnd({ attributes: { "http.route": "/patients/:id" } });
+    processor.onEnd({ attributes: {
+      "noxhere.event.name": "custom.report.shared",
+      "noxhere.user.id": "user-42",
+      "noxhere.event.attribute.channel": "email",
+      "http.route": "/patients/:id",
+    } });
+    await processor.forceFlush();
+    expect(noxcue.capturedEvents()).toHaveLength(1);
+    expect(noxcue.capturedEvents()[0]).toMatchObject({ metric: "custom.report.shared", attributes: { channel: "email" } });
+    expect(JSON.stringify(noxcue.capturedEvents())).not.toContain("/patients/:id");
   });
 
   it("rejects the wrong key kind without making a request", async () => {

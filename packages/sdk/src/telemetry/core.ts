@@ -258,7 +258,7 @@ export function createClient(
   const timeoutMs = Math.min(MAX_TIMEOUT_MS, Math.max(250, options.timeoutMs ?? DEFAULT_TIMEOUT_MS));
   const maxRetries = Math.min(3, Math.max(0, Math.round(options.maxRetries ?? 2)));
   const request = options.fetch ?? fetch;
-  const configured = options.enabled !== false && validKey(options.key, keyKind) && validEndpoint(endpoint);
+  const configured = options.enabled !== false && (options.mode === "memory" || (validKey(options.key, keyKind) && validEndpoint(endpoint)));
   const processEnvironment = (globalThis as typeof globalThis & { process?: RuntimeProcess }).process?.env;
   const identityHashKey = keyKind === "secret"
     ? bounded(options.identityHashKey ?? processEnvironment?.NOXHERE_IDENTITY_HASH_KEY, 4_096)
@@ -266,6 +266,7 @@ export function createClient(
   const identityKeyId = bounded(options.identityKeyId ?? processEnvironment?.NOXHERE_IDENTITY_KEY_ID ?? "primary", 32);
   const validIdentityConfiguration = validIdentityKey(identityHashKey, identityKeyId);
   const pending = new Set<Promise<DeliveryResult>>();
+  const memoryEvents: Array<Record<string, unknown>> = [];
   let closed = false;
   let identifiedUserId: string | undefined;
 
@@ -327,6 +328,10 @@ export function createClient(
     if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
       return { ok: false, eventId, error: "payload_too_large" };
     }
+    if (options.mode === "memory") {
+      memoryEvents.push(JSON.parse(body) as Record<string, unknown>);
+      return { ok: true, eventId, status: 202 };
+    }
 
     const totalAttempts = maxRetries + 1;
     for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
@@ -335,7 +340,7 @@ export function createClient(
       try {
         const response = await request(endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": options.key },
+          headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": options.key, ...(keyKind === "secret" ? { "User-Agent": `noxhere-typescript/${SDK_VERSION}` } : {}) },
           body,
           signal: controller.signal,
         });
@@ -414,6 +419,7 @@ export function createClient(
         metric: name,
         eventId,
         ...common,
+        ...(attributes ? { attributes } : {}),
       });
     }
     return deliver({
@@ -566,5 +572,13 @@ export function createClient(
       ...event,
       userId,
     }),
+    events: {
+      reportGenerated: (userId: string, reportId?: string, event: EventOptions = {}) => trackEvent("reports.generated", { ...event, userId, ...(reportId ? { attributes: { reportId } } : {}) }),
+      recordParsed: (userId: string, recordId?: string, event: EventOptions = {}) => trackEvent("records.parsed", { ...event, userId, ...(recordId ? { attributes: { recordId } } : {}) }),
+      trialStarted: (userId: string, event: EventOptions = {}) => trackEvent("subscription.trial_started", { ...event, userId }),
+      paidStarted: (userId: string, event: EventOptions = {}) => trackEvent("subscription.paid_started", { ...event, userId }),
+      subscriptionCancelled: (userId: string, event: EventOptions = {}) => trackEvent("subscription.cancelled", { ...event, userId }),
+    },
+    capturedEvents: () => memoryEvents.map((event) => ({ ...event })),
   };
 }

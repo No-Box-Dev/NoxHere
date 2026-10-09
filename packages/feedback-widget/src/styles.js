@@ -152,6 +152,23 @@ const CSS = `
   letter-spacing: 0.2px;
 }
 
+.noxspot-canvas-unavailable {
+  max-width: 260px;
+  text-align: center;
+  line-height: 1.45;
+}
+
+.noxspot-canvas-unavailable strong,
+.noxspot-canvas-unavailable span {
+  display: block;
+}
+
+.noxspot-canvas-unavailable strong {
+  color: white;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
 .noxspot-spinner {
   width: 32px;
   height: 32px;

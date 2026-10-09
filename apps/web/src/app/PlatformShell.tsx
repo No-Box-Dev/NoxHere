@@ -74,14 +74,14 @@ export function PlatformShell() {
                 </NavLink>}
               </div>)}
             </nav>
-            <div className="sidebar-account"><span>{bootstrap.data.actor.initials}</span><small>{bootstrap.data.organization.name}</small><b>⌄</b></div>
+            <Link className="sidebar-account" to="/?choose=1" aria-label="Switch personal or organization workspace"><span>{bootstrap.data.actor.initials}</span><small>{bootstrap.data.organization.name}</small><b>⌄</b></Link>
           </aside>
           <main className="main-canvas">
             <header className="platform-topbar">
               <PlatformRetrieval projectId={projectId} />
               <div className="topbar-actions">
               <ProjectSwitcher organizationId={bootstrap.data.organization.id} projects={bootstrap.data.projects} selectedId={projectId} canCreate={bootstrap.data.actor.isAdmin} placement="topbar" onSwitch={switchProject} />
-              <a className="topbar-projects" href="/docs/" target="_blank" rel="noreferrer" aria-label="Open API documentation">
+              <a className="topbar-projects" href="/developers" target="_blank" rel="noreferrer" aria-label="Open API documentation">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13H6z" /><path d="M14 4v4h4M9 12h6M9 16h6" /></svg>
                 <span>API docs</span>
               </a>

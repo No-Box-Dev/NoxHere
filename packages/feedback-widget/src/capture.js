@@ -6,23 +6,38 @@
 import { debugLog } from './debug.js';
 import { captureViewport } from './rasterize.js';
 
+const ELEMENT_MAP_NODE_LIMIT = 5_000;
+const ELEMENT_MAP_ENTRY_LIMIT = 750;
+const ELEMENT_MAP_TIME_LIMIT_MS = 750;
+const NEARBY_DESCENDANT_LIMIT = 80;
+
+let nearbyDataCache = new WeakMap();
+
+function now() {
+  return typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+}
+
 /**
  * Capture a screenshot of the current viewport and an element map for
  * hit-testing in the annotation overlay.
  *
- * @returns {Promise<{ dataUrl: string, elementMap: Array, viewport: { width: number, height: number } }>}
+ * @param {{ includeElementMap?: boolean }} [options]
+ * @returns {Promise<{ dataUrl: string|null, elementMap: Array, viewport: { width: number, height: number }, captureError?: { code: string, message: string } }>}
  */
-export async function captureScreenshot() {
+export async function captureScreenshot(options = {}) {
   debugLog('[NoxSpot] Capturing screenshot...');
 
   // Hide the trigger button during capture so it doesn't appear in the image.
   const trigger = document.querySelector('.noxspot-trigger');
   if (trigger) trigger.style.visibility = 'hidden';
 
+  let elementMap = [];
   try {
     // Capture element positions BEFORE rasterizing so coordinates match the
     // exact layout the screenshot captures.
-    const elementMap = captureElementMap();
+    if (options.includeElementMap !== false) elementMap = captureElementMap();
 
     const { dataUrl, viewport } = await captureViewport({
       filter: (node) => {
@@ -41,6 +56,21 @@ export async function captureScreenshot() {
     });
 
     return { dataUrl, elementMap, viewport };
+  } catch (error) {
+    // Capture is an enhancement to the report, never a prerequisite for it.
+    // Returning a bounded fallback keeps the feedback form usable on pages
+    // whose DOM is too large or contains browser-specific rasterization traps.
+    const message = error instanceof Error ? error.message : String(error);
+    debugLog('[NoxSpot] Screenshot unavailable; continuing without it', { message });
+    return {
+      dataUrl: null,
+      elementMap: [],
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      captureError: {
+        code: error?.code || 'capture_failed',
+        message: message.slice(0, 300),
+      },
+    };
   } finally {
     if (trigger) trigger.style.visibility = 'visible';
   }
@@ -54,13 +84,23 @@ export function captureElementMap() {
   const elements = [];
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
+  const state = {
+    visited: 0,
+    startedAt: now(),
+    exhausted: false,
+    rects: new WeakMap(),
+  };
+  nearbyDataCache = new WeakMap();
 
-  walkDocument(document, window, 0, 0, '', elements, viewportWidth, viewportHeight);
+  walkDocument(document, window, 0, 0, '', elements, viewportWidth, viewportHeight, state);
 
   // Sort by area (smallest first) so smaller elements are checked first during hover
   elements.sort((a, b) => (a.rect.width * a.rect.height) - (b.rect.width * b.rect.height));
 
-  debugLog('[NoxSpot] Element map captured:', elements.length, 'elements');
+  debugLog('[NoxSpot] Element map captured:', elements.length, 'elements', {
+    visited: state.visited,
+    truncated: state.exhausted,
+  });
   return elements;
 }
 
@@ -78,7 +118,7 @@ export function captureElementMap() {
  * @param {number} viewportWidth
  * @param {number} viewportHeight
  */
-function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportWidth, viewportHeight) {
+function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportWidth, viewportHeight, state) {
   if (!doc || !doc.body) return;
 
   const childIframes = [];
@@ -88,11 +128,35 @@ function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportW
     NodeFilter.SHOW_ELEMENT,
     {
       acceptNode: (node) => {
+        state.visited += 1;
+        if (
+          state.visited > ELEMENT_MAP_NODE_LIMIT ||
+          elements.length >= ELEMENT_MAP_ENTRY_LIMIT ||
+          now() - state.startedAt > ELEMENT_MAP_TIME_LIMIT_MS
+        ) {
+          state.exhausted = true;
+          return NodeFilter.FILTER_REJECT;
+        }
+
         // Skip noxspot elements
         if (node.classList?.contains('noxspot-trigger')) return NodeFilter.FILTER_REJECT;
 
-        // Check actual visibility via computed styles
-        // Note: offsetParent === null doesn't work for position:fixed elements (like modals/popups)
+        // Reject off-screen table rows as a subtree. A large table can contain
+        // tens of thousands of cells, none of which can be selected when its
+        // row is outside the captured viewport.
+        const localRect = node.getBoundingClientRect();
+        state.rects.set(node, localRect);
+        const top = localRect.top + offsetY;
+        const bottom = localRect.bottom + offsetY;
+        const left = localRect.left + offsetX;
+        const right = localRect.right + offsetX;
+        const outside = bottom < 0 || top > viewportHeight || right < 0 || left > viewportWidth;
+        if (outside && node.tagName === 'TR') return NodeFilter.FILTER_REJECT;
+        if (outside) return NodeFilter.FILTER_SKIP;
+
+        // Check actual visibility only after the inexpensive viewport test.
+        // getComputedStyle can force layout and was previously called for
+        // every off-screen table cell.
         const style = win.getComputedStyle(node);
         if (style.display === 'none' || style.visibility === 'hidden') {
           return NodeFilter.FILTER_REJECT;
@@ -105,9 +169,10 @@ function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportW
 
   let node;
   while (node = walker.nextNode()) {
+    if (state.exhausted || elements.length >= ELEMENT_MAP_ENTRY_LIMIT) break;
     if (node.tagName === 'IFRAME') childIframes.push(node);
 
-    const localRect = node.getBoundingClientRect();
+    const localRect = state.rects.get(node) || node.getBoundingClientRect();
     // Translate to top-page viewport coords. getBoundingClientRect inside an
     // iframe is relative to that iframe's own viewport (and already accounts
     // for inner scroll), so adding the cumulative iframe offset yields the
@@ -234,19 +299,10 @@ function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportW
       elementInfo.framePath = framePath;
     }
 
-    // Capture HTML source (truncated for large elements)
-    try {
-      const html = node.outerHTML;
-      if (html.length <= 2000) {
-        elementInfo.html = html;
-      } else {
-        // For large elements, capture just the opening tag + indicator
-        const tagMatch = html.match(/^<[^>]+>/);
-        elementInfo.html = tagMatch ? `${tagMatch[0]}... (${html.length} chars truncated)` : null;
-      }
-    } catch (e) {
-      elementInfo.html = null;
-    }
+    // Build bounded source metadata directly. Reading outerHTML first and
+    // truncating afterwards serializes an entire table subtree into a large
+    // temporary string.
+    elementInfo.html = openingTagSnapshot(node);
 
     elements.push(elementInfo);
   }
@@ -255,6 +311,7 @@ function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportW
   // access, so the try/catch keeps cross-origin frames from breaking capture —
   // the iframe wrapper itself was already added above.
   for (const iframe of childIframes) {
+    if (state.exhausted || elements.length >= ELEMENT_MAP_ENTRY_LIMIT) break;
     let innerDoc = null;
     try { innerDoc = iframe.contentDocument; } catch { innerDoc = null; }
     if (!innerDoc) continue;
@@ -277,7 +334,33 @@ function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportW
       elements,
       viewportWidth,
       viewportHeight,
+      state,
     );
+  }
+}
+
+function escapeAttribute(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function openingTagSnapshot(node) {
+  try {
+    const tag = node.tagName.toLowerCase();
+    const parts = [];
+    let length = tag.length + 2;
+    for (const attr of node.attributes) {
+      if (/^(value|srcdoc)$/i.test(attr.name)) continue;
+      const piece = ` ${attr.name}="${escapeAttribute(attr.value)}"`;
+      if (length + piece.length > 1_000) {
+        parts.push(' data-noxspot-truncated="true"');
+        break;
+      }
+      parts.push(piece);
+      length += piece.length;
+    }
+    return `<${tag}${parts.join('')}>`;
+  } catch {
+    return null;
   }
 }
 
@@ -503,10 +586,10 @@ export function shouldSkipDataAttr(name) {
  * Walks up the DOM from the given element, collecting useful data attributes
  * For the first few ancestor levels, searches all descendants (catches buttons inside table cells)
  * @param {Element} element - Starting element
- * @param {number} maxDepth - Max ancestor levels to walk (default 10)
+ * @param {number} maxDepth - Max ancestor levels to walk (default 6)
  * @returns {Object} Flat object of { "data-attr-name": "value" } — closest wins
  */
-export function collectNearbyDataAttributes(element, maxDepth = 10) {
+export function collectNearbyDataAttributes(element, maxDepth = 6) {
   const result = {};
   let current = element?.parentElement;
   let depth = 0;
@@ -515,14 +598,25 @@ export function collectNearbyDataAttributes(element, maxDepth = 10) {
     // Collect from ancestor itself
     collectDataAttrsFrom(current, result);
 
-    // For first 5 ancestor levels, search ALL descendants (not just direct children)
-    // This catches data-record-id on buttons inside <td> cells within a <tr>
-    if (depth < 5) {
-      const descendants = current.querySelectorAll('*');
-      for (const desc of descendants) {
-        if (desc.contains(element) || desc === element) continue;
-        if (desc.className && typeof desc.className === 'string' && desc.className.includes('noxspot')) continue;
-        collectDataAttrsFrom(desc, result);
+    // Search a bounded number of nearby descendants and cache the result for
+    // each ancestor. Previously every cell rescanned the complete tbody/table,
+    // making long tables approach quadratic work.
+    if (depth < 2) {
+      let nearby = nearbyDataCache.get(current);
+      if (!nearby) {
+        nearby = {};
+        const walker = current.ownerDocument.createTreeWalker(current, NodeFilter.SHOW_ELEMENT);
+        let descendant;
+        let visited = 0;
+        while ((descendant = walker.nextNode()) && visited < NEARBY_DESCENDANT_LIMIT) {
+          visited += 1;
+          if (descendant.className && typeof descendant.className === 'string' && descendant.className.includes('noxspot')) continue;
+          collectDataAttrsFrom(descendant, nearby);
+        }
+        nearbyDataCache.set(current, nearby);
+      }
+      for (const [name, value] of Object.entries(nearby)) {
+        if (!(name in result)) result[name] = value;
       }
     }
 

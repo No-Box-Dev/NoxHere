@@ -56,22 +56,26 @@ Server telemetry is available from the same distribution:
 ```python
 import os
 
-from noxhere.telemetry import NoxCueClient
+from noxhere.telemetry import create_noxcue
 
-with NoxCueClient(
-    key=os.environ["NOXHERE_TELEMETRY_KEY"],
-    identity_hash_key=os.environ["NOXHERE_IDENTITY_HASH_KEY"],
-    environment="production",
-) as telemetry:
-    telemetry.track("user.registered", user_id="user-42")
-    telemetry.track("records.parsed", user_id="user-42", value=3)
+with create_noxcue() as telemetry:
+    telemetry.user.registered("user-42")
+    telemetry.events.record_parsed("user-42", "record-7")
 ```
 
-`track()` queues delivery and returns immediately; leaving the context flushes
-the queue. Identifiers are HMAC-SHA256 protected before JSON serialization and
+`create_noxcue()` reads `NOXHERE_INGEST_KEY`, `NOXHERE_IDENTITY_HASH_KEY`,
+`NOXHERE_IDENTITY_KEY_ID`, `NOXHERE_ENVIRONMENT`, and `NOXHERE_RELEASE`.
+`track()` queues delivery and returns immediately; process shutdown or leaving
+the context flushes the queue. Delivery failures are returned or retained for
+`flush()` and never raised into the host application. Set
+`NOXHERE_TELEMETRY_MODE=memory` in tests, then inspect
+`telemetry.captured_events` without making network calls. Identifiers are
+HMAC-SHA256 protected before JSON serialization and
 the original value is never transmitted. Keep the identity key stable—changing
 it resets user continuity. Compatibility helpers such as `user.registered()`
-and `activity()` delegate to the same contract.
+and `activity()` delegate to the same contract. The typed `events` helpers keep
+built-in event names out of application strings while event timing remains an
+explicit decision at the call site.
 
 `noxcue` remains available as a deprecated forwarding package for existing
 applications; new code should import `noxhere.telemetry`.

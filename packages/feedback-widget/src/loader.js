@@ -71,6 +71,9 @@ let coreUrl = null;
 // need to scan the DOM and guess. Falls back to script-tag scan inside
 // resolveCoreUrl if this is null (e.g. loader injected dynamically).
 const LOADER_SRC = (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) || null;
+const LOADER_DATASET = (typeof document !== 'undefined' && document.currentScript && document.currentScript.dataset)
+  ? { ...document.currentScript.dataset }
+  : {};
 
 export { DEFAULT_BLOCKS };
 
@@ -192,6 +195,20 @@ export function init(options = {}) {
   config.getContext = typeof options.getContext === 'function' ? options.getContext : null;
   const reporterProvider = options.getUser ?? options.getReporter;
   config.getUser = typeof reporterProvider === 'function' ? reporterProvider : null;
+  // Hosts can provide the signed-in reporter either as an init option or as
+  // data attributes on the embed script. This is explicit host data; the
+  // widget never inspects cookies, storage, or application sessions.
+  const embeddedReporter = LOADER_DATASET.userName || LOADER_DATASET.userEmail || LOADER_DATASET.userAvatarUrl
+    ? {
+        name: LOADER_DATASET.userName,
+        email: LOADER_DATASET.userEmail,
+        avatarUrl: LOADER_DATASET.userAvatarUrl,
+        notifyOnResolution: LOADER_DATASET.notifyOnResolution === 'true',
+      }
+    : null;
+  if (options.reporter !== undefined || embeddedReporter) {
+    config.reporter = normalizeReporter(options.reporter ?? embeddedReporter);
+  }
   if (options.shortcut !== undefined) config.shortcut = options.shortcut;
 
   setDebug(!!options.debug);

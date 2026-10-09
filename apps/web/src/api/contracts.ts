@@ -32,6 +32,7 @@ export const projectSettingsSchema = z.object({
     id: z.string(),
     label: z.string(),
     color: z.string(),
+    completed: z.boolean().optional(),
   })).optional(),
 }).loose().nullable();
 
@@ -201,6 +202,24 @@ export const cueStatEventSchema = z.object({
   status: z.enum(["accepted", "rejected"]),
 });
 
+export const engineerStatsSchema = z.object({
+  openPRs: z.record(z.string(), z.number()),
+  openNonDraftPRs: z.record(z.string(), z.number()),
+  reviewing: z.record(z.string(), z.number()),
+  approvalsGiven: z.record(z.string(), z.number()),
+  mergesOfOthers: z.record(z.string(), z.number()),
+  assignedIssues: z.record(z.string(), z.number()),
+  lifetimePRs: z.record(z.string(), z.number()),
+  prsLast4Weeks: z.record(z.string(), z.number()),
+  lifetimeCommits: z.record(z.string(), z.number()),
+  commitsLast4Weeks: z.record(z.string(), z.number()),
+  issuesClosed: z.record(z.string(), z.number()),
+  coverage: z.object({
+    approvalsGivenSince: z.string().nullable(), mergedByKnown: z.number(), mergedPRs: z.number(),
+    issuesClosedByKnown: z.number(), closedIssues: z.number(),
+  }),
+}).loose();
+
 export const cueAlertSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -293,6 +312,7 @@ export type GuestInvite = z.infer<typeof guestInviteSchema>;
 export type GuestAccess = z.infer<typeof guestAccessSchema>;
 export type GithubMember = z.infer<typeof githubMemberSchema>;
 export type ProjectSettings = NonNullable<z.infer<typeof projectSettingsSchema>>;
+export type EngineerStats = z.infer<typeof engineerStatsSchema>;
 export type SlackRouting = z.infer<typeof slackRoutingSchema>;
 export type SlackStatus = z.infer<typeof slackStatusSchema>;
 export type SlackChannels = z.infer<typeof slackChannelsSchema>;

@@ -4,6 +4,7 @@ from __future__ import annotations
 # pyright: reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportMissingTypeArgument=false, reportUnknownLambdaType=false
 
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -12,7 +13,7 @@ from typing import Mapping
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "src"))
 
-from noxhere.telemetry import NoxCueClient, safe_error_details  # noqa: E402
+from noxhere.telemetry import NoxCueClient, create_noxcue, safe_error_details  # noqa: E402
 
 SERVER_KEY = "nox_secret_" + "b" * 32
 IDENTITY_HASH_KEY = "identity-secret-key-that-is-at-least-32-bytes"
@@ -98,6 +99,31 @@ class SDKTests(unittest.TestCase):
             result = client.activity("custom.journals.added", "user-42")
         self.assertTrue(result.ok)
         self.assertEqual(calls[0]["eventId"], calls[1]["eventId"])
+
+    def test_sets_a_versioned_user_agent(self) -> None:
+        self.client.test()
+        self.assertRegex(self.requests[-1][0].get_header("User-agent"), r"^noxhere-python/\d+\.\d+\.\d+$")
+
+    def test_environment_bootstrap_and_memory_mode_never_use_network(self) -> None:
+        previous = dict(os.environ)
+        os.environ.update({
+            "NOXHERE_INGEST_KEY": SERVER_KEY,
+            "NOXHERE_IDENTITY_HASH_KEY": IDENTITY_HASH_KEY,
+            "NOXHERE_ENVIRONMENT": "test",
+            "NOXHERE_TELEMETRY_MODE": "memory",
+        })
+        try:
+            client = create_noxcue(flush_at_exit=False, transport=lambda *_: self.fail("network called"))
+            result = client.events.report_generated("user-42", "report-7")
+            client.flush()
+            self.assertTrue(result.ok)
+            self.assertEqual(client.captured_events[0]["name"], "reports.generated")
+            self.assertEqual(client.captured_events[0]["attributes"], {"reportId": "report-7"})
+            self.assertNotIn("user-42", json.dumps(client.captured_events))
+            client.close()
+        finally:
+            os.environ.clear()
+            os.environ.update(previous)
 
     def test_rejects_wrong_key_without_network(self) -> None:
         client = NoxCueClient(

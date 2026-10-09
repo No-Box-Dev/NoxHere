@@ -42,21 +42,27 @@ Telemetry is part of the same SDK, with runtime-specific entry points so a
 secret ingest key can never be included in a browser bundle:
 
 ```ts
-import { createNoxCue } from "@noxhere/sdk/telemetry/server";
+import { createNoxCueFromEnv } from "@noxhere/sdk/telemetry/server";
 
-const telemetry = createNoxCue({
-  key: process.env.NOXHERE_TELEMETRY_KEY!,
-  identityHashKey: process.env.NOXHERE_IDENTITY_HASH_KEY!,
-  environment: "production",
-});
+const telemetry = createNoxCueFromEnv();
 
-await telemetry.track("user.registered", { userId: "user-42" });
-await telemetry.track("records.parsed", { userId: "user-42", value: 3 });
+await telemetry.user.registered("user-42");
+await telemetry.events.recordParsed("user-42", "record-7");
 
 // Request-scoped identity adds only the opaque id to telemetry evidence.
 const userTelemetry = telemetry.forUser("user-42");
 await userTelemetry.auth.login(() => authenticate());
 ```
+
+Environment bootstrap reads `NOXHERE_INGEST_KEY`,
+`NOXHERE_IDENTITY_HASH_KEY`, `NOXHERE_IDENTITY_KEY_ID`,
+`NOXHERE_ENVIRONMENT`, and `NOXHERE_RELEASE`. Set
+`NOXHERE_TELEMETRY_MODE=memory` for a network-free test client and inspect
+`capturedEvents()`. Delivery retries respect `Retry-After`, use a versioned user
+agent, and report failure results without changing application outcomes. The
+optional `createNoxCueSpanProcessor()` bridge accepts only OpenTelemetry spans
+explicitly marked with `noxhere.event.name` and `noxhere.user.id`; it never
+captures request spans automatically.
 
 Browser applications import `@noxhere/sdk/telemetry/browser` and use a
 `nox_pub_…` key. The compatibility function remains named `createNoxCue`, but

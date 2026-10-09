@@ -118,6 +118,31 @@ describe('showOverlay — optimistic flow', () => {
     expect(toolbarTools.classList.contains('noxspot-toolbar-tools--disabled')).toBe(false);
   });
 
+  it('keeps the feedback form open when capture degrades without a screenshot', async () => {
+    const onCaptureError = vi.fn();
+    const capture = {
+      dataUrl: null,
+      elementMap: [],
+      viewport: { width: 100, height: 100 },
+      captureError: { code: 'capture_limit_exceeded', message: 'Page capture exceeded the node limit' },
+    };
+
+    showOverlay(Promise.resolve(capture), {
+      onClose: () => {},
+      onSubmit: () => {},
+      onCaptureError,
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const overlay = document.querySelector('.noxspot-overlay');
+    expect(overlay).not.toBeNull();
+    expect(overlay.querySelector('.noxspot-canvas-loading').textContent).toContain('You can still send your feedback');
+    expect(overlay.querySelector('.noxspot-toolbar-tools').classList.contains('noxspot-toolbar-tools--disabled')).toBe(true);
+    expect(onCaptureError).toHaveBeenCalledOnce();
+  });
+
   it('closes the overlay and forwards the error if the capture rejects', async () => {
     const onCaptureError = vi.fn();
     const failure = new Error('capture failed');

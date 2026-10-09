@@ -64,7 +64,7 @@ export async function onRequestPost(context) {
         const period = completedPeriodAt(source.timezone);
         const digest = await loadNoxCueDigestData(context.env.DB, sourceId, period);
         if (!digest.hasData) return errorResponse("This NoxCue source has no completed daily user statistics yet. Send user events for the source, wait until its first day is complete, then test again.", 404);
-        const enabledKeys = await loadEnabledNoxCueMetricKeys(context.env.DB, orgId, source.project_id);
+        const enabledKeys = await loadEnabledNoxCueMetricKeys(context.env.DB, orgId, source.project_id, sourceId);
         const selected = selectNoxCueDigestMetrics(digest, enabledKeys);
         payload = (await getNoxCueDigestResponse(
           context.env,

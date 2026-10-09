@@ -51,11 +51,14 @@ const MAX_DELIVERIES = 5;
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runScheduledTick(env, event.scheduledTime));
+    const reportScheduleTick = event.cron === "* * * * *";
+    ctx.waitUntil(reportScheduleTick
+      ? runReportSchedules(env, event.scheduledTime)
+      : runScheduledTick(env, event.scheduledTime));
     // Daily event-table archival/retention — gated to the 03:00 UTC ticks so it
     // runs roughly once a day rather than every 30 min. Idempotent, so the two
     // 03:xx ticks just drain any backlog left by the per-run cap.
-    if (new Date(event.scheduledTime).getUTCHours() === 3) {
+    if (!reportScheduleTick && new Date(event.scheduledTime).getUTCHours() === 3) {
       ctx.waitUntil(
         runArchive(env, event.scheduledTime),
       );
@@ -136,7 +139,7 @@ async function runScheduledTick(env, nowMs) {
   // and an uncaught top-level failure does the same.
   await recordHeartbeatSuccess(env.DB, "scheduled.cron", env.CF_VERSION_METADATA?.id);
   try {
-    await runTick(env, nowMs);
+    await runTick(env, nowMs, false);
   } catch (err) {
     await recordHeartbeatFailure(env.DB, "scheduled.cron", err, env.CF_VERSION_METADATA?.id);
     await reportNoxCueRuntimeFailure(env, err, { operation: "scheduled.cron" });
@@ -203,7 +206,7 @@ async function handleTask(env, body) {
   }
 }
 
-async function runTick(env, nowMs = Date.now()) {
+async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
   const db = env.DB;
 
   await recoverNoxSpotResolutionPreparations(env);
@@ -231,26 +234,7 @@ async function runTick(env, nowMs = Date.now()) {
   }
   await healOrgInstallationLinks(db);
 
-  try {
-    await runNoxCueDigests(env, nowMs);
-  } catch (err) {
-    console.error("[noxconnect-cron] NoxCue digest sweep failed:", err?.message ?? err);
-    await reportScheduledComponentFailure(env, "noxcue.digest-sweep", err);
-  }
-
-  try {
-    await runNoxSpotDailyDigests(env, nowMs);
-  } catch (err) {
-    console.error("[noxconnect-cron] NoxSpot daily digest sweep failed:", err?.message ?? err);
-    await reportScheduledComponentFailure(env, "noxspot.digest-sweep", err);
-  }
-
-  try {
-    await runNoxFeedDailySummaries(env, nowMs);
-  } catch (err) {
-    console.error("[noxconnect-cron] NoxFeed daily summary sweep failed:", err?.message ?? err);
-    await reportScheduledComponentFailure(env, "noxfeed.summary-sweep", err);
-  }
+  if (includeReportSchedules) await runReportSchedules(env, nowMs);
 
   // Process at most one explicitly-requested source-of-truth audit per tick.
   // Each request is bounded to 120 monthly GitHub Search calls and is durable
@@ -291,6 +275,21 @@ async function runTick(env, nowMs = Date.now()) {
       if (!isTenantConfigurationFailure(err)) {
         await reportScheduledComponentFailure(env, "github.reconcile", err);
       }
+    }
+  }
+}
+
+async function runReportSchedules(env, nowMs) {
+  for (const [operation, label, run] of [
+    ["noxcue.digest-sweep", "NoxCue digest", runNoxCueDigests],
+    ["noxspot.digest-sweep", "NoxSpot daily digest", runNoxSpotDailyDigests],
+    ["noxfeed.summary-sweep", "NoxFeed daily summary", runNoxFeedDailySummaries],
+  ]) {
+    try {
+      await run(env, nowMs);
+    } catch (err) {
+      console.error(`[noxconnect-cron] ${label} sweep failed:`, err?.message ?? err);
+      await reportScheduledComponentFailure(env, operation, err);
     }
   }
 }

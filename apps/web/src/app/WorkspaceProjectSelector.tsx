@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import type { Bootstrap, Project } from "../api/contracts";
 import { platformApi } from "../api/platform";
 import { services } from "./service-registry";
+import { readLastProject } from "./last-project";
 
 export type WorkspaceProfile = {
   user: { login: string; email?: string | null };
@@ -17,10 +18,18 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
   const [selectedProject, setSelectedProject] = useState("");
   const [creating, setCreating] = useState(false);
   const [projectName, setProjectName] = useState("");
-  const workspaces = useMemo(() => profile.orgs.map((organization) => ({
-    ...organization,
-    id: organization.login.toLowerCase(),
-  })), [profile.orgs]);
+  const workspaces = useMemo(() => {
+    const personal = profile.user.login.toLowerCase();
+    const lastWorkspace = readLastProject(profile.user.login)?.organizationId.toLowerCase();
+    return profile.orgs.map((organization) => ({ ...organization, id: organization.login.toLowerCase() }))
+      .sort((left, right) => {
+        if (lastWorkspace && left.id === lastWorkspace) return -1;
+        if (lastWorkspace && right.id === lastWorkspace) return 1;
+        if (left.id === personal && right.id !== personal) return 1;
+        if (right.id === personal && left.id !== personal) return -1;
+        return left.login.localeCompare(right.login);
+      });
+  }, [profile.orgs, profile.user.login]);
   const bootstrapQueries = useQueries({
     queries: workspaces.map((workspace) => ({
       queryKey: ["platform", "bootstrap", workspace.id, ""],

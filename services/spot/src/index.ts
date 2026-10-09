@@ -335,6 +335,14 @@ app.get("/responses/:siteId/:objectId", (context) => {
 // core URL resolves beside them. Keep this exact route ahead of the catch-all
 // site route or the core filename is mistaken for a site ID and returns 404.
 app.get("/widget/noxspot-core.min.js", (context) => serveObject(context, "noxspot-core.min.js"));
+// Keep direct asset URLs working for older host integrations. Site-specific
+// embeds should use /widget/:siteId.js, but these aliases prevent a cached
+// NoxSpot/Blindspot script URL from falling through to the site-id route.
+app.get("/widget/noxspot.min.js", (context) => serveObject(context, "noxspot.min.js"));
+app.get("/widget/blindspot.min.js", (context) => serveObject(context, "blindspot.min.js"));
+app.get("/noxspot.min.js", (context) => serveObject(context, "noxspot.min.js"));
+app.get("/blindspot.min.js", (context) => serveObject(context, "blindspot.min.js"));
+app.get("/noxspot-core.min.js", (context) => serveObject(context, "noxspot-core.min.js"));
 
 app.get("/widget/:siteId{.+\\.js$}", async (context) => {
   const siteId = context.req.param("siteId").replace(/\.js$/, "");
