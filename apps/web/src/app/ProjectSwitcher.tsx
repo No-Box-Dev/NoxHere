@@ -21,8 +21,8 @@ export function ProjectSwitcher({ organizationId, projects, selectedId, canCreat
   const [draftRepositories, setDraftRepositories] = useState<string[] | null>(null);
   const selected = projects.find((project) => project.id === selectedId) ?? projects[0];
   const routing = useQuery({
-    queryKey: ["platform", "project-routing", organizationId],
-    queryFn: ({ signal }) => platformApi.projectRouting(organizationId, signal),
+    queryKey: ["platform", "project-routing", organizationId, selectedId],
+    queryFn: ({ signal }) => platformApi.projectRouting(organizationId, selectedId, signal),
     enabled: creating,
     staleTime: 60_000,
   });

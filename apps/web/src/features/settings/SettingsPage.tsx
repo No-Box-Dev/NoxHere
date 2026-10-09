@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const project = bootstrap.projects.find((item) => item.id === projectId) ?? bootstrap.projects[0];
   const projectName = project?.name ?? projectId;
-  const members = useQuery({ queryKey: ["platform", "members", organizationId], queryFn: ({ signal }) => platformApi.members(organizationId, signal) });
+  const members = useQuery({ queryKey: ["platform", "members", organizationId, projectId], queryFn: ({ signal }) => platformApi.members(organizationId, projectId, signal) });
   const settingsKey = projectSettingsQueryKey(organizationId, projectId);
   const settings = useQuery({ queryKey: settingsKey, queryFn: ({ signal }) => platformApi.projectSettings(organizationId, projectId, signal) });
   const saveTracking = useMutation({

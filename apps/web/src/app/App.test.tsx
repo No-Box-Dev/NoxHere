@@ -1043,6 +1043,12 @@ describe("NoxConnect API-backed platform", () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
 
     await user.click(await screen.findByRole("checkbox", { name: /^api/ }));
+    expect(fetch).toHaveBeenCalledWith("/api/v1/projects/routing", expect.objectContaining({
+      headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
+    }));
+    expect(fetch).toHaveBeenCalledWith("/api/v1/members", expect.objectContaining({
+      headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
+    }));
     await user.click(screen.getByRole("button", { name: "Save repositories" }));
 
     expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/${project.id}/routing`, expect.objectContaining({
