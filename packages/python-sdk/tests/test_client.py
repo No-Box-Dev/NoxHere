@@ -46,7 +46,11 @@ class ClientTest(unittest.TestCase):
     def test_maps_every_operation_and_alias(self) -> None:
         client = NoxHereClient(transport=Recorder())
         self.assertGreater(len(client.operation_ids()), 100)
-        self.assertIs(client.cue, client.incidents)
+        self.assertIsNot(client.cue, client.incidents)
+        self.assertIn("getNoxCueDailyHealth", client.stats.operation_ids())
+        self.assertIn("getProjectIncidents", client.incidents.operation_ids())
+        self.assertIn("getNoxCueDailyHealth", client.cue.operation_ids())
+        self.assertIn("getProjectIncidents", client.cue.operation_ids())
         self.assertIs(client.spot, client.feedback)
 
     def test_encodes_path_query_and_auth(self) -> None:

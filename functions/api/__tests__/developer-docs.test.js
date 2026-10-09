@@ -78,9 +78,27 @@ describe("developer documentation", () => {
     expect(html).toContain('from <span class="token-string">"@noxhere/sdk/telemetry/server"</span>');
     expect(html).toContain("await noxcue.auth.signup");
     expect(html).toContain("await userCue.user.registered");
-    expect(html).toContain("noxcue.identify({ id: user.id");
+    expect(html).not.toContain("noxcue.identify({ id: user.id");
+    expect(html).toContain("identityHashKey: process.env.NOXHERE_IDENTITY_HASH_KEY!");
+    expect(html).toContain("Browser activity is count-only");
     expect(html).toContain("noxcue.forUser(user.id)");
     expect(html).toContain("Never ship a <code>nox_secret_…</code> key to a browser");
+  });
+
+  it("separates public Stats and Incidents vocabulary and publishes governance", () => {
+    expect(html).toContain("Planning, Activity, Feedback, Stats, and Incidents capabilities");
+    expect(html).toContain("<h3>Stats</h3>");
+    expect(html).toContain("<h3>Incidents</h3>");
+    expect(html).not.toContain("One API. Five focused");
+    expect(guide).toContain("Stats sources:");
+    expect(discovery).toContain("Telemetry data governance");
+  });
+
+  it("shows exact credential alternatives and automation scopes from OpenAPI", () => {
+    expect(script).toContain("Accepted credentials");
+    expect(script).toContain("Automation scope");
+    expect(script).toContain("automation nox_sk_ token");
+    expect(script).toContain("source X-Nox-Ingest-Key");
   });
 
   it("makes the NoxSpot signed-in identity integration explicit", () => {

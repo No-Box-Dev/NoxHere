@@ -34,6 +34,10 @@
       "types": "./dist/incidents.d.ts",
       "import": "./dist/incidents.js"
     },
+    "./stats": {
+      "types": "./dist/stats.d.ts",
+      "import": "./dist/stats.js"
+    },
     "./telemetry/browser": {
       "types": "./dist/telemetry/browser.d.ts",
       "import": "./dist/telemetry/browser.js"

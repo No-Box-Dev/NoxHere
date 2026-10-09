@@ -6,5 +6,6 @@ Allow: /developers.js
 Allow: /openapi.json
 Allow: /docs/ai-setup.md
 Allow: /docs/direct-api.md
+Allow: /docs/data-governance.md
 Allow: /llms.txt
 Disallow: /

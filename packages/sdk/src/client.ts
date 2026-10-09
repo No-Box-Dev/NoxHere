@@ -131,6 +131,7 @@ export type OperationMap = { readonly [K in OperationId]: Operation<K> };
 type Definition = (typeof operationDefinitions)[number];
 export type OperationIdFor<N extends ResourceNamespace> = Extract<Definition, { namespace: N }>["id"];
 export type ResourceClient<N extends ResourceNamespace = ResourceNamespace> = Readonly<Pick<OperationMap, OperationIdFor<N>>>;
+export type CueResourceClient = ResourceClient<"stats"> & ResourceClient<"incidents">;
 
 export interface NoxHereClient {
   readonly operations: OperationMap;
@@ -138,12 +139,14 @@ export interface NoxHereClient {
   readonly activity: ResourceClient<"activity">;
   readonly planning: ResourceClient<"planning">;
   readonly feedback: ResourceClient<"feedback">;
+  readonly stats: ResourceClient<"stats">;
   readonly incidents: ResourceClient<"incidents">;
   readonly connect: ResourceClient<"workspace">;
   readonly feed: ResourceClient<"activity">;
   readonly ticket: ResourceClient<"planning">;
   readonly spot: ResourceClient<"feedback">;
-  readonly cue: ResourceClient<"incidents">;
+  /** @deprecated Use `stats` or `incidents`. */
+  readonly cue: CueResourceClient;
   request<K extends OperationId>(operationId: K, ...args: OperationArguments<K>): Promise<OperationOutput<K>>;
   withContext(context: { organization?: string; projectId?: string }): NoxHereClient;
 }
@@ -315,7 +318,7 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
 
   const operations: Record<string, (input?: RuntimeOperationInput) => Promise<unknown>> = {};
   const resources: Record<ResourceNamespace, Record<string, (input?: RuntimeOperationInput) => Promise<unknown>>> = {
-    workspace: {}, activity: {}, planning: {}, feedback: {}, incidents: {},
+    workspace: {}, activity: {}, planning: {}, feedback: {}, stats: {}, incidents: {},
   };
   for (const definition of operationDefinitions) {
     const operation = (input?: RuntimeOperationInput) => (request as (id: OperationId, input?: RuntimeOperationInput) => Promise<unknown>)(definition.id, input);
@@ -324,6 +327,7 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
   }
   for (const resource of Object.values(resources)) Object.freeze(resource);
   Object.freeze(operations);
+  const cue = Object.freeze({ ...resources.stats, ...resources.incidents }) as unknown as CueResourceClient;
   const client = {
     operations: operations as unknown as OperationMap,
     ...resources,
@@ -331,7 +335,7 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
     feed: resources.activity,
     ticket: resources.planning,
     spot: resources.feedback,
-    cue: resources.incidents,
+    cue,
     request,
     withContext: (context: { organization?: string; projectId?: string }) => createNoxHere({ ...options, ...context }),
   } as unknown as NoxHereClient;

@@ -13,8 +13,7 @@ python -m pip install --upgrade noxhere
 from noxhere import NoxHereClient
 
 nox = NoxHereClient(token="nox_sk_...")
-projects = nox.workspace.list_projects()
-incidents = nox.incidents.get_project_incidents(path={"projectId": "project-1"})
+services = nox.workspace.list_nox_services()
 ```
 
 The SDK is optional. The equivalent operation can always be called directly:
@@ -24,12 +23,12 @@ import os
 import requests
 
 response = requests.get(
-    f"https://app.noxhere.com/api/v1/projects/{project_id}/incidents",
+    "https://app.noxhere.com/api/v1/services",
     headers={"Authorization": f"Bearer {os.environ['NOXHERE_API_TOKEN']}"},
     timeout=10,
 )
 response.raise_for_status()
-incidents = response.json()
+services = response.json()
 ```
 
 See the repository's [direct HTTP guide](../../public/docs/direct-api.md) and the
@@ -46,9 +45,10 @@ nox = AsyncNoxHereClient(token="nox_sk_...")
 page = await nox.activity.get_nox_feed(query={"limit": 25})
 ```
 
-Namespaces are `workspace`, `activity`, `planning`, `feedback`, and
-`incidents`; `connect`, `feed`, `ticket`, `spot`, and `cue` are compatibility
-aliases. Use `noxhere.incidents.create_incident_client` or
+Namespaces are `workspace`, `activity`, `planning`, `feedback`, `stats`, and
+`incidents`; `connect`, `feed`, `ticket`, and `spot` are direct compatibility
+aliases. The deprecated `cue` facade combines Stats and Incidents operations.
+Use `noxhere.stats.create_stats_client`, `noxhere.incidents.create_incident_client`, or
 `noxhere.feedback.create_feedback_client` for focused clients.
 
 Server telemetry is available from the same distribution:

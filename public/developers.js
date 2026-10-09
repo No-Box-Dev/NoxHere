@@ -59,6 +59,7 @@ function collectOperations(document) {
         summary: operation.summary ?? "",
         description: operation.description ?? "",
         authentication: operation["x-authentication"] ?? "member",
+        automationScope: operation["x-automation-scope"] ?? null,
         safety: operation["x-change-safety"] ?? "unspecified",
         server: operation.servers?.[0]?.url ?? document.servers?.[0]?.url ?? "",
         parameters: resolveParameters(operation.parameters ?? [], document),
@@ -140,6 +141,8 @@ function operationCard(operation) {
     element("span", `Safety: ${humanize(operation.safety)}`, safetyClass(operation.safety)),
   );
   body.append(badges);
+  body.append(definition("Accepted credentials", acceptedCredentials(operation)));
+  if (operation.automationScope) body.append(definition("Automation scope", operation.automationScope));
   if (operation.description) body.append(element("p", operation.description));
   body.append(definition("Operation ID", operation.id));
   if (operation.server && operation.server !== "https://app.noxhere.com") body.append(definition("Server", operation.server));
@@ -211,6 +214,20 @@ function safetyClass(safety) {
 
 function humanize(value) {
   return String(value).replaceAll("_", " ");
+}
+
+function acceptedCredentials(operation) {
+  if (!Array.isArray(operation.security) || operation.security.length === 0) return "Public; no credential";
+  const labels = {
+    browserSession: "browser session",
+    nativeSession: "native nox_at_ token",
+    noxApiToken: "automation nox_sk_ token",
+    noxCueKey: "source X-Nox-Ingest-Key",
+    organization: "organization context",
+    csrfProof: "CSRF proof",
+  };
+  return operation.security.map((alternative) => Object.keys(alternative ?? {})
+    .map((name) => labels[name] ?? humanize(name)).join(" + ")).join(" or ");
 }
 
 function element(tag, text = "", className = "") {

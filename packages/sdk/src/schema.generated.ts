@@ -10,7 +10,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Submit a bounded batch of automatic browser errors */
+        /**
+         * Submit a bounded batch of automatic browser errors
+         * @description Submit a bounded batch of automatic browser errors. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["submitPublicNoxSpotErrors"];
         delete?: never;
         options?: never;
@@ -65,7 +68,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get effective public widget configuration for the request origin */
+        /**
+         * Get effective public widget configuration for the request origin
+         * @description Get effective public widget configuration for the request origin. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getPublicNoxSpotConfig"];
         put?: never;
         post?: never;
@@ -82,7 +88,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List organization people and identity overlays */
+        /**
+         * List organization people and identity overlays
+         * @description List organization people and identity overlays. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listActors"];
         put?: never;
         post?: never;
@@ -99,14 +108,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get one organization identity */
+        /**
+         * Get one organization identity
+         * @description Get one organization identity. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getActor"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Update an organization identity overlay */
+        /**
+         * Update an organization identity overlay
+         * @description Update an organization identity overlay. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         patch: operations["updateActor"];
         trace?: never;
     };
@@ -431,7 +446,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List recent NoxCue events and Slack delivery state */
+        /**
+         * List recent NoxCue events and Slack delivery state
+         * @description List recent NoxCue events and Slack delivery state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listNoxCueEvents"];
         put?: never;
         post?: never;
@@ -472,7 +490,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get stored NoxCue-derived user metrics and digest state */
+        /**
+         * Get stored NoxCue-derived user metrics and digest state
+         * @description Get stored NoxCue-derived user metrics and digest state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getNoxCueDailyHealth"];
         put?: never;
         post?: never;
@@ -509,9 +530,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List selectable metrics and their active event status for one project */
+        /**
+         * List selectable metrics and their active event status for one project
+         * @description List selectable metrics and their active event status for one project. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getNoxCueProjectMetrics"];
-        /** Choose metrics included in one project's daily report */
+        /**
+         * Choose metrics included in one project's daily report
+         * @description Choose metrics included in one project's daily report. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["updateNoxCueProjectMetrics"];
         post?: never;
         delete?: never;
@@ -547,10 +574,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List NoxCue sources, linked projects, and ingest keys */
+        /**
+         * List NoxCue sources, linked projects, and ingest keys
+         * @description List NoxCue sources, linked projects, and ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listNoxCueSources"];
         put?: never;
-        /** Create a NoxCue event source */
+        /**
+         * Create a NoxCue event source
+         * @description Create a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["createNoxCueSource"];
         delete?: never;
         options?: never;
@@ -566,10 +599,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update a NoxCue event source */
+        /**
+         * Update a NoxCue event source
+         * @description Update a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["updateNoxCueSource"];
         post?: never;
-        /** Delete a NoxCue source and revoke its keys */
+        /**
+         * Delete a NoxCue source and revoke its keys
+         * @description Delete a NoxCue source and revoke its keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["deleteNoxCueSource"];
         options?: never;
         head?: never;
@@ -583,9 +622,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List source-scoped NoxCue report card configuration */
+        /**
+         * List source-scoped NoxCue report card configuration
+         * @description List source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listNoxCueCards"];
-        /** Replace source-scoped NoxCue report card configuration */
+        /**
+         * Replace source-scoped NoxCue report card configuration
+         * @description Replace source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["updateNoxCueCards"];
         post?: never;
         delete?: never;
@@ -601,10 +646,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List registered custom activity metrics and event status */
+        /**
+         * List registered custom activity metrics and event status
+         * @description List registered custom activity metrics and event status. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listNoxCueCustomMetrics"];
         put?: never;
-        /** Register a custom activity metric before ingest */
+        /**
+         * Register a custom activity metric before ingest
+         * @description Register a custom activity metric before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["createNoxCueCustomMetric"];
         delete?: never;
         options?: never;
@@ -620,10 +671,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Rename or pause a registered custom activity metric */
+        /**
+         * Rename or pause a registered custom activity metric
+         * @description Rename or pause a registered custom activity metric. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["updateNoxCueCustomMetric"];
         post?: never;
-        /** Delete a custom metric definition while retaining historical events */
+        /**
+         * Delete a custom metric definition while retaining historical events
+         * @description Delete a custom metric definition while retaining historical events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["deleteNoxCueCustomMetric"];
         options?: never;
         head?: never;
@@ -643,7 +700,10 @@ export interface paths {
          */
         get: operations["listNoxCueFeatures"];
         put?: never;
-        /** Register a custom NoxCue feature before ingest */
+        /**
+         * Register a custom NoxCue feature before ingest
+         * @description Register a custom NoxCue feature before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["createNoxCueCustomFeature"];
         delete?: never;
         options?: never;
@@ -659,10 +719,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update or pause a registered custom feature */
+        /**
+         * Update or pause a registered custom feature
+         * @description Update or pause a registered custom feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["updateNoxCueCustomFeature"];
         post?: never;
-        /** Delete a custom feature definition while retaining historical results */
+        /**
+         * Delete a custom feature definition while retaining historical results
+         * @description Delete a custom feature definition while retaining historical results. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["deleteNoxCueCustomFeature"];
         options?: never;
         head?: never;
@@ -698,7 +764,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List NoxCue key metadata, usage, and audit history */
+        /**
+         * List NoxCue key metadata, usage, and audit history
+         * @description List NoxCue key metadata, usage, and audit history. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listNoxCueKeys"];
         put?: never;
         /**
@@ -722,7 +791,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revoke a NoxCue ingest key */
+        /**
+         * Revoke a NoxCue ingest key
+         * @description Revoke a NoxCue ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["revokeNoxCueKey"];
         options?: never;
         head?: never;
@@ -738,7 +810,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rotate a NoxCue ingest key with a 24-hour overlap */
+        /**
+         * Rotate a NoxCue ingest key with a 24-hour overlap
+         * @description Rotate a NoxCue ingest key with a 24-hour overlap. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["rotateNoxCueKey"];
         delete?: never;
         options?: never;
@@ -773,7 +848,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get normalized monthly activity for one engineer */
+        /**
+         * Get normalized monthly activity for one engineer
+         * @description Get normalized monthly activity for one engineer. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getEngineerActivity"];
         put?: never;
         post?: never;
@@ -852,10 +930,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List NoxTicket features */
+        /**
+         * List NoxTicket features
+         * @description List NoxTicket features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listFeatures"];
         put?: never;
-        /** Create a feature */
+        /**
+         * Create a feature
+         * @description Create a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["createFeature"];
         delete?: never;
         options?: never;
@@ -873,11 +957,17 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Close a feature */
+        /**
+         * Close a feature
+         * @description Close a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["closeFeature"];
         options?: never;
         head?: never;
-        /** Partially update a feature */
+        /**
+         * Partially update a feature
+         * @description Partially update a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         patch: operations["updateFeature"];
         trace?: never;
     };
@@ -888,10 +978,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List feature attachments */
+        /**
+         * List feature attachments
+         * @description List attachments for one Planning feature.
+         */
         get: operations["listFeatureAttachments"];
         put?: never;
-        /** Upload a bounded feature attachment */
+        /**
+         * Upload a bounded feature attachment
+         * @description Upload a bounded attachment to one Planning feature.
+         */
         post: operations["uploadFeatureAttachment"];
         delete?: never;
         options?: never;
@@ -906,11 +1002,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Download a feature attachment */
+        /**
+         * Download a feature attachment
+         * @description Download one attachment from a Planning feature.
+         */
         get: operations["downloadFeatureAttachment"];
         put?: never;
         post?: never;
-        /** Delete a feature attachment */
+        /**
+         * Delete a feature attachment
+         * @description Delete one attachment from a Planning feature.
+         */
         delete: operations["deleteFeatureAttachment"];
         options?: never;
         head?: never;
@@ -924,7 +1026,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get normalized current work, posts, and release notes */
+        /**
+         * Get normalized current work, posts, and release notes
+         * @description Get normalized current work, posts, and release notes. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getNoxFeed"];
         put?: never;
         post?: never;
@@ -1105,7 +1210,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List provider connection state */
+        /**
+         * List provider connection state
+         * @description List provider connection state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listConnections"];
         put?: never;
         post?: never;
@@ -1124,7 +1232,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Disconnect a provider */
+        /**
+         * Disconnect a provider
+         * @description Disconnect a provider. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["disconnectConnection"];
         delete?: never;
         options?: never;
@@ -1159,7 +1270,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get resumable setup state and next actions */
+        /**
+         * Get resumable setup state and next actions
+         * @description Get resumable setup state and next actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getSetupPlan"];
         put?: never;
         post?: never;
@@ -1196,14 +1310,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get service-to-channel routing */
+        /**
+         * Get service-to-channel routing
+         * @description Get service-to-channel routing. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getSlackRouting"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Partially update service-to-channel routing */
+        /**
+         * Partially update service-to-channel routing
+         * @description Partially update service-to-channel routing. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         patch: operations["patchSlackRouting"];
         trace?: never;
     };
@@ -1216,7 +1336,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send a test message through a saved or candidate route */
+        /**
+         * Send a test message through a saved or candidate route
+         * @description Send a test message through a saved or candidate route. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["testSlackRoute"];
         delete?: never;
         options?: never;
@@ -1271,7 +1394,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List tracked GitHub issues */
+        /**
+         * List tracked GitHub issues
+         * @description List tracked GitHub issues. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listIssues"];
         put?: never;
         post?: never;
@@ -1288,7 +1414,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get one tracked GitHub issue */
+        /**
+         * Get one tracked GitHub issue
+         * @description Get one tracked GitHub issue. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getIssue"];
         put?: never;
         post?: never;
@@ -1305,9 +1434,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get organization AI execution settings */
+        /**
+         * Get organization AI execution settings
+         * @description Get organization AI execution settings. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getAiSettings"];
-        /** Set organization AI execution mode */
+        /**
+         * Set organization AI execution mode
+         * @description Set organization AI execution mode. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["putAiSettings"];
         post?: never;
         delete?: never;
@@ -1425,7 +1560,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Draft a Planning feature or task with managed AI */
+        /**
+         * Draft a Planning feature or task with managed AI
+         * @description Draft a Planning feature or task with managed AI. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["draftPlanningItem"];
         delete?: never;
         options?: never;
@@ -1440,7 +1578,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List active projects used by feature setup */
+        /**
+         * List active projects used by feature setup
+         * @description List active projects used by feature setup. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listProjects"];
         put?: never;
         /**
@@ -1461,7 +1602,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List NoxConnect projects, repository assignments, and product destinations */
+        /**
+         * List NoxConnect projects, repository assignments, and product destinations
+         * @description List NoxConnect projects, repository assignments, and product destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getProjectRouting"];
         put?: never;
         post?: never;
@@ -1478,7 +1622,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project activity */
+        /**
+         * Read project activity
+         * @description Read project activity. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getProjectActivity"];
         put?: never;
         post?: never;
@@ -1497,9 +1644,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop tracking a project without deleting it */
+        /**
+         * Stop tracking a project without deleting it
+         * @description Stop tracking a project without deleting it. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["archiveProject"];
-        /** Resume tracking an eligible project */
+        /**
+         * Resume tracking an eligible project
+         * @description Resume tracking an eligible project. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["restoreProject"];
         options?: never;
         head?: never;
@@ -1535,9 +1688,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project Cue actions */
+        /**
+         * Read project Cue actions
+         * @description Read project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getCueProjectActions"];
-        /** Update project Cue actions */
+        /**
+         * Update project Cue actions
+         * @description Update project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["updateCueProjectActions"];
         post?: never;
         delete?: never;
@@ -1553,7 +1712,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project Cue alert rules */
+        /**
+         * Read project Cue alert rules
+         * @description Read project Cue alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getCueProjectAlertRules"];
         put?: never;
         post?: never;
@@ -1570,7 +1732,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project Cue alerts */
+        /**
+         * Read project Cue alerts
+         * @description Read project Cue alerts. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getCueProjectAlerts"];
         put?: never;
         post?: never;
@@ -1587,7 +1752,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read the project Cue dashboard */
+        /**
+         * Read the project Cue dashboard
+         * @description Read the project Cue dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getCueProjectDashboard"];
         put?: never;
         post?: never;
@@ -1604,7 +1772,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project Cue statistic events */
+        /**
+         * Read project Cue statistic events
+         * @description Read project Cue statistic events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getCueProjectStatEvents"];
         put?: never;
         post?: never;
@@ -1621,7 +1792,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project feedback */
+        /**
+         * Read project feedback
+         * @description Read project feedback. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getProjectFeedback"];
         put?: never;
         post?: never;
@@ -1638,7 +1812,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project incidents */
+        /**
+         * Read project incidents
+         * @description Read project incidents. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getProjectIncidents"];
         put?: never;
         post?: never;
@@ -1655,14 +1832,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read one project incident */
+        /**
+         * Read one project incident
+         * @description Read one project incident. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getProjectIncident"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Update one project incident */
+        /**
+         * Update one project incident
+         * @description Update one project incident. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         patch: operations["updateProjectIncident"];
         trace?: never;
     };
@@ -1673,7 +1856,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read project issues */
+        /**
+         * Read project issues
+         * @description Read project issues. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getProjectIssues"];
         put?: never;
         post?: never;
@@ -1713,7 +1899,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Atomically update one project's repositories and named Slack destinations */
+        /**
+         * Atomically update one project's repositories and named Slack destinations
+         * @description Atomically update one project's repositories and named Slack destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         put: operations["updateProjectRouting"];
         post?: never;
         delete?: never;
@@ -1729,7 +1918,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List tracked pull requests */
+        /**
+         * List tracked pull requests
+         * @description List tracked pull requests. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listPullRequests"];
         put?: never;
         post?: never;
@@ -1748,7 +1940,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Close a pull request through GitHub */
+        /**
+         * Close a pull request through GitHub
+         * @description Close a pull request through GitHub. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["closePullRequest"];
         delete?: never;
         options?: never;
@@ -1763,7 +1958,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get one tracked pull request */
+        /**
+         * Get one tracked pull request
+         * @description Get one tracked pull request. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getPullRequest"];
         put?: never;
         post?: never;
@@ -1800,7 +1998,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List tracked repositories or include all discovered repositories */
+        /**
+         * List tracked repositories or include all discovered repositories
+         * @description List tracked repositories or include all discovered repositories. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listRepositories"];
         put?: never;
         post?: never;
@@ -1819,7 +2020,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Acknowledge newly discovered repositories */
+        /**
+         * Acknowledge newly discovered repositories
+         * @description Acknowledge newly discovered repositories. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["acknowledgeRepositories"];
         delete?: never;
         options?: never;
@@ -1854,7 +2058,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Nox services, their focus, capabilities, and setup readiness */
+        /**
+         * List Nox services, their focus, capabilities, and setup readiness
+         * @description List Nox services, their focus, capabilities, and setup readiness. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listNoxServices"];
         put?: never;
         post?: never;
@@ -1871,7 +2078,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get capabilities and setup readiness for one Nox service */
+        /**
+         * Get capabilities and setup readiness for one Nox service
+         * @description Get capabilities and setup readiness for one Nox service. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getNoxService"];
         put?: never;
         post?: never;
@@ -1912,7 +2122,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get service readiness and connection checks */
+        /**
+         * Get service readiness and connection checks
+         * @description Get service readiness and connection checks. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getNoxServiceHealth"];
         put?: never;
         post?: never;
@@ -1929,7 +2142,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get setup state, sections, blockers, and capabilities for one service */
+        /**
+         * Get setup state, sections, blockers, and capabilities for one service
+         * @description Get setup state, sections, blockers, and capabilities for one service. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getNoxServiceSetup"];
         put?: never;
         post?: never;
@@ -1946,7 +2162,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List channels visible to the connected Nox bot */
+        /**
+         * List channels visible to the connected Nox bot
+         * @description List channels visible to the connected Nox bot. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listSlackChannels"];
         put?: never;
         post?: never;
@@ -2043,10 +2262,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List NoxTicket specifications */
+        /**
+         * List NoxTicket specifications
+         * @description List NoxTicket specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listSpecs"];
         put?: never;
-        /** Create a specification */
+        /**
+         * Create a specification
+         * @description Create a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["createSpec"];
         delete?: never;
         options?: never;
@@ -2061,14 +2286,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get one specification */
+        /**
+         * Get one specification
+         * @description Get one specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["getSpec"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Partially update or relink a specification */
+        /**
+         * Partially update or relink a specification
+         * @description Partially update or relink a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         patch: operations["updateSpec"];
         trace?: never;
     };
@@ -2081,9 +2312,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Archive a specification */
+        /**
+         * Archive a specification
+         * @description Archive a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["archiveSpec"];
-        /** Restore a specification */
+        /**
+         * Restore a specification
+         * @description Restore a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["restoreSpec"];
         options?: never;
         head?: never;
@@ -2097,10 +2334,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List specification attachments */
+        /**
+         * List specification attachments
+         * @description List specification attachments. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listSpecAttachments"];
         put?: never;
-        /** Upload a bounded specification attachment */
+        /**
+         * Upload a bounded specification attachment
+         * @description Upload a bounded specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["uploadSpecAttachment"];
         delete?: never;
         options?: never;
@@ -2115,11 +2358,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Download a specification attachment */
+        /**
+         * Download a specification attachment
+         * @description Download a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["downloadSpecAttachment"];
         put?: never;
         post?: never;
-        /** Delete a specification attachment */
+        /**
+         * Delete a specification attachment
+         * @description Delete a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["deleteSpecAttachment"];
         options?: never;
         head?: never;
@@ -2173,10 +2422,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List NoxSpot sites */
+        /**
+         * List NoxSpot sites
+         * @description List NoxSpot sites. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listNoxSpotSites"];
         put?: never;
-        /** Create a NoxSpot site */
+        /**
+         * Create a NoxSpot site
+         * @description Create a NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["createNoxSpotSite"];
         delete?: never;
         options?: never;
@@ -2194,11 +2449,17 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a NoxSpot site and its screenshots */
+        /**
+         * Delete a NoxSpot site and its screenshots
+         * @description Delete a NoxSpot site and its screenshots. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["deleteNoxSpotSite"];
         options?: never;
         head?: never;
-        /** Update a NoxSpot site including its channel override */
+        /**
+         * Update a NoxSpot site including its channel override
+         * @description Update a NoxSpot site including its channel override. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         patch: operations["updateNoxSpotSite"];
         trace?: never;
     };
@@ -2235,7 +2496,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Render a safe preview of a draft resolution email template */
+        /**
+         * Render a safe preview of a draft resolution email template
+         * @description Render a safe preview of a draft resolution email template. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["previewNoxSpotResolutionTemplate"];
         delete?: never;
         options?: never;
@@ -2272,7 +2536,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Retry blocked deliveries for one NoxSpot site */
+        /**
+         * Retry blocked deliveries for one NoxSpot site
+         * @description Retry blocked deliveries for one NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["retryNoxSpotDeliveries"];
         delete?: never;
         options?: never;
@@ -2331,10 +2598,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Planning tasks */
+        /**
+         * List Planning tasks
+         * @description List Planning tasks. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         get: operations["listPlanningTasks"];
         put?: never;
-        /** Create a Planning task */
+        /**
+         * Create a Planning task
+         * @description Create a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         post: operations["createPlanningTask"];
         delete?: never;
         options?: never;
@@ -2352,11 +2625,17 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a Planning task */
+        /**
+         * Delete a Planning task
+         * @description Delete a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         delete: operations["deletePlanningTask"];
         options?: never;
         head?: never;
-        /** Update a Planning task */
+        /**
+         * Update a Planning task
+         * @description Update a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
         patch: operations["updatePlanningTask"];
         trace?: never;
     };
@@ -2438,6 +2717,18 @@ export interface components {
             method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
             path: string;
         };
+        CueAction: {
+            key: string;
+            label: string;
+            slot: number;
+        };
+        CueActions: {
+            actions: components["schemas"]["CueAction"][];
+            projectId: string;
+            snippet: string;
+            /** @enum {integer} */
+            windowDays: 7 | 14 | 30;
+        };
         DeveloperFeedbackCreate: {
             /** @enum {string} */
             area: "api" | "documentation" | "sdk" | "product" | "other";
@@ -2516,6 +2807,31 @@ export interface components {
             /** Format: uri */
             url: string;
         };
+        IncidentAlert: {
+            environment: string;
+            fingerprint: string;
+            /** Format: date-time */
+            happenedAt: string;
+            id: string;
+            occurrences: number;
+            sourceId: string;
+            /** @enum {string} */
+            status: "active" | "resolved";
+            summary: string;
+            title: string;
+        };
+        IncidentAlertList: components["schemas"]["IncidentAlert"][];
+        IncidentAlertRule: {
+            condition: string;
+            enabled: boolean;
+            environment: string;
+            id: string;
+            /** @enum {string} */
+            kind: "feature" | "error" | "health";
+            name: string;
+            source: string;
+        };
+        IncidentAlertRuleList: components["schemas"]["IncidentAlertRule"][];
         /** @description Legacy response whose stable typed schema has not yet been promoted into API v1. */
         JsonValue: JsonValue;
         LegacyError: {
@@ -2965,6 +3281,80 @@ export interface components {
             channelId: string;
             connectionId: string;
         };
+        ProjectIncident: {
+            /** Format: date-time */
+            acknowledgedAt: string | null;
+            acknowledgedBy: string | null;
+            component: string | null;
+            environment: string | null;
+            errorCode: string | null;
+            fingerprint: string;
+            /** Format: date-time */
+            firstSeenAt: string;
+            id: string;
+            /** Format: date-time */
+            lastSeenAt: string;
+            occurrenceCount: number;
+            /** Format: date-time */
+            resolvedAt: string | null;
+            resolvedBy: string | null;
+            sourceId: string;
+            sourceName?: string;
+            /** @enum {string} */
+            status: "open" | "acknowledged" | "resolved";
+            title: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        /** @description Incident overview for the selected project, including active sources and unresolved error groups. */
+        ProjectIncidentOverview: {
+            errors: ({
+                environment: string;
+                fingerprint: string;
+                id: string;
+                /** Format: date-time */
+                last_seen_at: string;
+                occurrence_count: number;
+                source_id: string;
+                source_name: string;
+                title: string;
+            } & {
+                [key: string]: unknown;
+            })[];
+            metrics: ({
+                metric_key: string;
+                origin: string;
+                /** Format: date */
+                period: string;
+                source_id: string;
+                source_name: string;
+                value: number;
+            } & {
+                [key: string]: unknown;
+            })[];
+            project: {
+                id: string;
+                name: string;
+            } | null;
+            sources: ({
+                environment: string;
+                id: string;
+                /** Format: date-time */
+                last_activity_at?: string | null;
+                /** Format: date-time */
+                last_registration_at?: string | null;
+                name: string;
+            } & {
+                [key: string]: unknown;
+            })[];
+        };
+        ProjectIncidentResponse: {
+            incident: components["schemas"]["ProjectIncident"];
+        };
+        ProjectIncidentUpdate: {
+            /** @enum {string} */
+            status: "open" | "acknowledged" | "resolved";
+        };
         ProjectRoutingInput: {
             /** @description Whether this repository-mirror row is explicitly enabled as a NoxConnect routing project */
             enabled: boolean;
@@ -3213,6 +3603,53 @@ export interface components {
             /** @description Slack only: team (workspace) ID like T08B8C3E91N that pins Slack's authorize page to one workspace. An empty string or null leaves the workspace choice to Slack's picker. Omitted pins the organization's currently connected workspace so reconnects can't hop. */
             team?: string | null;
         };
+        /** @description One formatted statistics card and its ordered chart points. */
+        StatCard: {
+            breakdown?: components["schemas"]["StatCardBreakdown"];
+            /** @description Formatted change from the comparison period. */
+            change: string;
+            /** @description Window or comparison context. */
+            context: string;
+            /** @enum {string} */
+            direction: "up" | "down" | "same";
+            /** @description Stable metric key. */
+            id: string;
+            /** @description Human-readable card label. */
+            name: string;
+            /** @description Oldest-to-newest chart values. */
+            points: number[];
+            /** @description Formatted current value. */
+            value: string;
+        };
+        StatCardBreakdown: {
+            actionLabel: string;
+            actionsPerParticipant: number;
+            activeUsers: number;
+            participatingUsers: number;
+            participationRate: number;
+            totalActions: number;
+            windowDays: number;
+        };
+        StatEvent: {
+            environment: string;
+            id: string;
+            name: string;
+            /** Format: date-time */
+            receivedAt: string;
+            /** @enum {string} */
+            status: "accepted" | "rejected";
+            /** @description Truncated protected subject hash; never the original identifier. */
+            subject: string;
+            type: string;
+        };
+        StatEventList: components["schemas"]["StatEvent"][];
+        /** @description Production statistics dashboard for one project. */
+        StatsDashboard: {
+            dateLabel: string;
+            range: string;
+            reportStatus: string;
+            stats: components["schemas"]["StatCard"][];
+        };
         UserAction: {
             provider: string;
             resume: Record<string, never>;
@@ -3235,6 +3672,26 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["LegacyError"];
+            };
+        };
+        /** @description Request payload exceeds the operation's documented size limit. */
+        PayloadTooLarge: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ApiV1Error"];
+            };
+        };
+        /** @description Request rate limit exceeded. Wait for the Retry-After delay before retrying. */
+        RateLimited: {
+            headers: {
+                /** @description Seconds to wait before another request. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ApiV1Error"];
             };
         };
         /** @description Missing, invalid, or expired supported credential */
@@ -3528,7 +3985,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getActor: {
@@ -3559,7 +4016,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateActor: {
@@ -3594,7 +4051,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listApiTokens: {
@@ -3622,7 +4079,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createApiToken: {
@@ -3654,7 +4111,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     revokeApiToken: {
@@ -3684,7 +4141,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     rotateApiToken: {
@@ -3714,7 +4171,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     recordAppActivity: {
@@ -3746,7 +4203,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     assignIssue: {
@@ -3778,7 +4235,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     revokeBrowserSession: {
@@ -3807,7 +4264,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     pollNativeDeviceAuthorization: {
@@ -3849,7 +4306,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -3891,7 +4348,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -3935,7 +4392,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -3976,7 +4433,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -4008,7 +4465,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getIdentityProfile: {
@@ -4033,7 +4490,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getBootstrapStatus: {
@@ -4061,7 +4518,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getWorkspaceConfig: {
@@ -4091,7 +4548,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     putWorkspaceConfig: {
@@ -4125,7 +4582,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxCueErrorStatus: {
@@ -4164,7 +4621,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxCueEvents: {
@@ -4197,7 +4654,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxCueGitHubIssueSettings: {
@@ -4225,7 +4682,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     putNoxCueGitHubIssueSettings: {
@@ -4258,7 +4715,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxCueDailyHealth: {
@@ -4288,7 +4745,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxCueProjectOverview: {
@@ -4316,7 +4773,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxCueProjectMetrics: {
@@ -4346,7 +4803,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxCueProjectMetrics: {
@@ -4380,7 +4837,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     ingestNoxCueEvent: {
@@ -4412,9 +4869,9 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            413: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
             415: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxCueSources: {
@@ -4442,7 +4899,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createNoxCueSource: {
@@ -4474,7 +4931,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxCueSource: {
@@ -4508,7 +4965,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     deleteNoxCueSource: {
@@ -4538,7 +4995,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxCueCards: {
@@ -4569,7 +5026,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxCueCards: {
@@ -4604,7 +5061,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxCueCustomMetrics: {
@@ -4634,7 +5091,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createNoxCueCustomMetric: {
@@ -4668,7 +5125,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxCueCustomMetric: {
@@ -4704,7 +5161,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     deleteNoxCueCustomMetric: {
@@ -4736,7 +5193,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxCueFeatures: {
@@ -4766,7 +5223,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createNoxCueCustomFeature: {
@@ -4800,7 +5257,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxCueCustomFeature: {
@@ -4836,7 +5293,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     deleteNoxCueCustomFeature: {
@@ -4868,7 +5325,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     testNoxCueSource: {
@@ -4902,7 +5359,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxCueKeys: {
@@ -4932,7 +5389,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createNoxCueKey: {
@@ -4970,7 +5427,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     revokeNoxCueKey: {
@@ -5001,7 +5458,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     rotateNoxCueKey: {
@@ -5033,7 +5490,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     submitDeveloperFeedback: {
@@ -5065,10 +5522,10 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            413: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
             415: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -5100,7 +5557,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getEngineerStats: {
@@ -5128,7 +5585,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listFeedEvents: {
@@ -5156,7 +5613,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getFeedEvent: {
@@ -5186,7 +5643,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listFeatures: {
@@ -5216,7 +5673,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -5251,7 +5708,7 @@ export interface operations {
             409: components["responses"]["V1Error"];
             412: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -5283,7 +5740,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -5320,7 +5777,7 @@ export interface operations {
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -5351,7 +5808,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     uploadFeatureAttachment: {
@@ -5388,8 +5845,8 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            413: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -5422,7 +5879,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     deleteFeatureAttachment: {
@@ -5454,7 +5911,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxFeed: {
@@ -5493,7 +5950,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getCurrentWorkSummary: {
@@ -5521,7 +5978,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getGitHubComments: {
@@ -5549,7 +6006,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getGitHubDetails: {
@@ -5577,7 +6034,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getGitHubRateLimit: {
@@ -5605,7 +6062,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listGuestAccess: {
@@ -5633,7 +6090,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     revokeGuestGrant: {
@@ -5663,7 +6120,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createGuestInvitation: {
@@ -5695,7 +6152,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     revokeGuestInvitation: {
@@ -5725,7 +6182,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listConnections: {
@@ -5753,7 +6210,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     disconnectConnection: {
@@ -5783,7 +6240,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     startConnection: {
@@ -5817,7 +6274,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getSetupPlan: {
@@ -5845,7 +6302,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     sendSlackMessage: {
@@ -5877,10 +6334,10 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            413: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
             415: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             502: components["responses"]["V1Error"];
         };
     };
@@ -5909,7 +6366,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     patchSlackRouting: {
@@ -5941,7 +6398,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     testSlackRoute: {
@@ -5973,7 +6430,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getIntegrationStatus: {
@@ -6001,7 +6458,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     setIssueState: {
@@ -6033,7 +6490,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listIssues: {
@@ -6074,7 +6531,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getIssue: {
@@ -6106,7 +6563,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getAiSettings: {
@@ -6134,7 +6591,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     putAiSettings: {
@@ -6169,7 +6626,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -6198,7 +6655,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listMembers: {
@@ -6226,7 +6683,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxFeedDefaultPrompt: {
@@ -6254,7 +6711,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listOperationFailures: {
@@ -6282,7 +6739,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getOperatorUsage: {
@@ -6307,7 +6764,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     draftPlanningItem: {
@@ -6339,7 +6796,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             502: components["responses"]["V1Error"];
             503: components["responses"]["V1Error"];
         };
@@ -6369,7 +6826,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createProject: {
@@ -6401,7 +6858,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getProjectRouting: {
@@ -6429,7 +6886,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getProjectActivity: {
@@ -6460,7 +6917,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     archiveProject: {
@@ -6491,7 +6948,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     restoreProject: {
@@ -6521,7 +6978,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     backfillProjectPullRequests: {
@@ -6555,7 +7012,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -6579,7 +7036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["CueActions"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6587,7 +7044,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateCueProjectActions: {
@@ -6614,7 +7071,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["CueActions"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6622,7 +7079,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getCueProjectAlertRules: {
@@ -6645,7 +7102,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["IncidentAlertRuleList"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6653,7 +7110,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getCueProjectAlerts: {
@@ -6676,7 +7133,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["IncidentAlertList"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6684,7 +7141,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getCueProjectDashboard: {
@@ -6707,7 +7164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["StatsDashboard"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6715,7 +7172,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getCueProjectStatEvents: {
@@ -6738,7 +7195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["StatEventList"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6746,7 +7203,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getProjectFeedback: {
@@ -6777,7 +7234,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getProjectIncidents: {
@@ -6800,7 +7257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["ProjectIncidentOverview"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6808,7 +7265,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getProjectIncident: {
@@ -6832,7 +7289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["ProjectIncidentResponse"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6840,7 +7297,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateProjectIncident: {
@@ -6858,7 +7315,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ApiRecord"];
+                "application/json": components["schemas"]["ProjectIncidentUpdate"];
             };
         };
         responses: {
@@ -6868,7 +7325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiRecord"];
+                    "application/json": components["schemas"]["ProjectIncidentResponse"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -6876,7 +7333,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getProjectIssues: {
@@ -6907,7 +7364,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     retrieveProject: {
@@ -6937,7 +7394,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateProjectRouting: {
@@ -6973,7 +7430,7 @@ export interface operations {
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listPullRequests: {
@@ -7012,7 +7469,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     closePullRequest: {
@@ -7047,7 +7504,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getPullRequest: {
@@ -7079,7 +7536,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     recoverRepositoryHistory: {
@@ -7111,7 +7568,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listRepositories: {
@@ -7141,7 +7598,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     acknowledgeRepositories: {
@@ -7175,7 +7632,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     searchWorkspace: {
@@ -7225,7 +7682,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxServices: {
@@ -7253,7 +7710,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxService: {
@@ -7284,7 +7741,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxServiceConfig: {
@@ -7316,7 +7773,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     patchNoxServiceConfig: {
@@ -7356,7 +7813,7 @@ export interface operations {
             412: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
             428: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxServiceHealth: {
@@ -7387,7 +7844,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxServiceSetup: {
@@ -7418,7 +7875,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listSlackChannels: {
@@ -7446,7 +7903,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     assignSlackConnectionProject: {
@@ -7480,7 +7937,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     disconnectSlackWorkspace: {
@@ -7512,7 +7969,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getSlackStatus: {
@@ -7540,7 +7997,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     testSlackDestination: {
@@ -7572,7 +8029,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listSpecs: {
@@ -7603,7 +8060,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createSpec: {
@@ -7636,7 +8093,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getSpec: {
@@ -7667,7 +8124,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateSpec: {
@@ -7703,7 +8160,7 @@ export interface operations {
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     archiveSpec: {
@@ -7733,7 +8190,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     restoreSpec: {
@@ -7763,7 +8220,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listSpecAttachments: {
@@ -7793,7 +8250,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     uploadSpecAttachment: {
@@ -7830,8 +8287,8 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            413: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -7864,7 +8321,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     deleteSpecAttachment: {
@@ -7896,7 +8353,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxSpotProjectOverview: {
@@ -7924,7 +8381,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxSpotReport: {
@@ -7967,7 +8424,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listNoxSpotSites: {
@@ -7995,7 +8452,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     createNoxSpotSite: {
@@ -8027,7 +8484,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     deleteNoxSpotSite: {
@@ -8057,7 +8514,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxSpotSite: {
@@ -8091,7 +8548,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getNoxSpotResolutionTemplate: {
@@ -8121,7 +8578,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     updateNoxSpotResolutionTemplate: {
@@ -8160,7 +8617,7 @@ export interface operations {
             409: components["responses"]["V1Error"];
             412: components["responses"]["V1Error"];
             428: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     previewNoxSpotResolutionTemplate: {
@@ -8196,7 +8653,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     testNoxSpotResolutionTemplate: {
@@ -8234,7 +8691,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -8266,7 +8723,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     getSyncStatus: {
@@ -8294,7 +8751,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     syncGitHubData: {
@@ -8326,7 +8783,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     syncGitHubEvents: {
@@ -8358,7 +8815,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listPlanningTasks: {
@@ -8390,7 +8847,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -8424,7 +8881,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -8456,7 +8913,7 @@ export interface operations {
             403: components["responses"]["V1Error"];
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -8493,7 +8950,7 @@ export interface operations {
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["V1Error"];
         };
     };
@@ -8522,7 +8979,7 @@ export interface operations {
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
-            429: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
 }

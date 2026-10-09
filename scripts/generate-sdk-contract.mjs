@@ -7,11 +7,13 @@ const outputUrl = new URL("../packages/sdk-contract/public-api.json", import.met
 const methods = new Set(["get", "post", "put", "patch", "delete"]);
 
 export const namespaceForTag = Object.freeze({
+  NoxHere: "workspace",
   NoxConnect: "workspace",
   Activity: "activity",
   NoxTicket: "planning",
   NoxSpot: "feedback",
   NoxCue: "incidents",
+  Stats: "stats",
   Workspace: "workspace",
   Planning: "planning",
   Feedback: "feedback",

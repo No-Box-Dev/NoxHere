@@ -18,13 +18,16 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
   delete document.paths[path];
 }
 
-document.servers = [{ url: "https://app.noxhere.com", description: "Hosted NoxConnect API" }];
+document.info.title = "NoxHere API";
+document.info.description = "One API for NoxHere workspace, activity, planning, feedback, statistics, and incident capabilities.";
+document.servers = [{ url: "https://app.noxhere.com", description: "Hosted NoxHere API" }];
 document.tags = [
-  { name: "NoxConnect", description: "Connections, identity, repositories, projects, and shared delivery." },
-  { name: "NoxTicket", description: "Features, workflow, specifications, and attachments." },
+  { name: "NoxHere", description: "Workspace connections, identity, repositories, projects, and shared delivery." },
+  { name: "Planning", description: "Features, workflow, specifications, and attachments." },
   { name: "Activity", description: "Current work, engineering activity, and narratives." },
-  { name: "NoxSpot", description: "Sites, website feedback capture, and screenshots." },
-  { name: "NoxCue", description: "Event sources, ingest keys, customer-health events, and metrics." },
+  { name: "Feedback", description: "Sites, website feedback capture, and screenshots." },
+  { name: "Stats", description: "Telemetry sources, ingest keys, activity events, product metrics, and dashboards." },
+  { name: "Incidents", description: "Feature health, error groups, alerts, and GitHub incident routing." },
 ];
 document.components.schemas.JsonValue = {
   description: "Legacy response whose stable typed schema has not yet been promoted into API v1.",
@@ -189,6 +192,131 @@ document.components.schemas.NoxCueGitHubIssueSettingsUpdate = {
     },
     commentOnRepeat: { type: "boolean", default: false },
     repeatIntervalMinutes: { type: "integer", minimum: 15, maximum: 10080, default: 360 },
+  },
+};
+document.components.schemas.StatCard = {
+  type: "object", additionalProperties: false,
+  required: ["id", "name", "value", "context", "change", "direction", "points"],
+  description: "One formatted statistics card and its ordered chart points.",
+  properties: {
+    id: { type: "string", description: "Stable metric key." },
+    name: { type: "string", description: "Human-readable card label." },
+    value: { type: "string", description: "Formatted current value." },
+    context: { type: "string", description: "Window or comparison context." },
+    change: { type: "string", description: "Formatted change from the comparison period." },
+    direction: { type: "string", enum: ["up", "down", "same"] },
+    points: { type: "array", items: { type: "number" }, description: "Oldest-to-newest chart values." },
+    breakdown: { "$ref": "#/components/schemas/StatCardBreakdown" },
+  },
+};
+document.components.schemas.StatCardBreakdown = {
+  type: "object", additionalProperties: false,
+  required: ["actionLabel", "windowDays", "totalActions", "activeUsers", "participatingUsers", "participationRate", "actionsPerParticipant"],
+  properties: {
+    actionLabel: { type: "string" }, windowDays: { type: "integer", minimum: 1 },
+    totalActions: { type: "integer", minimum: 0 }, activeUsers: { type: "integer", minimum: 0 },
+    participatingUsers: { type: "integer", minimum: 0 }, participationRate: { type: "number", minimum: 0 },
+    actionsPerParticipant: { type: "number", minimum: 0 },
+  },
+};
+document.components.schemas.StatsDashboard = {
+  type: "object", additionalProperties: false, required: ["range", "dateLabel", "reportStatus", "stats"],
+  description: "Production statistics dashboard for one project.",
+  properties: {
+    range: { type: "string" }, dateLabel: { type: "string" }, reportStatus: { type: "string" },
+    stats: { type: "array", items: { "$ref": "#/components/schemas/StatCard" } },
+  },
+};
+document.components.schemas.CueAction = {
+  type: "object", additionalProperties: false, required: ["slot", "key", "label"],
+  properties: {
+    slot: { type: "integer", minimum: 1, maximum: 3 },
+    key: { type: "string", pattern: "^custom\\.[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){0,4}$" },
+    label: { type: "string", minLength: 1, maxLength: 80 },
+  },
+};
+document.components.schemas.CueActions = {
+  type: "object", additionalProperties: false, required: ["projectId", "windowDays", "actions", "snippet"],
+  properties: {
+    projectId: { type: "string" }, windowDays: { type: "integer", enum: [7, 14, 30] },
+    actions: { type: "array", maxItems: 3, items: { "$ref": "#/components/schemas/CueAction" } },
+    snippet: { type: "string" },
+  },
+};
+document.components.schemas.StatEvent = {
+  type: "object", additionalProperties: false,
+  required: ["id", "name", "type", "subject", "environment", "receivedAt", "status"],
+  properties: {
+    id: { type: "string" }, name: { type: "string" }, type: { type: "string" },
+    subject: { type: "string", description: "Truncated protected subject hash; never the original identifier." },
+    environment: { type: "string" }, receivedAt: { type: "string", format: "date-time" },
+    status: { type: "string", enum: ["accepted", "rejected"] },
+  },
+};
+document.components.schemas.StatEventList = { type: "array", items: { "$ref": "#/components/schemas/StatEvent" } };
+document.components.schemas.IncidentAlert = {
+  type: "object", additionalProperties: false,
+  required: ["id", "sourceId", "fingerprint", "title", "environment", "summary", "status", "occurrences", "happenedAt"],
+  properties: {
+    id: { type: "string" }, sourceId: { type: "string" }, fingerprint: { type: "string" },
+    title: { type: "string" }, environment: { type: "string" }, summary: { type: "string" },
+    status: { type: "string", enum: ["active", "resolved"] }, occurrences: { type: "integer", minimum: 1 },
+    happenedAt: { type: "string", format: "date-time" },
+  },
+};
+document.components.schemas.IncidentAlertList = { type: "array", items: { "$ref": "#/components/schemas/IncidentAlert" } };
+document.components.schemas.IncidentAlertRule = {
+  type: "object", additionalProperties: false,
+  required: ["id", "name", "kind", "condition", "environment", "source", "enabled"],
+  properties: {
+    id: { type: "string" }, name: { type: "string" }, kind: { type: "string", enum: ["feature", "error", "health"] },
+    condition: { type: "string" }, environment: { type: "string" }, source: { type: "string" }, enabled: { type: "boolean" },
+  },
+};
+document.components.schemas.IncidentAlertRuleList = { type: "array", items: { "$ref": "#/components/schemas/IncidentAlertRule" } };
+document.components.schemas.ProjectIncident = {
+  type: "object", additionalProperties: false,
+  required: ["id", "sourceId", "fingerprint", "title", "errorCode", "component", "environment", "firstSeenAt", "lastSeenAt", "occurrenceCount", "status", "acknowledgedAt", "acknowledgedBy", "resolvedAt", "resolvedBy"],
+  properties: {
+    id: { type: "string", pattern: "^inc_[a-f0-9]{32}$" }, sourceId: { type: "string" }, sourceName: { type: "string" },
+    fingerprint: { type: "string" }, title: { type: "string" }, errorCode: { type: ["string", "null"] },
+    component: { type: ["string", "null"] }, environment: { type: ["string", "null"] },
+    firstSeenAt: { type: "string", format: "date-time" }, lastSeenAt: { type: "string", format: "date-time" },
+    occurrenceCount: { type: "integer", minimum: 1 }, status: { type: "string", enum: ["open", "acknowledged", "resolved"] },
+    acknowledgedAt: { type: ["string", "null"], format: "date-time" }, acknowledgedBy: { type: ["string", "null"] },
+    resolvedAt: { type: ["string", "null"], format: "date-time" }, resolvedBy: { type: ["string", "null"] },
+    updatedAt: { type: "string", format: "date-time" },
+  },
+};
+document.components.schemas.ProjectIncidentResponse = {
+  type: "object", additionalProperties: false, required: ["incident"],
+  properties: { incident: { "$ref": "#/components/schemas/ProjectIncident" } },
+};
+document.components.schemas.ProjectIncidentUpdate = {
+  type: "object", additionalProperties: false, required: ["status"],
+  properties: { status: { type: "string", enum: ["open", "acknowledged", "resolved"] } },
+};
+document.components.schemas.ProjectIncidentOverview = {
+  type: "object", additionalProperties: false, required: ["project", "sources", "metrics", "errors"],
+  description: "Incident overview for the selected project, including active sources and unresolved error groups.",
+  properties: {
+    project: { oneOf: [
+      { type: "object", additionalProperties: false, required: ["id", "name"], properties: { id: { type: "string" }, name: { type: "string" } } },
+      { type: "null" },
+    ] },
+    sources: { type: "array", items: { type: "object", additionalProperties: true, required: ["id", "name", "environment"], properties: {
+      id: { type: "string" }, name: { type: "string" }, environment: { type: "string" },
+      last_registration_at: { type: ["string", "null"], format: "date-time" }, last_activity_at: { type: ["string", "null"], format: "date-time" },
+    } } },
+    metrics: { type: "array", items: { type: "object", additionalProperties: true, required: ["source_id", "source_name", "period", "metric_key", "value", "origin"], properties: {
+      source_id: { type: "string" }, source_name: { type: "string" }, period: { type: "string", format: "date" },
+      metric_key: { type: "string" }, value: { type: "number" }, origin: { type: "string" },
+    } } },
+    errors: { type: "array", items: { type: "object", additionalProperties: true, required: ["id", "source_id", "source_name", "fingerprint", "title", "environment", "last_seen_at", "occurrence_count"], properties: {
+      id: { type: "string" }, source_id: { type: "string" }, source_name: { type: "string" }, fingerprint: { type: "string" },
+      title: { type: "string" }, environment: { type: "string" }, last_seen_at: { type: "string", format: "date-time" },
+      occurrence_count: { type: "integer", minimum: 1 },
+    } } },
   },
 };
 document.components.schemas.ApiTokenCreate = {
@@ -359,6 +487,20 @@ document.components.parameters.projectContext = {
 };
 delete document.components.securitySchemes.bearerAuth;
 document.components.responses.Unauthorized.description = "Missing, invalid, or expired supported credential";
+document.components.responses.RateLimited = {
+  description: "Request rate limit exceeded. Wait for the Retry-After delay before retrying.",
+  headers: {
+    "Retry-After": {
+      description: "Seconds to wait before another request.",
+      schema: { type: "integer", minimum: 1 },
+    },
+  },
+  content: { "application/json": { schema: { "$ref": "#/components/schemas/ApiV1Error" } } },
+};
+document.components.responses.PayloadTooLarge = {
+  description: "Request payload exceeds the operation's documented size limit.",
+  content: { "application/json": { schema: { "$ref": "#/components/schemas/ApiV1Error" } } },
+};
 document.security = [
   { browserSession: [], organization: [] },
   { nativeSession: [], organization: [] },
@@ -602,6 +744,24 @@ delete cueIngest.servers;
 cueIngest.summary = "Submit one standardized NoxCue event through the stable NoxConnect gateway";
 cueIngest.description = "Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.";
 cueIngest.responses["202"].content = { "application/json": { schema: { "$ref": "#/components/schemas/NoxCueIngestResponse" } } };
+cueIngest.requestBody.content["application/json"].examples = {
+  anonymousWebsiteActivity: {
+    summary: "Anonymous count-only browser activity",
+    value: {
+      version: 1, type: "activity.tracked", eventId: "8f7ec5e2-e8d3-4e08-a185-7fd4966e9529",
+      occurredAt: "2026-10-09T08:00:00.000Z", environment: "production",
+      name: "website.signup_clicked", value: 1,
+    },
+  },
+  protectedServerActivity: {
+    summary: "Server activity with an SDK-protected identity",
+    value: {
+      version: 1, type: "activity.tracked", eventId: "21f7b6ad-3648-4515-b086-b7a2a69de1bf",
+      occurredAt: "2026-10-09T08:00:00.000Z", environment: "production",
+      name: "custom.records.parsed", userId: "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", value: 1,
+    },
+  },
+};
 cueIngest.responses["413"] = { description: "Payload exceeds 32 KiB", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } };
 cueIngest.responses["415"] = { description: "Content-Type must be application/json", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } };
 
@@ -663,12 +823,16 @@ for (const operation of Object.values(document.paths[featureAttachmentPath])) {
 }
 document.paths[featureAttachmentsPath].get.operationId = "listFeatureAttachments";
 document.paths[featureAttachmentsPath].get.summary = "List feature attachments";
+document.paths[featureAttachmentsPath].get.description = "List attachments for one Planning feature.";
 document.paths[featureAttachmentsPath].post.operationId = "uploadFeatureAttachment";
 document.paths[featureAttachmentsPath].post.summary = "Upload a bounded feature attachment";
+document.paths[featureAttachmentsPath].post.description = "Upload a bounded attachment to one Planning feature.";
 document.paths[featureAttachmentPath].get.operationId = "downloadFeatureAttachment";
 document.paths[featureAttachmentPath].get.summary = "Download a feature attachment";
+document.paths[featureAttachmentPath].get.description = "Download one attachment from a Planning feature.";
 document.paths[featureAttachmentPath].delete.operationId = "deleteFeatureAttachment";
 document.paths[featureAttachmentPath].delete.summary = "Delete a feature attachment";
+document.paths[featureAttachmentPath].delete.description = "Delete one attachment from a Planning feature.";
 
 const projectParameter = { "$ref": "#/components/parameters/projectId" };
 const incidentParameter = { name: "incidentId", in: "path", required: true, schema: { type: "string", pattern: "^inc_[a-f0-9]{32}$" } };
@@ -697,6 +861,7 @@ document.paths["/api/v1/projects/{projectId}/incidents/{incidentId}"] = {
   get: projectCapabilityOperation("getProjectIncident", "Read one project incident", { incident: true }),
   patch: projectCapabilityOperation("updateProjectIncident", "Update one project incident", { write: true, incident: true }),
 };
+document.paths["/api/v1/projects/{projectId}/incidents/{incidentId}"].patch.requestBody.content["application/json"].schema = { "$ref": "#/components/schemas/ProjectIncidentUpdate" };
 document.paths["/api/v1/projects/{projectId}/cue/dashboard"] = { get: projectCapabilityOperation("getCueProjectDashboard", "Read the project Cue dashboard") };
 document.paths["/api/v1/projects/{projectId}/cue/actions"] = {
   get: projectCapabilityOperation("getCueProjectActions", "Read project Cue actions"),
@@ -733,6 +898,13 @@ setJsonSuccessSchema("/api/v1/specs/{specId}/attachments", "post", "SpecAttachme
 setJsonSuccessSchema("/api/v1/specs/{specId}/attachments/{attachmentId}", "delete", "MutationReceipt");
 setJsonSuccessSchema("/api/v1/assign", "post", "ApiRecord");
 setJsonSuccessSchema("/api/v1/issue-state", "post", "MutationReceipt");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/dashboard", "get", "StatsDashboard");
+for (const method of ["get", "put"]) setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/actions", method, "CueActions");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/stat-events", "get", "StatEventList");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/alerts", "get", "IncidentAlertList");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/alert-rules", "get", "IncidentAlertRuleList");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/incidents", "get", "ProjectIncidentOverview");
+for (const method of ["get", "patch"]) setJsonSuccessSchema("/api/v1/projects/{projectId}/incidents/{incidentId}", method, "ProjectIncidentResponse");
 
 for (const [path, pathItem] of Object.entries(document.paths)) {
   for (const [method, operation] of Object.entries(pathItem)) {
@@ -741,14 +913,21 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
     if (isV1) {
       for (const status of Object.keys(operation.responses)) {
         if (/^[45]/.test(status) || status === "default") {
-          operation.responses[status] = { "$ref": "#/components/responses/V1Error" };
+          operation.responses[status] = status === "429"
+            ? { "$ref": "#/components/responses/RateLimited" }
+            : status === "413"
+              ? { "$ref": "#/components/responses/PayloadTooLarge" }
+              : { "$ref": "#/components/responses/V1Error" };
         }
       }
       for (const status of ["400", "401", "403", "409", "429"]) {
-        operation.responses[status] ??= { "$ref": "#/components/responses/V1Error" };
+        operation.responses[status] ??= status === "429"
+          ? { "$ref": "#/components/responses/RateLimited" }
+          : { "$ref": "#/components/responses/V1Error" };
       }
     }
     operation.tags = [serviceTag(path)];
+    operation.description ??= `${operation.summary || `${method.toUpperCase()} ${path}`}. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.`;
     operation["x-authentication"] = authenticationFor(operation);
     delete operation["x-project-scope"];
     delete operation["x-automation-scope"];
@@ -871,13 +1050,17 @@ function firstPartyClientOperation(operationId, summary, role, organization, met
 
 function serviceTag(path) {
   const compatibilityPath = compatibilityApiPath(path);
-  if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(compatibilityPath)) return "NoxTicket";
+  if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(compatibilityPath)) return "Planning";
   if (/^\/api\/v1\/feed(?:\/|$)/.test(path)
       || /^\/api\/(?:issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(compatibilityPath)
       || /^\/api\/github\/(?:comments|details)$/.test(compatibilityPath)) return "Activity";
-  if (compatibilityPath.startsWith("/api/spots")) return "NoxSpot";
-  if (compatibilityPath.startsWith("/api/cues") || /^\/api\/v1\/projects\/[^/]+\/cue(?:\/|$)/.test(path)) return "NoxCue";
-  return "NoxConnect";
+  if (compatibilityPath.startsWith("/api/spots")) return "Feedback";
+  if (/^\/api\/v1\/projects\/[^/]+\/incidents(?:\/|$)/.test(path)
+      || /^\/api\/cues\/(?:github-issues|errors)(?:\/|$)/.test(compatibilityPath)
+      || /^\/api\/cues\/sources\/[^/]+\/features(?:\/|$)/.test(compatibilityPath)
+      || /^\/api\/v1\/projects\/[^/]+\/cue\/(?:alerts|alert-rules)(?:\/|$)/.test(path)) return "Incidents";
+  if (compatibilityPath.startsWith("/api/cues") || /^\/api\/v1\/projects\/[^/]+\/cue(?:\/|$)/.test(path)) return "Stats";
+  return "NoxHere";
 }
 
 function acceptsOptionalProjectContext(operation) {

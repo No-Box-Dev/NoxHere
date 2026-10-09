@@ -295,18 +295,19 @@ class NoxHereClient:
         }
         resources = {
             namespace: ResourceClient(self, [operation for operation in self._operations.values() if operation.namespace == namespace])
-            for namespace in ("workspace", "activity", "planning", "feedback", "incidents")
+            for namespace in ("workspace", "activity", "planning", "feedback", "stats", "incidents")
         }
         self.workspace = resources["workspace"]
         self.activity = resources["activity"]
         self.planning = resources["planning"]
         self.feedback = resources["feedback"]
+        self.stats = resources["stats"]
         self.incidents = resources["incidents"]
         self.connect = self.workspace
         self.feed = self.activity
         self.ticket = self.planning
         self.spot = self.feedback
-        self.cue = self.incidents
+        self.cue = ResourceClient(self, [operation for operation in self._operations.values() if operation.namespace in {"stats", "incidents"}])
 
     def request(
         self,
@@ -414,18 +415,19 @@ class AsyncNoxHereClient:
         }
         resources = {
             namespace: AsyncResourceClient(self, [operation for operation in self._operations.values() if operation.namespace == namespace])
-            for namespace in ("workspace", "activity", "planning", "feedback", "incidents")
+            for namespace in ("workspace", "activity", "planning", "feedback", "stats", "incidents")
         }
         self.workspace = resources["workspace"]
         self.activity = resources["activity"]
         self.planning = resources["planning"]
         self.feedback = resources["feedback"]
+        self.stats = resources["stats"]
         self.incidents = resources["incidents"]
         self.connect = self.workspace
         self.feed = self.activity
         self.ticket = self.planning
         self.spot = self.feedback
-        self.cue = self.incidents
+        self.cue = AsyncResourceClient(self, [operation for operation in self._operations.values() if operation.namespace in {"stats", "incidents"}])
 
     async def request(
         self,
