@@ -17,7 +17,13 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
   }
   let match = pathname.match(/^\/api\/projects\/routing\/([^/]+)$/);
   if (match) return { kind: "project", projectId: decodeURIComponent(match[1]) };
-  match = pathname.match(/^\/api\/projects\/([^/]+)/);
+  // Match only project-resource routes. A broad `/api/projects/:id` match
+  // mistakes collection routes such as `/api/projects/routing` for a project
+  // whose ID is "routing", causing valid scoped requests to be concealed as
+  // cross-project access.
+  match = pathname.match(
+    /^\/api\/projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|cue)(?:\/|$)/,
+  );
   if (match) return { kind: "project", projectId: decodeURIComponent(match[1]) };
 
   match = pathname.match(/^\/api\/(?:issues|prs)\/([^/]+)/);

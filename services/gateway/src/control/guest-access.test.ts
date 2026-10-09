@@ -86,6 +86,12 @@ describe("guest access", () => {
   it("accepts header, query, and path project selectors", () => {
     expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/feed?project_id=p1"))).toBe("p1");
     expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/cues/projects/p2/metrics"))).toBe("p2");
+    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/projects/p4/routing"))).toBe("p4");
     expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/feed", { headers: { "X-Project-ID": "p3" } }))).toBe("p3");
+  });
+
+  it("does not interpret project collection routes as project IDs", () => {
+    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/projects/routing"))).toBeNull();
+    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/projects?view=bootstrap"))).toBeNull();
   });
 });
