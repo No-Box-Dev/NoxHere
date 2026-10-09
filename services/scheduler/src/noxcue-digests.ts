@@ -45,7 +45,7 @@ interface DigestSource {
   organization_connection_id: string | null;
   fallback_channel_id: string | null;
   fallback_connection_id: string | null;
-  latest_digest_period: string | null;
+  recent_digest_periods_json: string;
 }
 
 type SlackDestination = { channelId: string; connectionId: string };
@@ -98,16 +98,17 @@ function nextPeriod(period: string) {
   return value.toISOString().slice(0, 10);
 }
 
-export function digestPeriodsToAttempt(completedPeriod: string, latestDigestPeriod: string | null) {
-  if (!latestDigestPeriod || latestDigestPeriod >= completedPeriod) return [completedPeriod];
+export function digestPeriodsToAttempt(completedPeriod: string, recentDigestPeriods: string[]) {
+  if (recentDigestPeriods.length === 0) return [completedPeriod];
   const boundedStartDate = new Date(`${completedPeriod}T00:00:00Z`);
   boundedStartDate.setUTCDate(boundedStartDate.getUTCDate() - (MAX_CATCH_UP_DAYS - 1));
   const boundedStart = boundedStartDate.toISOString().slice(0, 10);
-  let cursor = nextPeriod(latestDigestPeriod);
-  if (cursor < boundedStart) cursor = boundedStart;
+  const existing = new Set(recentDigestPeriods);
+  const earliestExisting = [...existing].sort()[0];
+  let cursor = earliestExisting < boundedStart ? boundedStart : earliestExisting;
   const periods: string[] = [];
   while (cursor <= completedPeriod && periods.length < MAX_CATCH_UP_DAYS) {
-    periods.push(cursor);
+    if (!existing.has(cursor)) periods.push(cursor);
     cursor = nextPeriod(cursor);
   }
   return periods;
@@ -196,8 +197,11 @@ export async function runNoxCueDigests(env: DigestEnv, nowMs = Date.now()) {
             NULLIF(json_extract(config.data, '$.slack.noxCueConnectionId'), '') AS organization_connection_id,
             NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '') AS fallback_channel_id,
             NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '') AS fallback_connection_id,
-            (SELECT MAX(digest.period) FROM cue_digest_runs digest
-              WHERE digest.source_id = source.id) AS latest_digest_period
+            COALESCE((SELECT json_group_array(recent.period)
+              FROM (SELECT digest.period FROM cue_digest_runs digest
+                     WHERE digest.source_id = source.id
+                       AND digest.period >= date('now', '-8 days')
+                     ORDER BY digest.period) recent), '[]') AS recent_digest_periods_json
        FROM cue_sources source
        JOIN project_config config
          ON config.org_id = source.org_id AND config.project_id = source.project_id AND config.key = 'settings'
@@ -225,7 +229,8 @@ export async function runNoxCueDigests(env: DigestEnv, nowMs = Date.now()) {
       const local = localDateTime(nowMs, source.timezone);
       if (local.minutes < configuredMinutes(source.digest_time_local)) { skipped += 1; continue; }
       const completedPeriod = previousPeriod(local.period);
-      for (const period of digestPeriodsToAttempt(completedPeriod, source.latest_digest_period)) {
+      const recentPeriods = JSON.parse(source.recent_digest_periods_json || "[]") as string[];
+      for (const period of digestPeriodsToAttempt(completedPeriod, recentPeriods)) {
         const result = await createDigest(env, source, destination, period);
         if (result.created) created += 1;
         else skipped += 1;
