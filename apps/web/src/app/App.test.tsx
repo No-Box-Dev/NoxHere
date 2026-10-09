@@ -1060,6 +1060,25 @@ describe("NoxConnect API-backed platform", () => {
     }));
   });
 
+  it("shows the repository routing error and recovers when the user retries", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    let routingRequests = 0;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/projects/routing" && routingRequests++ === 0) {
+        return json({ error: { code: "service_unavailable", message: "Repository routing is temporarily unavailable." } }, 503);
+      }
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+
+    expect(await screen.findByText("Repository routing is temporarily unavailable.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(await screen.findByRole("checkbox", { name: /^api/ })).toBeInTheDocument();
+    expect(routingRequests).toBe(2);
+  });
+
   it("creates one guest invitation for all capabilities by default", async () => {
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connect/people");

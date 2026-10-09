@@ -41,7 +41,7 @@ export function ProjectRepositories({ organizationId, projectId, projectName, ca
 
   if (!canManage) return <RepositoryList repositories={connectedRepositories} projectName={projectName} />;
   if (routing.isLoading) return <div className="connect-empty"><b>Loading project repositories</b><p>Reading the central repository map…</p></div>;
-  if (routing.isError || !project) return <div className="connect-empty"><b>Repository settings could not be loaded</b><p>The existing project mapping has not been changed.</p></div>;
+  if (routing.isError || !project) return <div className="connect-empty"><b>Repository settings could not be loaded</b><p>{routing.error instanceof Error ? routing.error.message : !project ? `${projectName} is missing from the repository map.` : "The existing project mapping has not been changed."}</p><button type="button" className="mini-button" disabled={routing.isFetching} onClick={() => void routing.refetch()}>{routing.isFetching ? "Retrying…" : "Retry"}</button></div>;
 
   const toggle = (repo: string) => {
     setSavedProjectId(null);
