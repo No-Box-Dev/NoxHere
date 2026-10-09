@@ -124,12 +124,16 @@ export async function loadEnabledNoxCueMetricKeys(db, orgId, projectId, sourceId
   ).bind(orgId, sourceId).all() : { results: [] };
   const sourceRows = sourceSettings.results ?? [];
   const sourceOverrides = new Map(sourceRows.map((row) => [String(row.metric_key), row]));
-  const sourceMetricKeys = NOXCUE_N1_METRIC_KEYS.filter((key) => {
-    const setting = sourceOverrides.get(key);
-    if (setting && Number(setting.enabled) !== 1) return false;
-    if (key.endsWith(".per_active") && setting && Number(setting.per_active_enabled) !== 1) return false;
-    return true;
-  });
+  // N1-style subscription/report cards are opt-in per source. Treating an
+  // absent source policy as "enable every N1 card" changed established report
+  // templates and crowded out engagement cards for legacy sources.
+  const sourceMetricKeys = sourceRows.length > 0 ? NOXCUE_N1_METRIC_KEYS.filter((key) => {
+    if (key.endsWith(".per_active")) {
+      const baseSetting = sourceOverrides.get(key.slice(0, -".per_active".length));
+      return Number(baseSetting?.enabled) === 1 && Number(baseSetting?.per_active_enabled) === 1;
+    }
+    return Number(sourceOverrides.get(key)?.enabled) === 1;
+  }) : [];
   if (!projectId) return new Set([...NOXCUE_USER_METRIC_KEYS, ...sourceMetricKeys, ...customKeys]);
   const result = await db.prepare(
     `SELECT metric_key, enabled FROM cue_project_metric_settings

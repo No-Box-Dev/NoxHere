@@ -182,6 +182,7 @@ async function loadEventDerivedNoxCueDigestData(db, sourceId, period) {
   const metricLabels = {};
   const activityBreakdowns = {};
   let hasFacts = false;
+  const factPeriods = new Set();
   for (const row of results ?? []) {
     const values = {
       "users.new": Number(row.new_users ?? 0),
@@ -191,6 +192,7 @@ async function loadEventDerivedNoxCueDigestData(db, sourceId, period) {
       "users.active.monthly": Number(row.monthly_active ?? 0),
     };
     if (values["users.total"] > 0 || values["users.active.monthly"] > 0) hasFacts = true;
+    if (values["users.new"] > 0 || values["users.active.daily"] > 0) factPeriods.add(String(row.period));
     for (const [metricKey, value] of Object.entries(values)) {
       metricRows.push({ period: row.period, metric_key: metricKey, value, origin: "calculated" });
     }
@@ -211,6 +213,7 @@ async function loadEventDerivedNoxCueDigestData(db, sourceId, period) {
     const metricKey = String(row.metric_key);
     const label = String(row.label);
     if (dailyTotal > 0 || weeklyTotal > 0) hasFacts = true;
+    if (dailyTotal > 0) factPeriods.add(String(row.period));
     metricRows.push({ period: row.period, metric_key: metricKey, value: dailyTotal, origin: "calculated" });
     metricLabels[metricKey] = label;
     if (weeklyActive > 0) {
@@ -261,17 +264,36 @@ async function loadEventDerivedNoxCueDigestData(db, sourceId, period) {
       "reports.generated.users.total": Number(row.reports_users_total ?? 0),
     };
     if (Object.values(values).some((value) => value > 0)) hasFacts = true;
+    if (
+      Number(row.trials_new ?? 0) > 0
+      || Number(row.paid_new ?? 0) > 0
+      || Number(row.churned ?? 0) > 0
+      || recordsParsed > 0
+      || reportsGenerated > 0
+    ) factPeriods.add(String(row.period));
     for (const [metricKey, value] of Object.entries(values)) {
       metricRows.push({ period: row.period, metric_key: metricKey, value, origin: "calculated" });
     }
   }
-  if (!hasFacts) return null;
-  return { ...summarizeNoxCueDigestRows(metricRows, period), metricLabels, activityBreakdowns, derivedFromEvents: true };
+  if (!hasFacts || !factPeriods.has(period)) return null;
+  const observedMetricRows = metricRows.filter((row) => factPeriods.has(String(row.period)));
+  return { ...summarizeNoxCueDigestRows(observedMetricRows, period), metricLabels, activityBreakdowns, derivedFromEvents: true };
 }
 
 export async function loadNoxCueDigestData(db, sourceId, period) {
-  return await loadEventDerivedNoxCueDigestData(db, sourceId, period)
-    ?? { ...(await loadStoredNoxCueDigestData(db, sourceId, period)), metricLabels: {}, activityBreakdowns: {}, derivedFromEvents: false };
+  const derived = await loadEventDerivedNoxCueDigestData(db, sourceId, period);
+  if (derived) return derived;
+  const stored = await loadStoredNoxCueDigestData(db, sourceId, period);
+  // A reported daily snapshot can explicitly and truthfully contain zeroes.
+  // Calculated zero rows cannot distinguish a quiet day from a broken event
+  // stream, so never publish them as observed activity.
+  if (stored.hasReportedData) {
+    return { ...stored, metricLabels: {}, activityBreakdowns: {}, derivedFromEvents: false };
+  }
+  return {
+    metrics: {}, comparisons: {}, hasData: false, hasReportedData: false,
+    metricLabels: {}, activityBreakdowns: {}, derivedFromEvents: false,
+  };
 }
 
 export async function storeNoxCueDerivedMetrics(db, orgId, sourceId, period, metrics) {

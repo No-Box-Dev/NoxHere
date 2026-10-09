@@ -41,12 +41,22 @@ describe("NoxCue project metric settings", () => {
     ]);
   });
 
-  it("defaults all standard user metrics on until a project saves a selection", async () => {
+  it("keeps source-specific N1 cards opt-in for legacy report templates", async () => {
     const db = { prepare: () => statement("settings", { all: async () => ({ results: [] }) }) };
     expect([...await loadEnabledNoxCueMetricKeys(db, 2, "playnist")]).toEqual([
       ...NOXCUE_USER_METRIC_KEYS,
-      ...NOXCUE_N1_METRIC_KEYS,
     ]);
+  });
+
+  it("enables configured N1 cards for a source", async () => {
+    let call = 0;
+    const db = { prepare: () => statement("settings", { all: async () => ({
+      results: call++ === 0 ? [] : call === 2
+        ? [{ metric_key: "subscriptions.trials.new", enabled: 1, per_active_enabled: 0 }]
+        : [],
+    }) }) };
+    const enabled = await loadEnabledNoxCueMetricKeys(db, 2, "n1", "source-n1");
+    expect(enabled).toContain("subscriptions.trials.new");
   });
 
   it("includes both outputs for enabled registered custom activity metrics", async () => {

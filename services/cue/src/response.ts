@@ -183,12 +183,12 @@ const DISPLAY_METRICS: DisplayMetric[] = [
   { key: "subscriptions.trial_to_paid", label: "Trial-to-paid conversion", kind: "ratio", group: "Subscriptions" },
   { key: "subscriptions.churn", label: "Churn", kind: "ratio", group: "Subscriptions" },
   { key: "users.active.daily", label: "Daily active", kind: "count", group: "Engagement" },
+  { key: "users.active.weekly", label: "Weekly active", kind: "count", group: "Engagement" },
   { key: "users.active.monthly", label: "Monthly active", kind: "count", group: "Engagement" },
   { key: "records.parsed", label: "Records parsed", kind: "count", group: "Activity" },
   { key: "records.parsed.per_active", label: "Records parsed per active user", kind: "decimal", group: "Activity" },
   { key: "reports.generated", label: "Reports generated", kind: "count", group: "Activity" },
   { key: "reports.generated.per_active", label: "Reports generated per active user", kind: "decimal", group: "Activity" },
-  { key: "users.active.weekly", label: "Weekly active", kind: "count", group: "Engagement" },
   { key: "users.stickiness.dau_mau", label: "DAU / MAU", kind: "ratio", group: "Engagement" },
   { key: "records.parsed.users.total", label: "Users who parsed records", kind: "count", group: "Activity" },
   { key: "reports.generated.users.total", label: "Users who generated reports", kind: "count", group: "Activity" },
@@ -213,7 +213,13 @@ export function displayMetricsFor(metrics: Record<string, number>, labels: Recor
     ...metric,
     label: metric.key.startsWith("custom.") ? metric.label : (labels[metric.key]?.trim() || metric.label),
   }));
-  const configuredOrder = new Map(Object.keys(labels).map((key, index) => [key, index]));
+  // Custom activity labels are derived metric data, not an explicit card-order
+  // policy. Only source card configuration contains standard keys; without
+  // one, preserve the established Growth → Engagement → Activity template.
+  const configuredKeys = Object.keys(labels).some((key) => !key.startsWith("custom."))
+    ? Object.keys(labels)
+    : [];
+  const configuredOrder = new Map(configuredKeys.map((key, index) => [key, index]));
   return all.sort((left, right) => {
     const leftOrder = configuredOrder.get(left.key);
     const rightOrder = configuredOrder.get(right.key);
