@@ -17,7 +17,27 @@ export async function getInactiveRepoSet(db, orgId, orgLogin, projectId = null) 
     projectId
       ? db.prepare("SELECT data FROM project_config WHERE org_id = ? AND project_id = ? AND key = 'settings'").bind(orgId, projectId)
       : db.prepare("SELECT data FROM config WHERE org_id = ? AND key = 'settings'").bind(orgId),
-    db.prepare("SELECT repo FROM projects WHERE owner_id = ? AND archived = 1").bind(orgLogin),
+    // Repository-shaped projects pre-date the platform-wide routing map. When
+    // repositories are consolidated under an active umbrella project, those
+    // legacy project rows are archived but the repositories themselves remain
+    // active. Only treat an archived project as a repository archive when no
+    // current assignment points that repository at an active project.
+    db.prepare(
+      `SELECT legacy.repo
+         FROM projects legacy
+        WHERE legacy.owner_id = ?
+          AND legacy.archived = 1
+          AND NOT EXISTS (
+            SELECT 1
+              FROM project_repositories assignment
+              JOIN projects active_project
+                ON active_project.id = assignment.project_id
+               AND active_project.org_id = assignment.org_id
+             WHERE assignment.org_id = legacy.org_id
+               AND assignment.repo = legacy.repo COLLATE NOCASE
+               AND COALESCE(active_project.archived, 0) = 0
+          )`,
+    ).bind(orgLogin),
     db.prepare("SELECT name FROM repos WHERE org_id = ? AND (archived_at IS NOT NULL OR retired_at IS NOT NULL)").bind(orgId),
   ]);
 
