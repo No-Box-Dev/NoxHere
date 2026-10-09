@@ -8,8 +8,8 @@ const projectRoutingKey = (organizationId: string) => ["platform", "project-rout
 export function ProjectRepositories({ organizationId, projectId, projectName, canManage, connectedRepositories }: { organizationId: string; projectId: string; projectName: string; canManage: boolean; connectedRepositories: string[] }) {
   const queryClient = useQueryClient();
   const routing = useQuery({
-    queryKey: projectRoutingKey(organizationId),
-    queryFn: ({ signal }) => platformApi.projectRouting(organizationId, signal),
+    queryKey: [...projectRoutingKey(organizationId), projectId],
+    queryFn: ({ signal }) => platformApi.projectRouting(organizationId, projectId, signal),
     enabled: canManage,
     staleTime: 60_000,
   });

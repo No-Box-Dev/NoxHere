@@ -6,7 +6,7 @@ import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, post
 export interface PlatformApi {
   bootstrap(organizationId: string, projectId: string, signal?: AbortSignal): Promise<Bootstrap>;
   createProject(organizationId: string, name: string, repositories?: string[]): Promise<{ id: string; name: string; repositories: string[] }>;
-  projectRouting(organizationId: string, signal?: AbortSignal): Promise<ProjectRoutingResponse>;
+  projectRouting(organizationId: string, projectId: string, signal?: AbortSignal): Promise<ProjectRoutingResponse>;
   setProjectRouting(organizationId: string, project: ProjectRouting): Promise<void>;
   ticketFeatures(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TicketFeatureRecord[]>;
   createTicketFeature(organizationId: string, projectId: string, input: { title: string; status?: string; backlog?: boolean; priority?: number; owners?: string[]; description?: string; links?: Array<{ url: string; label?: string }> }): Promise<TicketFeatureRecord>;
@@ -30,7 +30,7 @@ export interface PlatformApi {
   retrieve(projectId: string, query: string, signal?: AbortSignal): Promise<RetrievalResult[]>;
   guestAccess(organizationId: string, signal?: AbortSignal): Promise<GuestAccess>;
   inviteGuest(organizationId: string, projectId: string, email: string, serviceId: "all" | "ticket" | "feed" | "spot" | "cue"): Promise<GuestInvite>;
-  members(organizationId: string, signal?: AbortSignal): Promise<GithubMember[]>;
+  members(organizationId: string, projectId: string, signal?: AbortSignal): Promise<GithubMember[]>;
   projectSettings(organizationId: string, projectId: string, signal?: AbortSignal): Promise<ProjectSettings>;
   setProjectSettings(organizationId: string, projectId: string, settings: ProjectSettings): Promise<ProjectSettings>;
   slackRouting(organizationId: string, projectId: string, signal?: AbortSignal): Promise<SlackRouting>;
@@ -87,7 +87,7 @@ export const platformApi: PlatformApi = {
     if (typeof response.project?.id !== "string" || typeof response.project.name !== "string") throw new Error("Project creation returned an invalid response");
     return { id: response.project.id, name: response.project.name, repositories: Array.isArray(response.project.repositories) ? response.project.repositories.filter((repo): repo is string => typeof repo === "string") : [] };
   },
-  projectRouting: (organizationId, signal) => getJson("/api/v1/projects/routing", projectRoutingResponseSchema, signal, { organizationId }),
+  projectRouting: (organizationId, projectId, signal) => getJson("/api/v1/projects/routing", projectRoutingResponseSchema, signal, { organizationId, projectId }),
   setProjectRouting: async (organizationId, project) => {
     await putJson(`/api/v1/projects/${encodeURIComponent(project.id)}/routing`, { enabled: project.enabled, repositories: project.repositories, routes: project.routes }, z.object({ ok: z.literal(true) }).passthrough(), { organizationId, projectId: project.id });
   },
@@ -132,7 +132,7 @@ export const platformApi: PlatformApi = {
     const response = await postJson("/api/v1/guests/invites", { email, scopeType: service ? "tool" : "project", projectId, service }, guestInviteResponseSchema, { organizationId });
     return response.invitation;
   },
-  members: (organizationId, signal) => getJson("/api/v1/members", githubMemberSchema.array(), signal, { organizationId }),
+  members: (organizationId, projectId, signal) => getJson("/api/v1/members", githubMemberSchema.array(), signal, { organizationId, projectId }),
   projectSettings: async (organizationId, projectId, signal) => (await getJson("/api/v1/config/settings", projectSettingsSchema, signal, { organizationId, projectId })) ?? {},
   setProjectSettings: async (organizationId, projectId, settings) => {
     await putJson("/api/v1/config/settings", settings, z.object({ ok: z.literal(true) }), { organizationId, projectId });
