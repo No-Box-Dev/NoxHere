@@ -281,10 +281,12 @@ export async function storeNoxCueDerivedMetrics(db, orgId, sourceId, period, met
     .map(([metricKey, value]) => db.prepare(
     `INSERT INTO cue_daily_metrics
        (org_id, source_id, period, metric_key, value, origin, formula_version, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'calculated', 2, ?)
+     SELECT ?, ?, ?, definition.key, ?, 'calculated', 2, ?
+       FROM cue_metric_definitions definition
+      WHERE definition.key = ?
      ON CONFLICT(source_id, period, metric_key) DO UPDATE SET
        value = excluded.value, origin = 'calculated', formula_version = 2,
        reported_at = NULL, updated_at = excluded.updated_at`,
-  ).bind(orgId, sourceId, period, metricKey, value, now));
+  ).bind(orgId, sourceId, period, value, now, metricKey));
   if (statements.length > 0) await db.batch(statements);
 }

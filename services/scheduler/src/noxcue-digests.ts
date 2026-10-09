@@ -4,6 +4,7 @@ import { loadNoxCueDigestData, storeNoxCueDerivedMetrics } from "../../../functi
 import { loadEnabledNoxCueMetricKeys, loadNoxCueSourceCards, selectNoxCueDigestMetrics } from "../../../functions/lib/noxcue-project-metrics.js";
 
 const MAX_SOURCES_PER_TICK = 100;
+const MAX_CATCH_UP_DAYS = 7;
 
 interface DigestResponseService {
   buildDigestResponse(
@@ -44,6 +45,7 @@ interface DigestSource {
   organization_connection_id: string | null;
   fallback_channel_id: string | null;
   fallback_connection_id: string | null;
+  latest_digest_period: string | null;
 }
 
 type SlackDestination = { channelId: string; connectionId: string };
@@ -88,6 +90,27 @@ export function previousPeriod(period: string) {
   const value = new Date(`${period}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() - 1);
   return value.toISOString().slice(0, 10);
+}
+
+function nextPeriod(period: string) {
+  const value = new Date(`${period}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + 1);
+  return value.toISOString().slice(0, 10);
+}
+
+export function digestPeriodsToAttempt(completedPeriod: string, latestDigestPeriod: string | null) {
+  if (!latestDigestPeriod || latestDigestPeriod >= completedPeriod) return [completedPeriod];
+  const boundedStartDate = new Date(`${completedPeriod}T00:00:00Z`);
+  boundedStartDate.setUTCDate(boundedStartDate.getUTCDate() - (MAX_CATCH_UP_DAYS - 1));
+  const boundedStart = boundedStartDate.toISOString().slice(0, 10);
+  let cursor = nextPeriod(latestDigestPeriod);
+  if (cursor < boundedStart) cursor = boundedStart;
+  const periods: string[] = [];
+  while (cursor <= completedPeriod && periods.length < MAX_CATCH_UP_DAYS) {
+    periods.push(cursor);
+    cursor = nextPeriod(cursor);
+  }
+  return periods;
 }
 
 function configuredMinutes(value: string) {
@@ -172,7 +195,9 @@ export async function runNoxCueDigests(env: DigestEnv, nowMs = Date.now()) {
             NULLIF(json_extract(config.data, '$.slack.noxCueChannelId'), '') AS organization_channel_id,
             NULLIF(json_extract(config.data, '$.slack.noxCueConnectionId'), '') AS organization_connection_id,
             NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '') AS fallback_channel_id,
-            NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '') AS fallback_connection_id
+            NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '') AS fallback_connection_id,
+            (SELECT MAX(digest.period) FROM cue_digest_runs digest
+              WHERE digest.source_id = source.id) AS latest_digest_period
        FROM cue_sources source
        JOIN project_config config
          ON config.org_id = source.org_id AND config.project_id = source.project_id AND config.key = 'settings'
@@ -199,9 +224,12 @@ export async function runNoxCueDigests(env: DigestEnv, nowMs = Date.now()) {
     try {
       const local = localDateTime(nowMs, source.timezone);
       if (local.minutes < configuredMinutes(source.digest_time_local)) { skipped += 1; continue; }
-      const result = await createDigest(env, source, destination, previousPeriod(local.period));
-      if (result.created) created += 1;
-      else skipped += 1;
+      const completedPeriod = previousPeriod(local.period);
+      for (const period of digestPeriodsToAttempt(completedPeriod, source.latest_digest_period)) {
+        const result = await createDigest(env, source, destination, period);
+        if (result.created) created += 1;
+        else skipped += 1;
+      }
     } catch (error) {
       failed += 1;
       console.error(JSON.stringify({
