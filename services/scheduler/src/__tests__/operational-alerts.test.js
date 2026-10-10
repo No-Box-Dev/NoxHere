@@ -8,13 +8,15 @@ vi.mock("../../../../functions/lib/transport-outbox.ts", () => ({ publishSlackTr
 
 import { runOperationalAlerts } from "../operational-alerts.js";
 
-function database({ failures = [], deliveries = [] } = {}) {
+function database({ failures = [], deliveries = [], transports = [] } = {}) {
   return {
     prepare(sql) {
       return {
         bind() { return this; },
         async all() {
-          return { results: sql.includes("FROM op_failures") ? failures : deliveries };
+          return { results: sql.includes("FROM op_failures")
+            ? failures
+            : sql.includes("FROM delivery_outbox") ? deliveries : transports };
         },
       };
     },
@@ -64,5 +66,24 @@ describe("operational Slack alerts", () => {
 
     expect(await runOperationalAlerts({ DB: db })).toEqual({ candidates: 1, queued: 1, skipped: 0 });
     expect(publishSlackTransport).toHaveBeenCalledOnce();
+  });
+
+  it("alerts on failures from the unified Slack and GitHub transport", async () => {
+    const db = database({ transports: [{
+      org_id: 7,
+      project_id: "project-1",
+      org_login: "acme",
+      kind: "transport_failure",
+      source_id: "transport_failure:t-1",
+      subject: "github.issue.create",
+      detail: "provider rejected the command",
+      occurred_at: "2026-09-09T08:00:00Z",
+    }] });
+
+    expect(await runOperationalAlerts({ DB: db })).toEqual({ candidates: 1, queued: 1, skipped: 0 });
+    expect(publishSlackTransport).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      idempotencyKey: "operations:transport_failure:t-1",
+      route: "operations",
+    }));
   });
 });

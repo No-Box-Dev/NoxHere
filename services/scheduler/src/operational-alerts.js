@@ -36,7 +36,7 @@ export async function runOperationalAlerts(env) {
 }
 
 async function loadCandidates(db) {
-  const [failures, deliveries] = await Promise.all([
+  const [failures, deliveries, transports] = await Promise.all([
     db.prepare(
       `SELECT org.id AS org_id, org.github_login AS org_login, failure.project_id,
               'operation_failure' AS kind,
@@ -76,14 +76,34 @@ async function loadCandidates(db) {
         ORDER BY delivery.updated_at
         LIMIT ?`,
     ).bind(LOOKBACK, ALERT_LIMIT).all(),
+    db.prepare(
+      `SELECT transport.org_id, org.github_login AS org_login, transport.project_id,
+              'transport_failure' AS kind,
+              'transport_failure:' || transport.id AS source_id,
+              transport.operation AS subject,
+              COALESCE(transport.last_error, transport.last_error_code, 'Transport failed') AS detail,
+              transport.updated_at AS occurred_at
+         FROM transport_outbox transport
+         JOIN orgs org ON org.id = transport.org_id
+        WHERE transport.route != 'operations'
+          AND transport.status IN ('failed', 'blocked')
+          AND transport.updated_at >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', ?)
+          AND NOT EXISTS (
+            SELECT 1 FROM transport_outbox alert
+             WHERE alert.provider = 'slack'
+               AND alert.idempotency_key = 'operations:transport_failure:' || transport.id
+          )
+        ORDER BY transport.updated_at
+        LIMIT ?`,
+    ).bind(LOOKBACK, ALERT_LIMIT).all(),
   ]);
-  return [...(failures.results ?? []), ...(deliveries.results ?? [])]
+  return [...(failures.results ?? []), ...(deliveries.results ?? []), ...(transports.results ?? [])]
     .sort((left, right) => String(left.occurred_at).localeCompare(String(right.occurred_at)))
     .slice(0, ALERT_LIMIT);
 }
 
 function operationalMessage(candidate) {
-  const isDelivery = candidate.kind === "delivery_failure";
+  const isDelivery = candidate.kind === "delivery_failure" || candidate.kind === "transport_failure";
   const title = isDelivery ? "Nox delivery needs attention" : "Nox background operation failed";
   const detail = safeDetail(candidate.detail);
   return {
@@ -103,8 +123,8 @@ function operationalMessage(candidate) {
         elements: [{
           type: "mrkdwn",
           text: isDelivery
-            ? "Open NoxConnect → Admin → Slack and repair the affected route, then send a test."
-            : "Open NoxConnect → Operator to inspect the recorded failure.",
+            ? "Open NoxHere → Settings → Slack and repair the affected route, then send a test."
+            : "Open NoxHere → Settings → Operations to inspect the recorded failure.",
         }],
       },
     ],

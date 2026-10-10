@@ -495,8 +495,8 @@ describe("v1 middleware errors", () => {
     expect(requests).toHaveLength(1);
     expect(await requests[0].json()).toMatchObject({
       type: "error.occurred",
-      title: "NoxConnect GET /api/v1/events failed",
-      message: "A NoxConnect API request returned an unexpected server error.",
+      title: "NoxHere GET /api/v1/events failed",
+      message: "A NoxHere API request returned an unexpected server error.",
       error: { name: "HTTPResponseError", code: "HTTP_500", status: 500 },
       data: {
         component: "noxconnect.pages-api",
