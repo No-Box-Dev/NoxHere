@@ -98,7 +98,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     return jsonResponse({ app: appId, recorded: "active", period }, 202);
   } catch (error) {
     console.error(JSON.stringify({
-      message: "NoxConnect user event delivery failed",
+      message: "NoxHere user event delivery failed",
       app: appId,
       event: existing ? "user.active" : "user.registered",
       error: error instanceof Error ? error.message : String(error),

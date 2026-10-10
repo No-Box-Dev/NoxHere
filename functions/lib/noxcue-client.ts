@@ -65,8 +65,8 @@ export function reportNoxCueHttpFailure(
     status: status ?? 500,
   });
   const delivery = client.error(evidence, {
-    title: `NoxConnect ${method} ${route} failed`,
-    message: "A NoxConnect API request returned an unexpected server error.",
+    title: `NoxHere ${method} ${route} failed`,
+    message: "A NoxHere API request returned an unexpected server error.",
     component: "noxconnect.pages-api",
     fingerprint: `noxconnect.http|${method}|${route}|${status ?? "exception"}`,
     url: `${url.origin}${url.pathname}`,
