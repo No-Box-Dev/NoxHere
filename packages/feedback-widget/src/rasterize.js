@@ -29,12 +29,81 @@ const SKIP_TAGS = new Set([
   'VIDEO', 'AUDIO',
 ]);
 
-// backdrop-filter silently fails to paint inside foreignObject — the scrim
-// renders transparent. Skipping the property lets the rgba() background
-// that almost always accompanies it render instead.
-const SKIP_STYLE_PROPS = new Set([
-  'backdrop-filter', '-webkit-backdrop-filter',
-]);
+// Copy only properties that affect rendered pixels or layout. Iterating every
+// entry returned by getComputedStyle also copied hundreds of browser-internal
+// properties and every inherited CSS custom property onto every node. A
+// modest Playnist page consequently expanded to a 24MB SVG before any image
+// data was embedded and always tripped the 8MB capture guard.
+//
+// These are resolved computed values, so custom properties are not needed:
+// var(--token) has already been replaced in the property that consumes it.
+const CAPTURE_STYLE_PROPS = [
+  'accent-color', 'align-content', 'align-items', 'align-self',
+  'appearance', '-webkit-appearance',
+  'background-color', 'background-image', 'background-origin',
+  'background-position', 'background-repeat', 'background-size',
+  'block-size', 'border-block-end-color', 'border-block-end-style',
+  'border-block-end-width', 'border-block-start-color',
+  'border-block-start-style', 'border-block-start-width',
+  'border-bottom-color', 'border-bottom-left-radius',
+  'border-bottom-right-radius', 'border-bottom-style', 'border-bottom-width',
+  'border-collapse', 'border-image-outset', 'border-image-repeat',
+  'border-image-slice', 'border-image-source', 'border-image-width',
+  'border-inline-end-color', 'border-inline-end-style',
+  'border-inline-end-width', 'border-inline-start-color',
+  'border-inline-start-style', 'border-inline-start-width',
+  'border-left-color', 'border-left-style', 'border-left-width',
+  'border-right-color', 'border-right-style', 'border-right-width',
+  'border-spacing', 'border-top-color', 'border-top-left-radius',
+  'border-top-right-radius', 'border-top-style', 'border-top-width',
+  'bottom', 'box-decoration-break', '-webkit-box-decoration-break',
+  'box-shadow', 'box-sizing', 'break-after', 'break-before', 'break-inside',
+  'caption-side', 'caret-color', 'clear', 'clip', 'clip-path', 'color',
+  'column-count', 'column-fill', 'column-gap', 'column-rule-color',
+  'column-rule-style', 'column-rule-width', 'column-span', 'column-width',
+  'content', 'cursor', 'direction', 'display', 'empty-cells', 'filter',
+  '-webkit-filter', 'flex-basis', 'flex-direction', 'flex-grow', 'flex-shrink',
+  'flex-wrap', 'float', 'font-family', 'font-feature-settings',
+  'font-kerning', 'font-optical-sizing', 'font-size', 'font-stretch',
+  'font-style', 'font-variant', 'font-variation-settings', 'font-weight',
+  'gap', 'grid-auto-columns', 'grid-auto-flow', 'grid-auto-rows',
+  'grid-column-end', 'grid-column-start', 'grid-row-end', 'grid-row-start',
+  'grid-template-areas', 'grid-template-columns', 'grid-template-rows',
+  'height', 'hyphens', '-webkit-hyphens', 'inline-size', 'inset-block-end',
+  'inset-block-start', 'inset-inline-end', 'inset-inline-start', 'isolation',
+  'justify-content', 'justify-items', 'justify-self', 'left', 'letter-spacing',
+  'line-break', 'line-height', 'list-style-image', 'list-style-position',
+  'list-style-type', 'margin-block-end', 'margin-block-start',
+  'margin-bottom', 'margin-inline-end', 'margin-inline-start', 'margin-left',
+  'margin-right', 'margin-top', 'mask', 'mask-image', '-webkit-mask-image',
+  'max-block-size', 'max-height', 'max-inline-size', 'max-width',
+  'min-block-size', 'min-height', 'min-inline-size', 'min-width',
+  'mix-blend-mode', 'object-fit', 'object-position', 'opacity', 'order',
+  'orphans', 'outline-color', 'outline-offset', 'outline-style',
+  'outline-width', 'overflow', 'overflow-wrap', 'overflow-x', 'overflow-y',
+  'padding-block-end', 'padding-block-start', 'padding-bottom',
+  'padding-inline-end', 'padding-inline-start', 'padding-left',
+  'padding-right', 'padding-top', 'paint-order', 'perspective',
+  'perspective-origin', 'place-content', 'place-items', 'place-self',
+  'pointer-events', 'position', 'quotes', 'resize', 'right', 'rotate',
+  'row-gap', 'scale', 'shape-outside', 'tab-size', 'table-layout',
+  'text-align', 'text-align-last', 'text-combine-upright', 'text-decoration-color',
+  'text-decoration-line', 'text-decoration-style', 'text-decoration-thickness',
+  'text-emphasis-color', 'text-emphasis-position', 'text-emphasis-style',
+  'text-indent', 'text-orientation', 'text-overflow', 'text-rendering',
+  'text-shadow', 'text-transform', 'text-underline-offset', 'top', 'transform',
+  'transform-origin', 'transform-style', 'translate', 'unicode-bidi',
+  'user-select', '-webkit-user-select', 'vertical-align', 'visibility',
+  'white-space', 'widows', 'width', 'word-break', 'word-spacing',
+  'writing-mode', 'z-index',
+  // SVG presentation properties.
+  'fill', 'fill-opacity', 'fill-rule', 'flood-color', 'flood-opacity',
+  'lighting-color', 'marker-end', 'marker-mid', 'marker-start',
+  'shape-rendering', 'stop-color', 'stop-opacity', 'stroke',
+  'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap',
+  'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-width',
+  'vector-effect',
+];
 
 const IMAGE_FETCH_TIMEOUT_MS = 3000;
 const RASTERIZE_TIMEOUT_MS = 10_000;
@@ -326,9 +395,7 @@ function applyScrollOffset(source, clone) {
 
 function flattenComputedStyle(source, clone) {
   const computed = window.getComputedStyle(source);
-  for (let i = 0; i < computed.length; i++) {
-    const prop = computed[i];
-    if (SKIP_STYLE_PROPS.has(prop)) continue;
+  for (const prop of CAPTURE_STYLE_PROPS) {
     const value = computed.getPropertyValue(prop);
     if (value === '') continue;
     // setProperty handles escaping for values containing quotes (e.g.
@@ -619,7 +686,7 @@ function auditRemainingExternalUrls(root) {
   // `data` are kept for forward-compat — <video>/<object> are in SKIP_TAGS
   // today, but the audit should still flag them if those tags are ever
   // unskipped or the attributes appear on unexpected elements.
-  const URL_ATTRS = ['src', 'srcset', 'href', 'xlink:href', 'poster', 'data'];
+  const URL_ATTRS = ['src', 'srcset', 'poster', 'data'];
   // Narrow the scan to elements that actually carry one of the audited attrs
   // — a targeted selector avoids the O(N·M) walk over every node.
   const candidates = root.querySelectorAll(
@@ -631,6 +698,16 @@ function auditRemainingExternalUrls(root) {
       const value = element.getAttribute(attr);
       if (value && isInlinable(value)) {
         remaining.push({ tag: element.tagName, attr, value: value.slice(0, 200) });
+      }
+    }
+    // Ordinary HTML links do not load pixels into the SVG and cannot taint
+    // the canvas. Audit href only on SVG resource-bearing elements.
+    if (element.namespaceURI === SVG_NS && ['image', 'feImage', 'use', 'pattern', 'textPath'].includes(element.localName)) {
+      for (const attr of ['href', 'xlink:href']) {
+        const value = element.getAttribute(attr);
+        if (value && isInlinable(value)) {
+          remaining.push({ tag: element.tagName, attr, value: value.slice(0, 200) });
+        }
       }
     }
   }

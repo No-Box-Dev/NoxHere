@@ -30,7 +30,7 @@ const EnvironmentInput = z.object({
 const BlockInput = z.object({
   id: z.string().trim().regex(/^[a-z0-9][a-z0-9-]{0,119}$/),
   type: z.enum([
-    "title", "description", "reporter", "contact_email", "custom_text",
+    "title", "description", "reporter", "contact_email", "category", "custom_text",
     "custom_textarea", "custom_select", "element_picker", "metadata", "console_logs",
   ]),
   label: z.string().trim().max(120).nullable().optional(),

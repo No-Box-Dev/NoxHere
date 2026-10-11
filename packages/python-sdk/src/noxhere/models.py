@@ -284,7 +284,7 @@ class NoxSpotBlock(TypedDict, total=False):
     label: NotRequired[Union[str, None]]
     options: NotRequired[list[str]]
     required: NotRequired[bool]
-    type: Required[Literal['title', 'description', 'reporter', 'contact_email', 'custom_text', 'custom_textarea', 'custom_select', 'element_picker', 'metadata', 'console_logs']]
+    type: Required[Literal['title', 'description', 'reporter', 'contact_email', 'category', 'custom_text', 'custom_textarea', 'custom_select', 'element_picker', 'metadata', 'console_logs']]
 
 class NoxSpotEnvironment(TypedDict, total=False):
     buttonColor: NotRequired[Union[str, None]]

@@ -1813,6 +1813,7 @@
               "description",
               "reporter",
               "contact_email",
+              "category",
               "custom_text",
               "custom_textarea",
               "custom_select",
@@ -27340,5 +27341,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "614245bc8cc744907a34832722b8fd83c739f9eda99c88cf0d346741ac2cd5da"
+  "x-sdk-source-sha256": "3f05e70d965b4a3a16f9f11f99509a1c2768e51695f9b90c5db65b13c215ab2a"
 }

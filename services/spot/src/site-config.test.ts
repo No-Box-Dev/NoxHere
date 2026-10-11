@@ -26,11 +26,13 @@ const site: CaptureSite = {
 };
 
 describe("site configuration", () => {
-  it("uses one required description field as the standard form", () => {
+  it("uses the complete feedback form as the standard form", () => {
     const config = publicWidgetConfig({ ...site, widget_config: "{}" }, null);
-    expect(config.blocks).toEqual([
-      { id: "default-description", type: "description", label: "Description", required: true },
+    expect(config.blocks.map((block) => block.type)).toEqual([
+      "title", "description", "reporter", "contact_email", "category",
+      "element_picker", "metadata", "console_logs",
     ]);
+    expect(config.blocks.find((block) => block.type === "description")?.required).toBe(true);
   });
 
   it("matches exact hosts and subdomains without matching suffix attacks", () => {

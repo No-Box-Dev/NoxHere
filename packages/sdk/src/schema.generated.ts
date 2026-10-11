@@ -3086,7 +3086,7 @@ export interface components {
             options?: string[];
             required?: boolean;
             /** @enum {string} */
-            type: "title" | "description" | "reporter" | "contact_email" | "custom_text" | "custom_textarea" | "custom_select" | "element_picker" | "metadata" | "console_logs";
+            type: "title" | "description" | "reporter" | "contact_email" | "category" | "custom_text" | "custom_textarea" | "custom_select" | "element_picker" | "metadata" | "console_logs";
         };
         NoxSpotEnvironment: {
             buttonColor?: string | null;

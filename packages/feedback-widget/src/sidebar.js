@@ -17,6 +17,7 @@ import { debugLog } from './debug.js';
 const TITLE_MAX = 256;
 const DESCRIPTION_MAX = 10000;
 const REPORTER_MAX = 100;
+const EMAIL_MAX = 254;
 const CUSTOM_TEXT_MAX = 10000;
 
 let onSubmitCallback = null;
@@ -35,6 +36,7 @@ const FALLBACK_BLOCKS = [
   { id: 'fallback-title', type: 'title', required: true },
   { id: 'fallback-description', type: 'description', required: true },
   { id: 'fallback-reporter', type: 'reporter', required: true },
+  { id: 'fallback-contact-email', type: 'contact_email', required: false },
   { id: 'fallback-category', type: 'category', required: false },
   { id: 'fallback-element-picker', type: 'element_picker', required: false },
   { id: 'fallback-metadata', type: 'metadata', required: false },
@@ -47,6 +49,7 @@ const CORE_IDS = {
   title: 'noxspot-title',
   description: 'noxspot-description',
   reporter: 'noxspot-reporter',
+  contactEmail: 'noxspot-contact-email',
   category: 'noxspot-category',
 };
 
@@ -114,6 +117,7 @@ function renderBlock(block, metadata) {
     case 'title':           return renderTitle(block);
     case 'description':     return renderDescription(block);
     case 'reporter':        return renderReporter(block);
+    case 'contact_email':   return renderContactEmail(block);
     case 'category':        return renderCategory(block);
     case 'custom_text':     return renderCustomText(block);
     case 'custom_textarea': return renderCustomTextarea(block);
@@ -193,6 +197,26 @@ function renderReporter(block) {
         ></div>
       </div>
       <div class="noxspot-field-error" id="${CORE_IDS.reporter}-error" role="alert"></div>
+    </div>
+  `;
+}
+
+function renderContactEmail(block) {
+  const labelText = block.label || 'Contact email (optional)';
+  const requiredMark = block.required ? ' *' : '';
+  return `
+    <div class="noxspot-form-group">
+      <label class="noxspot-label" for="${CORE_IDS.contactEmail}">${escapeHtml(labelText)}${requiredMark}</label>
+      <input
+        type="email"
+        id="${CORE_IDS.contactEmail}"
+        class="noxspot-input"
+        placeholder="you@example.com"
+        autocomplete="email"
+        maxlength="${EMAIL_MAX}"
+        ${block.required ? 'required' : ''}
+      />
+      <div class="noxspot-field-error" id="${CORE_IDS.contactEmail}-error" role="alert"></div>
     </div>
   `;
 }
@@ -319,7 +343,7 @@ export function initSidebarEvents() {
 }
 
 function initFieldErrorClearing() {
-  const ids = [CORE_IDS.title, CORE_IDS.description, CORE_IDS.reporter];
+  const ids = [CORE_IDS.title, CORE_IDS.description, CORE_IDS.reporter, CORE_IDS.contactEmail];
   for (const block of formBlocks) {
     if (block.type === 'custom_text' || block.type === 'custom_textarea' || block.type === 'custom_select') {
       ids.push(customBlockDomId(block.id));
@@ -370,6 +394,17 @@ export function validateFormData(data, blocks) {
     }
   }
 
+  const contactBlock = blockList.find((b) => b.type === 'contact_email');
+  if (contactBlock) {
+    if (contactBlock.required && !data.reporterEmail) {
+      errors[CORE_IDS.contactEmail] = 'Contact email is required.';
+    } else if (data.reporterEmail && (
+      data.reporterEmail.length > EMAIL_MAX || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.reporterEmail)
+    )) {
+      errors[CORE_IDS.contactEmail] = 'Enter a valid email address.';
+    }
+  }
+
   for (const block of blockList) {
     if (block.type !== 'custom_text' && block.type !== 'custom_textarea' && block.type !== 'custom_select') continue;
     const id = customBlockDomId(block.id);
@@ -390,6 +425,7 @@ function collectFormData() {
   const titleEl = document.getElementById(CORE_IDS.title);
   const descriptionEl = document.getElementById(CORE_IDS.description);
   const reporterEl = document.getElementById(CORE_IDS.reporter);
+  const contactEmailEl = document.getElementById(CORE_IDS.contactEmail);
   const categoryEl = document.getElementById(CORE_IDS.category);
 
   const blockValues = {};
@@ -401,10 +437,13 @@ function collectFormData() {
     if (v) blockValues[block.id] = v;
   }
 
+  const reporterEmail = contactEmailEl ? contactEmailEl.value.trim() : '';
   return {
     title: titleEl ? titleEl.value.trim() : '',
     description: descriptionEl ? descriptionEl.value.trim() : '',
     reporter: reporterEl ? reporterEl.value.trim() : '',
+    reporterEmail: reporterEmail || null,
+    notifyOnResolution: Boolean(reporterEmail),
     category: (categoryEl ? categoryEl.value.trim() : '') || null,
     blockValues: Object.keys(blockValues).length ? blockValues : null,
   };

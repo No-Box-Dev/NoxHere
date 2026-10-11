@@ -93,6 +93,13 @@ describe('validateFormData', () => {
     expect(errors['noxspot-reporter']).toMatch(/too long/i);
   });
 
+  it('validates a configured contact email field', () => {
+    const blocks = [{ type: 'description' }, { type: 'contact_email', required: true }];
+    expect(validateFormData({ description: 'Steps', reporterEmail: '' }, blocks)['noxspot-contact-email']).toMatch(/required/i);
+    expect(validateFormData({ description: 'Steps', reporterEmail: 'not-an-email' }, blocks)['noxspot-contact-email']).toMatch(/valid email/i);
+    expect(validateFormData({ description: 'Steps', reporterEmail: 'ada@example.com' }, blocks)).toEqual({});
+  });
+
   it('does not require reporter when reporter block is not required', () => {
     const blocks = [
       { type: 'title' },
@@ -171,6 +178,16 @@ describe('createSidebarHTML', () => {
     expect(html).toContain('data-block-id="why"');
     expect(html).toContain('data-block-type="custom_text"');
     expect(html).toContain('required');
+  });
+
+  it('renders a configured contact email input', () => {
+    const html = createSidebarHTML({
+      ...ctx,
+      blocks: [{ type: 'description' }, { type: 'contact_email', label: 'Email me', required: false }],
+    });
+    expect(html).toContain('id="noxspot-contact-email"');
+    expect(html).toContain('type="email"');
+    expect(html).toContain('Email me');
   });
 
   it('renders custom_textarea with rows attribute', () => {
