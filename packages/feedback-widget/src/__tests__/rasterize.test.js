@@ -57,4 +57,39 @@ describe('viewport-bounded rasterization', () => {
     await expect(captureViewport()).resolves.toMatchObject({ dataUrl: 'data:image/jpeg;base64,ok' });
     expect(styleSpy.mock.calls.length).toBeLessThan(100);
   });
+
+  it('does not serialize browser-internal and custom computed properties onto every node', async () => {
+    for (let index = 0; index < 1_200; index += 1) {
+      const node = document.createElement('div');
+      node.textContent = `node ${index}`;
+      document.body.appendChild(node);
+    }
+
+    class LoadedImage {
+      set src(_value) { queueMicrotask(() => this.onload?.()); }
+    }
+    globalThis.Image = LoadedImage;
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+      scale: vi.fn(),
+      fillRect: vi.fn(),
+      drawImage: vi.fn(),
+      set fillStyle(_value) {},
+    }));
+    HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/jpeg;base64,ok');
+
+    const bloatedProperties = Array.from({ length: 1_000 }, (_, index) => `--inherited-token-${index}`);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(() => ({
+      length: bloatedProperties.length,
+      backgroundColor: 'rgb(255, 255, 255)',
+      getPropertyValue: (property) => property.startsWith('--') ? 'x'.repeat(80) : ({
+        display: 'block',
+        color: 'rgb(0, 0, 0)',
+        width: '100px',
+        height: '20px',
+      }[property] || ''),
+      getPropertyPriority: () => '',
+    }));
+
+    await expect(captureViewport()).resolves.toMatchObject({ dataUrl: 'data:image/jpeg;base64,ok' });
+  });
 });

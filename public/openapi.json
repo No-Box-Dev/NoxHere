@@ -11793,6 +11793,7 @@
               "description",
               "reporter",
               "contact_email",
+              "category",
               "custom_text",
               "custom_textarea",
               "custom_select",

@@ -139,7 +139,7 @@ describe('showOverlay — optimistic flow', () => {
     const overlay = document.querySelector('.noxspot-overlay');
     expect(overlay).not.toBeNull();
     expect(overlay.querySelector('.noxspot-canvas-loading').textContent).toContain('You can still send your feedback');
-    expect(overlay.querySelector('.noxspot-toolbar-tools').classList.contains('noxspot-toolbar-tools--disabled')).toBe(true);
+    expect(overlay.querySelector('.noxspot-toolbar-tools').style.display).toBe('none');
     expect(onCaptureError).toHaveBeenCalledOnce();
   });
 

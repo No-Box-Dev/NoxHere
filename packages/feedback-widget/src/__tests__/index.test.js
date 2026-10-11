@@ -297,6 +297,16 @@ describe('buildSubmitBody', () => {
     });
   });
 
+  it('uses contact details entered in the configured form', () => {
+    const body = buildSubmitBody({
+      ...baseData,
+      reporterEmail: 'reporter@example.com',
+      notifyOnResolution: true,
+    }, baseCtx);
+    expect(body.reporterEmail).toBe('reporter@example.com');
+    expect(body.notifyOnResolution).toBe(true);
+  });
+
   it('drops elements when element_picker block is absent', () => {
     const body = buildSubmitBody(baseData, {
       ...baseCtx,

@@ -212,6 +212,14 @@ function hydrateCapture(capture) {
       loading.classList.add('noxspot-canvas-unavailable');
       loading.innerHTML = '<strong>Screenshot unavailable</strong><span>You can still send your feedback.</span>';
     }
+    // Annotation and element-picking controls have no target without a
+    // screenshot. Hiding them also removes the stale "Click on an element"
+    // prompt when toolbar initialization races the failed capture.
+    if (toolbarTools) toolbarTools.style.display = 'none';
+    if (highlightOverlay) {
+      highlightOverlay.remove();
+      highlightOverlay = null;
+    }
     if (thumbContainer) thumbContainer.style.display = 'none';
     debugLog('[NoxSpot] Capture unavailable; form remains usable');
     return;
