@@ -145,6 +145,13 @@ async function preflight() {
   });
   if (!spotConfigResponse.ok) fail(`NoxSpot site preflight failed: ${spotConfigResponse.status} ${await spotConfigResponse.text()}`);
   pass("NoxSpot staging site accepts the staging origin", String(spotConfigResponse.status));
+  const spotMembersResponse = await fetch(new URL(`/api/spots/public/v1/sites/${encodeURIComponent(config.noxspotSiteId)}/members`, noxspotUrl), {
+    headers: { Origin: config.noxspotOrigin, Accept: "application/json" },
+  });
+  if (!spotMembersResponse.ok) fail(`NoxSpot member directory failed: ${spotMembersResponse.status} ${await spotMembersResponse.text()}`);
+  const spotMembers = await spotMembersResponse.json();
+  if (!Array.isArray(spotMembers?.members)) fail("NoxSpot member directory returned an invalid response");
+  pass("NoxSpot staging member directory accepts the staging origin", String(spotMembersResponse.status));
   const spotSites = (await request("NoxSpot site discovery", "/api/v1/spots/sites")).body?.sites;
   const spotSite = spotSites?.find((item) => item.id === config.noxspotSiteId && item.projectId === config.projectId && item.repo === config.repo);
   if (!spotSite

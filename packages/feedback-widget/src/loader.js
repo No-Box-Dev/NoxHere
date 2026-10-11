@@ -306,7 +306,7 @@ function scheduleCorePrefetch() {
 
 async function fetchMembers() {
   try {
-    const response = await fetch(`${API_URL}/sites/${config.siteId}/members`);
+    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${config.siteId}/members`);
     if (!response.ok) return;
     const data = await response.json();
     if (Array.isArray(data?.members)) config.members = data.members;
@@ -320,7 +320,7 @@ async function fetchConfig() {
   const timer = setTimeout(() => controller.abort(), CONFIG_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_URL}/sites/${config.siteId}/config`, { signal: controller.signal });
+    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${config.siteId}/config`, { signal: controller.signal });
     clearTimeout(timer);
     if (!response.ok) return;
 

@@ -119,6 +119,13 @@ describe('init', () => {
     const btn = document.querySelector('.noxspot-trigger');
     expect(btn).toBeTruthy();
     expect(btn.style.background).toBeTruthy();
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.noxspot.dev/api/spots/public/v1/sites/test-site/members',
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.noxspot.dev/api/spots/public/v1/sites/test-site/config',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it('no-ops when siteId is missing', () => {

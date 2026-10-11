@@ -114,6 +114,27 @@ async function serveConfig(context: AppContext) {
 app.get("/api/spots/public/v1/sites/:siteId/config", serveConfig);
 app.get("/sites/:siteId/config", serveConfig);
 
+async function serveMembers(context: AppContext) {
+  const siteId = context.req.param("siteId");
+  if (!siteId) return jsonError(context, "Site not found", 404);
+  const site = await siteForPublicRequest(context, siteId);
+  if (site instanceof Response) return site;
+
+  const result = await context.env.DB.prepare(
+    `SELECT login, avatar_url AS avatarUrl
+       FROM members
+      WHERE org_id = ? AND kind = 'human'
+      ORDER BY login COLLATE NOCASE
+      LIMIT 250`,
+  ).bind(site.org_id).all<{ login: string; avatarUrl: string | null }>();
+
+  return context.json({ members: result.results });
+}
+
+app.get("/api/spots/public/v1/sites/:siteId/members", serveMembers);
+// Existing loaders used this path before the public API was versioned.
+app.get("/sites/:siteId/members", serveMembers);
+
 async function submitReport(context: AppContext) {
   if (await checkRateLimit(context.env, `report:ip:${clientIp(context)}`, REPORT_IP_LIMIT, RATE_LIMIT_WINDOW_MS)) {
     return jsonError(context, "Too many reports. Please try again later.", 429);

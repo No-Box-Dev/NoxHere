@@ -802,6 +802,12 @@ class GetProjectIssuesPath(TypedDict, total=False):
 class GetPublicNoxSpotConfigPath(TypedDict, total=False):
     siteId: Required[str]
 
+class GetPublicNoxSpotMembersPath(TypedDict, total=False):
+    siteId: Required[str]
+
+class GetPublicNoxSpotMembersResponse(TypedDict, total=False):
+    members: Required[list["GetPublicNoxSpotMembersResponseMembers"]]
+
 class GetPullRequestPath(TypedDict, total=False):
     repo: Required[str]
     number: Required[int]
@@ -1173,6 +1179,10 @@ class UserActionUserAction(TypedDict, total=False):
     instructions: Required[str]
     type: Required[Literal['open_url']]
     url: Required[str]
+
+class GetPublicNoxSpotMembersResponseMembers(TypedDict, total=False):
+    avatarUrl: NotRequired[Union[str, None]]
+    login: Required[str]
 
 class AiSettingsManagedServices(TypedDict, total=False):
     noxconnect: Required["ManagedAiServiceStatus"]

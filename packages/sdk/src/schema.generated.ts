@@ -81,6 +81,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spots/public/v1/sites/{siteId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List public NoxSpot reporter choices for the request origin
+         * @description Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.
+         */
+        get: operations["getPublicNoxSpotMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/actors": {
         parameters: {
             query?: never;
@@ -3940,6 +3960,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            /** @description Origin is not enabled */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyError"];
+                };
+            };
+            /** @description Site not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyError"];
+                };
+            };
+        };
+    };
+    getPublicNoxSpotMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                siteId: components["parameters"]["siteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Origin-scoped reporter choices */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        members: {
+                            /** Format: uri */
+                            avatarUrl?: string | null;
+                            login: string;
+                        }[];
+                    };
                 };
             };
             /** @description Origin is not enabled */

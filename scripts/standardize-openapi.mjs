@@ -559,6 +559,44 @@ document.paths["/api/v1/auth/native/revoke"] = {
   },
 };
 
+document.paths["/api/spots/public/v1/sites/{siteId}/members"] = {
+  get: {
+    operationId: "getPublicNoxSpotMembers",
+    summary: "List public NoxSpot reporter choices for the request origin",
+    description: "Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.",
+    security: [],
+    servers: [{ url: "https://api.noxspot.dev" }],
+    parameters: [{ "$ref": "#/components/parameters/siteId" }],
+    responses: {
+      "200": {
+        description: "Origin-scoped reporter choices",
+        content: { "application/json": { schema: {
+          type: "object",
+          required: ["members"],
+          properties: {
+            members: {
+              type: "array",
+              maxItems: 250,
+              items: {
+                type: "object",
+                required: ["login"],
+                properties: {
+                  login: { type: "string" },
+                  avatarUrl: { type: ["string", "null"], format: "uri" },
+                },
+                additionalProperties: false,
+              },
+            },
+          },
+          additionalProperties: false,
+        } } },
+      },
+      "403": { description: "Origin is not enabled", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } },
+      "404": { description: "Site not found", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } },
+    },
+  },
+};
+
 // First-party clients use the same versioned boundary as external consumers.
 // These routes retain their established response payloads while gaining the
 // v1 error, cache, discovery, authentication, and service-gating contract.
