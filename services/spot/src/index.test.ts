@@ -11,6 +11,10 @@ beforeAll(async () => {
   await env.DB.batch([
     env.DB.prepare("CREATE TABLE orgs (id INTEGER PRIMARY KEY, github_login TEXT NOT NULL)"),
     env.DB.prepare("CREATE TABLE config (org_id INTEGER NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (org_id, key))"),
+    env.DB.prepare(`CREATE TABLE members (
+      id INTEGER PRIMARY KEY, org_id INTEGER NOT NULL, login TEXT NOT NULL,
+      avatar_url TEXT, kind TEXT NOT NULL DEFAULT 'human'
+    )`),
     env.DB.prepare(`CREATE TABLE spot_sites (
       id TEXT PRIMARY KEY,
       org_id INTEGER NOT NULL,
@@ -29,6 +33,9 @@ beforeAll(async () => {
       screenshot_url TEXT, last_error TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
     )`),
     env.DB.prepare("INSERT INTO orgs (id, github_login) VALUES (1, 'acme')"),
+    env.DB.prepare(`INSERT INTO members (id, org_id, login, avatar_url, kind) VALUES
+      (1, 1, 'Ada-Lovelace', 'https://avatars.example/ada.png', 'human'),
+      (2, 1, 'release-bot', NULL, 'bot')`),
     env.DB.prepare(`INSERT INTO spot_sites
       (id, org_id, project_id, repo, name, widget_config, slack_channel_id, slack_connection_id)
     VALUES
@@ -63,6 +70,26 @@ describe("public capture Worker", () => {
       headers: { Origin: "https://evil.example" },
     });
     expect(denied.status).toBe(403);
+  });
+
+  it("serves human reporter choices only to an allowed site origin", async () => {
+    for (const path of [
+      "/api/spots/public/v1/sites/site-1/members",
+      "/sites/site-1/members",
+    ]) {
+      const allowed = await SELF.fetch(`https://capture.test${path}`, {
+        headers: { Origin: "https://app.example.com" },
+      });
+      expect(allowed.status, path).toBe(200);
+      expect(await allowed.json()).toEqual({
+        members: [{ login: "Ada-Lovelace", avatarUrl: "https://avatars.example/ada.png" }],
+      });
+
+      const denied = await SELF.fetch(`https://capture.test${path}`, {
+        headers: { Origin: "https://evil.example" },
+      });
+      expect(denied.status, path).toBe(403);
+    }
   });
 
   it("serves the lazy widget core beside site-specific loaders", async () => {

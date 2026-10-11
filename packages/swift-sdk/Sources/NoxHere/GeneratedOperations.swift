@@ -29,7 +29,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 160
+    public static let operationCount = 161
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -102,6 +102,7 @@ public enum NoxHereOperations {
         "getProjectIssues": .init(id: "getProjectIssues", method: "GET", path: "/api/v1/projects/{projectId}/issues", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getProjectRouting": .init(id: "getProjectRouting", method: "GET", path: "/api/v1/projects/routing", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getPublicNoxSpotConfig": .init(id: "getPublicNoxSpotConfig", method: "GET", path: "/api/spots/public/v1/sites/{siteId}/config", resource: .feedback, changeSafety: .safeRead, servers: ["https://api.noxspot.dev"]),
+        "getPublicNoxSpotMembers": .init(id: "getPublicNoxSpotMembers", method: "GET", path: "/api/spots/public/v1/sites/{siteId}/members", resource: .feedback, changeSafety: .safeRead, servers: ["https://api.noxspot.dev"]),
         "getPullRequest": .init(id: "getPullRequest", method: "GET", path: "/api/v1/prs/{repo}/{number}", resource: .activity, changeSafety: .safeRead, servers: []),
         "getSetupPlan": .init(id: "getSetupPlan", method: "GET", path: "/api/v1/integrations/setup", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getSlackRouting": .init(id: "getSlackRouting", method: "GET", path: "/api/v1/integrations/slack/routing", resource: .workspace, changeSafety: .safeRead, servers: []),

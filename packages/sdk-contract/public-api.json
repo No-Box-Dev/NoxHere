@@ -4526,6 +4526,90 @@
         "x-change-safety": "safe_read"
       }
     },
+    "/api/spots/public/v1/sites/{siteId}/members": {
+      "get": {
+        "description": "Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.",
+        "operationId": "getPublicNoxSpotMembers",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/siteId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "members": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "avatarUrl": {
+                            "format": "uri",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "login": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "login"
+                        ],
+                        "type": "object"
+                      },
+                      "maxItems": 250,
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "members"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Origin-scoped reporter choices"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyError"
+                }
+              }
+            },
+            "description": "Origin is not enabled"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyError"
+                }
+              }
+            },
+            "description": "Site not found"
+          }
+        },
+        "security": [],
+        "servers": [
+          {
+            "url": "https://api.noxspot.dev"
+          }
+        ],
+        "summary": "List public NoxSpot reporter choices for the request origin",
+        "tags": [
+          "Feedback"
+        ],
+        "x-authentication": "public",
+        "x-change-safety": "safe_read"
+      }
+    },
     "/api/v1/actors": {
       "get": {
         "description": "List organization people and identity overlays. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
@@ -20375,6 +20459,96 @@
       "tag": "Feedback"
     },
     {
+      "authentication": "public",
+      "automationScope": null,
+      "changeSafety": "safe_read",
+      "description": "Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.",
+      "id": "getPublicNoxSpotMembers",
+      "method": "GET",
+      "namespace": "feedback",
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/siteId"
+        }
+      ],
+      "path": "/api/spots/public/v1/sites/{siteId}/members",
+      "projectScope": "none",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "members": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "avatarUrl": {
+                          "format": "uri",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "login": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "login"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 250,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "members"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Origin-scoped reporter choices"
+        },
+        "403": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyError"
+              }
+            }
+          },
+          "description": "Origin is not enabled"
+        },
+        "404": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyError"
+              }
+            }
+          },
+          "description": "Site not found"
+        }
+      },
+      "security": [],
+      "servers": [
+        {
+          "url": "https://api.noxspot.dev"
+        }
+      ],
+      "summary": "List public NoxSpot reporter choices for the request origin",
+      "tag": "Feedback"
+    },
+    {
       "authentication": "member",
       "automationScope": "noxfeed:read",
       "changeSafety": "safe_read",
@@ -27348,5 +27522,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "fe0ee75c01900ba7b5ff1fb7d90ab2e0e7850d2d89c1447bdfc05ecb607cb773"
+  "x-sdk-source-sha256": "ac5323be5ce508dda3950b39148e74558bc618e3e2d9feda43d056479532452c"
 }

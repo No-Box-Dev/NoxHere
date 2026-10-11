@@ -473,6 +473,7 @@ async function main() {
   }), 201);
   const siteId = site.body.site.id;
   const publicConfig = await request("read NoxSpot public widget config", `http://127.0.0.1:${port(8790)}/api/spots/public/v1/sites/${siteId}/config`);
+  await request("read NoxSpot public widget members", `http://127.0.0.1:${port(8790)}/api/spots/public/v1/sites/${siteId}/members`);
   if (publicConfig.body?.siteId !== siteId) throw new Error("NoxSpot config did not use the shared D1 state");
   const report = await request("queue a real NoxSpot public report", `http://127.0.0.1:${port(8790)}/api/spots/public/v1/reports`, {
     method: "POST", headers: { "Content-Type": "application/json" },

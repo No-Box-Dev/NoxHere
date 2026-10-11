@@ -1108,6 +1108,25 @@ export const operationDefinitions = [
     ]
   },
   {
+    "id": "getPublicNoxSpotMembers",
+    "method": "GET",
+    "path": "/api/spots/public/v1/sites/{siteId}/members",
+    "namespace": "feedback",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://api.noxspot.dev"
+      }
+    ]
+  },
+  {
     "id": "getPullRequest",
     "method": "GET",
     "path": "/api/v1/prs/{repo}/{number}",

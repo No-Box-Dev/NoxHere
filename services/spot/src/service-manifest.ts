@@ -18,6 +18,7 @@ export const NOXSPOT_SERVICE_MANIFEST = {
       ] },
       { id: "widget", name: "Feedback widget", description: "Configure how feedback is captured and which environments enable it.", access: "admin", requires: ["github"], operations: [
         { id: "get_widget_config", method: "GET", path: "https://api.noxspot.dev/api/spots/public/v1/sites/{siteId}/config", authentication: "public", description: "Resolve origin-bound public widget configuration." },
+        { id: "get_widget_members", method: "GET", path: "https://api.noxspot.dev/api/spots/public/v1/sites/{siteId}/members", authentication: "public", description: "List bounded human reporter choices for an origin-bound widget." },
         { id: "update_widget_config", method: "PATCH", path: "/api/v1/spots/sites/{siteId}", authentication: "admin", description: "Update environments, fields, and widget behavior." },
       ] },
       { id: "reports", name: "Reports and screenshots", description: "Turn captured feedback and browser context into actionable reports.", access: "member", requires: ["github"], operations: [
