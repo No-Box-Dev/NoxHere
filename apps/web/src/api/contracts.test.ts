@@ -6,7 +6,7 @@ describe("API contracts", () => {
     const result = bootstrapSchema.parse({
       actor: { id: "JasperNoBoxDev", name: "JasperNoBoxDev", initials: "JA", accessLevel: "member", isAdmin: true, allowedServiceIds: [] },
       organization: { id: "no-box-dev", name: "No-Box-Dev" },
-      projects: [{ id: "proj_no-box-dev_playnist", name: "playnist", organizationId: "no-box-dev", environment: "production", connections: [], members: [] }],
+      projects: [{ id: "proj_no-box-dev_playnist", name: "playnist", organizationId: "no-box-dev", environment: "production", connections: [] }],
     });
     expect(result.projects[0].id).toBe("proj_no-box-dev_playnist");
   });

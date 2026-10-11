@@ -46,18 +46,13 @@ export const projectSettingsQueryKey = (organizationId: string, projectId: strin
 export const platformApi: PlatformApi = {
   bootstrap: async (organizationId, projectId, signal) => {
     const scope = { organizationId, projectId };
-    const [profileRaw, projectsRaw, membersRaw, connectionsRaw] = await Promise.all([
+    const [profileRaw, projectsRaw, connectionsRaw] = await Promise.all([
       getRawJson("/api/v1/me", signal, scope),
       getRawJson("/api/v1/projects?view=bootstrap", signal, scope),
-      getRawJson("/api/v1/members", signal, scope).catch(() => []),
       getRawJson("/api/v1/integrations/connections?view=bootstrap", signal, scope).catch(() => null),
     ]);
     const profile = profileRaw as { login?: string; org?: string; accessLevel?: "member" | "guest"; isAdmin?: boolean; allowedServices?: string[] };
     const projectRows = (projectsRaw as { projects?: Array<{ id: string; name: string; org?: string | null; repo?: string | null; repositories?: string[]; description?: string | null; archived?: number; routing_enabled?: number }> }).projects ?? [];
-    const memberRows = Array.isArray(membersRaw) ? membersRaw as Array<{ login?: string | null; avatar_url?: string | null; kind?: string | null }> : [];
-    const members: Project["members"] = memberRows.flatMap((member) => member.kind === "human" && member.login && member.avatar_url
-      ? [{ login: member.login, avatarUrl: member.avatar_url, role: profile.isAdmin && member.login.toLowerCase() === profile.login?.toLowerCase() ? "admin" as const : "member" as const }]
-      : []);
     const integration = connectionsRaw as { github?: { connected?: boolean }; slack?: { connected?: boolean; teamName?: string | null } } | null;
     const guestServices = profile.accessLevel === "guest" ? new Set((profile.allowedServices ?? []).flatMap((id) => {
       const mapped = ({ noxticket: ["ticket"], noxfeed: ["feed"], noxspot: ["spot"], noxcue: ["stats", "incidents"] } as Record<string, ServiceId[] | undefined>)[id];
@@ -72,7 +67,7 @@ export const platformApi: PlatformApi = {
       return [{
         id: row.id, name: row.name, organizationId,
         environment: row.description?.toLowerCase().includes("isolated project for safely testing") ? "test" as const : "production" as const,
-        connections, members: [...members],
+        connections,
       }];
     });
     const login = profile.login ?? "Member";

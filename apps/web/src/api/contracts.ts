@@ -9,12 +9,6 @@ const projectConnectionSchema = z.object({
   status: z.enum(["connected", "attention"]),
 });
 
-const projectMemberSchema = z.object({
-  login: z.string(),
-  avatarUrl: z.string().url(),
-  role: z.enum(["admin", "member"]),
-});
-
 export const githubMemberSchema = z.object({
   login: z.string(),
   avatar_url: z.string().url(),
@@ -138,7 +132,6 @@ const projectSchema = z.object({
   organizationId: z.string(),
   environment: z.enum(["production", "test"]),
   connections: z.array(projectConnectionSchema),
-  members: z.array(projectMemberSchema),
 });
 
 const projectDestinationSchema = z.object({ connectionId: z.string(), channelId: z.string() });

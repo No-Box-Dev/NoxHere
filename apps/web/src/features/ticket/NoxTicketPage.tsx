@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useOutletContext, useParams, useSearchParams } from "react-router-dom";
-import type { Bootstrap, PlanningTask, TicketFeatureAttachment, TicketFeatureRecord } from "../../api/contracts";
+import type { PlanningTask, TicketFeatureAttachment, TicketFeatureRecord } from "../../api/contracts";
 import { platformApi, projectSettingsQueryKey } from "../../api/platform";
 import { postRawJson } from "../../api/http";
 import { ListRow } from "../../components/ListRow";
@@ -9,6 +9,7 @@ import { useConfirmDialog } from "../../components/ConfirmDialog";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
+import type { PlatformOutletContext } from "../../app/platform-context";
 
 const tabs = [["board", "Features"], ["tasks", "Tasks"], ["backlog", "Backlog"], ["completed", "Completed"], ["settings", "Settings"]] as const;
 
@@ -22,11 +23,10 @@ type TaskInput = { title: string; note?: string; owner?: string; featureNumber?:
 
 export default function NoxTicketPage() {
   const { organizationId = "", projectId = "", view = "board" } = useParams();
-  const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
+  const { bootstrap, members: organizationMembers } = useOutletContext<PlatformOutletContext>();
   const [searchParams] = useSearchParams();
   const project = bootstrap.projects.find((item) => item.id === projectId);
   const isGuest = bootstrap.actor.accessLevel === "guest";
-  const members = project?.members.map((member) => member.login) ?? [];
   const base = `/${organizationId}/${projectId}/ticket`;
   const [stages, setStages] = useState<Stage[]>(productionStages);
   const [taskStages, setTaskStages] = useState<Stage[]>(defaultTaskStages);
@@ -45,6 +45,12 @@ export default function NoxTicketPage() {
   });
   const tasksKey = ["ticket", organizationId, projectId, "tasks"] as const;
   const taskQuery = useQuery({ queryKey: tasksKey, queryFn: ({ signal }) => platformApi.planningTasks(organizationId, projectId, signal), enabled: view !== "settings" });
+  const members = useMemo(() => uniqueLogins([
+    bootstrap.actor.id,
+    ...organizationMembers.filter((member) => member.kind === "human").map((member) => member.login),
+    ...features.flatMap((feature) => feature.owners),
+    ...(taskQuery.data ?? []).map((task) => task.owner),
+  ]), [bootstrap.actor.id, features, organizationMembers, taskQuery.data]);
   const createTaskMutation = useMutation({
     mutationFn: (input: TaskInput) => platformApi.createPlanningTask(organizationId, projectId, input),
     onSuccess: (task) => queryClient.setQueryData<PlanningTask[]>(tasksKey, (current = []) => [...current.filter((item) => item.id !== task.id), task]),
@@ -217,6 +223,16 @@ function formatDate(value?: string | null) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(parsed);
+}
+
+function uniqueLogins(logins: string[]) {
+  const seen = new Set<string>();
+  return logins.filter((login) => {
+    const normalized = login.trim().toLowerCase();
+    if (!normalized || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
 }
 
 function DataNotice({ title, detail }: { title: string; detail: string }) {

@@ -1,13 +1,14 @@
 import { useCallback, useMemo } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useOutletContext, useParams } from "react-router-dom";
-import type { Bootstrap, GithubMember, TicketFeatureRecord } from "../../api/contracts";
+import type { GithubMember, TicketFeatureRecord } from "../../api/contracts";
 import { getRawJson } from "../../api/http";
 import { platformApi } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
 import { NoxFeedSettings } from "./NoxFeedSettings";
+import type { PlatformOutletContext } from "../../app/platform-context";
 
 const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"], ["issues", "Issues"], ["settings", "Settings"]] as const;
 type WorkItem = { id: number; repo: string; number: number; title: string; state: string; author?: string; author_avatar?: string; assignees?: Array<{ login: string; avatar_url?: string }>; html_url?: string; updated_at?: string; draft?: boolean };
@@ -20,7 +21,7 @@ type QuickView = "opened" | "merged" | "issues";
 
 export default function NoxFeedPage() {
   const { organizationId = "", projectId = "", view = "current", person } = useParams();
-  const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
+  const { bootstrap, members } = useOutletContext<PlatformOutletContext>();
   const project = bootstrap.projects.find((item) => item.id === projectId);
   const ticketEnabled = true;
   const isFeedStream = view === "opened" || view === "merged";
@@ -88,7 +89,7 @@ export default function NoxFeedPage() {
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
     {(!isFeedStream && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}
     {(!isFeedStream && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Activity is unavailable" detail="The project activity API could not be reached. No placeholder activity is being shown." /> : null}
-    {query.data && view === "current" ? <Current data={query.data as CurrentResult} base={base} person={person} /> : null}
+    {query.data && view === "current" ? <Current data={{ ...(query.data as CurrentResult), members }} base={base} person={person} /> : null}
     {stream.data && isFeedStream ? <Events events={streamEvents} releaseNotes={releaseNotes.data?.events ?? []} label={view} hasNextPage={stream.hasNextPage} loadingMore={stream.isFetchingNextPage} onLoadMore={() => void stream.fetchNextPage()} /> : null}
     {query.data && view === "issues" ? <Issues items={(query.data as PageResult).data ?? []} /> : null}
     {isSettings ? <NoxFeedSettings organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}

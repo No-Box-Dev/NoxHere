@@ -7,6 +7,7 @@ import { PlatformRetrieval } from "./PlatformRetrieval";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { serviceById, services, type ServiceId } from "./service-registry";
 import { clearLastProject, saveLastProject } from "./last-project";
+import type { PlatformOutletContext } from "./platform-context";
 
 function browserStorage() {
   try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
@@ -26,6 +27,12 @@ export function PlatformShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => browserStorage()?.getItem("noxhere.sidebar.collapsed") === "true");
   const selectedProject = bootstrap.data?.projects.find((project) => project.id === projectId);
   const isGuest = bootstrap.data?.actor.accessLevel === "guest";
+  const members = useQuery({
+    queryKey: ["platform", "members", organizationId],
+    queryFn: ({ signal }) => platformApi.members(organizationId, projectId, signal),
+    enabled: Boolean(selectedProject && !isGuest),
+    staleTime: 5 * 60_000,
+  });
   const visibleServices = services.filter((item) => !item.hidden && (!isGuest || bootstrap.data?.actor.allowedServiceIds.includes(item.id)));
   const guestFallback = visibleServices[0];
   const guestRouteForbidden = Boolean(isGuest && routeSegment && (routeSegment === "settings" || !visibleServices.some((item) => item.id === routeSegment)));
@@ -99,7 +106,13 @@ export function PlatformShell() {
               </div>
             </header>
             <div className="page-canvas">
-              <Outlet context={{ bootstrap: bootstrap.data, service }} />
+              <Outlet context={{
+                bootstrap: bootstrap.data,
+                members: members.data ?? [],
+                membersLoading: members.isLoading,
+                membersError: members.error,
+                retryMembers: () => { void members.refetch(); },
+              } satisfies PlatformOutletContext} />
             </div>
           </main>
         </div>

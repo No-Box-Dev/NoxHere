@@ -450,6 +450,36 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.queryByText("My task")).not.toBeInTheDocument();
   });
 
+  it("keeps known Planning owners assignable when the shared member directory fails", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/members") return json({ error: { code: "member_directory_unavailable", message: "Unavailable" } }, 503);
+      if (url === "/api/v1/features?state=all") return json([
+        { number: 61, title: "Owned already", state: "open", status: "todo", backlog: false, priority: 3, owners: ["JasperNoBoxDev"], description: "", links: [] },
+        { number: 62, title: "Needs owner", state: "open", status: "todo", backlog: false, priority: 3, owners: [], description: "", links: [] },
+      ]);
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    expect(await screen.findByText("Owned already")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Assign owner for Needs owner" }));
+    await user.click(screen.getByRole("combobox", { name: "Assign owner for Needs owner" }));
+
+    expect(screen.getByRole("option", { name: "JasperNoBoxDev" })).toBeInTheDocument();
+  });
+
+  it("loads one shared member directory for the shell and Settings", async () => {
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+
+    await user.click(await screen.findByRole("button", { name: "Toggle Members" }));
+    expect(await screen.findByText("JasperNoBoxDev")).toBeInTheDocument();
+    expect(vi.mocked(fetch).mock.calls.filter(([input]) => String(input) === "/api/v1/members")).toHaveLength(1);
+  });
+
   it("adds a task and optionally ties it to a feature", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     const feature = { number: 9, title: "New checkout", state: "open", status: "todo", backlog: false, priority: 3, owners: ["JasperNoBoxDev"], description: "", links: [], updatedAt: "2026-10-07T00:00:00Z" };

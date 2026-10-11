@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext, useParams } from "react-router-dom";
-import type { Bootstrap, GithubMember, ProjectSettings } from "../../api/contracts";
+import type { GithubMember, ProjectSettings } from "../../api/contracts";
 import { platformApi, projectSettingsQueryKey } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { StatusTag } from "../../components/StatusTag";
@@ -10,16 +10,16 @@ import { ApiTokens } from "./ApiTokens";
 import { Maintenance } from "./Maintenance";
 import { SlackMessageBridge } from "./SlackMessageBridge";
 import { SlackConnections } from "./SlackConnections";
+import type { PlatformOutletContext } from "../../app/platform-context";
 
 type SettingsSection = "repositories" | "members" | "slack-connections" | "slack-message" | "api-access" | "maintenance";
 
 export default function SettingsPage() {
   const { organizationId = "", projectId = "" } = useParams();
-  const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
+  const { bootstrap, members, membersLoading, membersError, retryMembers } = useOutletContext<PlatformOutletContext>();
   const queryClient = useQueryClient();
   const project = bootstrap.projects.find((item) => item.id === projectId) ?? bootstrap.projects[0];
   const projectName = project?.name ?? projectId;
-  const members = useQuery({ queryKey: ["platform", "members", organizationId, projectId], queryFn: ({ signal }) => platformApi.members(organizationId, projectId, signal) });
   const settingsKey = projectSettingsQueryKey(organizationId, projectId);
   const settings = useQuery({ queryKey: settingsKey, queryFn: ({ signal }) => platformApi.projectSettings(organizationId, projectId, signal) });
   const saveTracking = useMutation({
@@ -30,14 +30,14 @@ export default function SettingsPage() {
     },
   });
   const excluded = new Set(settings.data?.excludedMembers ?? []);
-  const trackedCount = (members.data ?? []).filter((member) => !excluded.has(member.login)).length;
+  const trackedCount = members.filter((member) => !excluded.has(member.login)).length;
   const connectedRepositories = project?.connections.filter((connection) => connection.provider === "github").map((connection) => connection.label.split("/").at(-1) ?? connection.label) ?? [];
   return <section><div className="connect-home connect-clean"><div className="connect-accordions">
     <SettingsAccordion id="repositories" symbol="R" title="Project repositories" description="Shared repository scope for every Nox capability" status={`${connectedRepositories.length} included`} initialOpen>
       <ProjectRepositories organizationId={organizationId} projectId={projectId} projectName={projectName} canManage={bootstrap.actor.isAdmin} connectedRepositories={connectedRepositories} />
     </SettingsAccordion>
-    <SettingsAccordion id="members" symbol="P" title="Members" description="GitHub members included in activity and people views" status={members.isLoading || settings.isLoading ? "Loading" : `${trackedCount}/${members.data?.length ?? 0} tracked`}>
-      <MembersTracking members={members.data ?? []} settings={settings.data ?? {}} loading={members.isLoading || settings.isLoading} saving={saveTracking.isPending} error={members.isError || settings.isError || saveTracking.isError} onToggle={(login) => {
+    <SettingsAccordion id="members" symbol="P" title="Members" description="GitHub members included in activity and people views" status={membersLoading || settings.isLoading ? "Loading" : `${trackedCount}/${members.length} tracked`}>
+      <MembersTracking members={members} settings={settings.data ?? {}} loading={membersLoading || settings.isLoading} saving={saveTracking.isPending} error={Boolean(membersError || settings.isError || saveTracking.isError)} retryMembers={retryMembers} onToggle={(login) => {
         const current = settings.data?.excludedMembers ?? [];
         const nextExcluded = excluded.has(login) ? current.filter((item) => item !== login) : [...current, login];
         saveTracking.mutate({ ...(settings.data ?? {}), excludedMembers: nextExcluded });
@@ -63,11 +63,11 @@ function SettingsAccordion({ id, symbol, title, description, status, children, i
   return <details className="connect-accordion" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}><summary role="button" aria-label={`Toggle ${title}`} aria-expanded={open}><span className="row-symbol">{symbol}</span><span className="connect-accordion-copy"><b>{title}</b><small>{description}</small></span><span className="connect-accordion-status">{status}</span><span className="connect-chevron" aria-hidden="true">⌄</span></summary><div className="connect-accordion-body" data-section={id}>{children}</div></details>;
 }
 
-function MembersTracking({ members, settings, loading, saving, error, onToggle }: { members: GithubMember[]; settings: ProjectSettings; loading: boolean; saving: boolean; error: boolean; onToggle: (login: string) => void }) {
+function MembersTracking({ members, settings, loading, saving, error, retryMembers, onToggle }: { members: GithubMember[]; settings: ProjectSettings; loading: boolean; saving: boolean; error: boolean; retryMembers: () => void; onToggle: (login: string) => void }) {
   const organizationMembers = members.filter((member) => member.kind === "human");
   const excluded = new Set(settings.excludedMembers ?? []);
   if (loading) return <div className="connect-empty"><b>Loading GitHub members</b><p>Reading the organization member directory…</p></div>;
-  if (error && organizationMembers.length === 0) return <div className="connect-empty"><b>Members could not be loaded</b><p>Try again after the GitHub member sync is available.</p></div>;
+  if (error && organizationMembers.length === 0) return <div className="connect-empty"><b>Members could not be loaded</b><p>The failure was not converted into an empty organization.</p><button type="button" className="button" onClick={retryMembers}>Retry</button></div>;
   return <>
     <div className="connect-inline-action"><p>GitHub members can access every capability. Tracking only controls whether their work appears in activity, ownership filters, and people statistics.</p><StatusTag tone="positive">Access unchanged</StatusTag></div>
     {organizationMembers.length ? <div className="list-surface settings-member-list">{organizationMembers.map((member) => {
