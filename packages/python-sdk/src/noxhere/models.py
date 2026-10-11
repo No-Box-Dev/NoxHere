@@ -579,7 +579,8 @@ class SlackMessageRequest(TypedDict, total=False):
     message: Required["SlackMessagePayload"]
 
 class SlackProjectAssignment(TypedDict, total=False):
-    projectId: Required[Union[str, None]]
+    displayName: NotRequired[Union[str, None]]
+    projectId: NotRequired[Union[str, None]]
 
 Spec: TypeAlias = ApiRecord
 

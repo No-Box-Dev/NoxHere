@@ -3,6 +3,7 @@ import { TransportExecutionError } from "../transport-outbox";
 import { resolveProjectSlackDestination, type ProjectRouteKey } from "../project-routing";
 import {
   postSlackMessage,
+  markSlackConnectionUsed,
   resolveSlackChannels,
   resolveSlackConnectionId,
   resolveSlackInstall,
@@ -146,6 +147,13 @@ export async function deliverResolvedSlackMessage(
       });
     }
     await markSlackChannelVerified(env.DB, input.orgId, install.id, input.channelId);
+    try {
+      await markSlackConnectionUsed(env.DB, input.orgId, install.id);
+    } catch (error) {
+      // Usage metadata is operational context, not part of Slack delivery.
+      // A bookkeeping failure must never retry a message Slack accepted.
+      console.error("Failed to record Slack connection usage", error);
+    }
     return { channelId: input.channelId, messageId };
   } catch (error) {
     try { await markSlackChannelIssue(env.DB, input.orgId, install.id, input.channelId, error); }

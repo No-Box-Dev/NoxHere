@@ -226,6 +226,12 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .settings-member-list .member-not-tracked { background: #faf9f7; }
 .settings-member-list .member-not-tracked .member-avatar,
 .settings-member-list .member-not-tracked .list-copy { opacity: .58; }
+.slack-connection-row { grid-template-columns: 32px minmax(210px, 1fr) minmax(430px, auto); }
+.slack-connection-controls { flex-wrap: wrap; max-width: 700px; white-space: normal; }
+.slack-connection-controls label { display: grid; gap: 3px; color: var(--muted); font-size: 7px; font-weight: 700; }
+.slack-connection-controls input, .slack-connection-controls select { min-width: 120px; height: 31px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--body); font-size: 8px; outline: none; }
+.slack-connection-controls input:focus, .slack-connection-controls select:focus { border-color: var(--service); box-shadow: 0 0 0 3px color-mix(in srgb, var(--service) 12%, transparent); }
+.slack-connection-controls .mini-button.danger { border-color: color-mix(in srgb, var(--red) 28%, var(--line)); background: var(--red-soft); color: var(--red); }
 .guest-invite-form { display: grid; grid-template-columns: minmax(220px, 1fr) 170px auto; align-items: end; gap: 9px; margin-top: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
 .guest-invite-form label { display: grid; gap: 5px; color: var(--muted); font-size: 8px; font-weight: 700; }
 .guest-invite-form input, .guest-invite-form select { min-width: 0; height: 38px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--body); font-size: 10px; outline: none; }
@@ -794,6 +800,8 @@ button.list-row:hover { background: var(--service-soft); }
   .stage-editor-row > span { display: none; }
   .list-row { grid-template-columns: 28px minmax(0, 1fr); }
   .list-meta { grid-column: 2; justify-content: flex-start; flex-wrap: wrap; }
+  .slack-connection-row { grid-template-columns: 32px minmax(0, 1fr); }
+  .slack-connection-controls { max-width: none; }
   .ticket-backlog-row, .ticket-priority-row { grid-template-columns: minmax(0, 1fr); }
   .ticket-backlog-row .list-copy, .ticket-backlog-row .list-meta,
   .ticket-priority-row .list-copy, .ticket-priority-row .list-meta { grid-column: 1; }

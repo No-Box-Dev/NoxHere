@@ -2,11 +2,15 @@ import { z } from "zod";
 import { getCtx, jsonResponse, errorResponse } from "../../../lib/db";
 import { validate } from "../../../lib/validate";
 
-const AssignmentSchema = z
+const ConnectionUpdateSchema = z
   .object({
-    projectId: z.string().trim().min(1).max(240).nullable(),
+    projectId: z.string().trim().min(1).max(240).nullable().optional(),
+    displayName: z.string().trim().min(1).max(80).nullable().optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => value.projectId !== undefined || value.displayName !== undefined, {
+    message: "Provide a project or display name to update",
+  });
 
 interface Context {
   request: Request;
@@ -29,13 +33,12 @@ export async function onRequestPatch(context: Context): Promise<Response> {
   } catch {
     return errorResponse("Invalid JSON body", 400);
   }
-  const parsed = validate(AssignmentSchema, body);
+  const parsed = validate(ConnectionUpdateSchema, body);
   if (!parsed.ok) return parsed.response;
-  const { projectId } = parsed.data;
 
   const [connection, count] = await Promise.all([
     context.env.DB.prepare(
-      "SELECT id FROM slack_connections WHERE id = ? AND org_id = ?",
+      "SELECT id, project_id, display_name FROM slack_connections WHERE id = ? AND org_id = ?",
     )
       .bind(connectionId, orgId)
       .first(),
@@ -46,6 +49,12 @@ export async function onRequestPatch(context: Context): Promise<Response> {
       .first<{ count: number }>(),
   ]);
   if (!connection) return errorResponse("Slack workspace not found", 404);
+  const projectId = parsed.data.projectId === undefined
+    ? String((connection as { project_id?: unknown }).project_id ?? "") || null
+    : parsed.data.projectId;
+  const displayName = parsed.data.displayName === undefined
+    ? ((connection as { display_name?: string | null }).display_name ?? null)
+    : parsed.data.displayName;
   if (!projectId && Number(count?.count ?? 0) > 1) {
     return errorResponse(
       "Every Slack workspace needs a project when more than one is connected",
@@ -68,10 +77,10 @@ export async function onRequestPatch(context: Context): Promise<Response> {
   }
 
   await context.env.DB.prepare(
-    "UPDATE slack_connections SET project_id = ? WHERE id = ? AND org_id = ?",
+    "UPDATE slack_connections SET project_id = ?, display_name = ? WHERE id = ? AND org_id = ?",
   )
-    .bind(projectId, connectionId, orgId)
+    .bind(projectId, displayName, connectionId, orgId)
     .run();
 
-  return jsonResponse({ ok: true, connectionId, projectId, projectName });
+  return jsonResponse({ ok: true, connectionId, projectId, projectName, displayName });
 }

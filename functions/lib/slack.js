@@ -118,8 +118,8 @@ export async function saveSlackInstall(env, orgId, install, projectId = null) {
   await env.DB.prepare(
     `INSERT INTO slack_connections
        (id, org_id, app_id, team_id, team_name, bot_user_id, encrypted_bot_token,
-       installed_by, installed_at, is_default, project_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), ?, ?)
+       installed_by, installed_at, is_default, project_id, opened_by, opened_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
      ON CONFLICT(org_id, team_id) DO UPDATE SET
        app_id = excluded.app_id,
        team_name = excluded.team_name,
@@ -132,7 +132,7 @@ export async function saveSlackInstall(env, orgId, install, projectId = null) {
        last_checked_at = NULL,
        last_error = NULL`,
   )
-    .bind(connectionId, orgId, install.appId ?? null, install.teamId, install.teamName ?? null, install.botUserId ?? null, encrypted, install.installedBy, defaultRow ? 0 : 1, projectId ?? existing?.project_id ?? null)
+    .bind(connectionId, orgId, install.appId ?? null, install.teamId, install.teamName ?? null, install.botUserId ?? null, encrypted, install.installedBy, defaultRow ? 0 : 1, projectId ?? existing?.project_id ?? null, install.installedBy)
     .run();
   return connectionId;
 }
@@ -141,6 +141,8 @@ export async function listSlackConnections(env, orgId) {
   if (!env?.DB || !orgId) return [];
   const { results } = await env.DB.prepare(
     `SELECT connection.id, connection.team_id, connection.team_name,
+            connection.display_name, connection.opened_by, connection.opened_at,
+            connection.installed_by, connection.installed_at, connection.last_used_at,
             connection.bot_user_id, connection.is_default,
             connection.health_status, connection.last_checked_at,
             connection.last_error, connection.app_id, connection.project_id,
@@ -152,11 +154,23 @@ export async function listSlackConnections(env, orgId) {
   ).bind(orgId).all();
   return (results ?? []).map((row) => ({
     id: row.id, teamId: row.team_id, teamName: row.team_name ?? row.team_id,
+    displayName: row.display_name ?? null,
+    createdBy: row.opened_by ?? row.installed_by,
+    createdAt: row.opened_at ?? row.installed_at,
+    connectedBy: row.installed_by,
+    connectedAt: row.installed_at,
+    lastUsedAt: row.last_used_at ?? null,
     botUserId: row.bot_user_id ?? null, isDefault: Boolean(row.is_default),
     health: row.health_status ?? "unknown", lastCheckedAt: row.last_checked_at ?? null,
     lastError: row.last_error ?? null, appId: row.app_id ?? null,
     projectId: row.project_id ?? null, projectName: row.project_name ?? null,
   }));
+}
+
+export async function markSlackConnectionUsed(db, orgId, connectionId) {
+  await db.prepare(
+    "UPDATE slack_connections SET last_used_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ? AND org_id = ?",
+  ).bind(connectionId, orgId).run();
 }
 
 export async function deleteSlackInstall(env, orgId, connectionId = null) {
