@@ -1,18 +1,19 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext, useParams } from "react-router-dom";
-import type { Bootstrap, GuestInvite, Project } from "../../api/contracts";
+import type { GithubMember, GuestInvite, Project } from "../../api/contracts";
 import { platformApi } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { StatusTag } from "../../components/StatusTag";
 import { ProjectRepositories } from "../../components/ProjectRepositories";
+import type { PlatformOutletContext } from "../../app/platform-context";
 
 type ConnectSection = "services" | "connections" | "people" | "repositories";
 const serviceRows = [["ticket", "P", "Planning", "Planning and delivery"], ["feed", "A", "Activity", "Engineering activity and releases"], ["spot", "F", "Feedback", "Reports and reporter messaging"], ["stats", "S", "Stats", "Product metrics and telemetry sources"], ["incidents", "I", "Incidents", "Product health and alerts"]] as const;
 
 export default function NoxConnectPage() {
   const { organizationId = "", projectId = "", view = "overview" } = useParams();
-  const { bootstrap } = useOutletContext<{ bootstrap: Bootstrap }>();
+  const { bootstrap, members, membersLoading, membersError, retryMembers } = useOutletContext<PlatformOutletContext>();
   const project = bootstrap.projects.find((item) => item.id === projectId) ?? bootstrap.projects[0];
   const projectName = project?.name ?? projectId;
   const isTestProject = project?.environment === "test";
@@ -26,8 +27,8 @@ export default function NoxConnectPage() {
           <Accordion id="connections" current={selected} symbol="C" title="Connections" description="GitHub and Slack capabilities for this project" status={connectionStatus(project)}>
             <Connections project={project} projectName={projectName} />
           </Accordion>
-          <Accordion id="people" current={selected} symbol="P" title="People and access" description={`Verified GitHub organization members with access to ${projectName}`} status={`${project?.members.length ?? 0} people`}>
-            <People project={project} organizationId={organizationId} projectId={projectId} canInvite={bootstrap.actor.isAdmin} />
+          <Accordion id="people" current={selected} symbol="P" title="People and access" description={`Verified GitHub organization members with access to ${projectName}`} status={membersLoading ? "Loading" : `${members.length} people`}>
+            <People members={members} membersLoading={membersLoading} membersError={membersError} retryMembers={retryMembers} organizationId={organizationId} projectId={projectId} canInvite={bootstrap.actor.isAdmin} />
           </Accordion>
           <Accordion id="repositories" current={selected} symbol="R" title="Project repositories" description="Repositories included across every capability" status={`${project?.connections.filter((connection) => connection.provider === "github").length ?? 0} included`}>
             <ProjectRepositories organizationId={organizationId} projectId={projectId} projectName={projectName} canManage={bootstrap.actor.isAdmin} connectedRepositories={repositoryNames(project)} />
@@ -55,7 +56,7 @@ function Connections({ project, projectName }: { project?: Project; projectName:
   return <><div className="list-surface">{project?.connections.map((connection) => <ListRow key={connection.id} symbol={connection.provider === "github" ? "G" : "S"} tone={connection.status === "connected" ? "positive" : "neutral"} title={connection.provider === "github" ? "GitHub" : "Slack"} description={`${connection.label} · ${connection.provider === "github" ? "repository data, issues and pull requests" : "alerts, reports and release delivery"}`} meta={<StatusTag tone={connection.status === "connected" ? "positive" : "warning"}>{connection.status === "connected" ? "Connected" : "Needs attention"}</StatusTag>} />)}</div><p className="section-note">Credentials are stored by NoxConnect for {projectName}; capabilities receive only the access they need.</p></>;
 }
 
-function People({ project, organizationId, projectId, canInvite }: { project?: Project; organizationId: string; projectId: string; canInvite: boolean }) {
+function People({ members, membersLoading, membersError, retryMembers, organizationId, projectId, canInvite }: { members: GithubMember[]; membersLoading: boolean; membersError: Error | null; retryMembers: () => void; organizationId: string; projectId: string; canInvite: boolean }) {
   const [showInvite, setShowInvite] = useState(false);
   const [email, setEmail] = useState("");
   const [serviceId, setServiceId] = useState<"all" | "ticket" | "feed" | "spot" | "cue">("all");
@@ -87,7 +88,11 @@ function People({ project, organizationId, projectId, canInvite }: { project?: P
       <button className="button primary-button" disabled={invite.isPending}>{invite.isPending ? "Sending…" : "Send invite"}</button>
       {invite.isError ? <span className="form-error" role="alert">{invite.error instanceof Error ? invite.error.message : "Invite could not be sent."}</span> : null}
     </form> : null}
-    {project?.members.length || grants.length || invitations.length ? <div className="list-surface member-list">{project?.members.map((member) => <div className="list-row" key={member.login}><img className="member-avatar" src={member.avatarUrl} alt="" /><span className="list-copy"><b>{member.login}</b><small>{member.role === "admin" ? "Organization admin" : "Organization member"} · Verified by GitHub</small></span><span className="list-meta"><StatusTag tone="positive">Active</StatusTag></span></div>)}{grants.map((guest) => <GuestRow key={guest.id} guest={guest} status="Active guest" />)}{invitations.map((pending) => <GuestRow key={pending.id} guest={pending} status="Invite pending" pending />)}</div> : <div className="connect-empty"><b>No verified organization members</b><p>Members appear after NoxConnect verifies their GitHub organization membership.</p></div>}
+    {membersLoading ? <div className="connect-empty"><b>Loading GitHub members</b><p>Reading the shared organization member directory…</p></div> : null}
+    {membersError && members.length === 0 ? <div className="connect-empty"><b>Members could not be loaded</b><p>The existing member directory was not replaced with an empty list.</p><button type="button" className="button" onClick={retryMembers}>Retry</button></div> : null}
+    {!membersLoading && (!membersError || members.length > 0) && (members.length || grants.length || invitations.length) ? <div className="list-surface member-list">{members.map((member) => <div className="list-row" key={member.login}><img className="member-avatar" src={member.avatar_url} alt="" /><span className="list-copy"><b>{member.login}</b><small>Organization member · Verified by GitHub</small></span><span className="list-meta"><StatusTag tone="positive">Active</StatusTag></span></div>)}{grants.map((guest) => <GuestRow key={guest.id} guest={guest} status="Active guest" />)}{invitations.map((pending) => <GuestRow key={pending.id} guest={pending} status="Invite pending" pending />)}</div> : null}
+    {!membersLoading && !membersError && !members.length && !grants.length && !invitations.length ? <div className="connect-empty"><b>No verified organization members</b><p>Members will appear after the GitHub organization sync completes.</p></div> : null}
+    {membersError && members.length > 0 ? <p className="form-error" role="alert">The member directory could not be refreshed. The last valid list remains available. <button type="button" className="link-button" onClick={retryMembers}>Retry</button></p> : null}
     <p className="section-note">Members come from the verified GitHub organization-member list. Guests are read-only, scoped to this project, and cannot open Settings or NoxConnect administration.</p>
   </>;
 }
