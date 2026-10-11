@@ -26,6 +26,7 @@ import {
   postSlackMessage,
   openSlackModal,
   listSlackChannels,
+  listSlackConnections,
 } from "../slack.js";
 
 describe("slackInstallNeedsReconnect", () => {
@@ -88,6 +89,27 @@ describe("saveSlackInstall", () => {
     expect(upsert.sql).toContain("health_status = 'unknown'");
     expect(upsert.sql).toContain("last_checked_at = NULL");
     expect(upsert.sql).toContain("last_error = NULL");
+  });
+});
+
+describe("listSlackConnections", () => {
+  it("returns connection ownership, reconnect, and usage metadata without tokens", async () => {
+    const rows = [{
+      id: "conn-1", team_id: "T1", team_name: "Acme", display_name: "Product alerts",
+      opened_by: "alice", opened_at: "2026-10-01T00:00:00Z",
+      installed_by: "bob", installed_at: "2026-10-02T00:00:00Z",
+      last_used_at: "2026-10-03T00:00:00Z", bot_user_id: "U1", is_default: 1,
+      health_status: "ok", last_checked_at: "2026-10-03T00:00:00Z",
+      last_error: null, app_id: "A1", project_id: "project-1", project_name: "Web",
+    }];
+    const statement = { bind: vi.fn(), all: vi.fn(async () => ({ results: rows })) };
+    statement.bind.mockReturnValue(statement);
+    const connections = await listSlackConnections({ DB: { prepare: vi.fn(() => statement) } }, 7);
+    expect(connections).toEqual([expect.objectContaining({
+      id: "conn-1", displayName: "Product alerts", createdBy: "alice",
+      connectedBy: "bob", lastUsedAt: "2026-10-03T00:00:00Z",
+    })]);
+    expect(connections[0]).not.toHaveProperty("encryptedBotToken");
   });
 });
 

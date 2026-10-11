@@ -14,7 +14,7 @@ function context({ count = 1, projectFound = true } = {}) {
               if (sql.includes("FROM projects"))
                 return projectFound ? { name: "Web" } : null;
               if (sql.includes("FROM slack_connections"))
-                return { id: "conn-1" };
+                return { id: "conn-1", project_id: "proj_acme_web", display_name: null };
               return null;
             },
             run: async () => ({ success: true }),
@@ -72,5 +72,17 @@ describe("PATCH /api/slack/connections/:id", () => {
       context({ projectFound: false }).value as never,
     );
     expect(response.status).toBe(404);
+  });
+
+  it("saves a custom connection name without changing its project", async () => {
+    const ctx = context();
+    ctx.value.request = new Request(ctx.value.request.url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: "Product alerts" }),
+    });
+    const response = await onRequestPatch(ctx.value as never);
+    expect(response.status).toBe(200);
+    expect(ctx.calls.some(({ sql, binds }) => sql.includes("UPDATE slack_connections") && binds[1] === "Product alerts")).toBe(true);
   });
 });

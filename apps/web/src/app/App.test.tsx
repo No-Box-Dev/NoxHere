@@ -73,7 +73,7 @@ beforeEach(() => {
     if (url.startsWith("/api/v1/integrations/connections")) return json({ github: { connected: true }, slack: { connected: false } });
     if (url === "/api/v1/integrations/slack/routing" && init?.method === "PATCH") return json({ routes: { noxticket: "C-FEATURES" }, connections: { noxticket: "conn-1" } });
     if (url === "/api/v1/integrations/slack/routing") return json({ routes: { noxticket: null }, connections: { noxticket: null } });
-    if (url === "/api/v1/slack/status") return json({ connected: true, defaultConnectionId: "conn-1", connections: [{ id: "conn-1", teamName: "No Box Dev", isDefault: true, projectId: project.id }] });
+    if (url === "/api/v1/slack/status") return json({ connected: true, defaultConnectionId: "conn-1", canConfigure: true, connections: [{ id: "conn-1", teamId: "T123", teamName: "No Box Dev", displayName: null, isDefault: true, projectId: project.id, projectName: project.name, createdBy: "jasper", createdAt: "2026-10-01T00:00:00Z", connectedBy: "jasper", connectedAt: "2026-10-01T00:00:00Z", lastUsedAt: "2026-10-07T00:00:00Z", health: "ok" }] });
     if (url.startsWith("/api/v1/slack/channels")) return json({ connectionId: "conn-1", channels: [{ id: "C-FEATURES", name: "feature-alerts", is_private: false, is_archived: false, is_member: true }] });
     if (url === "/api/v1/guests/invites" && init?.method === "POST") return json({ invitation: { id: "invite-1", email: "guest@example.com", scopeType: "project", projectId: project.id, service: null, expiresAt: "2026-09-27T00:00:00.000Z" } }, 201);
     if (url === "/api/v1/guests") return json({ grants: [], invitations: [] });
@@ -154,6 +154,28 @@ describe("NoxConnect API-backed platform", () => {
         blocks: [{ type: "image", image_url: "https://example.com/release.png", alt_text: "Release graph" }],
       },
     });
+  });
+
+  it("shows and manages organization Slack connections in Setup", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/slack/connections/conn-1" && init?.method === "PATCH") {
+        return json({ ok: true, connectionId: "conn-1", projectId: project.id, displayName: "Product alerts" });
+      }
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+
+    await user.click(await screen.findByRole("button", { name: "Toggle Slack connections" }));
+    expect(await screen.findByText(/Opened by jasper/)).toBeInTheDocument();
+    expect(screen.getByText(/Last used/)).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "Connection name for No Box Dev" }), "Product alerts");
+    await user.click(screen.getByRole("button", { name: "Save name" }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/slack/connections/conn-1", expect.objectContaining({ method: "PATCH" })));
+    const request = vi.mocked(fetch).mock.calls.find(([input, init]) => String(input) === "/api/v1/slack/connections/conn-1" && init?.method === "PATCH")?.[1];
+    expect(JSON.parse(String(request?.body))).toEqual({ displayName: "Product alerts" });
   });
 
   it("always shows a workspace and project selector after login", async () => {

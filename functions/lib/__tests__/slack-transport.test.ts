@@ -11,6 +11,7 @@ const provider = vi.hoisted(() => ({
   update: vi.fn(),
   verified: vi.fn(),
   channelIssue: vi.fn(),
+  used: vi.fn(),
 }));
 
 vi.mock("../project-routing", () => ({ resolveProjectSlackDestination: provider.projectRoute }));
@@ -22,6 +23,7 @@ vi.mock("../slack.js", () => ({
   slackInstallNeedsReconnect: provider.reconnect,
   postSlackMessage: provider.post,
   updateSlackMessage: provider.update,
+  markSlackConnectionUsed: provider.used,
 }));
 vi.mock("../slack-channel-status.js", () => ({
   markSlackChannelVerified: provider.verified,
@@ -52,10 +54,11 @@ describe("Slack transport adapter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     provider.projectRoute.mockResolvedValue({ connectionId: "connection-1", channelId: "C123" });
-    provider.install.mockResolvedValue({ botToken: "xoxb-secret" });
+    provider.install.mockResolvedValue({ id: "connection-1", botToken: "xoxb-secret" });
     provider.reconnect.mockReturnValue(false);
     provider.post.mockResolvedValue({ channel: "C123", ts: "100.1" });
     provider.update.mockResolvedValue({ channel: "C123", ts: "100.2" });
+    provider.used.mockResolvedValue(undefined);
   });
 
   it("resolves a neutral route and sends without producer-owned destinations", async () => {
@@ -65,6 +68,7 @@ describe("Slack transport adapter", () => {
     });
     expect(provider.projectRoute).toHaveBeenCalledWith({}, 7, "noxfeed_posts", { projectId: "project-1" });
     expect(provider.post).toHaveBeenCalledWith("xoxb-secret", "C123", { text: "hello", blocks: [] });
+    expect(provider.used).toHaveBeenCalledWith({}, 7, "connection-1");
   });
 
   it("uses the same adapter for updates", async () => {
@@ -79,6 +83,17 @@ describe("Slack transport adapter", () => {
       client_msg_id: "capture-1",
       blocks: [],
     });
+  });
+
+  it("does not retry a delivered message when usage bookkeeping fails", async () => {
+    provider.used.mockRejectedValueOnce(new Error("database unavailable"));
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(deliverSlackTransport({ DB: {} as D1Database }, command())).resolves.toEqual({
+      channelId: "C123",
+      messageId: "100.1",
+    });
+    expect(errorLog).toHaveBeenCalledWith("Failed to record Slack connection usage", expect.any(Error));
+    errorLog.mockRestore();
   });
 
   it("resolves a site-scoped feedback route inside the adapter", async () => {

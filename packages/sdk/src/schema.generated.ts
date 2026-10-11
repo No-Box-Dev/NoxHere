@@ -2189,8 +2189,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Assign a Slack workspace to a project
-         * @description One workspace may be organization-wide. With multiple workspaces, every connection requires a project.
+         * Manage a Slack workspace connection
+         * @description Set a recognizable display name or assign the workspace to a project. One workspace may be organization-wide; with multiple workspaces, every connection requires a project.
          */
         patch: operations["assignSlackConnectionProject"];
         trace?: never;
@@ -3565,8 +3565,10 @@ export interface components {
             message: components["schemas"]["SlackMessagePayload"];
         };
         SlackProjectAssignment: {
+            /** @description Optional organization-facing name for this connection. Null restores the Slack workspace name. */
+            displayName?: string | null;
             /** @description Project to own this workspace. Null is allowed only while it is the organization's sole workspace. */
-            projectId: string | null;
+            projectId?: string | null;
         };
         /** @description NoxTicket specification with its project, workflow state, content, and archive metadata. */
         Spec: components["schemas"]["ApiRecord"];

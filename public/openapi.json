@@ -3611,8 +3611,8 @@
     "/api/v1/slack/connections/{connectionId}": {
       "patch": {
         "operationId": "assignSlackConnectionProject",
-        "summary": "Assign a Slack workspace to a project",
-        "description": "One workspace may be organization-wide. With multiple workspaces, every connection requires a project.",
+        "summary": "Manage a Slack workspace connection",
+        "description": "Set a recognizable display name or assign the workspace to a project. One workspace may be organization-wide; with multiple workspaces, every connection requires a project.",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -13530,9 +13530,7 @@
       "SlackProjectAssignment": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "projectId"
-        ],
+        "minProperties": 1,
         "properties": {
           "projectId": {
             "type": [
@@ -13540,6 +13538,15 @@
               "null"
             ],
             "description": "Project to own this workspace. Null is allowed only while it is the organization's sole workspace."
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Optional organization-facing name for this connection. Null restores the Slack workspace name."
           }
         }
       },

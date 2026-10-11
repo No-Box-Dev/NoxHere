@@ -53,10 +53,23 @@ export const slackStatusSchema = z.object({
   defaultConnectionId: z.string().nullable(),
   connections: z.array(z.object({
     id: z.string(),
+    teamId: z.string(),
     teamName: z.string(),
+    displayName: z.string().nullable().optional(),
     isDefault: z.boolean(),
     projectId: z.string().nullable(),
+    projectName: z.string().nullable().optional(),
+    createdBy: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional(),
+    connectedBy: z.string().nullable().optional(),
+    connectedAt: z.string().nullable().optional(),
+    lastUsedAt: z.string().nullable().optional(),
+    health: z.string().optional(),
+    lastCheckedAt: z.string().nullable().optional(),
+    lastError: z.string().nullable().optional(),
+    needsReconnect: z.boolean().optional(),
   }).loose()),
+  canConfigure: z.boolean().optional(),
 }).loose();
 
 export const slackChannelsSchema = z.object({

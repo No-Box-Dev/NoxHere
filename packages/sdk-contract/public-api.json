@@ -3785,7 +3785,17 @@
       },
       "SlackProjectAssignment": {
         "additionalProperties": false,
+        "minProperties": 1,
         "properties": {
+          "displayName": {
+            "description": "Optional organization-facing name for this connection. Null restores the Slack workspace name.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "projectId": {
             "description": "Project to own this workspace. Null is allowed only while it is the organization's sole workspace.",
             "type": [
@@ -3794,9 +3804,6 @@
             ]
           }
         },
-        "required": [
-          "projectId"
-        ],
         "type": "object"
       },
       "Spec": {
@@ -12941,7 +12948,7 @@
     },
     "/api/v1/slack/connections/{connectionId}": {
       "patch": {
-        "description": "One workspace may be organization-wide. With multiple workspaces, every connection requires a project.",
+        "description": "Set a recognizable display name or assign the workspace to a project. One workspace may be organization-wide; with multiple workspaces, every connection requires a project.",
         "operationId": "assignSlackConnectionProject",
         "parameters": [
           {
@@ -12999,7 +13006,7 @@
             "organization": []
           }
         ],
-        "summary": "Assign a Slack workspace to a project",
+        "summary": "Manage a Slack workspace connection",
         "tags": [
           "NoxHere"
         ],
@@ -15640,7 +15647,7 @@
       "authentication": "admin",
       "automationScope": null,
       "changeSafety": "write_not_safe_to_retry",
-      "description": "One workspace may be organization-wide. With multiple workspaces, every connection requires a project.",
+      "description": "Set a recognizable display name or assign the workspace to a project. One workspace may be organization-wide; with multiple workspaces, every connection requires a project.",
       "id": "assignSlackConnectionProject",
       "method": "PATCH",
       "namespace": "workspace",
@@ -15709,7 +15716,7 @@
         }
       ],
       "servers": [],
-      "summary": "Assign a Slack workspace to a project",
+      "summary": "Manage a Slack workspace connection",
       "tag": "NoxHere"
     },
     {
@@ -27341,5 +27348,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "3f05e70d965b4a3a16f9f11f99509a1c2768e51695f9b90c5db65b13c215ab2a"
+  "x-sdk-source-sha256": "fe0ee75c01900ba7b5ff1fb7d90ab2e0e7850d2d89c1447bdfc05ecb607cb773"
 }
