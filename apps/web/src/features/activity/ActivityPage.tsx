@@ -1,16 +1,15 @@
 import { useCallback, useMemo } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useOutletContext, useParams } from "react-router-dom";
+import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
 import type { GithubMember, PlanningFeatureRecord } from "../../api/contracts";
 import { getRawJson } from "../../api/http";
 import { platformApi } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
-import { ActivitySettings } from "./ActivitySettings";
 import type { PlatformOutletContext } from "../../app/platform-context";
 
-const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"], ["settings", "Settings"]] as const;
+const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"]] as const;
 type WorkItem = { id: number; repo: string; number: number; title: string; state: string; author?: string; author_avatar?: string; assignees?: Array<{ login: string; avatar_url?: string }>; html_url?: string; updated_at?: string; draft?: boolean };
 type CurrentResult = { prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[]; members: GithubMember[]; excludedMembers: string[]; planningEnabled: boolean };
 type CurrentSummary = { prs: WorkItem[]; issues: WorkItem[]; members: GithubMember[]; excludedMembers: string[] };
@@ -76,13 +75,13 @@ export default function ActivityPage() {
   }, [organizationId, projectId, queryClient]);
 
   const base = `/${organizationId}/${projectId}/activity`;
+  if (isSettings) return <Navigate replace to={`/${organizationId}/${projectId}/settings/notifications`} />;
   const streamEvents = stream.data?.pages.flatMap((page) => page.events ?? []) ?? [];
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
     {(!isFeedStream && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}
     {(!isFeedStream && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Activity is unavailable" detail="The project activity API could not be reached. No placeholder activity is being shown." /> : null}
     {query.data && view === "current" ? <Current data={{ ...(query.data as CurrentResult), members }} base={base} person={person} /> : null}
     {stream.data && isFeedStream ? <Events events={streamEvents} releaseNotes={releaseNotes.data?.events ?? []} label={view} hasNextPage={stream.hasNextPage} loadingMore={stream.isFetchingNextPage} onLoadMore={() => void stream.fetchNextPage()} /> : null}
-    {isSettings ? <ActivitySettings organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}
   </div></section>;
 }
 

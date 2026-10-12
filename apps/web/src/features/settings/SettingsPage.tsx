@@ -1,21 +1,32 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useOutletContext, useParams } from "react-router-dom";
+import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
 import type { GithubMember, ProjectSettings } from "../../api/contracts";
 import { platformApi, projectSettingsQueryKey } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { StatusTag } from "../../components/StatusTag";
 import { ProjectRepositories } from "../../components/ProjectRepositories";
+import { SettingsPageHeader, SettingsSection, SettingsShell } from "../../components/SettingsShell";
+import { TelemetrySources } from "../../components/settings/TelemetrySources";
+import { NotificationSettings } from "../../components/settings/NotificationSettings";
+import { AlertRules } from "../../components/settings/AlertRules";
 import { ApiTokens } from "./ApiTokens";
 import { Maintenance } from "./Maintenance";
 import { SlackMessageBridge } from "./SlackMessageBridge";
 import { SlackConnections } from "./SlackConnections";
 import type { PlatformOutletContext } from "../../app/platform-context";
 
-type SettingsSection = "repositories" | "members" | "slack-connections" | "slack-message" | "api-access" | "maintenance";
+const settingsGroups = [
+  { items: [{ id: "project", label: "Project" }, { id: "people", label: "People & access" }] },
+  { label: "Integrations", items: [{ id: "integrations/github", label: "GitHub" }, { id: "integrations/slack", label: "Slack" }, { id: "integrations/telemetry", label: "Telemetry" }, { id: "integrations/api", label: "API access" }] },
+  { label: "Automation", items: [{ id: "notifications", label: "Notifications" }, { id: "alert-rules", label: "Alert rules" }] },
+  { label: "System", items: [{ id: "maintenance", label: "Maintenance" }] },
+] as const;
+
+const validSections = new Set<string>(settingsGroups.flatMap((group) => group.items.map((item) => item.id)));
 
 export default function SettingsPage() {
-  const { organizationId = "", projectId = "" } = useParams();
+  const { organizationId = "", projectId = "", section, detail } = useParams();
   const { bootstrap, members, membersLoading, membersError, retryMembers } = useOutletContext<PlatformOutletContext>();
   const queryClient = useQueryClient();
   const project = bootstrap.projects.find((item) => item.id === projectId) ?? bootstrap.projects[0];
@@ -32,35 +43,27 @@ export default function SettingsPage() {
   const excluded = new Set(settings.data?.excludedMembers ?? []);
   const trackedCount = members.filter((member) => !excluded.has(member.login)).length;
   const connectedRepositories = project?.connections.filter((connection) => connection.provider === "github").map((connection) => connection.label.split("/").at(-1) ?? connection.label) ?? [];
-  return <section><div className="connect-home connect-clean"><div className="connect-accordions">
-    <SettingsAccordion id="repositories" symbol="R" title="Project repositories" description="Shared repository scope for every Nox capability" status={`${connectedRepositories.length} included`} initialOpen>
-      <ProjectRepositories organizationId={organizationId} projectId={projectId} projectName={projectName} canManage={bootstrap.actor.isAdmin} connectedRepositories={connectedRepositories} />
-    </SettingsAccordion>
-    <SettingsAccordion id="members" symbol="P" title="Members" description="GitHub members included in activity and people views" status={membersLoading || settings.isLoading ? "Loading" : `${trackedCount}/${members.length} tracked`}>
-      <MembersTracking members={members} settings={settings.data ?? {}} loading={membersLoading || settings.isLoading} saving={saveTracking.isPending} error={Boolean(membersError || settings.isError || saveTracking.isError)} retryMembers={retryMembers} onToggle={(login) => {
-        const current = settings.data?.excludedMembers ?? [];
-        const nextExcluded = excluded.has(login) ? current.filter((item) => item !== login) : [...current, login];
-        saveTracking.mutate({ ...(settings.data ?? {}), excludedMembers: nextExcluded });
-      }} />
-    </SettingsAccordion>
-    <SettingsAccordion id="slack-connections" symbol="S" title="Slack connections" description="Add, name, assign, reconnect, and remove organization workspaces" status="Manage">
-      <SlackConnections organizationId={organizationId} projectId={projectId} projects={bootstrap.projects} isAdmin={bootstrap.actor.isAdmin} />
-    </SettingsAccordion>
-    <SettingsAccordion id="slack-message" symbol="S" title="Send to Slack" description="Compose a message using the connected Slack workspace" status="Message bridge">
-      <SlackMessageBridge organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} />
-    </SettingsAccordion>
-    <SettingsAccordion id="api-access" symbol="A" title="API access" description="Project tokens, scopes and developer documentation" status="Connected">
-      <ApiAccess organizationId={organizationId} projectId={projectId} projectName={projectName} isAdmin={bootstrap.actor.isAdmin} />
-    </SettingsAccordion>
-    <SettingsAccordion id="maintenance" symbol="M" title="Maintenance" description="Synchronization, recovery and background operations" status="Connected">
-      <Maintenance organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} />
-    </SettingsAccordion>
-  </div><div className="callout"><div><b>Projects belong to NoxHere</b><p>Change the active project with the NoxHere project picker; settings then apply to that selected project.</p></div><StatusTag tone="positive">Boundary enforced</StatusTag></div></div></section>;
-}
+  if (!section) return <Navigate replace to={`/${organizationId}/${projectId}/settings/project`} />;
+  const requestedSection = detail ? `${section}/${detail}` : section ?? "project";
+  if (!validSections.has(requestedSection)) return <Navigate replace to={`/${organizationId}/${projectId}/settings/project`} />;
+  const base = `/${organizationId}/${projectId}/settings`;
+  const tracking = <MembersTracking members={members} settings={settings.data ?? {}} loading={membersLoading || settings.isLoading} saving={saveTracking.isPending} error={Boolean(membersError || settings.isError || saveTracking.isError)} retryMembers={retryMembers} onToggle={(login) => {
+    const current = settings.data?.excludedMembers ?? [];
+    const nextExcluded = excluded.has(login) ? current.filter((item) => item !== login) : [...current, login];
+    saveTracking.mutate({ ...(settings.data ?? {}), excludedMembers: nextExcluded });
+  }} />;
 
-function SettingsAccordion({ id, symbol, title, description, status, children, initialOpen = false }: { id: SettingsSection; symbol: string; title: string; description: string; status: string; children: ReactNode; initialOpen?: boolean }) {
-  const [open, setOpen] = useState(initialOpen);
-  return <details className="connect-accordion" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}><summary role="button" aria-label={`Toggle ${title}`} aria-expanded={open}><span className="row-symbol">{symbol}</span><span className="connect-accordion-copy"><b>{title}</b><small>{description}</small></span><span className="connect-accordion-status">{status}</span><span className="connect-chevron" aria-hidden="true">⌄</span></summary><div className="connect-accordion-body" data-section={id}>{children}</div></details>;
+  return <SettingsShell base={base} active={requestedSection} groups={settingsGroups}>
+    {requestedSection === "project" ? <><SettingsPageHeader title="Project" description="Review the identity and shared scope for this project." /><SettingsSection title="Project details"><div className="settings-card"><div className="list-surface"><ListRow symbol="P" title={projectName} description={`Project ID · ${projectId}`} meta={<StatusTag tone="positive">{project?.environment ?? "Production"}</StatusTag>} /><ListRow symbol="R" title={`${connectedRepositories.length} repositories`} description="Repository scope is managed through the GitHub integration." meta={<Link className="mini-button" to={`${base}/integrations/github`}>Manage GitHub</Link>} /></div></div></SettingsSection></> : null}
+    {requestedSection === "people" ? <><SettingsPageHeader title="People & access" description="Control who is represented in project activity and ownership views." scope="Workspace" /><SettingsSection title="Tracked members" description={membersLoading || settings.isLoading ? "Loading member directory…" : `${trackedCount} of ${members.length} members tracked.`}>{tracking}</SettingsSection></> : null}
+    {requestedSection === "integrations/github" ? <><SettingsPageHeader title="GitHub" description="Manage the repositories that supply work, issues, and delivery activity." /><SettingsSection title="Repository access"><ProjectRepositories organizationId={organizationId} projectId={projectId} projectName={projectName} canManage={bootstrap.actor.isAdmin} connectedRepositories={connectedRepositories} /></SettingsSection></> : null}
+    {requestedSection === "integrations/slack" ? <><SettingsPageHeader title="Slack" description="Manage workspace connections and verify message delivery." scope="Workspace" /><SettingsSection title="Connections"><SlackConnections organizationId={organizationId} projectId={projectId} projects={bootstrap.projects} isAdmin={bootstrap.actor.isAdmin} /></SettingsSection><SettingsSection title="Delivery test" description="Send a test message through a connected workspace."><SlackMessageBridge organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /></SettingsSection></> : null}
+    {requestedSection === "integrations/telemetry" ? <><SettingsPageHeader title="Telemetry" description="Manage product data sources, ingest credentials, schedules, and report cards." /><TelemetrySources organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /></> : null}
+    {requestedSection === "integrations/api" ? <><SettingsPageHeader title="API access" description="Create project credentials and review the API surface." /><ApiAccess organizationId={organizationId} projectId={projectId} projectName={projectName} isAdmin={bootstrap.actor.isAdmin} /></> : null}
+    {requestedSection === "notifications" ? <><SettingsPageHeader title="Notifications" description="Choose where delivery updates and summaries are sent." /><NotificationSettings organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /></> : null}
+    {requestedSection === "alert-rules" ? <><SettingsPageHeader title="Alert rules" description="Review the rules that create operational incidents." /><AlertRules organizationId={organizationId} projectId={projectId} /></> : null}
+    {requestedSection === "maintenance" ? <><SettingsPageHeader title="Maintenance" description="Run recovery workflows and inspect background failures." /><Maintenance organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /></> : null}
+  </SettingsShell>;
 }
 
 function MembersTracking({ members, settings, loading, saving, error, retryMembers, onToggle }: { members: GithubMember[]; settings: ProjectSettings; loading: boolean; saving: boolean; error: boolean; retryMembers: () => void; onToggle: (login: string) => void }) {

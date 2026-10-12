@@ -13,24 +13,24 @@ test("keeps administration in Settings and NoxHere last", async ({ page }) => {
   await expect(page.getByText("Maintenance", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Projects belong to NoxHere", { exact: true })).toHaveCount(0);
   const productLinks = page.locator(".service-nav a");
-  await expect(productLinks.last()).toHaveText("NoxHere");
+  await expect(productLinks.last()).toHaveText("Connections");
   await page.getByRole("link", { name: /settings/i }).click();
-  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page).toHaveURL(/\/settings\/project$/);
   await expect(page.getByText("API access", { exact: true })).toBeVisible();
   await expect(page.getByText("Maintenance", { exact: true })).toBeVisible();
-  await expect(page.getByText("Projects belong to NoxHere", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Project" })).toBeVisible();
 });
 
 test("collapses the capability sidebar and remembers the preference", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/activity/current");
   const nav = page.locator(".service-nav");
-  await expect(nav.locator("a").last()).toHaveAccessibleName("NoxHere");
+  await expect(nav.locator("a").last()).toHaveAccessibleName("Connections");
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
   await expect(page.locator(".platform")).toHaveClass(/sidebar-collapsed/);
   await expect(nav.locator(".service-icon").first()).toBeVisible();
   await page.reload();
   await expect(page.locator(".platform")).toHaveClass(/sidebar-collapsed/);
-  await expect(page.locator(".service-nav a").last()).toHaveAccessibleName("NoxHere");
+  await expect(page.locator(".service-nav a").last()).toHaveAccessibleName("Connections");
 });
 
 test("shows the real project catalog without Test Project", async ({ page }) => {
@@ -70,12 +70,10 @@ const serviceRoutes = [
   ["/no-box-dev/proj_no-box-dev_playnist/activity/merged", "Merged"],
   ["/no-box-dev/proj_no-box-dev_playnist/incidents/issues", "Issues"],
   ["/no-box-dev/proj_no-box-dev_playnist/incidents/alerts", "Incidents"],
-  ["/no-box-dev/proj_no-box-dev_playnist/incidents/rules", "Rules"],
   ["/no-box-dev/proj_no-box-dev_playnist/feedback/issues", "Open"],
   ["/no-box-dev/proj_no-box-dev_playnist/feedback/resolved", "Resolved"],
   ["/no-box-dev/proj_no-box-dev_playnist/feedback/widgets", "Widgets"],
   ["/no-box-dev/proj_no-box-dev_playnist/feedback/messaging", "Messaging"],
-  ["/no-box-dev/proj_no-box-dev_playnist/stats/overview", "Overview"],
 ] as const;
 
 test("opens every service tab without a page failure", async ({ page }) => {
@@ -112,9 +110,18 @@ test("opens each NoxHere section and project settings controls", async ({ page }
   await expect(capabilities.getByText("Available", { exact: true })).toHaveCount(5);
 
   await page.getByRole("link", { name: /settings/i }).click();
-  await expect(page.getByText("Members", { exact: true })).toBeVisible();
+  await expect(page.getByText("People & access", { exact: true })).toBeVisible();
   await expect(page.getByText("API access", { exact: true })).toBeVisible();
   await expect(page.getByText("Maintenance", { exact: true })).toBeVisible();
+});
+
+test("opens canonical settings sections and redirects contextual configuration", async ({ page }) => {
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/settings/people");
+  await expect(page.getByRole("heading", { name: "People & access" })).toBeVisible({ timeout: 30_000 });
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/stats/sources");
+  await expect(page).toHaveURL(/\/settings\/integrations\/telemetry$/);
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/incidents/rules");
+  await expect(page).toHaveURL(/\/settings\/alert-rules$/);
 });
 
 test("shows Playnist merged work with its real release notes", async ({ page }) => {

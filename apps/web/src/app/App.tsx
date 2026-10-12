@@ -31,6 +31,8 @@ export function App() {
             <Route path="feedback/:view" element={<FeedbackPage />} />
             <Route path="key/:view" element={<NoxKeyPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings/:section" element={<SettingsPage />} />
+            <Route path="settings/:section/:detail" element={<SettingsPage />} />
             <Route path="connect/:view" element={<LegacyCapabilityRoute capability="connections" />} />
             <Route path="ticket/:view" element={<LegacyCapabilityRoute capability="planning" />} />
             <Route path="feed/:view" element={<LegacyCapabilityRoute capability="activity" />} />
@@ -59,7 +61,7 @@ function LegacyCapabilityRoute({ capability }: { capability: "connections" | "pl
 
 function LegacyTelemetryRoute() {
   const { organizationId = "", projectId = "", view = "stats" } = useParams();
-  const destination = view === "alerts" ? "incidents/alerts" : view === "sources" ? "stats/sources" : "stats/overview";
+  const destination = view === "alerts" ? "incidents/alerts" : view === "sources" ? "settings/integrations/telemetry" : "stats/overview";
   return <Navigate replace to={`/${organizationId}/${projectId}/${destination}`} />;
 }
 
