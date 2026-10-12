@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>No-Box-Dev — Highlights</title>
+<style>
+  @font-face { font-family:'Aeonik'; src:url('file:///Users/jaspermiddendorp/noboxdev/codebase/noboxdev/public/fonts/Aeonik-regular.ttf') format('truetype'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'Arbeit'; src:url('file:///Users/jaspermiddendorp/noboxdev/codebase/noboxdev/public/fonts/Arbeit-Regular.otf') format('opentype'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'Arbeit'; src:url('file:///Users/jaspermiddendorp/noboxdev/codebase/noboxdev/public/fonts/Arbeit-Bold.otf') format('opentype'); font-weight:700; font-display:swap; }
+  :root { --dark:#1A1A1A; --coral:#FE795D; --purple:#9B78F4; --purple-d:#7B5CD4; --ink:#1A1A1A; --muted:#5d5b56; --line:#e7e3dc; --chip:#f1ede5; }
+  @page { size:A4; margin:12mm 12mm; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; color:var(--ink); background:#fff;
+    font-family:'Arbeit',-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    font-size:9.2pt; line-height:1.45; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h1,h2,.disp { font-family:'Aeonik','Arbeit',sans-serif; }
+
+  .mast { display:flex; align-items:center; gap:13px; padding-bottom:9px; border-bottom:2px solid var(--dark); margin-bottom:12px; }
+  .mast .logo { height:25px; width:auto; color:var(--dark); }
+  .mast .who { font-family:'Aeonik','Arbeit',sans-serif; font-weight:700; font-size:11pt; color:var(--dark); }
+  .mast .sub { font-size:8pt; color:var(--muted); margin-left:auto; text-align:right; }
+
+  .sec-h { font-family:'Aeonik','Arbeit',sans-serif; font-size:9pt; font-weight:700; letter-spacing:0.13em; text-transform:uppercase; color:var(--coral); margin:0 0 8px; }
+
+  .hl { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .card { border:1px solid var(--line); border-radius:12px; padding:11px 14px 12px; break-inside:avoid; position:relative; border-top:3px solid var(--purple); }
+  .card.coral { border-top-color:var(--coral); }
+  .card .cat { font-size:6.8pt; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--purple-d); }
+  .card.coral .cat { color:#c8431c; }
+  .card .n { font-family:'Aeonik','Arbeit',sans-serif; font-weight:700; font-size:13pt; color:var(--ink); margin:2px 0 3px; line-height:1.1; }
+  .card .d { font-size:8.4pt; color:#3a3833; line-height:1.4; }
+  .chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; }
+  .chip { font-size:6.6pt; font-weight:700; color:#3a3833; background:var(--chip); padding:1px 6px; border-radius:8px; }
+  .link { display:inline-block; margin-top:7px; font-size:8.6pt; font-weight:700; color:var(--purple-d); text-decoration:none; }
+  .card.coral .link { color:#c8431c; }
+  .link .arr { color:var(--coral); }
+
+  .tech { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; margin-top:3px; }
+  .trow { break-inside:avoid; }
+  .trow .l { font-family:'Aeonik','Arbeit',sans-serif; font-size:7.6pt; font-weight:700; color:var(--dark); }
+  .trow .v { font-size:7.7pt; color:#3a3833; line-height:1.35; }
+
+  .note { font-size:7.4pt; color:var(--muted); margin-top:7px; font-style:italic; }
+  .foot { margin-top:11px; padding-top:7px; border-top:1px solid var(--line); font-size:7.4pt; color:var(--muted); display:flex; gap:16px; }
+  .foot a { color:var(--purple-d); text-decoration:none; font-weight:600; }
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <svg class="logo" viewBox="0 0 1822 275" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div><div class="who">Jasper Middendorp · No-Box-Dev</div></div>
+  <div class="sub">Software studio — native macOS, edge &amp; web, mobile, 3D, AI-native</div>
+</div>
+
+<div class="sec-h">Highlights — live &amp; public</div>
+<div class="hl">
+  <div class="card coral">
+    <div class="cat">macOS · Security</div>
+    <div class="n">NoxKey</div>
+    <div class="d">A Keychain-grade secret manager for macOS — Touch ID unlock, with an MCP server so AI agents can read secrets on demand.</div>
+    <div class="chips"><span class="chip">SwiftUI</span><span class="chip">macOS</span><span class="chip">Keychain</span><span class="chip">MCP</span><span class="chip">App Store</span></div>
+    <a class="link" href="https://apps.apple.com/app/noxkey/id6760210699"><span class="arr">↗</span> Mac App Store</a>
+  </div>
+  <div class="card">
+    <div class="cat">Web · AI platform</div>
+    <div class="n">unticket</div>
+    <div class="d">AI project management that ingests your GitHub org and narrates every PR as a first-person team update.</div>
+    <div class="chips"><span class="chip">Next.js</span><span class="chip">Cloudflare</span><span class="chip">D1</span><span class="chip">LLM pipeline</span></div>
+    <a class="link" href="https://app.unticket.ai"><span class="arr">↗</span> app.unticket.ai</a>
+  </div>
+  <div class="card">
+    <div class="cat">Web · Social</div>
+    <div class="n">Playnist</div>
+    <div class="d">A gaming social app — collect games, publish journals, follow people and boards, discover what to play next.</div>
+    <div class="chips"><span class="chip">React 19</span><span class="chip">Hono</span><span class="chip">D1</span><span class="chip">R2</span><span class="chip">Better-Auth</span></div>
+    <a class="link" href="https://app.playnist.com"><span class="arr">↗</span> app.playnist.com</a>
+  </div>
+  <div class="card coral">
+    <div class="cat">Web · SaaS</div>
+    <div class="n">NoxSpot</div>
+    <div class="d">A bug-reporting widget: capture and annotate screenshots from any site, then file them as GitHub issues.</div>
+    <div class="chips"><span class="chip">Workers</span><span class="chip">D1</span><span class="chip">R2</span><span class="chip">Hono</span></div>
+    <a class="link" href="https://app.noxspot.dev"><span class="arr">↗</span> app.noxspot.dev</a>
+  </div>
+  <div class="card coral">
+    <div class="cat">Web · Insurance platform</div>
+    <div class="n">112Schade</div>
+    <div class="d">Line-of-business insurance claim management — intake, processing, and notifications end to end.</div>
+    <div class="chips"><span class="chip">Next.js 16</span><span class="chip">Cloudflare</span><span class="chip">FastAPI</span><span class="chip">Better-Auth</span><span class="chip">Postmark</span></div>
+    <a class="link" href="https://app.112schade.nl"><span class="arr">↗</span> app.112schade.nl</a>
+  </div>
+  <div class="card">
+    <div class="cat">iOS · Health</div>
+    <div class="n">Baseline</div>
+    <div class="d">A stress-reset and health app for iOS — track where you are and reset your baseline.</div>
+    <div class="chips"><span class="chip">SwiftUI</span><span class="chip">iOS</span><span class="chip">App Store</span></div>
+    <a class="link" href="https://apps.apple.com/us/app/baseline-stress-reset/id6758278067"><span class="arr">↗</span> App Store</a>
+  </div>
+</div>
+
+<div class="sec-h" style="margin-top:14px">Technical knowledge</div>
+<div class="tech">
+  <div class="trow"><div class="l">Languages</div><div class="v">Swift · Rust · TypeScript · Python · SQL · Ruby</div></div>
+  <div class="trow"><div class="l">macOS native</div><div class="v">SwiftUI · App Sandbox · Keychain + Touch ID · MenuBarExtra · in-app MCP servers (Unix socket) · code-signing / notarization / Mac App Store · fastlane</div></div>
+  <div class="trow"><div class="l">Web &amp; edge</div><div class="v">React 19 / Next.js · Hono · Vite · Cloudflare Workers / Pages / D1 / R2 / Queues · OpenNext · Better-Auth · Drizzle · TanStack Query</div></div>
+  <div class="trow"><div class="l">Data &amp; APIs</div><div class="v">SQLite / D1 · FastAPI · idempotent ingest + reconcile + dedup · GitHub device-flow OAuth · Postmark</div></div>
+  <div class="trow"><div class="l">Games &amp; 3D</div><div class="v">Bevy ECS (Rust) · asset pipelines · single-source-of-truth model library (catalog.ron) · 3D editors</div></div>
+  <div class="trow"><div class="l">AI-native</div><div class="v">Anthropic SDK · headless <code>claude -p</code> agent orchestration · production LLM pipelines (webhook → queue → narrator → store) · MCP-first tool design</div></div>
+</div>
+<p class="note">Additional products built or in development (private): NoxViewer, NoxFeed, NoxPilot, Robin, noboxedu, Boundless Learning, NoxLink, Nox Agents, Character Gallery, AidenArena, wow-arena-db — details on request.</p>
+
+<div class="foot">
+  <a href="https://noboxdev.com">noboxdev.com</a>
+  <a href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a>
+  <a href="https://nl.linkedin.com/in/jaspermiddendorp">linkedin.com/in/jaspermiddendorp</a>
+</div>
+
+</body>
+</html>
