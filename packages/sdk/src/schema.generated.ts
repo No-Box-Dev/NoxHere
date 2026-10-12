@@ -2611,6 +2611,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/task-workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a personal task workflow
+         * @description Get the task columns chosen by a project member, or the standard Getting Things Done workflow when they have not customized them. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getPersonalTaskWorkflow"];
+        /**
+         * Replace a personal task workflow
+         * @description Replace the signed-in member's personal task columns. Each member can change only their own workflow. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["putPersonalTaskWorkflow"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks": {
         parameters: {
             query?: never;
@@ -3282,7 +3306,7 @@ export interface components {
             note?: string;
             owner?: string;
             position?: number;
-            /** @default todo */
+            /** @default inbox */
             stageId: string;
             title: string;
         };
@@ -3671,6 +3695,26 @@ export interface components {
             range: string;
             reportStatus: string;
             stats: components["schemas"]["StatCard"][];
+        };
+        TaskStage: {
+            color: string;
+            completed?: boolean;
+            id: string;
+            label: string;
+        };
+        TaskWorkflow: {
+            owner: string;
+            /** @enum {string} */
+            source: "gtd-default" | "custom";
+            stages: components["schemas"]["TaskStage"][];
+            /** Format: date-time */
+            updatedAt: string | null;
+        };
+        TaskWorkflowPut: {
+            /** @description Defaults to the signed-in member and must match the signed-in member when provided. */
+            owner?: string;
+            /** @description Ordered personal columns. Exactly one stage must set completed to true. */
+            stages: components["schemas"]["TaskStage"][];
         };
         UserAction: {
             provider: string;
@@ -8884,6 +8928,72 @@ export interface operations {
             403: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["RateLimited"];
+        };
+    };
+    getPersonalTaskWorkflow: {
+        parameters: {
+            query?: {
+                /** @description GitHub login whose personal task workflow should be returned. Defaults to the signed-in member. */
+                owner?: string;
+            };
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personal task workflow */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskWorkflow"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["V1Error"];
+        };
+    };
+    putPersonalTaskWorkflow: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskWorkflowPut"];
+            };
+        };
+        responses: {
+            /** @description Personal task workflow replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskWorkflow"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            422: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["V1Error"];
         };
     };
     listPlanningTasks: {

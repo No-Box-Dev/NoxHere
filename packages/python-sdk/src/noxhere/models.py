@@ -644,6 +644,22 @@ class StatsDashboard(TypedDict, total=False):
     reportStatus: Required[str]
     stats: Required[list["StatCard"]]
 
+class TaskStage(TypedDict, total=False):
+    color: Required[str]
+    completed: NotRequired[bool]
+    id: Required[str]
+    label: Required[str]
+
+class TaskWorkflow(TypedDict, total=False):
+    owner: Required[str]
+    source: Required[Literal['gtd-default', 'custom']]
+    stages: Required[list["TaskStage"]]
+    updatedAt: Required[Union[str, None]]
+
+class TaskWorkflowPut(TypedDict, total=False):
+    owner: NotRequired[str]
+    stages: Required[list["TaskStage"]]
+
 class UserAction(TypedDict, total=False):
     provider: Required[str]
     resume: Required[dict[str, Any]]
@@ -782,6 +798,9 @@ class GetNoxServiceSetupPath(TypedDict, total=False):
 
 class GetNoxSpotResolutionTemplatePath(TypedDict, total=False):
     siteId: Required[str]
+
+class GetPersonalTaskWorkflowQuery(TypedDict, total=False):
+    owner: NotRequired[str]
 
 class GetProjectActivityPath(TypedDict, total=False):
     projectId: Required[str]

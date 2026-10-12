@@ -64,7 +64,7 @@ export async function createTask(db: D1Database, scope: TicketScope, input: unkn
   const timestamp = now();
   const row = await db.prepare(`INSERT INTO planning_tasks (id, org_id, project_id, title, note, owner_login, created_by, color, feature_id, stage_id, position, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING ${COLUMNS}`)
-    .bind(crypto.randomUUID(), scope.orgId, scope.projectId, parsed.data.title, parsed.data.note ?? "", parsed.data.owner ?? scope.userLogin, scope.userLogin, parsed.data.color ?? "gray", parsed.data.featureNumber ?? null, parsed.data.stageId ?? "todo", parsed.data.position ?? 0, timestamp, timestamp).first<TaskRow>();
+    .bind(crypto.randomUUID(), scope.orgId, scope.projectId, parsed.data.title, parsed.data.note ?? "", parsed.data.owner ?? scope.userLogin, scope.userLogin, parsed.data.color ?? "gray", parsed.data.featureNumber ?? null, parsed.data.stageId ?? "inbox", parsed.data.position ?? 0, timestamp, timestamp).first<TaskRow>();
   if (!row) throw new Error("Task insert returned no row");
   return ok(toDto(row), 201);
 }

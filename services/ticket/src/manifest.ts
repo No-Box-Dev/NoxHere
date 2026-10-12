@@ -20,6 +20,8 @@ export const NOXTICKET_MANIFEST = {
         { id: "create_task", method: "POST", path: "/api/tasks", authentication: "member", description: "Create a general or feature-linked task." },
         { id: "update_task", method: "PATCH", path: "/api/tasks/{id}", authentication: "member", description: "Update or complete a task." },
         { id: "delete_task", method: "DELETE", path: "/api/tasks/{id}", authentication: "member", description: "Delete a task." },
+        { id: "get_task_workflow", method: "GET", path: "/api/task-workflows", authentication: "member", description: "Read a person's task workflow, defaulting to GTD." },
+        { id: "put_task_workflow", method: "PUT", path: "/api/task-workflows", authentication: "member", description: "Customize the caller's personal task workflow." },
       ] },
       { id: "workflow", name: "Workflow", description: "Define the stages used by the feature board.", access: "admin", operations: [
         { id: "get_ticket_config", method: "GET", path: "/api/v1/services/noxticket/config", authentication: "member", description: "Read the feature repository and workflow stages." },

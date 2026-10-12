@@ -278,6 +278,9 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .task-card .ticket-assignee { cursor: default; }
 .task-card-feature { display: block; margin-top: 8px; overflow: hidden; color: var(--muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 .task-board { grid-auto-columns: max(200px, calc((100% - 48px) / 5)); }
+.personal-workflow-label { color: var(--muted); font-size: 9px; font-weight: 700; }
+.personal-task-workflow { margin: 0 0 14px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #f8f7f5; }
+.personal-task-workflow .settings-section { margin: 0 0 10px; padding: 0; border: 0; background: transparent; box-shadow: none; }
 @media (max-width: 760px) { .task-composer { grid-template-columns: 1fr 1fr; } .task-composer > input { grid-column: 1 / -1; } }
 .ticket-card:focus-within, .ticket-card:has(.ticket-assignee-menu), .ticket-card:has(.priority-picker-menu), .ticket-card:has(.ticket-card-menu) { z-index: 50; }
 .ticket-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
