@@ -359,6 +359,6 @@ export type TelemetryAlertRule = z.infer<typeof telemetryAlertRuleSchema>;
 export type RetrievalResult = z.infer<typeof retrievalResultSchema>;
 export type PlanningFeatureRecord = z.infer<typeof planningFeatureSchema>;
 export type PlanningTask = z.infer<typeof planningTaskSchema>;
-export type PlanningFeatureAttachment = z.infer<typeof planningFeatureAttachmentSchema>;
 export type TaskStage = z.infer<typeof taskStageSchema>;
 export type TaskWorkflow = z.infer<typeof taskWorkflowSchema>;
+export type PlanningFeatureAttachment = z.infer<typeof planningFeatureAttachmentSchema>;

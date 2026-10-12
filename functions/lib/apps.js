@@ -21,15 +21,9 @@ export async function isAppEnabledForOwner(..._ignored) {
 }
 
 export function appForApiPath(pathname) {
-  if (/^\/api\/v1\/projects\/[^/]+\/telemetry(?:\/|$)/.test(pathname)) return "telemetry";
   pathname = compatibilityApiPath(pathname);
   const shared = serviceForApiPath(pathname);
   if (shared) return shared;
-  if (/^\/api\/projects\/[^/]+\/activity$/.test(pathname)) return "activity";
-  if (/^\/api\/projects\/[^/]+\/issues$/.test(pathname)) return "activity";
-  if (/^\/api\/projects\/[^/]+\/incidents$/.test(pathname)) return "telemetry";
-  if (/^\/api\/projects\/[^/]+\/incidents\/[^/]+$/.test(pathname)) return "telemetry";
-  if (/^\/api\/projects\/[^/]+\/feedback$/.test(pathname)) return "feedback";
   if (/^\/api\/config(?:\/|$)/.test(pathname)) return "noxhere";
   if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(pathname)) {
     return "planning";

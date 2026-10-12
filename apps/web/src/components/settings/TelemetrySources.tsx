@@ -60,7 +60,7 @@ function SourceSchedule({ source, scope, isAdmin, onSaved }: { source: Telemetry
 type TelemetryCard = { metricKey: string; enabled: boolean; dailyLabel: string | null; cumulativeLabel: string | null; perActiveEnabled: boolean };
 
 function TelemetryCardEditor({ sourceId, scope, isAdmin }: { sourceId: string; scope: { organizationId: string; projectId: string }; isAdmin: boolean }) {
-  const query = useQuery({ queryKey: ["cue-cards", sourceId], queryFn: ({ signal }) => getRawJson(`/api/v1/telemetry/sources/${encodeURIComponent(sourceId)}/cards`, signal, scope) as Promise<{ cards?: TelemetryCard[] }> });
+  const query = useQuery({ queryKey: ["telemetry-cards", sourceId], queryFn: ({ signal }) => getRawJson(`/api/v1/telemetry/sources/${encodeURIComponent(sourceId)}/cards`, signal, scope) as Promise<{ cards?: TelemetryCard[] }> });
   if (query.isLoading) return <p>Loading report cards…</p>;
   if (query.isError) return <small role="alert">Report cards could not be loaded.</small>;
   return <TelemetryCardForm key={JSON.stringify(query.data?.cards ?? [])} sourceId={sourceId} scope={scope} initial={query.data?.cards ?? []} isAdmin={isAdmin} onSaved={() => query.refetch()} />;

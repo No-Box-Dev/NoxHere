@@ -6,9 +6,9 @@ describe("shared authorization route registry", () => {
   for (const [path, service] of [
     ["/api/v1/tasks", "planning"],
     ["/api/v1/task-workflows", "planning"],
-    ["/api/v1/projects/playnist/cue/dashboard", "telemetry"],
-    ["/api/v1/spots/project-overview", "feedback"],
-    ["/api/v1/feed", "activity"],
+    ["/api/v1/projects/playnist/telemetry/dashboard", "telemetry"],
+    ["/api/v1/feedback/project-overview", "feedback"],
+    ["/api/v1/activity", "activity"],
   ]) {
     it(`${path} is consistently classified as ${service}`, () => {
       expect(serviceForApiPath(path)).toBe(service);

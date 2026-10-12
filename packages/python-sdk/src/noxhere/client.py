@@ -64,16 +64,9 @@ class Operation:
     servers: tuple[str, ...]
 
 
-SDK_VERSION = "0.2.1"
+SDK_VERSION = "0.2.4"
 DEFAULT_BASE_URL = "https://app.noxhere.com"
 MAX_RETRY_AFTER_SECONDS = 30.0
-
-# Keep the pre-unification method names working while the public product names
-# move from NoxFeed/NoxSpot to Activity/Feedback.
-LEGACY_OPERATION_ALIASES = {
-    "getNoxFeed": "getActivity",
-    "getPublicNoxSpotConfig": "getPublicFeedbackConfig",
-}
 
 
 def _retryable_status(status: int) -> bool:
@@ -165,11 +158,6 @@ class ResourceClient:
         self._client = client
         self._operations = {_snake(operation.operation_id): operation.operation_id for operation in operations}
         self._operations.update({operation.operation_id: operation.operation_id for operation in operations})
-        operation_ids = set(self._operations.values())
-        for alias, operation_id in LEGACY_OPERATION_ALIASES.items():
-            if operation_id in operation_ids:
-                self._operations[alias] = operation_id
-                self._operations[_snake(alias)] = operation_id
 
     def __getattr__(self, name: str) -> Callable[..., Any]:
         operation_id = self._operations.get(name)
@@ -190,11 +178,6 @@ class AsyncResourceClient:
         self._client = client
         self._operations = {_snake(operation.operation_id): operation.operation_id for operation in operations}
         self._operations.update({operation.operation_id: operation.operation_id for operation in operations})
-        operation_ids = set(self._operations.values())
-        for alias, operation_id in LEGACY_OPERATION_ALIASES.items():
-            if operation_id in operation_ids:
-                self._operations[alias] = operation_id
-                self._operations[_snake(alias)] = operation_id
 
     def __getattr__(self, name: str) -> Callable[..., Awaitable[Any]]:
         operation_id = self._operations.get(name)
@@ -320,11 +303,6 @@ class NoxHereClient:
         self.feedback = resources["feedback"]
         self.stats = resources["stats"]
         self.incidents = resources["incidents"]
-        self.connect = self.workspace
-        self.feed = self.activity
-        self.ticket = self.planning
-        self.spot = self.feedback
-        self.cue = ResourceClient(self, [operation for operation in self._operations.values() if operation.namespace in {"stats", "incidents"}])
 
     def request(
         self,
@@ -440,11 +418,6 @@ class AsyncNoxHereClient:
         self.feedback = resources["feedback"]
         self.stats = resources["stats"]
         self.incidents = resources["incidents"]
-        self.connect = self.workspace
-        self.feed = self.activity
-        self.ticket = self.planning
-        self.spot = self.feedback
-        self.cue = AsyncResourceClient(self, [operation for operation in self._operations.values() if operation.namespace in {"stats", "incidents"}])
 
     async def request(
         self,

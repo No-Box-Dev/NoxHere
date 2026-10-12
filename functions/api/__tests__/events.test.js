@@ -61,10 +61,10 @@ describe("GET /api/events", () => {
 
   it("supports the Feedback issue feed type", async () => {
     const db = makeDb();
-    await listEvents(makeCtx({ db, url: "http://x/api/events?type=spot%3Aissue_created" }));
+    await listEvents(makeCtx({ db, url: "http://x/api/events?type=feedback%3Aissue_created" }));
     const { sql, binds } = db._calls.all[0];
     expect(sql).toMatch(/type = \?/);
-    expect(binds).toContain("spot:issue_created");
+    expect(binds).toContain("feedback:issue_created");
   });
 
   it("appends trigger_types IN (...) clause when provided", async () => {

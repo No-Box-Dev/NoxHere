@@ -1,6 +1,6 @@
-# Telemetry telemetry development milestones
+# Telemetry development milestones
 
-This plan delivers the simplified Telemetry telemetry API and requirements 1–9:
+This plan delivers the simplified Telemetry API and requirements 1–9:
 one `track()` call, automatic server-side identity protection, anonymous browser
 activity, browser abuse controls, isolated sources, N1 metrics, privacy controls,
 key lifecycle management, and reliable TypeScript/Python releases.

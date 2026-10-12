@@ -423,7 +423,7 @@ function createOffscreenPlaceholder(source, budget) {
 
 function applyOffscreenPlaceholder(clone, dimensions) {
   if (!dimensions) return;
-  clone.setAttribute('data-noxspot-offscreen-placeholder', 'true');
+  clone.setAttribute('data-feedback-offscreen-placeholder', 'true');
   clone.setAttribute('aria-hidden', 'true');
   clone.removeAttribute('id');
   clone.removeAttribute('src');

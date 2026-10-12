@@ -54,9 +54,9 @@ export function main(args = process.argv.slice(2)) {
   }
 
   const plan = milestonesThrough(milestones, target);
-  process.stdout.write(`Active Telemetry telemetry milestone: ${activeMilestone}. Verifying ${plan.length} milestone(s) through ${target}.\n`);
+  process.stdout.write(`Active Telemetry milestone: ${activeMilestone}. Verifying ${plan.length} milestone(s) through ${target}.\n`);
   runMilestones(plan);
-  process.stdout.write(`\nAll required Telemetry telemetry gates through ${target} passed.\n`);
+  process.stdout.write(`\nAll required Telemetry gates through ${target} passed.\n`);
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : "";
@@ -64,7 +64,7 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
   try {
     main();
   } catch (error) {
-    process.stderr.write(`\nTELEMETRY TELEMETRY MILESTONE BLOCKED\n${error instanceof Error ? error.message : String(error)}\n`);
+    process.stderr.write(`\nTELEMETRY MILESTONE BLOCKED\n${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   }
 }

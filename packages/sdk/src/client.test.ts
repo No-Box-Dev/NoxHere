@@ -8,10 +8,8 @@ describe("@noxhere/sdk", () => {
     expect(new Set(operationDefinitions.map((item) => item.id)).size).toBe(operationDefinitions.length);
     const client = createNoxHere({ fetch: vi.fn() as typeof fetch });
     expect(Object.keys(client.operations)).toHaveLength(operationDefinitions.length);
-    expect(client.cue).not.toBe(client.incidents);
-    expect(client.cue.getTelemetryDailyHealth).toBe(client.stats.getTelemetryDailyHealth);
-    expect(client.cue.getProjectIncidents).toBe(client.incidents.getProjectIncidents);
-    expect(client.spot).toBe(client.feedback);
+    expect(client.stats.getTelemetryDailyHealth).toBeTypeOf("function");
+    expect(client.incidents.getProjectIncidents).toBeTypeOf("function");
   });
 
   it("exposes exact generated operation inputs, outputs, and namespaces", () => {
@@ -112,7 +110,7 @@ describe("@noxhere/sdk", () => {
     expect(headers.get("authorization")).toBeNull();
     expect(headers.get("x-org")).toBeNull();
     expect(headers.get("x-project-id")).toBeNull();
-    expect(headers.get("x-noxhere-sdk")).toBe("typescript/0.2.1");
+    expect(headers.get("x-noxhere-sdk")).toBe("typescript/0.2.4");
 
     await client.feedback.reopenResolvedFeedbackReport({ path: { token: "secret-token" }, body: new FormData() });
     expect(observed.at(-1)).toContain("[redacted]");

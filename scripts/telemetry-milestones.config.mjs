@@ -39,7 +39,7 @@ export const milestones = [
   {
     id: "M1",
     name: "One track contract",
-    objective: "Expose one versioned track() API in TypeScript and Python while preserving compatibility wrappers.",
+    objective: "Expose one versioned track() API in TypeScript and Python with unified ergonomic wrappers.",
     requiredPaths: [
       "packages/sdk/src/telemetry/track.test.ts",
       "packages/python-sdk/tests/test_telemetry_track.py",

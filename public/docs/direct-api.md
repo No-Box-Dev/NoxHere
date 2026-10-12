@@ -5,6 +5,25 @@ available through the HTTPS API described by [`/openapi.json`](/openapi.json).
 The hosted base URL is `https://app.noxhere.com`; self-hosted installations use
 their own gateway URL.
 
+## Unified capability routes
+
+NoxHere exposes one API and one authentication model. Capability identifiers
+are `activity`, `planning`, `feedback`, and `telemetry`; shared workspace and
+provider operations use the workspace API. Integrations must not call capability
+Worker hostnames directly.
+
+| Capability | Canonical API prefix | Service configuration |
+| --- | --- | --- |
+| Workspace and Connections | `/api/v1/integrations`, `/api/v1/projects` | `/api/v1/services/noxhere/config` |
+| Activity | `/api/v1/activity` | `/api/v1/services/activity/config` |
+| Planning | `/api/v1/features`, `/api/v1/specs`, `/api/v1/tasks` | `/api/v1/services/planning/config` |
+| Feedback | `/api/v1/feedback` | `/api/v1/services/feedback/config` |
+| Stats and Incidents | `/api/v1/telemetry`, `/api/v1/projects/{projectId}/incidents` | `/api/v1/services/telemetry/config` |
+
+The service catalog at `/api/v1/services` is the discovery source of truth.
+New clients should derive availability and links from that response instead of
+hard-coding deployment names.
+
 ## Official SDKs
 
 Install the unified Python SDK from

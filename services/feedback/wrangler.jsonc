@@ -75,8 +75,8 @@
       "name": "noxhere-feedback-staging",
       "vars": {
         "ENVIRONMENT": "staging",
-        "PUBLIC_API_BASE_URL": "https://noxhere-feedback-staging.jasper-414.workers.dev",
-        "PUBLIC_ASSET_BASE_URL": "https://noxhere-feedback-staging.jasper-414.workers.dev/api/feedback/public/v1/assets",
+        "PUBLIC_API_BASE_URL": "https://noxhere-staging.jasper-414.workers.dev",
+        "PUBLIC_ASSET_BASE_URL": "https://noxhere-staging.jasper-414.workers.dev/api/feedback/public/v1/assets",
         "BUILD_SHA": "development"
       },
       "triggers": { "crons": [] },

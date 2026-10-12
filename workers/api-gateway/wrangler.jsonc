@@ -50,7 +50,7 @@
   ],
   "env": {
     "staging": {
-      "name": "noxhere-staging",
+      "name": "noxhere-api-staging",
       "vars": {
         "PLATFORM_ADMIN_GITHUB_IDS": "196446605",
         "GITHUB_APP_ID": "3652510",

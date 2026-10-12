@@ -22,5 +22,5 @@ binding = "DEMO_DB"
 database_name = "activity-demo-staging"
 # Resolved to the dedicated database by scripts/prepare-staging-activity-database.mjs
 # before any remote staging migration or deploy.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "b5f3f43a-eadd-4091-9814-9474a73838d5"
 migrations_dir = "migrations"

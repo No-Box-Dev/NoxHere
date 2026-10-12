@@ -46,8 +46,7 @@ page = await nox.activity.get_nox_feed(query={"limit": 25})
 ```
 
 Namespaces are `workspace`, `activity`, `planning`, `feedback`, `stats`, and
-`incidents`; `connect`, `feed`, `ticket`, and `spot` are direct compatibility
-aliases. The deprecated `cue` facade combines Stats and Incidents operations.
+`incidents`. These unified namespaces are the only supported resource names.
 Use `noxhere.stats.create_stats_client`, `noxhere.incidents.create_incident_client`, or
 `noxhere.feedback.create_feedback_client` for focused clients.
 

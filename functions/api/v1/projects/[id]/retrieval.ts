@@ -52,8 +52,8 @@ function labelForKind(kind: SearchResult["kind"]): string {
 function hrefForResult(org: string, projectId: string, result: SearchResult): string {
   const base = `/${encodeURIComponent(org)}/${encodeURIComponent(projectId)}`;
   if (result.kind === "person" && result.login) return `${base}/activity/current/${encodeURIComponent(result.login)}`;
-  if (result.kind === "feature") return `${base}/ticket/board`;
-  if (result.kind === "issue") return `${base}/feed/issues`;
-  if (result.kind === "release_note") return `${base}/feed/merged`;
-  return `${base}/feed/opened`;
+  if (result.kind === "feature") return `${base}/planning/board`;
+  if (result.kind === "issue") return `${base}/activity/issues`;
+  if (result.kind === "release_note") return `${base}/activity/merged`;
+  return `${base}/activity/opened`;
 }

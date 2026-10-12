@@ -1,4 +1,4 @@
-# Telemetry telemetry operations
+# Telemetry operations
 
 ## Delivery contract
 

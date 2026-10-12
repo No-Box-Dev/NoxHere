@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthBoundary } from "./AuthBoundary";
 import { PlatformShell } from "./PlatformShell";
 
@@ -25,7 +25,6 @@ export function App() {
             <Route path="connections/:view" element={<ConnectionsPage />} />
             <Route path="planning/:view" element={<PlanningPage />} />
             <Route path="activity/issues" element={<LegacyIssuesRoute />} />
-            <Route path="feed/issues" element={<LegacyIssuesRoute />} />
             <Route path="activity/:view" element={<ActivityPage />} />
             <Route path="activity/:view/:person" element={<ActivityPage />} />
             <Route path="feedback/:view" element={<FeedbackPage />} />
@@ -33,12 +32,6 @@ export function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="settings/:section" element={<SettingsPage />} />
             <Route path="settings/:section/:detail" element={<SettingsPage />} />
-            <Route path="connect/:view" element={<LegacyCapabilityRoute capability="connections" />} />
-            <Route path="ticket/:view" element={<LegacyCapabilityRoute capability="planning" />} />
-            <Route path="feed/:view" element={<LegacyCapabilityRoute capability="activity" />} />
-            <Route path="feed/:view/:person" element={<LegacyCapabilityRoute capability="activity" />} />
-            <Route path="spot/:view" element={<LegacyCapabilityRoute capability="feedback" />} />
-            <Route path="telemetry/:view" element={<LegacyTelemetryRoute />} />
             <Route path="*" element={<ProjectFallback />} />
           </Route>
           <Route path="*" element={<Navigate replace to="/" />} />
@@ -50,23 +43,10 @@ export function App() {
 
 function LegacyIssuesRoute() {
   const { organizationId = "", projectId = "" } = useParams();
-  return <Navigate replace to={`/${organizationId}/${projectId}/incidents/issues`} />;
-}
-
-function LegacyCapabilityRoute({ capability }: { capability: "connections" | "planning" | "activity" | "feedback" }) {
-  const { organizationId = "", projectId = "", view = "", person } = useParams();
-  const { search } = useLocation();
-  const suffix = person ? `/${encodeURIComponent(person)}` : "";
-  return <Navigate replace to={`/${organizationId}/${projectId}/${capability}/${view}${suffix}${search}`} />;
-}
-
-function LegacyTelemetryRoute() {
-  const { organizationId = "", projectId = "", view = "stats" } = useParams();
-  const destination = view === "alerts" ? "incidents/alerts" : view === "sources" ? "settings/integrations/telemetry" : "stats/overview";
-  return <Navigate replace to={`/${organizationId}/${projectId}/${destination}`} />;
+  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/incidents/issues`} />;
 }
 
 function ProjectFallback() {
   const { organizationId = "", projectId = "" } = useParams();
-  return <Navigate replace to={`/${organizationId}/${projectId}/connections/overview`} />;
+  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/connections/overview`} />;
 }

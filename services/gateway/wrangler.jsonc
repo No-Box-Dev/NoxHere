@@ -57,7 +57,7 @@
       "services": [
         {
           "binding": "NOXHERE",
-          "service": "noxhere-staging"
+          "service": "noxhere-api-staging"
         },
         {
           "binding": "NOXHERE_IDENTITY",

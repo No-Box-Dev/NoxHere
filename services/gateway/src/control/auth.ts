@@ -1,6 +1,7 @@
 import { apiError } from "./http";
 import { constantTimeHashEqual, randomToken, sha256 } from "./crypto";
 import { guestCanAccess, loadGuestAccess, type GuestAccess } from "./guest-access";
+import { serviceForApiPath } from "../../../../packages/authz/routes.js";
 
 export const SESSION_COOKIE = "__Host-nox_session";
 export const CSRF_COOKIE = "nox_csrf";
@@ -417,13 +418,8 @@ export function requiredScope(pathname: string, method: string): string | null {
 }
 
 export function serviceForPath(pathname: string): string | null {
-  const serviceControl = pathname.match(/^\/api\/v1\/services\/(planning|activity|feedback|telemetry)(?:\/|$)/)?.[1];
-  if (serviceControl) return serviceControl;
-  if (/^\/api\/(?:v1\/)?(features|tasks|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return "planning";
-  if (pathname === "/api/v1/activity" || /^\/api\/(?:v1\/)?(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|activity)(?:\/|$)/.test(pathname)) return "activity";
-  if (/^\/api\/(?:v1\/)?feedback(?:\/|$)/.test(pathname)) return "feedback";
-  if (/^\/api\/(?:v1\/)?telemetry(?:\/|$)/.test(pathname)) return "telemetry";
-  return null;
+  const service = serviceForApiPath(pathname);
+  return service;
 }
 
 export function capabilitiesForRole(role: "owner" | "admin" | "member" | "viewer"): string[] {

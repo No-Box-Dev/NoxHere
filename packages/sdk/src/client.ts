@@ -131,8 +131,6 @@ export type OperationMap = { readonly [K in OperationId]: Operation<K> };
 type Definition = (typeof operationDefinitions)[number];
 export type OperationIdFor<N extends ResourceNamespace> = Extract<Definition, { namespace: N }>["id"];
 export type ResourceClient<N extends ResourceNamespace = ResourceNamespace> = Readonly<Pick<OperationMap, OperationIdFor<N>>>;
-export type TelemetryResourceClient = ResourceClient<"stats"> & ResourceClient<"incidents">;
-
 export interface NoxHereClient {
   readonly operations: OperationMap;
   readonly workspace: ResourceClient<"workspace">;
@@ -141,12 +139,6 @@ export interface NoxHereClient {
   readonly feedback: ResourceClient<"feedback">;
   readonly stats: ResourceClient<"stats">;
   readonly incidents: ResourceClient<"incidents">;
-  readonly connect: ResourceClient<"workspace">;
-  readonly feed: ResourceClient<"activity">;
-  readonly ticket: ResourceClient<"planning">;
-  readonly spot: ResourceClient<"feedback">;
-  /** @deprecated Use `stats` or `incidents`. */
-  readonly cue: TelemetryResourceClient;
   request<K extends OperationId>(operationId: K, ...args: OperationArguments<K>): Promise<OperationOutput<K>>;
   withContext(context: { organization?: string; projectId?: string }): NoxHereClient;
 }
@@ -173,7 +165,7 @@ async function payload(response: Response): Promise<unknown> {
   return response.arrayBuffer();
 }
 
-const SDK_VERSION = "0.2.1";
+const SDK_VERSION = "0.2.4";
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RETRY_DELAY_MS = 250;
 const MAX_RETRY_AFTER_MS = 30_000;
@@ -327,15 +319,9 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
   }
   for (const resource of Object.values(resources)) Object.freeze(resource);
   Object.freeze(operations);
-  const cue = Object.freeze({ ...resources.stats, ...resources.incidents }) as unknown as TelemetryResourceClient;
   const client = {
     operations: operations as unknown as OperationMap,
     ...resources,
-    connect: resources.workspace,
-    feed: resources.activity,
-    ticket: resources.planning,
-    spot: resources.feedback,
-    cue,
     request,
     withContext: (context: { organization?: string; projectId?: string }) => createNoxHere({ ...options, ...context }),
   } as unknown as NoxHereClient;
