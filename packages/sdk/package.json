@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "openapi-typescript": "7.13.0",
+    "openapi-typescript": "7.12.0",
     "pyright": "1.1.414",
     "typescript": "~5.9.3",
     "vitest": "^4.1.11",
@@ -72,9 +72,6 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "overrides": {
-    "supports-color": "10.2.2"
   },
   "license": "PolyForm-Noncommercial-1.0.0"
 }
