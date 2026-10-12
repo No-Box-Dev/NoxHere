@@ -103,7 +103,7 @@ async function storeEvent(db, capture, issue) {
   await db.prepare(
     `INSERT INTO events
        (delivery_id, source, type, actor_id, project_id, org, repo, summary, payload_json, owner_id)
-     VALUES (?, 'feedback', 'spot:issue_created', ?, ?, ?, ?, ?, ?, ?)
+     VALUES (?, 'feedback', 'feedback:issue_created', ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(delivery_id) DO UPDATE SET
        summary = excluded.summary, payload_json = excluded.payload_json`,
   ).bind(

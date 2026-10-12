@@ -3,7 +3,7 @@ import { apiResponse } from "./http";
 
 interface MembershipProfile {
   login: string;
-  role: "guest" | "member" | "admin";
+  role: "guest" | "member" | "admin" | "owner" | "viewer";
 }
 
 interface ProfileGrant {
@@ -19,7 +19,9 @@ export async function profileResponse(
 ): Promise<Response> {
   const [memberships, guestOrganizations, grants] = await Promise.all([
     db.prepare(
-      `SELECT org.github_login AS login, membership.role
+      `SELECT org.github_login AS login,
+              CASE WHEN membership.role = 'admin' THEN 'owner'
+                   ELSE COALESCE(membership.managed_role, 'member') END AS role
          FROM org_memberships membership
          JOIN orgs org ON org.id = membership.org_id
         WHERE membership.principal_id = ? AND org.suspended_at IS NULL

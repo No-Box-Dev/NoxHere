@@ -101,7 +101,10 @@ function isNoxHereControlPath(path) {
     || path === "/api/v1/api-tokens"
     || path.startsWith("/api/v1/api-tokens/")
     || path === "/api/v1/guests"
-    || path.startsWith("/api/v1/guests/");
+    || path.startsWith("/api/v1/guests/")
+    || path === "/api/v1/memberships"
+    || path.startsWith("/api/v1/memberships/")
+    || path === "/api/v1/audit-log";
 }
 
 function escapeRegex(value) {

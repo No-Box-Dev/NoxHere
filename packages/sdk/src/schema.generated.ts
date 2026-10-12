@@ -313,6 +313,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recent access and administration changes
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        get: operations["listOrganizationAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -968,7 +988,11 @@ export interface paths {
         delete: operations["revokeGuestGrant"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Change active guest access scope
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        patch: operations["updateGuestGrantScope"];
         trace?: never;
     };
     "/api/v1/guests/invites": {
@@ -1008,6 +1032,32 @@ export interface paths {
          * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
          */
         delete: operations["revokeGuestInvitation"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a pending guest invitation scope
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        patch: operations["updateGuestInvitationScope"];
+        trace?: never;
+    };
+    "/api/v1/guests/invites/{inviteId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend a pending guest invitation with a fresh expiry
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        post: operations["resendGuestInvitation"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1299,6 +1349,48 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List organization members and effective roles
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        get: operations["listOrganizationMemberships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memberships/{principalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                principalId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Assign an Admin, Member, or Viewer role
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        patch: operations["updateOrganizationMemberRole"];
         trace?: never;
     };
     "/api/v1/op-failures": {
@@ -4473,6 +4565,34 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
+    listOrganizationAuditLog: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
     revokeBrowserSession: {
         parameters: {
             query?: never;
@@ -5753,6 +5873,40 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
+    updateGuestGrantScope: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                grantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JsonValue"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
     createGuestInvitation: {
         parameters: {
             query?: never;
@@ -5798,6 +5952,74 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateGuestInvitationScope: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                inviteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JsonValue"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    resendGuestInvitation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                inviteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JsonValue"];
+            };
+        };
         responses: {
             /** @description Success */
             200: {
@@ -6299,6 +6521,68 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listOrganizationMemberships: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateOrganizationMemberRole: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                principalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JsonValue"];
+            };
+        };
         responses: {
             /** @description Success */
             200: {

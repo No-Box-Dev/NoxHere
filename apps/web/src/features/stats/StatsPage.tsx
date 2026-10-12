@@ -15,7 +15,7 @@ export default function StatsPage() {
         <NavLink className={activeSection === "sources" ? "active" : ""} to={`/${organizationId}/${projectId}/stats/sources`}>Sources</NavLink>
       </nav>
       {activeSection === "overview"
-        ? <StatsView organizationId={organizationId} projectId={projectId} />
+        ? <StatsView organizationId={organizationId} projectId={projectId} canConfigure={bootstrap.actor.capabilities.includes("stats.configure")} />
         : <StatsSources organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} />}
     </section>
   );

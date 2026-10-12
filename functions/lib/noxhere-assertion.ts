@@ -17,6 +17,9 @@ export interface NoxHereAuthContext {
     organizationWide: boolean;
     projects: Record<string, string[] | null>;
   } | null;
+  role?: "owner" | "admin" | "member" | "viewer" | "guest" | "automation";
+  capabilities?: string[];
+  membershipVerifiedAt?: string | null;
 }
 
 interface NoxHereAssertion {
@@ -88,6 +91,9 @@ function validAuth(auth: NoxHereAuthContext): boolean {
     && (auth.projectId === null || typeof auth.projectId === "string")
     && (auth.connectionId === null || typeof auth.connectionId === "string")
     && (auth.accessLevel === undefined || ["member", "guest", "api_token"].includes(auth.accessLevel))
+    && (auth.role === undefined || ["owner", "admin", "member", "viewer", "guest", "automation"].includes(auth.role))
+    && (auth.capabilities === undefined || (Array.isArray(auth.capabilities) && auth.capabilities.length <= 24
+      && auth.capabilities.every((capability) => typeof capability === "string" && capability.length <= 64)))
     && (auth.accessLevel !== "guest" || validGuestAccess(auth.guestAccess)));
 }
 

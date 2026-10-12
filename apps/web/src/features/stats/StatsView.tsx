@@ -9,7 +9,7 @@ import { SegmentedControl } from "../../components/SegmentedControl";
 import { Sparkline } from "../../components/Sparkline";
 import { StatusTag } from "../../components/StatusTag";
 
-type StatsViewProps = { organizationId: string; projectId: string };
+type StatsViewProps = { organizationId: string; projectId: string; canConfigure?: boolean };
 type StatsSubview = "dashboard" | "productivity" | "events";
 
 const segments = [
@@ -18,7 +18,7 @@ const segments = [
   { id: "events", label: "Stat events", description: "Incoming triggers" },
 ] as const;
 
-export function StatsView({ organizationId, projectId }: StatsViewProps) {
+export function StatsView({ organizationId, projectId, canConfigure = false }: StatsViewProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get("view");
   const selected: StatsSubview = requested === "events" || requested === "productivity" ? requested : "dashboard";
@@ -27,7 +27,7 @@ export function StatsView({ organizationId, projectId }: StatsViewProps) {
   return (
     <div className="workspace-view">
       <SegmentedControl label="Stats views" value={selected} segments={segments} onChange={select} />
-      {selected === "dashboard" ? <StatsDashboard organizationId={organizationId} projectId={projectId} /> : selected === "productivity" ? <ProductivityStats organizationId={organizationId} projectId={projectId} /> : <StatEvents organizationId={organizationId} projectId={projectId} />}
+      {selected === "dashboard" ? <StatsDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} /> : selected === "productivity" ? <ProductivityStats organizationId={organizationId} projectId={projectId} /> : <StatEvents organizationId={organizationId} projectId={projectId} />}
     </div>
   );
 }
@@ -60,7 +60,7 @@ function ProductivityCard({ label, value }: { label: string; value: number }) {
   return <article className="stat-card"><span className="stat-card-head"><b>{label}</b><small>Tracked project data</small></span><span className="stat-value"><strong>{value.toLocaleString()}</strong></span></article>;
 }
 
-function StatsDashboard({ organizationId, projectId }: StatsViewProps) {
+function StatsDashboard({ organizationId, projectId, canConfigure = false }: StatsViewProps) {
   const [configuring, setConfiguring] = useState(false);
   const [range, setRange] = useState("30d");
   const dashboard = useQuery({
@@ -86,12 +86,12 @@ function StatsDashboard({ organizationId, projectId }: StatsViewProps) {
       {dashboard.data ? <>
         <div className="toolbar">
           <select name="timeRange" aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select>
-          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag><button className="button" onClick={() => setConfiguring(true)}>Configure actions</button><button className="button" onClick={exportCsv}>Export CSV</button>
+          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag>{canConfigure ? <button className="button" onClick={() => setConfiguring(true)}>Configure actions</button> : null}<button className="button" onClick={exportCsv}>Export CSV</button>
         </div>
         <div className="stat-grid">
           {dashboard.data.stats.map((stat) => <StatCard key={stat.id} stat={stat} />)}
         </div>
-        {configuring ? <EngagementActionsDialog organizationId={organizationId} projectId={projectId} onClose={() => setConfiguring(false)} /> : null}
+        {configuring && canConfigure ? <EngagementActionsDialog organizationId={organizationId} projectId={projectId} onClose={() => setConfiguring(false)} /> : null}
       </> : null}
     </AsyncState>
   );

@@ -3,6 +3,7 @@ import type { AuthContext } from "./auth";
 import { API_TOKEN_SCOPES, createApiTokenValue } from "./auth";
 import { sha256 } from "./crypto";
 import { apiError, apiResponse, boundedJson } from "./http";
+import { freshAdmin } from "./memberships";
 
 const CreateToken = z.object({
   name: z.string().trim().min(1).max(80),
@@ -30,6 +31,9 @@ export async function handleApiTokens(
   if (!match) return null;
   const denied = requireAdminSession(auth);
   if (denied) return denied;
+  if (request.method !== "GET" && !freshAdmin(auth)) {
+    return apiError("membership_refresh_required", "Refresh your verified GitHub membership before changing credentials", 403);
+  }
 
   if (request.method === "GET" && !match[1]) {
     const result = await db.prepare(

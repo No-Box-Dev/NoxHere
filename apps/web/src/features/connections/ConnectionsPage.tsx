@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext, useParams } from "react-router-dom";
-import type { GithubMember, GuestInvite, Project } from "../../api/contracts";
+import type { GithubMember, GuestInvite, OrganizationMember, Project } from "../../api/contracts";
 import { platformApi } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { StatusTag } from "../../components/StatusTag";
@@ -62,6 +62,8 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
   const [serviceId, setServiceId] = useState<"all" | "planning" | "activity" | "feedback" | "telemetry">("all");
   const queryClient = useQueryClient();
   const access = useQuery({ queryKey: ["platform", "guest-access", organizationId], queryFn: ({ signal }) => platformApi.guestAccess(organizationId, signal), enabled: canInvite });
+  const roleMembers = useQuery({ queryKey: ["platform", "memberships", organizationId], queryFn: ({ signal }) => platformApi.organizationMembers(organizationId, signal) });
+  const auditLog = useQuery({ queryKey: ["platform", "access-audit", organizationId], queryFn: ({ signal }) => platformApi.auditLog(organizationId, signal), enabled: canInvite });
   const invite = useMutation({
     mutationFn: () => platformApi.inviteGuest(organizationId, projectId, email.trim(), serviceId),
     onSuccess: () => {
@@ -71,6 +73,22 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
       setShowInvite(false);
     },
   });
+  const setRole = useMutation({
+    mutationFn: ({ principalId, role }: { principalId: string; role: "admin" | "member" | "viewer" }) => platformApi.setMemberRole(organizationId, principalId, role),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "memberships", organizationId] }),
+  });
+  const revoke = useMutation({
+    mutationFn: ({ kind, id }: { kind: "invites" | "grants"; id: string }) => platformApi.revokeGuest(organizationId, kind, id),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "guest-access", organizationId] }),
+  });
+  const updateGuest = useMutation({
+    mutationFn: ({ kind, id, serviceId }: { kind: "invites" | "grants"; id: string; serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry" }) => platformApi.setGuestScope(organizationId, projectId, kind, id, serviceId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "guest-access", organizationId] }),
+  });
+  const resend = useMutation({
+    mutationFn: (id: string) => platformApi.resendGuestInvite(organizationId, id),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "guest-access", organizationId] }),
+  });
   const submitInvite = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (email.trim()) invite.mutate();
@@ -79,6 +97,7 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
   const guestServices = ["planning", "activity", "feedback", "telemetry"] as const;
   const invitations = (access.data?.invitations ?? []).filter((item) => item.projectId === projectId || item.scopeType === "organization");
   const grants = (access.data?.grants ?? []).filter((item) => item.projectId === projectId || item.scopeType === "organization");
+  const directory = [...members, ...(roleMembers.data ?? []).filter((managed) => !members.some((member) => member.login.toLowerCase() === managed.login.toLowerCase())).map((managed) => ({ login: managed.login, avatar_url: managed.avatarUrl ?? "", kind: "human" as const }))];
 
   return <>
     <div className="connect-inline-action"><p>One invitation grants read-only access to all project capabilities by default. Settings are never available to guests.</p>{canInvite ? <button type="button" className="button" aria-expanded={showInvite} onClick={() => setShowInvite((open) => !open)}>{showInvite ? "Cancel" : "Invite guest"}</button> : null}</div>
@@ -89,17 +108,27 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
       {invite.isError ? <span className="form-error" role="alert">{invite.error instanceof Error ? invite.error.message : "Invite could not be sent."}</span> : null}
     </form> : null}
     {membersLoading ? <div className="connect-empty"><b>Loading GitHub members</b><p>Reading the shared organization member directory…</p></div> : null}
-    {membersError && members.length === 0 ? <div className="connect-empty"><b>Members could not be loaded</b><p>The existing member directory was not replaced with an empty list.</p><button type="button" className="button" onClick={retryMembers}>Retry</button></div> : null}
-    {!membersLoading && (!membersError || members.length > 0) && (members.length || grants.length || invitations.length) ? <div className="list-surface member-list">{members.map((member) => <div className="list-row" key={member.login}><img className="member-avatar" src={member.avatar_url} alt="" /><span className="list-copy"><b>{member.login}</b><small>Organization member · Verified by GitHub</small></span><span className="list-meta"><StatusTag tone="positive">Active</StatusTag></span></div>)}{grants.map((guest) => <GuestRow key={guest.id} guest={guest} status="Active guest" />)}{invitations.map((pending) => <GuestRow key={pending.id} guest={pending} status="Invite pending" pending />)}</div> : null}
-    {!membersLoading && !membersError && !members.length && !grants.length && !invitations.length ? <div className="connect-empty"><b>No verified organization members</b><p>Members will appear after the GitHub organization sync completes.</p></div> : null}
-    {membersError && members.length > 0 ? <p className="form-error" role="alert">The member directory could not be refreshed. The last valid list remains available. <button type="button" className="link-button" onClick={retryMembers}>Retry</button></p> : null}
-    <p className="section-note">Members come from the verified GitHub organization-member list. Guests are read-only, scoped to this project, and cannot open Settings or NoxHere administration.</p>
+    {membersError && directory.length === 0 ? <div className="connect-empty"><b>Members could not be loaded</b><p>The existing member directory was not replaced with an empty list.</p><button type="button" className="button" onClick={retryMembers}>Retry</button></div> : null}
+    {(!membersLoading || directory.length > 0) && (directory.length || grants.length || invitations.length) ? <div className="list-surface member-list">{directory.map((member) => <MemberRow key={member.login} member={member} managed={roleMembers.data?.find((candidate) => candidate.login.toLowerCase() === member.login.toLowerCase())} canManage={canInvite} busy={setRole.isPending} onRole={(principalId, role) => setRole.mutate({ principalId, role })} />)}{grants.map((guest) => <GuestRow key={guest.id} guest={guest} status="Active guest" busy={revoke.isPending || updateGuest.isPending} onScope={(serviceId) => updateGuest.mutate({ kind: "grants", id: guest.id, serviceId })} onRevoke={() => revoke.mutate({ kind: "grants", id: guest.id })} />)}{invitations.map((pending) => <GuestRow key={pending.id} guest={pending} status="Invite pending" pending busy={revoke.isPending || updateGuest.isPending || resend.isPending} onScope={(serviceId) => updateGuest.mutate({ kind: "invites", id: pending.id, serviceId })} onResend={() => resend.mutate(pending.id)} onRevoke={() => revoke.mutate({ kind: "invites", id: pending.id })} />)}</div> : null}
+    {!membersLoading && !membersError && !directory.length && !grants.length && !invitations.length ? <div className="connect-empty"><b>No verified organization members</b><p>Members will appear after the GitHub organization sync completes.</p></div> : null}
+    {membersError && directory.length > 0 ? <p className="form-error" role="alert">GitHub could not refresh, so the last verified NoxHere member directory remains available. <button type="button" className="link-button" onClick={retryMembers}>Retry</button></p> : null}
+    {setRole.error || revoke.error || updateGuest.error || resend.error ? <p className="form-error" role="alert">{(setRole.error ?? revoke.error ?? updateGuest.error ?? resend.error)?.message}</p> : null}
+    {canInvite ? <details className="access-audit"><summary>Recent access and administration activity</summary>{auditLog.data?.length ? <div className="list-surface">{auditLog.data.slice(0, 20).map((event) => <div className="list-row" key={event.id}><span className="list-symbol">A</span><span className="list-copy"><b>{event.action.replaceAll(".", " ")}</b><small>{event.actorId} · {event.targetId ?? "organization"} · {new Date(event.createdAt).toLocaleString()}</small></span></div>)}</div> : <p>{auditLog.isLoading ? "Loading audit history…" : "No access changes recorded yet."}</p>}</details> : null}
+    <p className="section-note">Owners are verified GitHub organization owners. NoxHere admins manage access and connections, members can collaborate, viewers and guests are read-only.</p>
   </>;
 }
 
-function GuestRow({ guest, status, pending = false }: { guest: GuestInvite; status: string; pending?: boolean }) {
-  return <div className="list-row"><span className="list-symbol">G</span><span className="list-copy"><b>{guest.email}</b><small>Guest · {guest.service ? serviceNameFromApi(guest.service) : "All capabilities"} · No settings access</small></span><span className="list-meta"><StatusTag tone={pending ? "warning" : "positive"}>{status}</StatusTag></span></div>;
+function MemberRow({ member, managed, canManage, busy, onRole }: { member: GithubMember; managed?: OrganizationMember; canManage: boolean; busy: boolean; onRole: (principalId: string, role: "admin" | "member" | "viewer") => void }) {
+  const role = managed?.role ?? "member";
+  return <div className="list-row">{member.avatar_url ? <img className="member-avatar" src={member.avatar_url} alt="" /> : <span className="list-symbol">M</span>}<span className="list-copy"><b>{member.login}</b><small>{managed ? `${roleLabel(role)} · ${managed.roleSource === "github" ? "Verified by GitHub" : "Managed in NoxHere"} · verified ${new Date(managed.verifiedAt).toLocaleDateString()}` : "GitHub organization member · role available after first sign-in"}</small></span><span className="list-meta">{canManage && managed && role !== "owner" ? <select aria-label={`Role for ${member.login}`} value={role} disabled={busy} onChange={(event) => onRole(managed.principalId, event.target.value as "admin" | "member" | "viewer")}><option value="admin">Admin</option><option value="member">Member</option><option value="viewer">Viewer</option></select> : <StatusTag tone={role === "owner" || role === "admin" ? "positive" : "neutral"}>{roleLabel(role)}</StatusTag>}</span></div>;
 }
+
+function GuestRow({ guest, status, pending = false, busy, onScope, onResend, onRevoke }: { guest: GuestInvite; status: string; pending?: boolean; busy: boolean; onScope: (serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry") => void; onResend?: () => void; onRevoke: () => void }) {
+  const current = guest.service ?? "all";
+  return <div className="list-row"><span className="list-symbol">G</span><span className="list-copy"><b>{guest.email}</b><small>Guest · {guest.service ? serviceNameFromApi(guest.service) : "All capabilities"} · {guest.projectName ?? "Organization"}{guest.expiresAt ? ` · expires ${new Date(guest.expiresAt).toLocaleDateString()}` : ""}</small></span><span className="list-meta">{guest.scopeType !== "organization" ? <select aria-label={`Access for ${guest.email}`} value={current} disabled={busy} onChange={(event) => onScope(event.target.value as typeof current)}><option value="all">All capabilities</option><option value="planning">Planning</option><option value="activity">Activity</option><option value="feedback">Feedback</option><option value="telemetry">Stats and Incidents</option></select> : null}<StatusTag tone={pending ? "warning" : "positive"}>{status}</StatusTag>{pending && onResend ? <button type="button" className="mini-button" disabled={busy} onClick={onResend}>Resend</button> : null}<button type="button" className="mini-button destructive" disabled={busy} onClick={() => { if (window.confirm(pending ? `Cancel the invitation for ${guest.email}?` : `Revoke access for ${guest.email}?`)) onRevoke(); }}>{pending ? "Cancel invite" : "Revoke"}</button></span></div>;
+}
+
+function roleLabel(role: OrganizationMember["role"]) { return role[0].toUpperCase() + role.slice(1); }
 
 function serviceName(id: "planning" | "activity" | "feedback" | "telemetry") {
   return ({ planning: "Planning", activity: "Activity", feedback: "Feedback", telemetry: "Stats and Incidents" } as const)[id];

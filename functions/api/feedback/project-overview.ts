@@ -74,7 +74,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     ).bind(...issueBinds),
     db.prepare(
       `SELECT repo, payload_json FROM events
-        WHERE org_id = ?${repositoryFilter} AND type = 'spot:issue_created'
+        WHERE org_id = ?${repositoryFilter} AND type = 'feedback:issue_created'
         ORDER BY created_at DESC LIMIT 1000`,
     ).bind(...projectBinds),
     db.prepare(

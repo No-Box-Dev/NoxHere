@@ -170,7 +170,7 @@ export async function loadFeedbackDailyDigestData(db: D1Database, site: SpotSite
     db.prepare(
       `SELECT COUNT(DISTINCT CAST(json_extract(capture.payload_json, '$.githubIssueNumber') AS INTEGER)) AS count
          FROM events capture
-        WHERE capture.source = 'feedback' AND capture.type = 'spot:issue_created'
+        WHERE capture.source = 'feedback' AND capture.type = 'feedback:issue_created'
           AND json_extract(capture.payload_json, '$.siteId') = ?
           AND datetime(capture.created_at) >= datetime(?) AND datetime(capture.created_at) < datetime(?)`,
     ).bind(site.id, start, end),
@@ -180,7 +180,7 @@ export async function loadFeedbackDailyDigestData(db: D1Database, site: SpotSite
          JOIN issues issue
            ON issue.org_id = ? AND issue.repo = ?
           AND issue.number = CAST(json_extract(capture.payload_json, '$.githubIssueNumber') AS INTEGER)
-        WHERE capture.source = 'feedback' AND capture.type = 'spot:issue_created'
+        WHERE capture.source = 'feedback' AND capture.type = 'feedback:issue_created'
           AND json_extract(capture.payload_json, '$.siteId') = ?
           AND datetime(capture.created_at) >= datetime(?) AND datetime(capture.created_at) < datetime(?)
         GROUP BY issue.number
@@ -193,7 +193,7 @@ export async function loadFeedbackDailyDigestData(db: D1Database, site: SpotSite
           AND datetime(issue.closed_at) >= datetime(?) AND datetime(issue.closed_at) < datetime(?)
           AND EXISTS (
             SELECT 1 FROM events capture
-             WHERE capture.source = 'feedback' AND capture.type = 'spot:issue_created'
+             WHERE capture.source = 'feedback' AND capture.type = 'feedback:issue_created'
                AND json_extract(capture.payload_json, '$.siteId') = ?
                AND CAST(json_extract(capture.payload_json, '$.githubIssueNumber') AS INTEGER) = issue.number
           )`,
@@ -201,7 +201,7 @@ export async function loadFeedbackDailyDigestData(db: D1Database, site: SpotSite
     db.prepare(
       `SELECT issue.number, issue.title, issue.html_url,
               (SELECT capture.payload_json FROM events capture
-                WHERE capture.source = 'feedback' AND capture.type = 'spot:issue_created'
+                WHERE capture.source = 'feedback' AND capture.type = 'feedback:issue_created'
                   AND json_extract(capture.payload_json, '$.siteId') = ?
                   AND CAST(json_extract(capture.payload_json, '$.githubIssueNumber') AS INTEGER) = issue.number
                 ORDER BY capture.created_at ASC LIMIT 1) AS capture_payload
@@ -210,7 +210,7 @@ export async function loadFeedbackDailyDigestData(db: D1Database, site: SpotSite
           AND datetime(issue.closed_at) >= datetime(?) AND datetime(issue.closed_at) < datetime(?)
           AND EXISTS (
             SELECT 1 FROM events capture
-             WHERE capture.source = 'feedback' AND capture.type = 'spot:issue_created'
+             WHERE capture.source = 'feedback' AND capture.type = 'feedback:issue_created'
                AND json_extract(capture.payload_json, '$.siteId') = ?
                AND CAST(json_extract(capture.payload_json, '$.githubIssueNumber') AS INTEGER) = issue.number
           )

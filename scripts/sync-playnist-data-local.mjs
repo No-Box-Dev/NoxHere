@@ -19,7 +19,7 @@ const tables = [
   { table: "issues", where: `project_id = '${projectId}'` },
   {
     table: "events",
-    where: `project_id = '${projectId}' AND type IN ('pr_narrative','narrative','release_notes','spot:issue_created','stats.daily')`,
+    where: `project_id = '${projectId}' AND type IN ('pr_narrative','narrative','release_notes','feedback:issue_created','stats.daily')`,
   },
   { table: "features", where: `project_id = '${projectId}'` },
   { table: "spec_folders", where: `id IN (SELECT folder_id FROM specs WHERE project_id = '${projectId}' AND folder_id IS NOT NULL)` },

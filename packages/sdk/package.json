@@ -1,6 +1,6 @@
 {
   "name": "@noxhere/sdk",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Unified TypeScript SDK for every NoxHere resource",
   "type": "module",
   "sideEffects": false,

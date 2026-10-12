@@ -15,6 +15,16 @@ export const githubMemberSchema = z.object({
   kind: z.enum(["human", "bot", "contributor"]).default("human"),
 });
 
+export const organizationMemberSchema = z.object({
+  principalId: z.string(),
+  login: z.string(),
+  avatarUrl: z.string().nullable().optional().default(""),
+  role: z.enum(["owner", "admin", "member", "viewer"]),
+  roleSource: z.enum(["github", "noxhere"]),
+  verifiedAt: z.string(),
+});
+export const organizationMembersSchema = z.object({ members: z.array(organizationMemberSchema) });
+
 export const projectSettingsSchema = z.object({
   excludedMembers: z.array(z.string()).optional(),
   boardStages: z.array(z.object({
@@ -168,7 +178,7 @@ export const projectRoutingResponseSchema = z.object({
 });
 
 export const bootstrapSchema = z.object({
-  actor: z.object({ id: z.string(), name: z.string(), initials: z.string(), accessLevel: z.enum(["member", "guest"]), isAdmin: z.boolean(), allowedServiceIds: z.array(serviceIdSchema) }),
+  actor: z.object({ id: z.string(), name: z.string(), initials: z.string(), accessLevel: z.enum(["member", "guest"]), role: z.enum(["owner", "admin", "member", "viewer", "guest"]).default("member"), capabilities: z.array(z.string()).default(["content.read", "content.write"]), isAdmin: z.boolean(), allowedServiceIds: z.array(serviceIdSchema) }),
   organization: z.object({ id: z.string(), name: z.string() }),
   projects: z.array(projectSchema),
 });
@@ -331,6 +341,7 @@ export type ProjectRoutingResponse = z.infer<typeof projectRoutingResponseSchema
 export type GuestInvite = z.infer<typeof guestInviteSchema>;
 export type GuestAccess = z.infer<typeof guestAccessSchema>;
 export type GithubMember = z.infer<typeof githubMemberSchema>;
+export type OrganizationMember = z.infer<typeof organizationMemberSchema>;
 export type ProjectSettings = NonNullable<z.infer<typeof projectSettingsSchema>>;
 export type EngineerStats = z.infer<typeof engineerStatsSchema>;
 export type SlackRouting = z.infer<typeof slackRoutingSchema>;

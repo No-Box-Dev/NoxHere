@@ -53,7 +53,7 @@ describe("@noxhere/sdk telemetry", () => {
     const [url, init] = request.mock.calls[0]!;
     expect(url).toBe("https://app.noxhere.com/api/v1/telemetry/public/events");
     expect(init?.headers).toMatchObject({ "X-Nox-Ingest-Key": serverKey });
-    expect(init?.headers).toMatchObject({ "User-Agent": "noxhere-typescript/0.2.3" });
+    expect(init?.headers).toMatchObject({ "User-Agent": "noxhere-typescript/0.2.4" });
     expect(JSON.parse(String(init?.body))).toMatchObject({
       version: 1,
       type: "user.registered",
@@ -65,7 +65,7 @@ describe("@noxhere/sdk telemetry", () => {
         environment: "production",
         release: "playnist@abc123",
         runtime: "server",
-        sdkVersion: "0.2.3",
+        sdkVersion: "0.2.4",
       },
     });
   });
@@ -153,7 +153,7 @@ describe("@noxhere/sdk telemetry", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.3" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.4" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },

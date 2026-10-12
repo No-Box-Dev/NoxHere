@@ -32,12 +32,13 @@ export default function SettingsPage() {
   const excluded = new Set(settings.data?.excludedMembers ?? []);
   const trackedCount = members.filter((member) => !excluded.has(member.login)).length;
   const connectedRepositories = project?.connections.filter((connection) => connection.provider === "github").map((connection) => connection.label.split("/").at(-1) ?? connection.label) ?? [];
+  const canManage = bootstrap.actor.capabilities.includes("organization.manage");
   return <section><div className="connect-home connect-clean"><div className="connect-accordions">
     <SettingsAccordion id="repositories" symbol="R" title="Project repositories" description="Shared repository scope for every Nox capability" status={`${connectedRepositories.length} included`} initialOpen>
       <ProjectRepositories organizationId={organizationId} projectId={projectId} projectName={projectName} canManage={bootstrap.actor.isAdmin} connectedRepositories={connectedRepositories} />
     </SettingsAccordion>
     <SettingsAccordion id="members" symbol="P" title="Members" description="GitHub members included in activity and people views" status={membersLoading || settings.isLoading ? "Loading" : `${trackedCount}/${members.length} tracked`}>
-      <MembersTracking members={members} settings={settings.data ?? {}} loading={membersLoading || settings.isLoading} saving={saveTracking.isPending} error={Boolean(membersError || settings.isError || saveTracking.isError)} retryMembers={retryMembers} onToggle={(login) => {
+      <MembersTracking members={members} settings={settings.data ?? {}} loading={membersLoading || settings.isLoading} saving={saveTracking.isPending} canManage={canManage} error={Boolean(membersError || settings.isError || saveTracking.isError)} retryMembers={retryMembers} onToggle={(login) => {
         const current = settings.data?.excludedMembers ?? [];
         const nextExcluded = excluded.has(login) ? current.filter((item) => item !== login) : [...current, login];
         saveTracking.mutate({ ...(settings.data ?? {}), excludedMembers: nextExcluded });
@@ -63,7 +64,7 @@ function SettingsAccordion({ id, symbol, title, description, status, children, i
   return <details className="connect-accordion" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}><summary role="button" aria-label={`Toggle ${title}`} aria-expanded={open}><span className="row-symbol">{symbol}</span><span className="connect-accordion-copy"><b>{title}</b><small>{description}</small></span><span className="connect-accordion-status">{status}</span><span className="connect-chevron" aria-hidden="true">⌄</span></summary><div className="connect-accordion-body" data-section={id}>{children}</div></details>;
 }
 
-function MembersTracking({ members, settings, loading, saving, error, retryMembers, onToggle }: { members: GithubMember[]; settings: ProjectSettings; loading: boolean; saving: boolean; error: boolean; retryMembers: () => void; onToggle: (login: string) => void }) {
+function MembersTracking({ members, settings, loading, saving, canManage, error, retryMembers, onToggle }: { members: GithubMember[]; settings: ProjectSettings; loading: boolean; saving: boolean; canManage: boolean; error: boolean; retryMembers: () => void; onToggle: (login: string) => void }) {
   const organizationMembers = members.filter((member) => member.kind === "human");
   const excluded = new Set(settings.excludedMembers ?? []);
   if (loading) return <div className="connect-empty"><b>Loading GitHub members</b><p>Reading the organization member directory…</p></div>;
@@ -75,7 +76,7 @@ function MembersTracking({ members, settings, loading, saving, error, retryMembe
       return <div className={`list-row ${tracked ? "" : "member-not-tracked"}`} key={member.login}>
         <img className="member-avatar" src={member.avatar_url} alt="" />
         <span className="list-copy"><b>{member.login}</b><small>GitHub {member.kind === "bot" ? "bot" : "member"} · {tracked ? "Included in platform activity" : "Hidden from platform activity"}</small></span>
-        <span className="list-meta"><span className={`toggle-label ${tracked ? "on" : ""}`}>{tracked ? "Tracked" : "Not tracked"}</span><button type="button" className="toggle-switch" role="switch" aria-checked={tracked} aria-label={`Track ${member.login}`} disabled={saving} onClick={() => onToggle(member.login)}><span /></button></span>
+        <span className="list-meta"><span className={`toggle-label ${tracked ? "on" : ""}`}>{tracked ? "Tracked" : "Not tracked"}</span>{canManage ? <button type="button" className="toggle-switch" role="switch" aria-checked={tracked} aria-label={`Track ${member.login}`} disabled={saving} onClick={() => onToggle(member.login)}><span /></button> : null}</span>
       </div>;
     })}</div> : <div className="connect-empty"><b>No GitHub members returned</b><p>Members will appear after the organization member sync completes.</p></div>}
     {error && members.length ? <p className="form-error" role="alert">The tracking change could not be saved.</p> : null}

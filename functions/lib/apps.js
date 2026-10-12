@@ -1,4 +1,5 @@
 import { compatibilityApiPath } from "./api-paths.js";
+import { serviceForApiPath } from "../../packages/authz/routes.js";
 
 export const PRODUCT_APP_IDS = ["planning", "activity", "feedback", "telemetry"];
 const ALWAYS_AVAILABLE = Object.freeze(Object.fromEntries(PRODUCT_APP_IDS.map((appId) => [appId, true])));
@@ -20,13 +21,9 @@ export async function isAppEnabledForOwner(..._ignored) {
 }
 
 export function appForApiPath(pathname) {
-  if (/^\/api\/v1\/projects\/[^/]+\/telemetry(?:\/|$)/.test(pathname)) return "telemetry";
   pathname = compatibilityApiPath(pathname);
-  if (/^\/api\/projects\/[^/]+\/activity$/.test(pathname)) return "activity";
-  if (/^\/api\/projects\/[^/]+\/issues$/.test(pathname)) return "activity";
-  if (/^\/api\/projects\/[^/]+\/incidents$/.test(pathname)) return "telemetry";
-  if (/^\/api\/projects\/[^/]+\/incidents\/[^/]+$/.test(pathname)) return "telemetry";
-  if (/^\/api\/projects\/[^/]+\/feedback$/.test(pathname)) return "feedback";
+  const shared = serviceForApiPath(pathname);
+  if (shared) return shared;
   if (/^\/api\/config(?:\/|$)/.test(pathname)) return "noxhere";
   if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(pathname)) {
     return "planning";

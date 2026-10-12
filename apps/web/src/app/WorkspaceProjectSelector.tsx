@@ -8,7 +8,7 @@ import { readLastProject } from "./last-project";
 
 export type WorkspaceProfile = {
   user: { login: string; email?: string | null };
-  orgs: Array<{ login: string; role?: "guest" | "member" | "admin" }>;
+  orgs: Array<{ login: string; role?: "guest" | "viewer" | "member" | "admin" | "owner" }>;
 };
 
 export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfile }) {
@@ -44,7 +44,7 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
   const bootstrap = workspaceQuery?.data;
   const projects = bootstrap?.projects ?? [];
   const effectiveProject = projects.some((project) => project.id === selectedProject) ? selectedProject : projects[0]?.id ?? "";
-  const canCreate = workspace?.role === "admin" || Boolean(bootstrap?.actor.isAdmin);
+  const canCreate = workspace?.role === "admin" || workspace?.role === "owner" || Boolean(bootstrap?.actor.isAdmin);
   const allFailed = bootstrapQueries.length > 0 && bootstrapQueries.every((query) => query.isError);
 
   const create = useMutation({
