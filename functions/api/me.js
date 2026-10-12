@@ -13,6 +13,8 @@ export async function onRequestGet(context) {
     isAdmin: Boolean(isAdmin),
     isPlatformOperator: Boolean(isPlatformOperator),
     accessLevel: auth?.accessLevel ?? "member",
+    role: auth?.role ?? (isAdmin ? "admin" : "member"),
+    capabilities: auth?.capabilities ?? (isAdmin ? ["organization.manage"] : ["content.read", "content.write"]),
     allowedServices: auth?.accessLevel === "guest"
       ? (auth.guestAccess?.organizationWide === true || projectServices === null
         ? ["noxticket", "noxfeed", "noxspot", "noxcue"]

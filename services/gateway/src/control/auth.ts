@@ -1,6 +1,7 @@
 import { apiError } from "./http";
 import { constantTimeHashEqual, randomToken, sha256 } from "./crypto";
 import { guestCanAccess, loadGuestAccess, type GuestAccess } from "./guest-access";
+import { serviceForApiPath } from "../../../../packages/authz/routes.js";
 
 export const SESSION_COOKIE = "__Host-nox_session";
 export const CSRF_COOKIE = "nox_csrf";
@@ -33,6 +34,9 @@ export interface AuthContext {
   connectionId: string | null;
   accessLevel: "member" | "guest" | "api_token";
   guestAccess: GuestAccess | null;
+  role?: "owner" | "admin" | "member" | "viewer" | "guest" | "automation";
+  capabilities?: string[];
+  membershipVerifiedAt?: string | null;
 }
 
 export interface PrincipalCredentialRow {
@@ -51,6 +55,8 @@ interface MembershipRow {
   org_id: number;
   github_login: string;
   role: "member" | "admin";
+  managed_role: "admin" | "member" | "viewer" | null;
+  verified_at: string;
   suspended_at: string | null;
 }
 
@@ -230,7 +236,8 @@ export async function authenticate(request: Request, db: D1Database): Promise<Au
   if (!presentedOrg) return { response: apiError("missing_organization", "Missing X-Org header or org query parameter", 400) };
 
   const membership = await db.prepare(
-    `SELECT org.id AS org_id, org.github_login, membership.role, org.suspended_at
+    `SELECT org.id AS org_id, org.github_login, membership.role, membership.managed_role,
+            membership.verified_at, org.suspended_at
        FROM org_memberships membership
        JOIN orgs org ON org.id = membership.org_id
       WHERE membership.principal_id = ? AND org.github_login = ? COLLATE NOCASE`,
@@ -266,11 +273,18 @@ export async function authenticate(request: Request, db: D1Database): Promise<Au
         connectionId: null,
         accessLevel: "guest",
         guestAccess: guest.access,
+        role: "guest",
+        capabilities: ["content.read"],
+        membershipVerifiedAt: null,
       },
       session: row,
     };
   }
 
+  const role = membership.role === "admin" ? "owner" : membership.managed_role ?? "member";
+  if (role === "viewer" && !["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) {
+    return { response: apiError("member_read_only", "Viewer access is read-only", 403) };
+  }
   return {
     context: {
       credentialType,
@@ -280,12 +294,15 @@ export async function authenticate(request: Request, db: D1Database): Promise<Au
       userId: row.github_user_id,
       orgId: membership.org_id,
       orgLogin: membership.github_login,
-      isAdmin: membership.role === "admin",
+      isAdmin: role === "owner" || role === "admin",
       projectId: requestProjectId(request),
       scopes: [],
       connectionId: row.connection_id,
       accessLevel: "member",
       guestAccess: null,
+      role,
+      capabilities: capabilitiesForRole(role),
+      membershipVerifiedAt: membership.verified_at,
     },
     session: row,
   };
@@ -341,12 +358,15 @@ async function authenticateApiToken(
       userId: null,
       orgId: row.org_id,
       orgLogin: row.org_login,
-      isAdmin: required.endsWith(":write"),
+      isAdmin: false,
       projectId: row.project_id,
       scopes,
       connectionId: null,
       accessLevel: "api_token",
       guestAccess: null,
+      role: "automation",
+      capabilities: scopes,
+      membershipVerifiedAt: null,
     },
   };
 }
@@ -398,13 +418,15 @@ export function requiredScope(pathname: string, method: string): string | null {
 }
 
 export function serviceForPath(pathname: string): string | null {
-  const serviceControl = pathname.match(/^\/api\/v1\/services\/(noxticket|noxfeed|noxspot|noxcue)(?:\/|$)/)?.[1];
-  if (serviceControl) return serviceControl;
-  if (/^\/api\/(?:v1\/)?(features|tasks|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return "noxticket";
-  if (pathname === "/api/v1/feed" || /^\/api\/(?:v1\/)?(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(pathname)) return "noxfeed";
-  if (/^\/api\/(?:v1\/)?spots(?:\/|$)/.test(pathname)) return "noxspot";
-  if (/^\/api\/(?:v1\/)?cues(?:\/|$)/.test(pathname)) return "noxcue";
-  return null;
+  const service = serviceForApiPath(pathname);
+  return service === "noxconnect" ? null : service;
+}
+
+export function capabilitiesForRole(role: "owner" | "admin" | "member" | "viewer"): string[] {
+  const read = ["content.read", "settings.read"];
+  if (role === "viewer") return read;
+  if (role === "member") return [...read, "content.write"];
+  return [...read, "content.write", "organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "stats.configure", "planning.configure"];
 }
 
 export function requestProjectId(request: Request): string | null {

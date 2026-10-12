@@ -188,6 +188,12 @@ export async function handleRequest(
       }
 
       const { context: auth } = authenticated;
+      const { handleMembershipControl, freshAdmin, sensitiveAdminMutation } = await import("./control/memberships");
+      const membershipResponse = await handleMembershipControl(request, control.db, auth);
+      if (membershipResponse) return membershipResponse;
+      if (auth.isAdmin && sensitiveAdminMutation(request) && !freshAdmin(auth)) {
+        return Response.json({ apiVersion: 1, error: { code: "membership_refresh_required", message: "Refresh your verified GitHub membership before changing organization settings" } }, { status: 403, headers: { "Cache-Control": "no-store" } });
+      }
       const { handleApiTokens } = await import("./control/api-tokens");
       const tokenResponse = await handleApiTokens(request, control.db, auth);
       if (tokenResponse) return tokenResponse;
@@ -217,6 +223,14 @@ export async function handleRequest(
           code: error,
           orgId: auth.orgId,
         }));
+      }
+      if (response.ok && auth.isAdmin && sensitiveAdminMutation(request)) {
+        const { audit } = await import("./control/memberships");
+        const auditWork = audit(control.db, auth, "organization.setting_changed", url.pathname, { method: request.method.toUpperCase() })
+          .run()
+          .catch((error) => console.error(JSON.stringify({ event: "admin_audit_failed", path: url.pathname, error: error instanceof Error ? error.message : String(error) })));
+        if (services.background) services.background(auditWork);
+        else await auditWork;
       }
       const { mirrorAndOverlayResponse } = await import("./control/mirror");
       return gatewayResponse(await mirrorAndOverlayResponse(request, response, control.db, auth, services.background));

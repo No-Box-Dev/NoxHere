@@ -5266,6 +5266,64 @@
         "x-required-role": "member"
       }
     },
+    "/api/v1/audit-log": {
+      "get": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "listOrganizationAuditLog",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "List recent access and administration changes",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "admin",
+        "x-change-safety": "safe_read",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "admin"
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
@@ -9297,7 +9355,74 @@
             "type": "string"
           }
         }
-      ]
+      ],
+      "patch": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "updateGuestGrantScope",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "csrfProof": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Change active guest access scope",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "admin",
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "admin"
+      }
     },
     "/api/v1/guests/invites": {
       "post": {
@@ -9436,7 +9561,154 @@
             "type": "string"
           }
         }
-      ]
+      ],
+      "patch": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "updateGuestInvitationScope",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "csrfProof": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Change a pending guest invitation scope",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "admin",
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "admin"
+      }
+    },
+    "/api/v1/guests/invites/{inviteId}/resend": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "inviteId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "resendGuestInvitation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "csrfProof": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Resend a pending guest invitation with a fresh expiry",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "admin",
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "admin"
+      }
     },
     "/api/v1/integrations/connections": {
       "get": {
@@ -10511,6 +10783,144 @@
         "x-organization-optional": false,
         "x-project-scope": "optional",
         "x-required-role": "member"
+      }
+    },
+    "/api/v1/memberships": {
+      "get": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "listOrganizationMemberships",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "List organization members and effective roles",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "member"
+      }
+    },
+    "/api/v1/memberships/{principalId}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "principalId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
+      "patch": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "updateOrganizationMemberRole",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "csrfProof": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Assign an Admin, Member, or Viewer role",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "admin",
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "admin"
       }
     },
     "/api/v1/noxfeed/release-notes-prompt": {
@@ -15157,6 +15567,7 @@
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
+        "x-guest-access": "read",
         "x-project-scope": "optional"
       },
       "put": {
@@ -15324,6 +15735,7 @@
         ],
         "x-authentication": "member",
         "x-change-safety": "safe_read",
+        "x-guest-access": "read",
         "x-project-scope": "optional"
       },
       "post": {
@@ -22713,6 +23125,128 @@
       "tag": "NoxHere"
     },
     {
+      "authentication": "admin",
+      "automationScope": null,
+      "changeSafety": "safe_read",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "listOrganizationAuditLog",
+      "method": "GET",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/audit-log",
+      "projectScope": "optional",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "List recent access and administration changes",
+      "tag": "NoxHere"
+    },
+    {
+      "authentication": "member",
+      "automationScope": null,
+      "changeSafety": "safe_read",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "listOrganizationMemberships",
+      "method": "GET",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/memberships",
+      "projectScope": "optional",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "List organization members and effective roles",
+      "tag": "NoxHere"
+    },
+    {
       "authentication": "member",
       "automationScope": null,
       "changeSafety": "safe_read",
@@ -24257,6 +24791,88 @@
       ],
       "summary": "Reopen a resolved report with optional reporter context",
       "tag": "Feedback"
+    },
+    {
+      "authentication": "admin",
+      "automationScope": null,
+      "changeSafety": "write_not_safe_to_retry",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "resendGuestInvitation",
+      "method": "POST",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "inviteId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/guests/invites/{inviteId}/resend",
+      "projectScope": "optional",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          }
+        },
+        "required": false
+      },
+      "requestContentTypes": [
+        "application/json"
+      ],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "csrfProof": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Resend a pending guest invitation with a fresh expiry",
+      "tag": "NoxHere"
     },
     {
       "authentication": "admin",
@@ -26552,6 +27168,170 @@
       "tag": "Planning"
     },
     {
+      "authentication": "admin",
+      "automationScope": null,
+      "changeSafety": "write_not_safe_to_retry",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "updateGuestGrantScope",
+      "method": "PATCH",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "grantId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/guests/grants/{grantId}",
+      "projectScope": "optional",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          }
+        },
+        "required": false
+      },
+      "requestContentTypes": [
+        "application/json"
+      ],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "csrfProof": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Change active guest access scope",
+      "tag": "NoxHere"
+    },
+    {
+      "authentication": "admin",
+      "automationScope": null,
+      "changeSafety": "write_not_safe_to_retry",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "updateGuestInvitationScope",
+      "method": "PATCH",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "inviteId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/guests/invites/{inviteId}",
+      "projectScope": "optional",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          }
+        },
+        "required": false
+      },
+      "requestContentTypes": [
+        "application/json"
+      ],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "csrfProof": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Change a pending guest invitation scope",
+      "tag": "NoxHere"
+    },
+    {
       "authentication": "member",
       "automationScope": "noxcue:write",
       "changeSafety": "write_not_safe_to_retry",
@@ -27373,6 +28153,88 @@
       "tag": "Feedback"
     },
     {
+      "authentication": "admin",
+      "automationScope": null,
+      "changeSafety": "write_not_safe_to_retry",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "updateOrganizationMemberRole",
+      "method": "PATCH",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "principalId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/memberships/{principalId}",
+      "projectScope": "optional",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          }
+        },
+        "required": false
+      },
+      "requestContentTypes": [
+        "application/json"
+      ],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "csrfProof": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Assign an Admin, Member, or Viewer role",
+      "tag": "NoxHere"
+    },
+    {
       "authentication": "member",
       "automationScope": null,
       "changeSafety": "write_not_safe_to_retry",
@@ -27899,5 +28761,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "ff95a5fb6486470d730d0227aa01ee7b7d0ba92bb5698e73278fc06f308d0ce0"
+  "x-sdk-source-sha256": "68b10b00c6069da81feabde4e1777833140d8ab2ca664a0038ac558fafc76910"
 }
