@@ -201,7 +201,7 @@ jobs:
       - run: npm ci
       - name: Install unified Python SDK for Telemetry tests
         run: python3 -m pip install -e ../../packages/python-sdk
-      - name: Enforce active Telemetry telemetry milestone
+      - name: Enforce active Telemetry milestone
         working-directory: ${{ github.workspace }}
         run: npm run telemetry:milestones:verify
       - name: Verify Telemetry Worker, contracts, and build

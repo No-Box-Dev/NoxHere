@@ -271,7 +271,7 @@ daily summary, fallback, duplicate webhook, and separate Slack route flows pass.
    digest aggregation, resolution summaries, share projection, and product audit
    policy into Feedback.
 3. Keep GitHub and Slack execution in NoxHere using command/receipt contracts.
-4. Keep the private Feedback-to-Telemetry telemetry binding; it is an internal
+4. Keep the private Feedback-to-Telemetry binding; it is an internal
    service capability and carries only a source-scoped ingest credential.
 5. Remove the embedded Worker after parity tests prove the relocated service.
 

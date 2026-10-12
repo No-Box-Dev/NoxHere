@@ -6,7 +6,7 @@ export const milestones = [
     name: "Baseline and enforced gates",
     objective: "Lock the existing Telemetry SDK and ingest behavior and enforce a fail-closed telemetry roadmap.",
     requiredPaths: [
-      "docs/TELEMETRY_TELEMETRY_MILESTONES.md",
+      "docs/TELEMETRY_MILESTONES.md",
       "scripts/telemetry-milestones.config.mjs",
       "scripts/run-telemetry-milestones.mjs",
       "packages/sdk/src/telemetry/telemetry.test.ts",
@@ -39,7 +39,7 @@ export const milestones = [
   {
     id: "M1",
     name: "One track contract",
-    objective: "Expose one versioned track() API in TypeScript and Python while preserving compatibility wrappers.",
+    objective: "Expose one versioned track() API in TypeScript and Python with unified ergonomic wrappers.",
     requiredPaths: [
       "packages/sdk/src/telemetry/track.test.ts",
       "packages/python-sdk/tests/test_telemetry_track.py",
@@ -188,7 +188,7 @@ export const milestones = [
     name: "SDK operations and release",
     objective: "Prove non-blocking delivery, retry safety, release integrity, clean installation, and the complete local telemetry path.",
     requiredPaths: [
-      "docs/TELEMETRY_TELEMETRY_OPERATIONS.md",
+      "docs/TELEMETRY_OPERATIONS.md",
       "scripts/telemetry-local-e2e.mjs",
       "scripts/verify-sdk-release-artifacts.mjs",
     ],
