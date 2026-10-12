@@ -1,1 +1,0 @@
-PR,pull request,menu bar,team,feed,activity,notifications,developer tools,code review

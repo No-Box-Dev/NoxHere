@@ -1,3 +1,0 @@
-PR notes are now easier to scan from a person's open work. Expand any pull request to see its plain-English opening note and, once merged, its separate release note.
-
-New opening notes use three short, straightforward sentences, while merged posts remain distinct updates about what shipped.
