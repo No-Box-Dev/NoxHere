@@ -1,1 +1,1 @@
-GitHub,PR,pull request,menubar,team,feed,activity,notifications,developer tools,code review
+PR,pull request,menu bar,team,feed,activity,notifications,developer tools,code review

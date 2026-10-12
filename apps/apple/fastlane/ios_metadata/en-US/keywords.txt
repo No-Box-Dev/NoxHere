@@ -1,1 +1,1 @@
-GitHub,PR,pull request,code review,developer,team,feed,issues,releases,NoxHere
+PR,pull request,code review,developer,team,feed,issues,releases,NoxHere
