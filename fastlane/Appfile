@@ -1,0 +1,5 @@
+app_identifier("dev.noboxdev.noxfeed")
+team_id("GG6633R92T")
+# itc_team_id gets picked up from ASC API key once first pushed. Fill in
+# after the first `fastlane push_metadata` if fastlane prompts for it:
+#   itc_team_id("XXXXXXXXX")

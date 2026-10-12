@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [initial]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: service/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Verify public developer documentation contract
+        run: npm run docs:check
+      - run: npm run build

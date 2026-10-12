@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>No-Box-Dev — Studio Case Studies</title>
+<style>
+  :root {
+    --navy: #132444;
+    --navy-2: #0f1c36;
+    --blue: #2A4391;
+    --teal: #1F9D9B;
+    --coral: #FE795D;
+    --purple: #9B78F4;
+    --cream: #FFFDEB;
+    --ink: #1a1a1a;
+    --muted: #5b6472;
+    --line: #e3e7ee;
+    --bg: #ffffff;
+    --chip-bg: #f4f6f8;
+  }
+  @page { size: A4; margin: 16mm 14mm; }
+  @page :first { margin: 0; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+
+  /* ---------- Cover ---------- */
+  .cover {
+    page-break-after: always;
+    height: 297mm;
+    background: radial-gradient(120% 90% at 80% 0%, #1b3360 0%, var(--navy) 45%, var(--navy-2) 100%);
+    color: var(--cream);
+    position: relative;
+    overflow: hidden;
+    padding: 30mm 22mm;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .glow {
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.5; z-index: 0;
+  }
+  .cover .g1 { width: 360px; height: 360px; background: var(--teal); top: -120px; right: -90px; opacity: 0.35; }
+  .cover .g2 { width: 320px; height: 320px; background: var(--coral); bottom: -130px; left: -80px; opacity: 0.28; }
+  .cover .mark {
+    position: absolute; right: -60px; bottom: -40px; width: 230mm; opacity: 0.05; color: var(--cream); z-index: 0;
+  }
+  .cover > * { position: relative; z-index: 1; }
+  .logo { color: var(--cream); width: 300px; }
+  .cover .kicker {
+    margin-top: auto; font-size: 11pt; letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--teal); font-weight: 700;
+  }
+  .cover h1 {
+    font-size: 47pt; line-height: 1.02; margin: 10px 0 0; font-weight: 800; letter-spacing: -0.02em;
+    max-width: 15ch;
+  }
+  .cover h1 em { font-style: normal; color: var(--coral); }
+  .cover .lede { font-size: 13pt; max-width: 48ch; color: #d7dbe6; margin-top: 16px; }
+  .cover .rule { height: 4px; width: 120px; margin: 26px 0; border-radius: 4px;
+    background: linear-gradient(90deg, var(--teal), var(--coral)); }
+  .stats { display: flex; gap: 34px; margin-top: 6px; }
+  .stats .n { font-size: 26pt; font-weight: 800; color: var(--cream); }
+  .stats .l { font-size: 8.5pt; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa4b8; }
+  .cover .foot { margin-top: auto; font-size: 9pt; color: #8b95ac; letter-spacing: 0.04em; }
+
+  /* ---------- Sections ---------- */
+  .section { page-break-before: always; }
+  h2.section-title {
+    font-size: 19pt; margin: 0 0 4px; color: var(--navy); letter-spacing: -0.01em; font-weight: 800;
+  }
+  .section-sub { color: var(--muted); font-size: 10pt; margin: 0 0 16px; max-width: 70ch; }
+  .cat-bar { height: 4px; width: 54px; border-radius: 4px; margin-bottom: 10px; }
+
+  /* overview */
+  .lead { font-size: 12.5pt; line-height: 1.6; color: #2a3340; max-width: 62ch; }
+  .pillars { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+  .pillar { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; break-inside: avoid; }
+  .pillar .pt { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy); font-size: 11pt; }
+  .pillar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .pillar .pd { color: var(--muted); font-size: 9.5pt; margin-top: 4px; }
+
+  /* case study grid */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card {
+    border: 1px solid var(--line); border-radius: 14px; padding: 14px 15px 13px;
+    break-inside: avoid; position: relative; background: #fff;
+    border-top: 3px solid var(--teal);
+  }
+  .card.blue { border-top-color: var(--blue); }
+  .card.coral { border-top-color: var(--coral); }
+  .card.purple { border-top-color: var(--purple); }
+  .card .name { font-size: 13pt; font-weight: 800; color: var(--navy); letter-spacing: -0.01em; }
+  .card .pitch { font-size: 9.7pt; font-weight: 600; color: var(--ink); margin: 2px 0 6px; }
+  .card .desc { font-size: 9.3pt; color: var(--muted); line-height: 1.45; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .chip { font-size: 7.8pt; font-weight: 600; background: var(--chip-bg); color: #3a4453;
+    padding: 2px 7px; border-radius: 20px; letter-spacing: 0.02em; }
+  .meta { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 8.2pt; }
+  .status { font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .s-live { background: #e7f6ef; color: #1c7a4b; }
+  .s-dev { background: #fef0e6; color: #b45309; }
+  .s-internal { background: #eef0f4; color: #4a5568; }
+  .proof { color: var(--blue); font-weight: 600; text-decoration: none; word-break: break-all; }
+  .proof-sep { color: #c2c8d2; }
+
+  /* closing */
+  .closing { page-break-before: always; background: var(--navy); color: var(--cream);
+    border-radius: 16px; padding: 28mm 20mm; min-height: 235mm; position: relative; overflow: hidden; }
+  .closing .glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.3; z-index: 0; }
+  .closing .g1 { width: 320px; height: 320px; background: var(--teal); top: -100px; left: -90px; }
+  .closing > * { position: relative; z-index: 1; }
+  .closing h2 { font-size: 34pt; margin: 0 0 10px; font-weight: 800; letter-spacing: -0.02em; max-width: 14ch; }
+  .closing p { font-size: 12pt; color: #cdd3e0; max-width: 48ch; }
+  .closing .links { margin-top: 26px; display: flex; flex-direction: column; gap: 8px; font-size: 12pt; }
+  .closing .links a { color: var(--teal); text-decoration: none; font-weight: 600; }
+  .closing .logo { width: 240px; margin-bottom: 26px; color: var(--cream); }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<section class="cover">
+  <div class="glow g1"></div><div class="glow g2"></div>
+  <svg class="logo" viewBox="0 0 1822 275" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="No-Box-Dev">
+    <path d="M22.87 235.05V32.52H52.01L166.83 197.75V32.81H193.05V235.05H163.91L49.1 69.82V235.05H22.87ZM323.95 237.96c-59.44 0-97.33-42.25-97.33-104.61 0-62.36 37.88-105.2 97.33-105.2 60.03 0 97.62 42.84 97.62 105.2 0 62.07-37.88 104.61-97.62 104.61ZM254.6 133.35c0 47.79 26.81 82.17 69.35 82.17 43.42 0 69.94-34.68 69.94-82.17 0-48.37-26.52-82.47-69.94-82.47-43.54 0-69.35 34.1-69.35 82.47ZM537.57 235.05V32.52L622.95 32.81c39.63.29 64.1 17.78 64.1 51.58 0 24.18-12.82 36.71-28.85 43.12 24.48 6.12 37.59 22.44 37.59 49.54 0 34.67-25.06 58-70.23 58h-87.99ZM1104 235.05 1181.5 131.6 1106.9 32.52h31.76l58 78.68 57.99-78.68h31.76l-74.6 99.07 77.52 103.45h-31.76l-60.91-82.76-60.9 82.76H1104ZM1266.6 235.05V32.52h74.6c60.9 0 98.2 34.1 98.2 99.95 0 63.82-36.13 102.58-95.29 102.58h-77.51ZM1472.9 235.05V32.52H1619.5v21.86H1499.4v66.15h109.28v22.15H1499.4v70.23H1619.5v22.14h-146.6ZM1706.9 235.05l-70.8-202.53h29.43l60.33 179.39 60.61-179.39h29.43l-71.98 202.53h-37.01Z" fill="currentColor"/>
+    <g clip-path="url(#c)"><path d="M943.19 84.37V189.9L919.99 176.26V98.01L943.19 84.37Z" fill="currentColor"/><path d="M935.06 204.23 837.24 261.77 739.42 204.23 762.62 190.58 837.24 234.49 911.86 190.59 935.06 204.23Z" fill="currentColor"/><path d="M754.5 98.02V176.26L731.31 189.9V84.37L754.5 98.02Z" fill="currentColor"/><path d="M935.06 70.05 911.87 83.69 837.24 39.79 762.62 83.69 739.42 70.05 837.24 12.51 935.06 70.05Z" fill="currentColor"/></g>
+    <defs><clipPath id="c"><rect width="211.87" height="249.26" fill="currentColor" transform="translate(731.31 12.51)"/></clipPath></defs>
+  </svg>
+
+  <div class="kicker">Studio Case Studies · 2026</div>
+  <h1>Software that ships — <em>across every surface.</em></h1>
+  <p class="lede">No-Box-Dev is an AI-native software studio building developer tools, consumer apps, and games — native macOS, web &amp; cloud, mobile, and 3D. This is a tour of what we've built.</p>
+  <div class="rule"></div>
+  <div class="stats">
+    <div><div class="n">17+</div><div class="l">Products shipped</div></div>
+    <div><div class="n">5</div><div class="l">Platforms</div></div>
+    <div><div class="n">AI</div><div class="l">Native dev loop</div></div>
+  </div>
+  <div class="foot">noboxdev.com · github.com/No-Box-Dev</div>
+</section>
+
+<!-- ================= OVERVIEW ================= -->
+<section class="section">
+  <div class="cat-bar" style="background:linear-gradient(90deg,var(--teal),var(--coral))"></div>
+  <h2 class="section-title">A studio, not a single product.</h2>
+  <p class="section-sub">No-Box-Dev designs, builds, ships, and maintains a portfolio of products end-to-end — from Rust game engines to App Store macOS apps to Cloudflare-scale web platforms. Development is AI-native: agents are first-class collaborators across the whole workspace.</p>
+  <p class="lead">Everything here is real, running code — not mockups. Each entry lists the stack, current status, and a live link or repository as proof.</p>
+  <div class="pillars">
+    <div class="pillar"><div class="pt"><span class="dot" style="background:var(--teal)"></span>Native macOS</div><div class="pd">SwiftUI menu-bar &amp; desktop apps — NoxKey, NoxViewer, NoxFeed, NoxPilot, noboxedu.</div></div>
+    <div class="pillar"><div class="pt"><span class="dot" style="background:var(--blue)"></span>Web &amp; cloud</div><div class="pd">Next.js + Cloudflare (Workers / Pages / D1 / R2) — unticket, NoxSpot, Boundless Learning, 112Schade.</div></div>
+    <div class="pillar"><div class="pt"><span class="dot" style="background:var(--coral)"></span>Mobile</div><div class="pd">SwiftUI iOS &amp; iPadOS — Robin, Baseline, noboxedu.</div></div>
+    <div class="pillar"><div class="pt"><span class="dot" style="background:var(--purple)"></span>Games &amp; 3D</div><div class="pd">Bevy / Rust — Character Gallery, AidenArena, wow-arena-db.</div></div>
+  </div>
+</section>
+
+<!-- ================= DEVELOPER TOOLS ================= -->
+<section class="section">
+  <div class="cat-bar" style="background:var(--teal)"></div>
+  <h2 class="section-title">Developer tools — the nox* family</h2>
+  <p class="section-sub">A growing suite of native, fast, opinionated tools for developers. Shared naming, shared patterns, one workspace.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="name">NoxKey</div>
+      <div class="pitch">Keychain-grade secrets, unlocked with Touch ID.</div>
+      <div class="desc">A macOS menu-bar secret manager built on the system Keychain, with an MCP server so AI agents can read secrets on demand. Mac App Store distribution.</div>
+      <div class="chips"><span class="chip">SwiftUI</span><span class="chip">macOS</span><span class="chip">Keychain</span><span class="chip">MCP</span></div>
+      <div class="meta"><span class="status s-live">App Store</span><a class="proof" href="https://noxkey.ai">noxkey.ai</a></div>
+    </div>
+    <div class="card">
+      <div class="name">NoxViewer</div>
+      <div class="pitch">Triage GitHub issues without leaving the menubar.</div>
+      <div class="desc">A macOS menu-bar app for GitHub issue triage, extracted and hardened as its own product. Signed + notarized, distributed via GitHub Releases.</div>
+      <div class="chips"><span class="chip">SwiftUI</span><span class="chip">macOS</span><span class="chip">GitHub App</span></div>
+      <div class="meta"><span class="status s-live">Shipping</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card">
+      <div class="name">NoxFeed</div>
+      <div class="pitch">Your team's PR feed, narrated, in the menubar.</div>
+      <div class="desc">A read-only macOS menubar client for a team's GitHub pull-request activity — live feed, per-person "current" view, PR timelines, native notifications. Sandbox-friendly, MAS-bound.</div>
+      <div class="chips"><span class="chip">SwiftUI</span><span class="chip">macOS</span><span class="chip">Sandboxed</span></div>
+      <div class="meta"><span class="status s-dev">MAS pending</span><a class="proof" href="https://app.unticket.ai">app.unticket.ai</a></div>
+    </div>
+    <div class="card">
+      <div class="name">NoxPilot</div>
+      <div class="pitch">One native app for mail, calendar, and tasks.</div>
+      <div class="desc">A unified macOS PIM (mail + calendar + tasks) targeting Mac App Store. Swift engines (noxmail / noxcalendar / noxtask) talking to an external MCP server over a Unix-domain socket inside the app container.</div>
+      <div class="chips"><span class="chip">SwiftUI</span><span class="chip">macOS</span><span class="chip">MCP</span><span class="chip">MailCore2</span></div>
+      <div class="meta"><span class="status s-dev">In development</span><a class="proof" href="https://noboxdev.com">noboxdev.com</a></div>
+    </div>
+    <div class="card">
+      <div class="name">NoxSpot</div>
+      <div class="pitch">Bug reports with a screenshot, not a novel.</div>
+      <div class="desc">A bug-reporting widget SaaS: capture &amp; annotate screenshots from any site, then file them as GitHub issues. Embeddable JS widget + Cloudflare API + D1 + R2.</div>
+      <div class="chips"><span class="chip">Cloudflare Workers</span><span class="chip">D1</span><span class="chip">R2</span><span class="chip">Hono</span></div>
+      <div class="meta"><span class="status s-live">Live</span><a class="proof" href="https://app.noxspot.dev">app.noxspot.dev</a></div>
+    </div>
+    <div class="card">
+      <div class="name">Shotfix</div>
+      <div class="pitch">Screenshot it. Get the fix.</div>
+      <div class="desc">Visual AI input for developers — snap a screenshot of a problem, get an AI-driven fix. A focused, fast feedback loop for debugging UI and code.</div>
+      <div class="chips"><span class="chip">AI</span><span class="chip">Developer tooling</span></div>
+      <div class="meta"><span class="status s-dev">Built</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card">
+      <div class="name">NoxLink</div>
+      <div class="pitch">The activity feed for your AI agents.</div>
+      <div class="desc">A local-first feed that streams what autonomous agents ship, break, and fix — auto-detecting file edits, commits, builds, branch switches, PRs, and deploys across the whole workspace.</div>
+      <div class="chips"><span class="chip">Local-first</span><span class="chip">Watchers</span><span class="chip">HTTP API</span></div>
+      <div class="meta"><span class="status s-internal">Internal</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card">
+      <div class="name">Nox Agents</div>
+      <div class="pitch">Autonomous agents that ship across projects.</div>
+      <div class="desc">A headless orchestration hub that runs <code>claude -p</code> agents across projects — scheduling, multi-project coordination, and token-exhaustion recovery.</div>
+      <div class="chips"><span class="chip">Agents</span><span class="chip">Orchestration</span></div>
+      <div class="meta"><span class="status s-internal">Internal</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PLATFORMS & WEB ================= -->
+<section class="section">
+  <div class="cat-bar" style="background:var(--blue)"></div>
+  <h2 class="section-title">Platforms &amp; web</h2>
+  <p class="section-sub">Full web products on Cloudflare's edge — AI-assisted project management, education, and line-of-business software.</p>
+  <div class="grid">
+    <div class="card blue">
+      <div class="name">unticket</div>
+      <div class="pitch">AI project management that reads your repos.</div>
+      <div class="desc">An AI-powered project-management dashboard (formerly GitPulse). A GitHub App ingests org activity into a Cloudflare D1 store, and an AI narrator turns every PR into a first-person team update. The shared backend NoxFeed reads from.</div>
+      <div class="chips"><span class="chip">Next.js</span><span class="chip">Cloudflare Pages</span><span class="chip">Functions</span><span class="chip">D1</span></div>
+      <div class="meta"><span class="status s-live">Live</span><a class="proof" href="https://app.unticket.ai">app.unticket.ai</a></div>
+    </div>
+    <div class="card blue">
+      <div class="name">Boundless Learning</div>
+      <div class="pitch">Adaptive learning, web-scale.</div>
+      <div class="desc">An education platform with a Next.js frontend on Cloudflare Workers + D1, deployed via OpenNext. Pairs with a native iPad client (noboxedu) through pair-code auth.</div>
+      <div class="chips"><span class="chip">Next.js</span><span class="chip">Cloudflare Workers</span><span class="chip">D1</span></div>
+      <div class="meta"><span class="status s-live">Deployed</span><a class="proof" href="https://noboxdev.com">noboxdev.com</a></div>
+    </div>
+    <div class="card blue">
+      <div class="name">noboxedu</div>
+      <div class="pitch">The classroom, on iPad.</div>
+      <div class="desc">A native SwiftUI iPad app (iPadOS 17+) that connects to the Boundless Learning backend via pair-code authentication. xcodegen-managed, MAS-track.</div>
+      <div class="chips"><span class="chip">SwiftUI</span><span class="chip">iPadOS</span><span class="chip">xcodegen</span></div>
+      <div class="meta"><span class="status s-dev">Built</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card blue">
+      <div class="name">112Schade</div>
+      <div class="pitch">Insurance claims, end to end.</div>
+      <div class="desc">A line-of-business insurance-claim-management platform: Next.js 16 + Cloudflare Workers + D1 + a FastAPI service + Better-Auth + Postmark for notifications.</div>
+      <div class="chips"><span class="chip">Next.js 16</span><span class="chip">Cloudflare</span><span class="chip">FastAPI</span><span class="chip">Better-Auth</span></div>
+      <div class="meta"><span class="status s-dev">In development</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MOBILE + GAMES ================= -->
+<section class="section">
+  <div class="cat-bar" style="background:var(--coral)"></div>
+  <h2 class="section-title">Mobile, games &amp; 3D</h2>
+  <p class="section-sub">Native iOS apps for people, and a Bevy/Rust stack for real-time games and a shared 3D asset library.</p>
+  <div class="grid">
+    <div class="card coral">
+      <div class="name">Robin</div>
+      <div class="pitch">Reading, for kids.</div>
+      <div class="desc">A native SwiftUI iOS app that makes reading engaging for children.</div>
+      <div class="chips"><span class="chip">SwiftUI</span><span class="chip">iOS</span></div>
+      <div class="meta"><span class="status s-dev">Built</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card coral">
+      <div class="name">Baseline</div>
+      <div class="pitch">Health, tracked simply.</div>
+      <div class="desc">A native SwiftUI iOS health-tracking app focused on a clean, honest baseline of your data.</div>
+      <div class="chips"><span class="chip">SwiftUI</span><span class="chip">iOS</span></div>
+      <div class="meta"><span class="status s-dev">Built</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card purple">
+      <div class="name">Character Gallery</div>
+      <div class="pitch">A CC0 3D model library — and the hub for it.</div>
+      <div class="desc">A Bevy/Rust 3D model gallery and editor that is the single source of truth for a CC0 model library. Other Bevy projects symlink <code>models/</code> in and read the generated <code>catalog.ron</code>, so asset changes propagate automatically.</div>
+      <div class="chips"><span class="chip">Bevy</span><span class="chip">Rust</span><span class="chip">3D</span><span class="chip">CC0</span></div>
+      <div class="meta"><span class="status s-live">Active</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card purple">
+      <div class="name">AidenArena</div>
+      <div class="pitch">A Bevy arena combat game.</div>
+      <div class="desc">A Bevy/Rust game and the first consumer of the Character Gallery asset library — pulling shared CC0 models in via the symlinked asset path.</div>
+      <div class="chips"><span class="chip">Bevy</span><span class="chip">Rust</span><span class="chip">Game</span></div>
+      <div class="meta"><span class="status s-dev">In development</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+    <div class="card purple">
+      <div class="name">wow-arena-db</div>
+      <div class="pitch">Game data, queryable.</div>
+      <div class="desc">A queryable SQLite database of class data — base stats, abilities, full talent trees, PvP gear, and a meta Arena build per class — backing AidenArena's combat modeling. Read-only FastAPI + Vite/React/TS viewer.</div>
+      <div class="chips"><span class="chip">SQLite</span><span class="chip">FastAPI</span><span class="chip">React</span></div>
+      <div class="meta"><span class="status s-live">Built</span><a class="proof" href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CLOSING ================= -->
+<section class="closing">
+  <div class="glow g1"></div>
+  <svg class="logo" viewBox="0 0 1822 275" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M22.87 235.05V32.52H52.01L166.83 197.75V32.81H193.05V235.05H163.91L49.1 69.82V235.05H22.87ZM323.95 237.96c-59.44 0-97.33-42.25-97.33-104.61 0-62.36 37.88-105.2 97.33-105.2 60.03 0 97.62 42.84 97.62 105.2 0 62.07-37.88 104.61-97.62 104.61ZM254.6 133.35c0 47.79 26.81 82.17 69.35 82.17 43.42 0 69.94-34.68 69.94-82.17 0-48.37-26.52-82.47-69.94-82.47-43.54 0-69.35 34.1-69.35 82.47ZM537.57 235.05V32.52L622.95 32.81c39.63.29 64.1 17.78 64.1 51.58 0 24.18-12.82 36.71-28.85 43.12 24.48 6.12 37.59 22.44 37.59 49.54 0 34.67-25.06 58-70.23 58h-87.99ZM1104 235.05 1181.5 131.6 1106.9 32.52h31.76l58 78.68 57.99-78.68h31.76l-74.6 99.07 77.52 103.45h-31.76l-60.91-82.76-60.9 82.76H1104ZM1266.6 235.05V32.52h74.6c60.9 0 98.2 34.1 98.2 99.95 0 63.82-36.13 102.58-95.29 102.58h-77.51ZM1472.9 235.05V32.52H1619.5v21.86H1499.4v66.15h109.28v22.15H1499.4v70.23H1619.5v22.14h-146.6ZM1706.9 235.05l-70.8-202.53h29.43l60.33 179.39 60.61-179.39h29.43l-71.98 202.53h-37.01Z" fill="currentColor"/>
+    <g clip-path="url(#c2)"><path d="M943.19 84.37V189.9L919.99 176.26V98.01L943.19 84.37Z" fill="currentColor"/><path d="M935.06 204.23 837.24 261.77 739.42 204.23 762.62 190.58 837.24 234.49 911.86 190.59 935.06 204.23Z" fill="currentColor"/><path d="M754.5 98.02V176.26L731.31 189.9V84.37L754.5 98.02Z" fill="currentColor"/><path d="M935.06 70.05 911.87 83.69 837.24 39.79 762.62 83.69 739.42 70.05 837.24 12.51 935.06 70.05Z" fill="currentColor"/></g>
+    <defs><clipPath id="c2"><rect width="211.87" height="249.26" fill="currentColor" transform="translate(731.31 12.51)"/></clipPath></defs>
+  </svg>
+  <h2>Let's build something.</h2>
+  <p>No-Box-Dev ships across native, web, mobile, and games — AI-native from the first commit. If you'd like a deeper look at any of these, or a conversation about building yours, reach out.</p>
+  <div class="links">
+    <a href="https://noboxdev.com">noboxdev.com</a>
+    <a href="https://github.com/No-Box-Dev">github.com/No-Box-Dev</a>
+  </div>
+</section>
+
+</body>
+</html>

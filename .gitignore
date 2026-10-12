@@ -1,0 +1,37 @@
+## Xcode
+build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+*.xcuserstate
+*.xcworkspacedata
+
+## macOS
+.DS_Store
+
+## Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output
+# Screenshots live in git only when actual captures land; ignore the
+# scratch dir Fastlane writes during a run.
+
+## Ruby / Bundler
+.bundle/
+vendor/bundle/
+
+## Build outputs
+build/
+
+## SPM
+.build/
+.swiftpm/
+Package.resolved
+
+## JavaScript tooling
+node_modules/
+.wrangler/
+
+## Local signing material
+*.provisionprofile

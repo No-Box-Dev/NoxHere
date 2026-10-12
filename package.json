@@ -1,0 +1,11 @@
+{
+  "name": "unticketfeed-release-assets",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "screenshots": "node scripts/generate-screenshots.mjs"
+  },
+  "devDependencies": {
+    "puppeteer": "25.3.0"
+  }
+}
