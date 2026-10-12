@@ -7,6 +7,7 @@ import { activityMessage, featureAddedMessage, testMessage } from "./messages";
 import { PLANNING_MANIFEST } from "./manifest";
 import { checkReadiness } from "./readiness";
 import { createTask, deleteTask, listTasks, updateTask, type TaskFilters } from "./tasks";
+import { getTaskWorkflow, putTaskWorkflow } from "./task-workflows";
 import {
   createSpec,
   getSpec,
@@ -67,6 +68,8 @@ export default class PlanningService extends WorkerEntrypoint<Env> {
   createTask(scope: TicketScope, input: unknown) { return createTask(this.env.DB, scope, input); }
   updateTask(scope: TicketScope, id: string, input: unknown) { return updateTask(this.env.DB, scope, id, input); }
   deleteTask(scope: TicketScope, id: string) { return deleteTask(this.env.DB, scope, id); }
+  getTaskWorkflow(scope: TicketScope, owner?: string) { return getTaskWorkflow(this.env.DB, scope, owner); }
+  putTaskWorkflow(scope: TicketScope, owner: string, input: unknown) { return putTaskWorkflow(this.env.DB, scope, owner, input); }
   listFeatureAttachments(scope: TicketScope, featureId: number) { return listFeatureAttachments(this.env.DB, scope, featureId); }
   putFeatureAttachment(scope: TicketScope, featureId: number, filename: string, bytes: ArrayBuffer) { return putFeatureAttachment(this.env.DB, this.env.SPEC_ATTACHMENTS, scope, featureId, filename, bytes); }
   getFeatureAttachment(scope: TicketScope, featureId: number, attachmentId: number) { return getFeatureAttachment(this.env.DB, this.env.SPEC_ATTACHMENTS, scope, featureId, attachmentId); }

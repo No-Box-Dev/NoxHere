@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { bootstrapSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
-import type { Bootstrap, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
+import { bootstrapSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
+import type { Bootstrap, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
@@ -16,6 +16,8 @@ export interface PlatformApi {
   createPlanningTask(organizationId: string, projectId: string, input: { title: string; note?: string; owner?: string; color?: PlanningTask["color"]; featureNumber?: number | null; stageId?: string }): Promise<PlanningTask>;
   updatePlanningTask(organizationId: string, projectId: string, taskId: string, input: Partial<Pick<PlanningTask, "title" | "note" | "owner" | "color" | "status" | "featureNumber" | "stageId" | "position">>): Promise<PlanningTask>;
   deletePlanningTask(organizationId: string, projectId: string, taskId: string): Promise<void>;
+  taskWorkflow(organizationId: string, projectId: string, owner: string, signal?: AbortSignal): Promise<TaskWorkflow>;
+  setTaskWorkflow(organizationId: string, projectId: string, owner: string, stages: TaskStage[]): Promise<TaskWorkflow>;
   planningFeatureAttachments(organizationId: string, projectId: string, featureId: number, signal?: AbortSignal): Promise<PlanningFeatureAttachment[]>;
   uploadPlanningFeatureAttachment(organizationId: string, projectId: string, featureId: number, file: File): Promise<PlanningFeatureAttachment>;
   planningFeatureAttachmentBlob(organizationId: string, projectId: string, featureId: number, attachmentId: number, signal?: AbortSignal): Promise<Blob>;
@@ -100,6 +102,8 @@ export const platformApi: PlatformApi = {
   deletePlanningTask: async (organizationId, projectId, taskId) => {
     await deleteJson(`/api/v1/tasks/${encodeURIComponent(taskId)}`, z.object({ ok: z.literal(true) }), { organizationId, projectId });
   },
+  taskWorkflow: (organizationId, projectId, owner, signal) => getJson(`/api/v1/task-workflows?owner=${encodeURIComponent(owner)}`, taskWorkflowSchema, signal, { organizationId, projectId }),
+  setTaskWorkflow: (organizationId, projectId, owner, stages) => putJson("/api/v1/task-workflows", { owner, stages }, taskWorkflowSchema, { organizationId, projectId }),
   planningFeatureAttachments: async (organizationId, projectId, featureId, signal) => {
     const result = await getJson(`/api/v1/features/${featureId}/attachments`, z.object({ attachments: planningFeatureAttachmentSchema.array() }), signal, { organizationId, projectId });
     return result.attachments;

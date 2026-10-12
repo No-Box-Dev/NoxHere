@@ -30,6 +30,20 @@ export const projectSettingsSchema = z.object({
   })).optional(),
 }).loose().nullable();
 
+export const taskStageSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  color: z.string(),
+  completed: z.boolean().optional(),
+});
+
+export const taskWorkflowSchema = z.object({
+  owner: z.string(),
+  stages: z.array(taskStageSchema),
+  source: z.enum(["gtd-default", "custom"]),
+  updatedAt: z.string().nullable(),
+});
+
 export const slackRoutingSchema = z.object({
   routes: z.object({ planning: z.string().nullable() }).loose(),
   connections: z.object({ planning: z.string().nullable() }).loose().optional(),
@@ -335,3 +349,5 @@ export type RetrievalResult = z.infer<typeof retrievalResultSchema>;
 export type PlanningFeatureRecord = z.infer<typeof planningFeatureSchema>;
 export type PlanningTask = z.infer<typeof planningTaskSchema>;
 export type PlanningFeatureAttachment = z.infer<typeof planningFeatureAttachmentSchema>;
+export type TaskStage = z.infer<typeof taskStageSchema>;
+export type TaskWorkflow = z.infer<typeof taskWorkflowSchema>;

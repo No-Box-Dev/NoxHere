@@ -410,7 +410,12 @@ function overlayCallbacks() {
     blocks: config.blocks,
     reporter,
     onCaptureError: (error) => {
-      console.error('[Feedback] Capture failed:', error);
+      console.error('[Feedback] Capture failed', {
+        code: error?.code || 'capture_failed',
+        message: error instanceof Error ? error.message : String(error),
+        details: error?.details || null,
+        error,
+      });
       showToast({ message: 'Screenshot capture failed', variant: 'error', durationMs: 4000 });
     },
   };

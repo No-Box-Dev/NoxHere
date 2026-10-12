@@ -29,7 +29,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 161
+    public static let operationCount = 163
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -86,6 +86,7 @@ public enum NoxHereOperations {
         "getNoxServiceHealth": .init(id: "getNoxServiceHealth", method: "GET", path: "/api/v1/services/{service}/health", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getNoxServiceSetup": .init(id: "getNoxServiceSetup", method: "GET", path: "/api/v1/services/{service}/setup", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getOperatorUsage": .init(id: "getOperatorUsage", method: "GET", path: "/api/v1/operator/usage", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "getPersonalTaskWorkflow": .init(id: "getPersonalTaskWorkflow", method: "GET", path: "/api/v1/task-workflows", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getProjectActivity": .init(id: "getProjectActivity", method: "GET", path: "/api/v1/projects/{projectId}/activity", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getProjectFeedback": .init(id: "getProjectFeedback", method: "GET", path: "/api/v1/projects/{projectId}/feedback", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getProjectIncident": .init(id: "getProjectIncident", method: "GET", path: "/api/v1/projects/{projectId}/incidents/{incidentId}", resource: .incidents, changeSafety: .safeRead, servers: []),
@@ -142,6 +143,7 @@ public enum NoxHereOperations {
         "pollNativeDeviceAuthorization": .init(id: "pollNativeDeviceAuthorization", method: "POST", path: "/api/v1/auth/native/device/poll", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "previewFeedbackResolutionTemplate": .init(id: "previewFeedbackResolutionTemplate", method: "POST", path: "/api/v1/feedback/sites/{siteId}/resolution-template/preview", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
         "putAiSettings": .init(id: "putAiSettings", method: "PUT", path: "/api/v1/llm-settings", resource: .activity, changeSafety: .writeNotSafeToRetry, servers: []),
+        "putPersonalTaskWorkflow": .init(id: "putPersonalTaskWorkflow", method: "PUT", path: "/api/v1/task-workflows", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "putTelemetryGitHubIssueSettings": .init(id: "putTelemetryGitHubIssueSettings", method: "PUT", path: "/api/v1/telemetry/github-issues", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "putWorkspaceConfig": .init(id: "putWorkspaceConfig", method: "PUT", path: "/api/v1/config/{key}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "recordAppActivity": .init(id: "recordAppActivity", method: "POST", path: "/api/v1/app-activity", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),

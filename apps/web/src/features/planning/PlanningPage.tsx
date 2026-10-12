@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useOutletContext, useParams, useSearchParams } from "react-router-dom";
-import type { PlanningTask, PlanningFeatureAttachment, PlanningFeatureRecord } from "../../api/contracts";
+import type { PlanningTask, TaskStage, PlanningFeatureAttachment, PlanningFeatureRecord } from "../../api/contracts";
 import { platformApi, projectSettingsQueryKey } from "../../api/platform";
 import { postRawJson } from "../../api/http";
 import { ListRow } from "../../components/ListRow";
@@ -13,7 +13,7 @@ import type { PlatformOutletContext } from "../../app/platform-context";
 
 const tabs = [["board", "Features"], ["tasks", "Tasks"], ["backlog", "Backlog"], ["completed", "Completed"], ["settings", "Settings"]] as const;
 
-type Stage = { id: string; label: string; color: string; completed?: boolean };
+type Stage = TaskStage;
 type FeatureLink = { url: string; label?: string };
 type Priority = 1 | 2 | 3 | 4 | 5;
 type PlanningFeature = { id: number; title: string; status: string; owners: string[]; description: string; links: FeatureLink[]; backlog: boolean; priority: Priority; closed: boolean; updated: string; history: string[] };
@@ -29,7 +29,6 @@ export default function PlanningPage() {
   const isGuest = bootstrap.actor.accessLevel === "guest";
   const base = `/${organizationId}/${projectId}/ticket`;
   const [stages, setStages] = useState<Stage[]>(productionStages);
-  const [taskStages, setTaskStages] = useState<Stage[]>(defaultTaskStages);
   const [features, setFeatures] = useState<PlanningFeature[]>([]);
   const nextOptimisticFeatureId = useRef(-1);
   const queryClient = useQueryClient();
@@ -80,8 +79,6 @@ export default function PlanningPage() {
   }, [featureQuery.data, projectId]);
   useEffect(() => {
     setStages(settingsQuery.data?.boardStages?.length ? settingsQuery.data.boardStages : productionStages);
-    const savedTaskStages = settingsQuery.data?.taskBoardStages;
-    setTaskStages(savedTaskStages?.length ? ensureCompletedStage(savedTaskStages) : defaultTaskStages);
   }, [projectId, settingsQuery.data]);
   /* eslint-enable react-hooks/set-state-in-effect */
   const saveStages = useMutation({
@@ -93,16 +90,6 @@ export default function PlanningPage() {
     const previous = stages;
     setStages(next);
     saveStages.mutate({ next, previous });
-  };
-  const saveTaskStages = useMutation({
-    mutationFn: ({ next }: { next: Stage[]; previous: Stage[] }) => platformApi.setProjectSettings(organizationId, projectId, { ...(settingsQuery.data ?? {}), taskBoardStages: next }),
-    onSuccess: (settings) => queryClient.setQueryData(settingsKey, settings),
-    onError: (_error, { previous }) => setTaskStages(previous),
-  });
-  const persistTaskStages = (next: Stage[]) => {
-    const previous = taskStages;
-    setTaskStages(next);
-    saveTaskStages.mutate({ next, previous });
   };
   const updateFeature = useMutation({
     mutationFn: ({ next, patch }: { next: PlanningFeature; previous: PlanningFeature; patch: PlanningFeaturePatch }) => platformApi.updatePlanningFeature(organizationId, projectId, next.id, patch),
@@ -163,9 +150,9 @@ export default function PlanningPage() {
     <div className="workspace-view ticket-workspace">
       {(view !== "settings" && (featureQuery.isLoading || taskQuery.isLoading)) || settingsQuery.isLoading ? <DataNotice title="Loading planning" detail="Reading this project's planning data…" /> : null}
       {(view !== "settings" && (featureQuery.isError || taskQuery.isError)) || settingsQuery.isError ? <DataNotice title="Planning is unavailable" detail="The dashboard could not reach the planning API. No placeholder tickets are being shown." /> : null}
-      {featureReady && view === "tasks" ? <TasksBoard key={projectId} organizationId={organizationId} projectId={projectId} stages={taskStages} features={features} tasks={taskQuery.data ?? []} actor={bootstrap.actor.id} members={members} createTask={(input) => createTaskMutation.mutate(input)} updateTask={(id, patch) => updateTaskMutation.mutate({ id, patch })} deleteTask={(id) => deleteTaskMutation.mutate(id)} saving={createTaskMutation.isPending || updateTaskMutation.isPending || deleteTaskMutation.isPending} /> : null}
+      {featureReady && view === "tasks" ? <TasksBoard key={projectId} organizationId={organizationId} projectId={projectId} features={features} tasks={taskQuery.data ?? []} actor={bootstrap.actor.id} members={members} createTask={(input) => createTaskMutation.mutate(input)} updateTask={(id, patch) => updateTaskMutation.mutate({ id, patch })} deleteTask={(id) => deleteTaskMutation.mutate(id)} saving={createTaskMutation.isPending || updateTaskMutation.isPending || deleteTaskMutation.isPending} /> : null}
       {featureReady && (view === "board" || view === "backlog" || view === "completed") ? <FeaturesWorkspace key={projectId} organizationId={organizationId} projectId={projectId} mode={view} stages={stages} features={features} actor={bootstrap.actor.id} members={members} createFeature={createFeature} saveFeature={saveFeature} deleteFeature={deleteFeature} saving={updateFeature.isPending || createFeatureMutation.isPending} /> : null}
-      {view === "settings" && !settingsQuery.isLoading && !settingsQuery.isError ? <TicketSettings organizationId={organizationId} projectId={projectId} repository={project?.connections.find((connection) => connection.provider === "github")?.label ?? null} stages={stages} setStages={setStages} saveStages={persistStages} savingStages={saveStages.isPending} stageSaveError={saveStages.error} taskStages={taskStages} setTaskStages={setTaskStages} saveTaskStages={persistTaskStages} savingTaskStages={saveTaskStages.isPending} taskStageSaveError={saveTaskStages.error} /> : null}
+      {view === "settings" && !settingsQuery.isLoading && !settingsQuery.isError ? <TicketSettings organizationId={organizationId} projectId={projectId} repository={project?.connections.find((connection) => connection.provider === "github")?.label ?? null} stages={stages} setStages={setStages} saveStages={persistStages} savingStages={saveStages.isPending} stageSaveError={saveStages.error} /> : null}
     </div>
   </section>;
 }
@@ -179,10 +166,12 @@ const productionStages: Stage[] = [
 ];
 
 const defaultTaskStages: Stage[] = [
-  { id: "todo", label: "To do", color: "#94a3b8" },
+  { id: "inbox", label: "Inbox", color: "#94a3b8" },
+  { id: "next-actions", label: "Next actions", color: "#6f88b8" },
   { id: "in-progress", label: "In progress", color: "#8b83b8" },
-  { id: "blocked", label: "Blocked", color: "#c77b63" },
-  { id: "done", label: "Completed", color: "#6e9970", completed: true },
+  { id: "waiting-for", label: "Waiting for", color: "#c79263" },
+  { id: "someday-maybe", label: "Someday / Maybe", color: "#9a938d" },
+  { id: "done", label: "Done", color: "#6e9970", completed: true },
 ];
 
 function ensureCompletedStage(stages: Stage[]): Stage[] {
@@ -290,18 +279,45 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   </>;
 }
 
-function TasksBoard({ organizationId, projectId, stages, features, tasks, actor, members, createTask, updateTask, deleteTask, saving }: { organizationId: string; projectId: string; stages: Stage[]; features: PlanningFeature[]; tasks: PlanningTask[]; actor: string; members: string[]; createTask: (input: TaskInput) => void; updateTask: (id: string, patch: Partial<Pick<PlanningTask, "status" | "stageId" | "position">>) => void; deleteTask: (id: string) => void; saving: boolean }) {
+function TasksBoard({ organizationId, projectId, features, tasks, actor, members, createTask, updateTask, deleteTask, saving }: { organizationId: string; projectId: string; features: PlanningFeature[]; tasks: PlanningTask[]; actor: string; members: string[]; createTask: (input: TaskInput) => void; updateTask: (id: string, patch: Partial<Pick<PlanningTask, "status" | "stageId" | "position">>) => void; deleteTask: (id: string) => void; saving: boolean }) {
+  const queryClient = useQueryClient();
   const people = members.includes(actor) ? members : [actor, ...members];
   const [person, setPerson] = useState(actor);
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState(false);
+  const [draftStages, setDraftStages] = useState<Stage[]>(defaultTaskStages);
+  const workflowKey = ["planning", organizationId, projectId, "task-workflow", person.toLowerCase()] as const;
+  const workflowQuery = useQuery({ queryKey: workflowKey, queryFn: ({ signal }) => platformApi.taskWorkflow(organizationId, projectId, person, signal) });
+  const savedStages = workflowQuery.data?.stages?.length ? workflowQuery.data.stages : defaultTaskStages;
+  const ownBoard = person.toLowerCase() === actor.toLowerCase();
+  const stages = editingWorkflow && ownBoard ? draftStages : savedStages;
+  const saveWorkflow = useMutation({
+    mutationFn: (next: Stage[]) => platformApi.setTaskWorkflow(organizationId, projectId, actor, next),
+    onSuccess: (workflow) => {
+      queryClient.setQueryData(["planning", organizationId, projectId, "task-workflow", actor.toLowerCase()], workflow);
+      setDraftStages(workflow.stages);
+      void queryClient.invalidateQueries({ queryKey: ["planning", organizationId, projectId, "tasks"] });
+    },
+    onError: () => setDraftStages(savedStages.map((stage) => ({ ...stage }))),
+  });
+  const persistWorkflow = (next: Stage[]) => {
+    setDraftStages(next);
+    saveWorkflow.mutate(next);
+  };
   const normalizedQuery = query.trim().toLowerCase();
   const featureByNumber = useMemo(() => new Map(features.map((feature) => [feature.id, feature])), [features]);
   const visibleTasks = useMemo(() => tasks
     .filter((task) => task.owner.toLowerCase() === person.toLowerCase() && (!normalizedQuery || `${task.title} ${task.note}`.toLowerCase().includes(normalizedQuery)))
     .sort(byTitle), [normalizedQuery, person, tasks]);
   const doneStage = stages.find((stage) => stage.completed)?.id ?? stages.at(-1)?.id ?? "done";
-  const stageForTask = (task: PlanningTask) => task.status === "completed" ? doneStage : stages.some((stage) => stage.id === task.stageId) ? task.stageId : stages[0]?.id;
+  const stageForTask = (task: PlanningTask) => {
+    if (task.status === "completed") return doneStage;
+    if (stages.some((stage) => stage.id === task.stageId)) return task.stageId;
+    const migrated = ({ todo: "next-actions", blocked: "waiting-for" } as Record<string, string>)[task.stageId];
+    if (migrated && stages.some((stage) => stage.id === migrated)) return migrated;
+    return stages.find((stage) => !stage.completed)?.id ?? stages[0]?.id;
+  };
   const drop = (event: DragEvent, stageId: string, position: number) => {
     event.preventDefault();
     const id = event.dataTransfer.getData("text/plain");
@@ -311,16 +327,19 @@ function TasksBoard({ organizationId, projectId, stages, features, tasks, actor,
   return <>
     <div className="ticket-toolbar">
       <input aria-label="Search tasks" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tasks…" />
-      <label className="planning-person-picker"><span>Tasks for</span><SearchableSelect ariaLabel="Tasks for person" value={person} onChange={setPerson} options={people.map((member) => ({ value: member, label: member === actor ? `${member} (you)` : member }))} /></label>
+      <label className="planning-person-picker"><span>Tasks for</span><SearchableSelect ariaLabel="Tasks for person" value={person} onChange={(next) => { setPerson(next); setAdding(false); setEditingWorkflow(false); }} options={people.map((member) => ({ value: member, label: member === actor ? `${member} (you)` : member }))} /></label>
       <span className="toolbar-spacer" />
+      {ownBoard ? <button type="button" className="button" onClick={() => { if (editingWorkflow) setEditingWorkflow(false); else { setDraftStages(savedStages.map((stage) => ({ ...stage }))); setEditingWorkflow(true); } }}>{editingWorkflow ? "Close workflow" : "Customize my workflow"}</button> : <span className="personal-workflow-label">{person}&apos;s workflow</span>}
       <button type="button" className="button primary-button" onClick={() => setAdding(true)}>New task</button>
     </div>
-    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="task" owner={person} features={features} onApply={(draft) => createTask({ title: draft.title, note: draft.description, owner: person, featureNumber: draft.featureNumber, stageId: stages[0]?.id ?? "todo" })} />
-    {adding ? <div className="board-task-composer"><TaskComposer owner={person} initialStageId={stages[0]?.id ?? "todo"} features={features} onCreate={(input) => { createTask(input); setAdding(false); }} onCancel={() => setAdding(false)} saving={saving} /></div> : null}
-    <div className="ticket-board task-board">{stages.map((stage) => {
+    {editingWorkflow && ownBoard ? <div className="personal-task-workflow"><StageSettings title="My task workflow" detail="Your columns are private preferences for this project. Start with GTD, then rename, reorder, add, or remove stages to match how you work." stages={draftStages} setStages={setDraftStages} saveStages={persistWorkflow} saving={saveWorkflow.isPending} error={saveWorkflow.error} completionSelectable maxStages={10} /><button type="button" className="button" disabled={saveWorkflow.isPending} onClick={() => persistWorkflow(defaultTaskStages.map((stage) => ({ ...stage })))}>Reset to GTD</button></div> : null}
+    {workflowQuery.isError ? <DataNotice title="Personal workflow unavailable" detail="The task board could not load this person's workflow." /> : null}
+    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="task" owner={person} features={features} onApply={(draft) => createTask({ title: draft.title, note: draft.description, owner: person, featureNumber: draft.featureNumber, stageId: stages.find((stage) => !stage.completed)?.id ?? "inbox" })} />
+    {adding ? <div className="board-task-composer"><TaskComposer owner={person} initialStageId={stages.find((stage) => !stage.completed)?.id ?? "inbox"} features={features} onCreate={(input) => { createTask(input); setAdding(false); }} onCancel={() => setAdding(false)} saving={saving} /></div> : null}
+    {!workflowQuery.isError ? <div className="ticket-board task-board">{stages.map((stage) => {
       const items = visibleTasks.filter((task) => stageForTask(task) === stage.id).sort((a, b) => a.position - b.position || byTitle(a, b));
       return <section className="ticket-column" key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, stage.id, items.length)}><header><span className="stage-title"><i style={{ background: stage.color }} /><b>{stage.label}</b></span><span>{items.length}</span></header>{items.map((task, index) => <div draggable onDragStart={(event) => { event.dataTransfer.setData("text/plain", task.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.stopPropagation(); drop(event, stage.id, index); }} key={task.id}><TaskCard task={task} feature={task.featureNumber === null ? null : featureByNumber.get(task.featureNumber) ?? null} color={stage.color} onDelete={() => deleteTask(task.id)} /></div>)}</section>;
-    })}</div>
+    })}</div> : null}
   </>;
 }
 
@@ -556,19 +575,18 @@ function formatBytes(bytes: number) {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function TicketSettings({ organizationId, projectId, repository, stages, setStages, saveStages, savingStages, stageSaveError, taskStages, setTaskStages, saveTaskStages, savingTaskStages, taskStageSaveError }: { organizationId: string; projectId: string; repository: string | null; stages: Stage[]; setStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveStages: (stages: Stage[]) => void; savingStages: boolean; stageSaveError: Error | null; taskStages: Stage[]; setTaskStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveTaskStages: (stages: Stage[]) => void; savingTaskStages: boolean; taskStageSaveError: Error | null }) {
+function TicketSettings({ organizationId, projectId, repository, stages, setStages, saveStages, savingStages, stageSaveError }: { organizationId: string; projectId: string; repository: string | null; stages: Stage[]; setStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveStages: (stages: Stage[]) => void; savingStages: boolean; stageSaveError: Error | null }) {
   return <><PlanningSlackRoute organizationId={organizationId} projectId={projectId} />
     <StageSettings title="Feature board stages" detail="The last stage is treated as production when you clean the feature board." stages={stages} setStages={setStages} saveStages={saveStages} saving={savingStages} error={stageSaveError} />
-    <StageSettings title="Task board stages" detail="Tasks move independently from features. Choose the one stage that completes a task." stages={taskStages} setStages={setTaskStages} saveStages={saveTaskStages} saving={savingTaskStages} error={taskStageSaveError} completionSelectable />
     <div className="settings-section"><div className="settings-section-head"><div><b>Feature repository</b><p>Planning stores features as GitHub-backed records in the connected project repository.</p></div><StatusTag tone={repository ? "positive" : "warning"}>{repository ? "Connected" : "Not configured"}</StatusTag></div><div className="list-surface"><ListRow symbol="R" tone={repository ? "positive" : "neutral"} title={repository ?? "No GitHub repository connected"} description="Feature source selected from repositories connected through NoxHere" meta={<StatusTag>GitHub</StatusTag>} /></div></div></>;
 }
 
-function StageSettings({ title, detail, stages, setStages, saveStages, saving, error, completionSelectable = false }: { title: string; detail: string; stages: Stage[]; setStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveStages: (stages: Stage[]) => void; saving: boolean; error: Error | null; completionSelectable?: boolean }) {
+function StageSettings({ title, detail, stages, setStages, saveStages, saving, error, completionSelectable = false, maxStages }: { title: string; detail: string; stages: Stage[]; setStages: React.Dispatch<React.SetStateAction<Stage[]>>; saveStages: (stages: Stage[]) => void; saving: boolean; error: Error | null; completionSelectable?: boolean; maxStages?: number }) {
   const update = (id: string, patch: Partial<Stage>) => setStages((current) => current.map((stage) => stage.id === id ? { ...stage, ...patch } : stage));
   const move = (index: number, direction: -1 | 1) => { const next = [...stages]; const target = index + direction; if (target < 0 || target >= next.length) return; [next[index], next[target]] = [next[target], next[index]]; saveStages(next); };
   const add = () => saveStages([...stages, { id: `stage-${Date.now()}`, label: "New stage", color: "#9a938d", ...(completionSelectable ? { completed: false } : {}) }]);
   const markCompleted = (id: string) => saveStages(stages.map((stage) => ({ ...stage, completed: stage.id === id })));
-  return <div className="settings-section"><div className="settings-section-head"><div><b>{title}</b><p>{detail}</p></div><button className="button" disabled={saving} onClick={add}>Add stage</button></div><div className="list-surface stage-editor">{stages.map((stage, index) => <div className="stage-editor-row" key={stage.id}><input type="color" aria-label={`${stage.label} color`} value={stage.color} disabled={saving} onChange={(event) => saveStages(stages.map((item) => item.id === stage.id ? { ...item, color: event.target.value } : item))} /><input aria-label={`Stage ${index + 1} name`} value={stage.label} disabled={saving} onChange={(event) => update(stage.id, { label: event.target.value })} onBlur={() => saveStages(stages)} />{completionSelectable ? <label className="stage-complete-choice"><input type="radio" name="task-completed-stage" checked={stage.completed === true} disabled={saving} onChange={() => markCompleted(stage.id)} /> Completes task</label> : <span>{index === 0 ? "Starting stage" : "Active stage"}</span>}<button className="mini-button" disabled={saving || index === 0} onClick={() => move(index, -1)} aria-label={`Move ${stage.label} left`}>←</button><button className="mini-button" disabled={saving || index === stages.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${stage.label} right`}>→</button><button className="mini-button" disabled={saving || stages.length <= 1 || stage.completed === true} onClick={() => saveStages(stages.filter((item) => item.id !== stage.id))}>Remove</button></div>)}</div>{saving ? <p className="form-success" role="status">Saving board stages…</p> : null}{error ? <p className="form-error" role="alert">{error.message}</p> : null}</div>;
+  return <div className="settings-section"><div className="settings-section-head"><div><b>{title}</b><p>{detail}</p></div><button className="button" disabled={saving || (maxStages !== undefined && stages.length >= maxStages)} onClick={add}>Add stage</button></div><div className="list-surface stage-editor">{stages.map((stage, index) => <div className="stage-editor-row" key={stage.id}><input type="color" aria-label={`${stage.label} color`} value={stage.color} disabled={saving} onChange={(event) => saveStages(stages.map((item) => item.id === stage.id ? { ...item, color: event.target.value } : item))} /><input aria-label={`Stage ${index + 1} name`} value={stage.label} disabled={saving} onChange={(event) => update(stage.id, { label: event.target.value })} onBlur={() => saveStages(stages)} />{completionSelectable ? <label className="stage-complete-choice"><input type="radio" name="task-completed-stage" checked={stage.completed === true} disabled={saving} onChange={() => markCompleted(stage.id)} /> Completes task</label> : <span>{index === 0 ? "Starting stage" : "Active stage"}</span>}<button className="mini-button" disabled={saving || index === 0} onClick={() => move(index, -1)} aria-label={`Move ${stage.label} left`}>←</button><button className="mini-button" disabled={saving || index === stages.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${stage.label} right`}>→</button><button className="mini-button" disabled={saving || stages.length <= (completionSelectable ? 2 : 1) || stage.completed === true} onClick={() => saveStages(stages.filter((item) => item.id !== stage.id))}>Remove</button></div>)}</div>{saving ? <p className="form-success" role="status">Saving board stages…</p> : null}{error ? <p className="form-error" role="alert">{error.message}</p> : null}</div>;
 }
 
 function PlanningSlackRoute({ organizationId, projectId }: { organizationId: string; projectId: string }) {

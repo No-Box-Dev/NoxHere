@@ -75,6 +75,7 @@ export async function captureScreenshot(options = {}) {
       captureError: {
         code: error?.code || 'capture_failed',
         message: message.slice(0, 300),
+        details: error?.details || null,
       },
     };
   } finally {

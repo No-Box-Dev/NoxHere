@@ -540,6 +540,22 @@ class StatsDashboard(TypedDict, total=False):
     reportStatus: Required[str]
     stats: Required[list["StatCard"]]
 
+class TaskStage(TypedDict, total=False):
+    color: Required[str]
+    completed: NotRequired[bool]
+    id: Required[str]
+    label: Required[str]
+
+class TaskWorkflow(TypedDict, total=False):
+    owner: Required[str]
+    source: Required[Literal['gtd-default', 'custom']]
+    stages: Required[list["TaskStage"]]
+    updatedAt: Required[Union[str, None]]
+
+class TaskWorkflowPut(TypedDict, total=False):
+    owner: NotRequired[str]
+    stages: Required[list["TaskStage"]]
+
 class TelemetryAction(TypedDict, total=False):
     key: Required[str]
     label: Required[str]
@@ -785,6 +801,9 @@ class GetNoxServiceHealthPath(TypedDict, total=False):
 
 class GetNoxServiceSetupPath(TypedDict, total=False):
     service: Required[Literal['noxhere', 'planning', 'activity', 'feedback', 'telemetry']]
+
+class GetPersonalTaskWorkflowQuery(TypedDict, total=False):
+    owner: NotRequired[str]
 
 class GetProjectActivityPath(TypedDict, total=False):
     projectId: Required[str]

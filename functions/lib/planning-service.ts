@@ -29,6 +29,8 @@ export interface PlanningServiceBinding {
   createTask(scope: PlanningScope, input: unknown): Promise<PlanningServiceResult>;
   updateTask(scope: PlanningScope, id: string, input: unknown): Promise<PlanningServiceResult>;
   deleteTask(scope: PlanningScope, id: string): Promise<PlanningServiceResult>;
+  getTaskWorkflow(scope: PlanningScope, owner?: string): Promise<PlanningServiceResult>;
+  putTaskWorkflow(scope: PlanningScope, owner: string, input: unknown): Promise<PlanningServiceResult>;
   listFeatureAttachments(scope: PlanningScope, featureId: number): Promise<PlanningServiceResult>;
   putFeatureAttachment(scope: PlanningScope, featureId: number, filename: string, bytes: ArrayBuffer): Promise<PlanningServiceResult>;
   getFeatureAttachment(scope: PlanningScope, featureId: number, attachmentId: number): Promise<Response>;
