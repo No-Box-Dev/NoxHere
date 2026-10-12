@@ -31,7 +31,12 @@ export async function onRequest(context) {
   if (url.pathname === "/api/health/live" || url.pathname === "/api/health/ready") {
     return nextApiResponse(context, url);
   }
-  if (url.pathname === "/api/telemetry/public/v1/events" || url.pathname === "/api/v1/telemetry/public/events") {
+  const hasInternalAssertion = Boolean(
+    context.request.headers.get("X-NoxHere-Internal-Assertion")
+    || context.request.headers.get("X-NoxHere-Internal-Signature"),
+  );
+  if ((url.pathname === "/api/telemetry/public/v1/events" || url.pathname === "/api/v1/telemetry/public/events")
+      && !hasInternalAssertion) {
     return nextApiResponse(context, url);
   }
   if (url.pathname === "/api/webhook") {
@@ -210,6 +215,7 @@ export async function onRequest(context) {
     projectId,
     accessLevel: auth.accessLevel ?? "member",
     guestAccess: auth.guestAccess ?? null,
+    tokenEnvironment: auth.tokenEnvironment ?? null,
   };
   return nextApiResponse(context, url);
 }

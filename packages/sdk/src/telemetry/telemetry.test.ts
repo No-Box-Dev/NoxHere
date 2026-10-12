@@ -5,6 +5,7 @@ import { createTelemetry as createServerTelemetry, createTelemetryFromEnv, creat
 
 const browserKey = `nox_pub_${"a".repeat(32)}`;
 const serverKey = `nox_secret_${"b".repeat(32)}`;
+const apiToken = `nox_sk_live_${"c".repeat(32)}`;
 const identityHashKey = "identity-secret-key-that-is-at-least-32-bytes";
 const protectedUser42 = "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40";
 const wireFixtures = JSON.parse(readFileSync(new URL("../../../../services/telemetry/packages/sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
@@ -53,7 +54,7 @@ describe("@noxhere/sdk telemetry", () => {
     const [url, init] = request.mock.calls[0]!;
     expect(url).toBe("https://app.noxhere.com/api/v1/telemetry/public/events");
     expect(init?.headers).toMatchObject({ "X-Nox-Ingest-Key": serverKey });
-    expect(init?.headers).toMatchObject({ "User-Agent": "noxhere-typescript/0.2.4" });
+    expect(init?.headers).toMatchObject({ "User-Agent": "noxhere-typescript/0.2.5" });
     expect(JSON.parse(String(init?.body))).toMatchObject({
       version: 1,
       type: "user.registered",
@@ -65,9 +66,21 @@ describe("@noxhere/sdk telemetry", () => {
         environment: "production",
         release: "playnist@abc123",
         runtime: "server",
-        sdkVersion: "0.2.4",
+        sdkVersion: "0.2.5",
       },
     });
+  });
+
+  it("uses bearer auth for a unified server key and never sends it as an ingest header", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const telemetry = createServerTelemetry({
+      key: apiToken, sourceId: "source-1", identityHashKey, environment: "production", fetch: request,
+    });
+    await telemetry.user.active("user-42");
+    const headers = request.mock.calls[0]![1]?.headers as Record<string, string>;
+    expect(headers.Authorization).toBe(`Bearer ${apiToken}`);
+    expect(headers["X-Nox-Source-ID"]).toBe("source-1");
+    expect(headers["X-Nox-Ingest-Key"]).toBeUndefined();
   });
 
   it("supports environment bootstrap, typed events, and in-memory test delivery", async () => {
@@ -153,7 +166,7 @@ describe("@noxhere/sdk telemetry", () => {
     expect(event).toMatchObject({
       type: "error.occurred",
       environment: "staging",
-      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.4" },
+      context: { environment: "staging", release: "playnist@2026.09.07", runtime: "server", sdkVersion: "0.2.5" },
       error: { message: "Signup failed for [redacted-email] with api_key=[redacted]", code: "AUTH_UPSTREAM", status: 503 },
       url: "https://playnist.com/signup",
       data: { component: "auth", fingerprint: "auth/signup/provider" },

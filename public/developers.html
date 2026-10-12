@@ -192,11 +192,12 @@ noxhere whoami</code></pre>
           <table id="cli-command-reference">
             <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
             <tbody>
-              <tr data-cli-command="login"><td><code>noxhere login [--no-open]</code></td><td>Sign in once through GitHub with a human approval step.</td></tr>
+              <tr data-cli-command="login"><td><code>noxhere login [--no-open] [--create-key --project NAME]</code></td><td>Sign in through GitHub and optionally create a project write key.</td></tr>
               <tr data-cli-command="logout"><td><code>noxhere logout</code></td><td>Revoke the shared NoxHere session.</td></tr>
               <tr data-cli-command="whoami"><td><code>noxhere whoami</code></td><td>Show the account and active organization/project context.</td></tr>
               <tr data-cli-command="use"><td><code>noxhere use &lt;organization&gt;[/&lt;project&gt;]</code></td><td>Change context without signing in again.</td></tr>
               <tr data-cli-command="projects"><td><code>noxhere projects</code></td><td>List projects in the active organization.</td></tr>
+              <tr data-cli-command="keys"><td><code>noxhere keys &lt;list|create|rotate|revoke&gt; [options]</code></td><td>Manage project-scoped server keys with a human session.</td></tr>
               <tr data-cli-command="activity"><td><code>noxhere activity</code></td><td>Read activity for the active project.</td></tr>
               <tr data-cli-command="incidents"><td><code>noxhere incidents [resolve|acknowledge|reopen] [incident-id]</code></td><td>Read incidents or change one incident by its fixed ID.</td></tr>
               <tr data-cli-command="issues"><td><code>noxhere issues</code></td><td>Read issues for the active project.</td></tr>

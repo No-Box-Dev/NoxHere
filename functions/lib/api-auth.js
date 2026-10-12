@@ -97,6 +97,8 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
 
 export function projectScopedApiTokenPathSupported(pathname, method) {
   const verb = method.toUpperCase();
+  if (verb === "POST" && (pathname === "/api/v1/telemetry/public/events"
+      || pathname === "/api/telemetry/public/v1/events")) return true;
   if (verb === "POST" && pathname === "/api/v1/developer-feedback") return true;
   if (verb === "POST" && pathname === "/api/v1/integrations/slack/messages") return true;
   if (verb === "GET" && /^\/api\/v1\/services(?:\/[^/]+(?:\/(?:setup|health))?)?$/.test(pathname)) return true;

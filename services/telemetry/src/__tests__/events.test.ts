@@ -174,6 +174,63 @@ describe("Telemetry event contract", () => {
     expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_transport" }));
   });
 
+  it("resolves a scoped API token to one project source without a source key", async () => {
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn(() => statement),
+        all: vi.fn(async () => sql.includes("FROM cue_sources source") ? ({ results: [{
+          key_id: null, key_kind: "api_token", org_id: 7, owner_id: "acme",
+          source_id: "source-1", source_name: "App", project_id: "project-1",
+          allowed_origins_json: "[]", allowed_events_json: "[]", timezone: "UTC",
+          error_cooldown_minutes: 15, environment: "production", alerts_enabled: 0,
+          aggregate_only_slack: 1, slack_channel_id: null, slack_connection_id: null,
+        }] }) : ({ results: [] })),
+        first: vi.fn(async () => null),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const env = {
+      NOX_DB: { prepare, batch: vi.fn() }, NOX_TASKS: { send: vi.fn() },
+      TELEMETRY_IP_RATE_LIMITER: allow, TELEMETRY_ERROR_RATE_LIMITER: allow,
+      TELEMETRY_USER_EVENT_RATE_LIMITER: allow, TELEMETRY_ORG_RATE_LIMITER: allow,
+    } as unknown as Env;
+    const response = await handleTelemetryEvent(new Request("https://telemetry.internal/v1/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "user.active", userId: PROTECTED_USER }),
+    }), env, {
+      orgId: 7, projectId: "project-1", environment: "production", tokenId: "token-1",
+    });
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ accepted: true, environment: "production" });
+    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("UPDATE cue_source_keys"))).toBe(false);
+  });
+
+  it("requires an explicit source when a token project has multiple sources", async () => {
+    const prepare = vi.fn((sql: string) => {
+      const statement = {
+        bind: vi.fn(() => statement),
+        all: vi.fn(async () => ({ results: sql.includes("FROM cue_sources source") ? [
+          { source_id: "one" }, { source_id: "two" },
+        ] : [] })),
+      };
+      return statement;
+    });
+    const allow = { limit: vi.fn(async () => ({ success: true })) };
+    const env = {
+      NOX_DB: { prepare }, TELEMETRY_IP_RATE_LIMITER: allow,
+    } as unknown as Env;
+    const response = await handleTelemetryEvent(new Request("https://telemetry.internal/v1/events", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    }), env, {
+      orgId: 7, projectId: "project-1", environment: "production", tokenId: "token-1",
+    });
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ error: "source_required" });
+  });
+
   it("reopens and immediately notifies a resolved incident when it regresses", async () => {
     const queue = { send: vi.fn(async () => undefined) };
     const batch = vi.fn(async () => []);

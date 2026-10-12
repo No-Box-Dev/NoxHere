@@ -850,10 +850,14 @@
       "get": {
         "operationId": "listApiTokens",
         "summary": "List redacted API-token metadata",
-        "description": "Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.",
+        "description": "Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.",
         "security": [
           {
             "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
             "organization": []
           }
         ],
@@ -885,7 +889,6 @@
           }
         },
         "x-required-role": "admin",
-        "x-browser-session-only": true,
         "tags": [
           "NoxHere"
         ],
@@ -901,12 +904,16 @@
       "post": {
         "operationId": "createApiToken",
         "summary": "Create a scoped API token",
-        "description": "Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.",
+        "description": "Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.",
         "security": [
           {
             "browserSession": [],
             "organization": [],
             "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
           }
         ],
         "responses": {
@@ -937,7 +944,6 @@
           }
         },
         "x-required-role": "admin",
-        "x-browser-session-only": true,
         "requestBody": {
           "required": true,
           "content": {
@@ -975,12 +981,16 @@
       "delete": {
         "operationId": "revokeApiToken",
         "summary": "Revoke an API token",
-        "description": "Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.",
+        "description": "Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.",
         "security": [
           {
             "browserSession": [],
             "organization": [],
             "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
           }
         ],
         "responses": {
@@ -1011,7 +1021,6 @@
           }
         },
         "x-required-role": "admin",
-        "x-browser-session-only": true,
         "tags": [
           "NoxHere"
         ],
@@ -1039,12 +1048,16 @@
       "post": {
         "operationId": "rotateApiToken",
         "summary": "Rotate an API token and return its replacement once",
-        "description": "Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.",
+        "description": "Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.",
         "security": [
           {
             "browserSession": [],
             "organization": [],
             "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
           }
         ],
         "responses": {
@@ -1075,7 +1088,6 @@
           }
         },
         "x-required-role": "admin",
-        "x-browser-session-only": true,
         "tags": [
           "NoxHere"
         ],
@@ -1580,7 +1592,7 @@
           }
         ],
         "x-project-scope": "optional",
-        "x-automation-scope": "slack:write"
+        "x-automation-scope": "slack:send"
       }
     },
     "/api/v1/integrations/slack/test": {
@@ -6411,6 +6423,9 @@
         "security": [
           {
             "telemetryKey": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "requestBody": {
@@ -6499,7 +6514,7 @@
             "$ref": "#/components/responses/RateLimited"
           }
         },
-        "description": "Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.",
+        "description": "Server applications authenticate with a project-scoped NoxHere API token carrying telemetry:ingest. Browser capture continues to use X-Nox-Ingest-Key with a publishable source key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.",
         "tags": [
           "Stats"
         ],
@@ -6508,8 +6523,12 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/telemetrySourceContext"
           }
-        ]
+        ],
+        "x-automation-scope": "telemetry:ingest"
       }
     },
     "/api/v1/auth/native/device/start": {
@@ -11927,6 +11946,17 @@
           "minLength": 1,
           "maxLength": 240
         }
+      },
+      "telemetrySourceContext": {
+        "name": "X-Nox-Source-ID",
+        "in": "header",
+        "required": false,
+        "description": "Selects the destination source for a project-scoped NoxHere API token. It may be omitted when exactly one enabled source matches the token project and environment. Publishable source keys already identify their source.",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
       }
     },
     "schemas": {
@@ -14755,10 +14785,11 @@
           "environment": {
             "type": "string",
             "enum": [
-              "live",
+              "production",
+              "staging",
               "test"
             ],
-            "default": "live"
+            "default": "production"
           },
           "projectId": {
             "type": "string",
@@ -14773,7 +14804,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(services:read|developer-feedback:write|slack:write|(activity|feedback|telemetry):(read|write))$"
+              "pattern": "^(services:read|developer-feedback:write|slack:(send|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$"
             }
           },
           "expiresInDays": {

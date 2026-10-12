@@ -1252,7 +1252,7 @@ export const operationDefinitions = [
     "path": "/api/v1/telemetry/public/events",
     "namespace": "stats",
     "authentication": "ingest_key",
-    "automationScope": null,
+    "automationScope": "telemetry:ingest",
     "projectScope": "none",
     "changeSafety": "idempotent_with_event_key",
     "requestContentTypes": [
@@ -2113,7 +2113,7 @@ export const operationDefinitions = [
     "path": "/api/v1/integrations/slack/messages",
     "namespace": "workspace",
     "authentication": "member",
-    "automationScope": "slack:write",
+    "automationScope": "slack:send",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [

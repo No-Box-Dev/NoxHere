@@ -22,7 +22,10 @@ export interface DeliveryResult {
 }
 
 export interface TelemetryOptions {
+  /** A source ingest key (`nox_secret_`/`nox_pub_`) or, on servers, a scoped NoxHere API token (`nox_sk_`). */
   key: string;
+  /** Selects a telemetry source when a project-scoped API token can reach more than one source. */
+  sourceId?: string;
   /** HMAC key used by trusted runtimes to protect user identities before transmission. */
   identityHashKey?: string;
   /** Public identifier for the current identity key. Defaults to `primary`. */

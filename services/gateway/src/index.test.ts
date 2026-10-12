@@ -25,6 +25,7 @@ function controlDb(options: { apiToken?: Record<string, unknown>; nativeSession?
           if (sql.includes("FROM api_tokens")) return options.apiToken ?? null;
           return null;
         },
+        async run() { return { success: true }; },
       };
       return statement;
     },
@@ -371,6 +372,33 @@ describe("NoxHere gateway", () => {
     const assertion = JSON.parse(atob(body.assertion.replaceAll("-", "+").replaceAll("_", "/"))) as { auth: { credentialType: string; projectId: string } };
     expect(body.authorization).toBeNull();
     expect(assertion.auth).toMatchObject({ credentialType: "api_token", projectId: "project-a" });
+  });
+
+  it("authenticates a scoped server ingestion key while keeping browser ingestion public", async () => {
+    const apiToken = {
+      id: "noxkey_ingest", org_id: 7, project_id: "project-a", environment: "production",
+      scopes_json: JSON.stringify(["telemetry:ingest"]), org_login: "acme", project_enabled: 1,
+    };
+    const connector = { fetch: vi.fn(async (request: Request) => Response.json({
+      authorization: request.headers.get("Authorization"),
+      assertion: request.headers.get("X-NoxHere-Internal-Assertion"),
+    }, { status: 202 })) };
+    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/telemetry/public/events", {
+      method: "POST",
+      headers: { Authorization: "Bearer nox_sk_live_example", "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "user.active", userId: "h1_primary_example" }),
+    }), controlledServices(connector, controlDb({ apiToken })));
+    expect(response.status).toBe(202);
+    const body = await response.json() as { authorization: string | null; assertion: string };
+    const assertion = JSON.parse(atob(body.assertion.replaceAll("-", "+").replaceAll("_", "/"))) as {
+      auth: { projectId: string; tokenEnvironment: string; scopes: string[] };
+    };
+    expect(body.authorization).toBeNull();
+    expect(assertion.auth).toMatchObject({
+      projectId: "project-a",
+      tokenEnvironment: "production",
+      scopes: ["telemetry:ingest"],
+    });
   });
 
   it("rejects raw GitHub bearer credentials before invoking the connector", async () => {

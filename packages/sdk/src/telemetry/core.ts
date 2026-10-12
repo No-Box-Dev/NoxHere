@@ -166,8 +166,9 @@ function validEndpoint(value: string): boolean {
 }
 
 function validKey(key: string, kind: KeyKind): boolean {
-  const prefix = kind === "publishable" ? "nox_pub_" : "nox_secret_";
-  return key.startsWith(prefix) && key.length >= prefix.length + 30;
+  if (kind === "publishable") return key.startsWith("nox_pub_") && key.length >= "nox_pub_".length + 30;
+  return (key.startsWith("nox_secret_") && key.length >= "nox_secret_".length + 30)
+    || (key.startsWith("nox_sk_") && key.length >= "nox_sk_".length + 30);
 }
 
 function retryable(status: number): boolean {
@@ -258,6 +259,8 @@ export function createClient(
   const timeoutMs = Math.min(MAX_TIMEOUT_MS, Math.max(250, options.timeoutMs ?? DEFAULT_TIMEOUT_MS));
   const maxRetries = Math.min(3, Math.max(0, Math.round(options.maxRetries ?? 2)));
   const request = options.fetch ?? fetch;
+  const sourceId = bounded(options.sourceId, 240);
+  const apiToken = keyKind === "secret" && options.key.startsWith("nox_sk_");
   const configured = options.enabled !== false && (options.mode === "memory" || (validKey(options.key, keyKind) && validEndpoint(endpoint)));
   const processEnvironment = (globalThis as typeof globalThis & { process?: RuntimeProcess }).process?.env;
   const identityHashKey = keyKind === "secret"
@@ -340,7 +343,12 @@ export function createClient(
       try {
         const response = await request(endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": options.key, ...(keyKind === "secret" ? { "User-Agent": `noxhere-typescript/${SDK_VERSION}` } : {}) },
+          headers: {
+            "Content-Type": "application/json",
+            ...(apiToken ? { Authorization: `Bearer ${options.key}` } : { "X-Nox-Ingest-Key": options.key }),
+            ...(apiToken && sourceId ? { "X-Nox-Source-ID": sourceId } : {}),
+            ...(keyKind === "secret" ? { "User-Agent": `noxhere-typescript/${SDK_VERSION}` } : {}),
+          },
           body,
           signal: controller.signal,
         });

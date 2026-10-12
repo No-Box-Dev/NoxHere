@@ -16,6 +16,7 @@ sys.path.insert(0, str(PACKAGE / "src"))
 from noxhere.telemetry import TelemetryClient, create_telemetry, safe_error_details  # noqa: E402
 
 SERVER_KEY = "nox_secret_" + "b" * 32
+API_TOKEN = "nox_sk_live_" + "c" * 32
 IDENTITY_HASH_KEY = "identity-secret-key-that-is-at-least-32-bytes"
 FIXTURES = json.loads(
     (PACKAGE.parents[1] / "services" / "telemetry" / "packages" / "sdk-contract" / "wire-fixtures.json").read_text()
@@ -103,6 +104,21 @@ class SDKTests(unittest.TestCase):
     def test_sets_a_versioned_user_agent(self) -> None:
         self.client.test()
         self.assertRegex(self.requests[-1][0].get_header("User-agent"), r"^noxhere-python/\d+\.\d+\.\d+$")
+
+    def test_unified_server_key_uses_bearer_auth(self) -> None:
+        requests = []
+        with TelemetryClient(
+            key=API_TOKEN,
+            source_id="source-1",
+            identity_hash_key=IDENTITY_HASH_KEY,
+            environment="production",
+            transport=lambda request, _timeout: requests.append(request) or MockResponse(),
+        ) as client:
+            self.assertTrue(client.user.active("user-42").ok)
+        headers = {key.lower(): value for key, value in requests[0].header_items()}
+        self.assertEqual(headers["authorization"], f"Bearer {API_TOKEN}")
+        self.assertEqual(headers["x-nox-source-id"], "source-1")
+        self.assertNotIn("x-nox-ingest-key", headers)
 
     def test_environment_bootstrap_and_memory_mode_never_use_network(self) -> None:
         previous = dict(os.environ)

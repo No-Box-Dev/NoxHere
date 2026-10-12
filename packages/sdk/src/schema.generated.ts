@@ -214,13 +214,13 @@ export interface paths {
         };
         /**
          * List redacted API-token metadata
-         * @description Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.
+         * @description Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.
          */
         get: operations["listApiTokens"];
         put?: never;
         /**
          * Create a scoped API token
-         * @description Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.
+         * @description Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.
          */
         post: operations["createApiToken"];
         delete?: never;
@@ -243,7 +243,7 @@ export interface paths {
         post?: never;
         /**
          * Revoke an API token
-         * @description Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.
+         * @description Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.
          */
         delete: operations["revokeApiToken"];
         options?: never;
@@ -264,7 +264,7 @@ export interface paths {
         put?: never;
         /**
          * Rotate an API token and return its replacement once
-         * @description Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.
+         * @description Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.
          */
         post: operations["rotateApiToken"];
         delete?: never;
@@ -2532,7 +2532,7 @@ export interface paths {
         put?: never;
         /**
          * Submit one standardized Telemetry event through the stable NoxHere gateway
-         * @description Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.
+         * @description Server applications authenticate with a project-scoped NoxHere API token carrying telemetry:ingest. Browser capture continues to use X-Nox-Ingest-Key with a publishable source key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.
          */
         post: operations["ingestTelemetryEvent"];
         delete?: never;
@@ -2855,10 +2855,10 @@ export interface components {
         };
         ApiTokenCreate: {
             /**
-             * @default live
+             * @default production
              * @enum {string}
              */
-            environment: "live" | "test";
+            environment: "production" | "staging" | "test";
             /** @default 90 */
             expiresInDays: number;
             name: string;
@@ -3918,6 +3918,8 @@ export interface components {
         siteId: string;
         sourceId: string;
         specId: number;
+        /** @description Selects the destination source for a project-scoped NoxHere API token. It may be omitted when exactly one enabled source matches the token project and environment. Publishable source keys already identify their source. */
+        telemetrySourceContext: string;
     };
     requestBodies: never;
     headers: never;
@@ -8825,6 +8827,8 @@ export interface operations {
             header?: {
                 /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
                 "X-Project-ID"?: components["parameters"]["projectContext"];
+                /** @description Selects the destination source for a project-scoped NoxHere API token. It may be omitted when exactly one enabled source matches the token project and environment. Publishable source keys already identify their source. */
+                "X-Nox-Source-ID"?: components["parameters"]["telemetrySourceContext"];
             };
             path?: never;
             cookie?: never;

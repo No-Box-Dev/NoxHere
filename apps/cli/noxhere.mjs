@@ -20,9 +20,19 @@ import {
 } from "./lib/client.mjs";
 import { deleteSession, readSession, sessionLocation, withSessionLock, writeSession } from "./lib/store.mjs";
 import { CLI_COMMANDS, commandHelpLines } from "./lib/commands.mjs";
+import { keyEnvironment, printTokenRecord, requireKeyProject, scopesForKey } from "./lib/keys.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
 const apiBase = process.env.NOXHERE_API_BASE || process.env.NOXHERE_API_BASE || DEFAULT_API_BASE;
+
+const keyOptionDefinitions = {
+  name: { type: "string" },
+  project: { type: "string" },
+  environment: { type: "string", default: "production" },
+  preset: { type: "string", default: "write" },
+  scope: { type: "string", multiple: true, default: [] },
+  "expires-in-days": { type: "string", default: "90" },
+};
 
 async function requireSession() {
   const session = await readSession();
@@ -40,8 +50,17 @@ function authenticatedRequest(session, path, options = {}) {
 }
 
 async function login() {
-  return withSessionLock("session", async () => {
-    const options = parseArgs({ args, options: { "no-open": { type: "boolean" } } }).values;
+  const options = parseArgs({ args, options: {
+    "no-open": { type: "boolean" },
+    "create-key": { type: "boolean" },
+    "key-name": { type: "string" },
+    project: keyOptionDefinitions.project,
+    environment: keyOptionDefinitions.environment,
+    preset: keyOptionDefinitions.preset,
+    scope: keyOptionDefinitions.scope,
+    "expires-in-days": keyOptionDefinitions["expires-in-days"],
+  } }).values;
+  await withSessionLock("session", async () => {
     const current = await readSession();
     if (current?.refreshToken) {
       console.log(`Already signed in as ${current.user?.login || "a NoxHere user"}. Use \`noxhere logout\` first to change accounts.`);
@@ -79,6 +98,80 @@ async function login() {
   }
     throw new Error("The sign-in code expired. Run `noxhere login` again.");
   }, { timeoutMs: 20 * 60_000 });
+  if (options["create-key"]) {
+    await createKey({
+      name: options["key-name"] || "CLI server write key",
+      project: options.project,
+      environment: options.environment,
+      preset: options.preset,
+      scope: options.scope,
+      expiresInDays: options["expires-in-days"],
+    });
+  }
+}
+
+function parseExpiryDays(value) {
+  const days = Number(value);
+  if (!Number.isInteger(days) || days < 1 || days > 365) throw new Error("Key expiry must be between 1 and 365 days.");
+  return days;
+}
+
+async function createKey(options) {
+  let session = await requireSession();
+  if (options.project) {
+    const result = await authenticatedRequest(session, "/api/v1/projects");
+    const project = resolveProject(projectsFromPayload(result.payload), options.project);
+    if (!project) throw new Error(`Project '${options.project}' is not available in ${session.context?.organization}.`);
+    session = { ...result.session, context: { ...result.session.context, project: project.id } };
+    await writeSession(session);
+  }
+  const projectId = requireKeyProject(session);
+  const name = String(options.name || "").trim();
+  if (!name) throw new Error("Provide a key name with `--name`.");
+  const { payload } = await authenticatedRequest(session, "/api/v1/api-tokens", {
+    method: "POST",
+    body: {
+      name,
+      environment: keyEnvironment(options.environment),
+      projectId,
+      scopes: scopesForKey({ preset: options.preset, scopes: options.scope }),
+      expiresInDays: parseExpiryDays(options.expiresInDays),
+    },
+  });
+  console.log(payload.token);
+  console.error(payload.warning || "Copy this token now. NoxHere cannot display it again.");
+}
+
+async function keys() {
+  const [action = "list", ...keyArgs] = args;
+  if (action === "list") {
+    if (keyArgs.length) throw new Error("Usage: noxhere keys list");
+    const session = await requireSession();
+    const { payload } = await authenticatedRequest(session, "/api/v1/api-tokens");
+    for (const token of payload.tokens || []) console.log(printTokenRecord(token));
+    return;
+  }
+  if (action === "create") {
+    const parsed = parseArgs({ args: keyArgs, options: keyOptionDefinitions });
+    await createKey({ ...parsed.values, expiresInDays: parsed.values["expires-in-days"] });
+    return;
+  }
+  if (action === "rotate" || action === "revoke") {
+    if (keyArgs.length !== 1) throw new Error(`Usage: noxhere keys ${action} <key-id>`);
+    const session = await requireSession();
+    const id = encodeURIComponent(keyArgs[0]);
+    const { payload } = await authenticatedRequest(
+      session,
+      `/api/v1/api-tokens/${id}${action === "rotate" ? "/rotate" : ""}`,
+      { method: action === "rotate" ? "POST" : "DELETE", body: action === "rotate" ? {} : undefined },
+    );
+    if (action === "rotate") {
+      console.log(payload.token);
+      console.error(payload.warning || "Copy this token now. NoxHere cannot display it again.");
+    } else console.log(`Revoked ${payload.id}.`);
+    return;
+  }
+  throw new Error("Usage: noxhere keys <list|create|rotate|revoke> [options]");
 }
 
 async function logout() {
@@ -194,6 +287,7 @@ try {
     whoami,
     use: useContext,
     projects,
+    keys,
     activity: () => capability("activity"),
     incidents,
     issues: () => capability("issues"),

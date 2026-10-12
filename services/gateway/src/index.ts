@@ -112,7 +112,7 @@ export async function handleRequest(
 
   if (url.pathname === "/api" || url.pathname.startsWith(API_PREFIX)) {
     try {
-      const publicConnectorPath = isPublicConnectorPath(url.pathname);
+      const publicConnectorPath = isPublicConnectorPath(url.pathname, request);
       if (publicConnectorPath) return gatewayResponse(await services.connector.fetch(request));
 
       const control = services.control;
@@ -296,7 +296,11 @@ async function boundedErrorCode(response: Response): Promise<string> {
   }
 }
 
-function isPublicConnectorPath(pathname: string): boolean {
+function isApiTokenRequest(request: Request): boolean {
+  return (request.headers.get("Authorization") ?? "").startsWith("Bearer nox_sk_");
+}
+
+function isPublicConnectorPath(pathname: string, request: Request): boolean {
   return pathname === "/api/health/live"
     || pathname === "/api/health/ready"
     || pathname === "/api/webhook"
@@ -308,8 +312,9 @@ function isPublicConnectorPath(pathname: string): boolean {
     || pathname === "/api/slack/events"
     || pathname === "/api/slack/interactions"
     || pathname.startsWith("/api/public/")
-    || pathname === "/api/telemetry/public/v1/events"
-    || pathname === "/api/v1/telemetry/public/events";
+    || ((pathname === "/api/telemetry/public/v1/events"
+      || pathname === "/api/v1/telemetry/public/events"
+      || pathname === "/api/feedback/public/v1/reports") && !isApiTokenRequest(request));
 }
 
 function unavailableAuthentication(): Response {
