@@ -23,7 +23,11 @@ async function spotReady() {
 
 for (let attempt = 1; attempt <= 12; attempt += 1) {
   try {
-    if (await ready() && await spotReady()) {
+    // Production serves the app and public Feedback API from the same origin.
+    // Readiness already probes Feedback through its service binding and checks
+    // its exact build SHA, while /health on the app origin intentionally serves
+    // the SPA. Staging keeps a dedicated Feedback origin and probes it directly.
+    if (await ready() && (spotOrigin === platformOrigin || await spotReady())) {
       console.log(JSON.stringify({ platformOrigin, spotOrigin, buildSha: expectedSha, status: "ready" }));
       process.exit(0);
     }
