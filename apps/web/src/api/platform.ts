@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
-import type { Bootstrap, CueAction, CueActions, CueAlert, CueAlertRule, CueDashboard, CueStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TicketFeatureAttachment, TicketFeatureRecord } from "./contracts";
+import { bootstrapSchema, cueActionsSchema, cueAlertRuleSchema, cueAlertSchema, cueDashboardSchema, cueStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, ticketFeatureAttachmentSchema, ticketFeatureSchema } from "./contracts";
+import type { Bootstrap, CueAction, CueActions, CueAlert, CueAlertRule, CueDashboard, CueStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, TicketFeatureAttachment, TicketFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
@@ -16,6 +16,8 @@ export interface PlatformApi {
   createPlanningTask(organizationId: string, projectId: string, input: { title: string; note?: string; owner?: string; color?: PlanningTask["color"]; featureNumber?: number | null; stageId?: string }): Promise<PlanningTask>;
   updatePlanningTask(organizationId: string, projectId: string, taskId: string, input: Partial<Pick<PlanningTask, "title" | "note" | "owner" | "color" | "status" | "featureNumber" | "stageId" | "position">>): Promise<PlanningTask>;
   deletePlanningTask(organizationId: string, projectId: string, taskId: string): Promise<void>;
+  taskWorkflow(organizationId: string, projectId: string, owner: string, signal?: AbortSignal): Promise<TaskWorkflow>;
+  setTaskWorkflow(organizationId: string, projectId: string, owner: string, stages: TaskStage[]): Promise<TaskWorkflow>;
   ticketFeatureAttachments(organizationId: string, projectId: string, featureId: number, signal?: AbortSignal): Promise<TicketFeatureAttachment[]>;
   uploadTicketFeatureAttachment(organizationId: string, projectId: string, featureId: number, file: File): Promise<TicketFeatureAttachment>;
   ticketFeatureAttachmentBlob(organizationId: string, projectId: string, featureId: number, attachmentId: number, signal?: AbortSignal): Promise<Blob>;
@@ -100,6 +102,8 @@ export const platformApi: PlatformApi = {
   deletePlanningTask: async (organizationId, projectId, taskId) => {
     await deleteJson(`/api/v1/tasks/${encodeURIComponent(taskId)}`, z.object({ ok: z.literal(true) }), { organizationId, projectId });
   },
+  taskWorkflow: (organizationId, projectId, owner, signal) => getJson(`/api/v1/task-workflows?owner=${encodeURIComponent(owner)}`, taskWorkflowSchema, signal, { organizationId, projectId }),
+  setTaskWorkflow: (organizationId, projectId, owner, stages) => putJson("/api/v1/task-workflows", { owner, stages }, taskWorkflowSchema, { organizationId, projectId }),
   ticketFeatureAttachments: async (organizationId, projectId, featureId, signal) => {
     const result = await getJson(`/api/v1/features/${featureId}/attachments`, z.object({ attachments: ticketFeatureAttachmentSchema.array() }), signal, { organizationId, projectId });
     return result.attachments;

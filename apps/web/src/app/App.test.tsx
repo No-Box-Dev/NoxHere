@@ -91,6 +91,21 @@ beforeEach(() => {
       excludedMembers: ["memenoboxdev"],
     });
     if (url.startsWith("/api/v1/features?state=all")) return json([]);
+    if (url === "/api/v1/task-workflows" && init?.method === "PUT") {
+      const body = JSON.parse(String(init.body));
+      return json({ owner: body.owner, stages: body.stages, source: "custom", updatedAt: "2026-10-12T00:00:00Z" });
+    }
+    if (url.startsWith("/api/v1/task-workflows?owner=")) {
+      const owner = new URL(`https://app.noxhere.com${url}`).searchParams.get("owner");
+      return json({ owner, source: "gtd-default", updatedAt: null, stages: [
+        { id: "inbox", label: "Inbox", color: "#94a3b8" },
+        { id: "next-actions", label: "Next actions", color: "#6f88b8" },
+        { id: "in-progress", label: "In progress", color: "#8b83b8" },
+        { id: "waiting-for", label: "Waiting for", color: "#c79263" },
+        { id: "someday-maybe", label: "Someday / Maybe", color: "#9a938d" },
+        { id: "done", label: "Done", color: "#6e9970", completed: true },
+      ] });
+    }
     if (url === "/api/v1/tasks?status=all") return json([]);
     if (url.startsWith("/api/v1/specs")) return json({ specs: [] });
     if (url.startsWith("/api/v1/prs") || url.startsWith("/api/v1/issues")) return json({ data: [], totalCount: 0, page: 1, pageSize: 100 });
@@ -450,6 +465,29 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.queryByText("My task")).not.toBeInTheDocument();
   });
 
+  it("gives each person a GTD task workflow and only lets the signed-in person customize their own", async () => {
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/tasks");
+
+    expect(await screen.findByText("Inbox")).toBeInTheDocument();
+    expect(screen.getByText("Next actions")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Customize my workflow" }));
+    expect(screen.getByText("My task workflow")).toBeInTheDocument();
+    const inboxName = screen.getByRole("textbox", { name: "Stage 1 name" });
+    await user.clear(inboxName);
+    await user.type(inboxName, "Capture");
+    await user.tab();
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/task-workflows", expect.objectContaining({
+      method: "PUT",
+      body: expect.stringContaining('"owner":"JasperNoBoxDev"'),
+    })));
+
+    await user.click(screen.getByRole("combobox", { name: "Tasks for person" }));
+    await user.click(screen.getByRole("option", { name: "memenoboxdev" }));
+    expect(await screen.findByText("memenoboxdev's workflow")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Customize my workflow" })).not.toBeInTheDocument();
+  });
+
   it("keeps known Planning owners assignable when the shared member directory fails", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -503,7 +541,7 @@ describe("NoxConnect API-backed platform", () => {
 
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/tasks", expect.objectContaining({
       method: "POST",
-      body: JSON.stringify({ title: "Check mobile payment", owner: "JasperNoBoxDev", featureNumber: 9, stageId: "todo" }),
+      body: JSON.stringify({ title: "Check mobile payment", owner: "JasperNoBoxDev", featureNumber: 9, stageId: "inbox" }),
     })));
     const taskCard = (await screen.findByText("Check mobile payment")).closest(".task-card");
     expect(within(taskCard as HTMLElement).getByText("Feature #9 · New checkout")).toBeInTheDocument();
@@ -524,7 +562,7 @@ describe("NoxConnect API-backed platform", () => {
       return baseFetch(input, init);
     });
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/tasks");
-    const todo = (await screen.findByText("To do")).closest("section")!;
+    const todo = (await screen.findByText("Next actions")).closest("section")!;
     expect(within(todo).getByText("Sticky task")).toBeInTheDocument();
     expect([...todo.querySelectorAll(".ticket-card-title")].map((item) => item.textContent)).toEqual(["Sticky task", "Alpha task"]);
     expect(within(todo).getAllByText("Feature #7 · Sticky feature")).toHaveLength(2);

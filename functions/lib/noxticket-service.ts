@@ -29,6 +29,8 @@ export interface NoxTicketServiceBinding {
   createTask(scope: NoxTicketScope, input: unknown): Promise<NoxTicketServiceResult>;
   updateTask(scope: NoxTicketScope, id: string, input: unknown): Promise<NoxTicketServiceResult>;
   deleteTask(scope: NoxTicketScope, id: string): Promise<NoxTicketServiceResult>;
+  getTaskWorkflow(scope: NoxTicketScope, owner?: string): Promise<NoxTicketServiceResult>;
+  putTaskWorkflow(scope: NoxTicketScope, owner: string, input: unknown): Promise<NoxTicketServiceResult>;
   listFeatureAttachments(scope: NoxTicketScope, featureId: number): Promise<NoxTicketServiceResult>;
   putFeatureAttachment(scope: NoxTicketScope, featureId: number, filename: string, bytes: ArrayBuffer): Promise<NoxTicketServiceResult>;
   getFeatureAttachment(scope: NoxTicketScope, featureId: number, attachmentId: number): Promise<Response>;

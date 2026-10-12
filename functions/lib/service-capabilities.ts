@@ -131,6 +131,8 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "create_task", method: "POST", path: "/api/v1/tasks", authentication: "member", description: "Create a general or feature-linked task." },
         { id: "update_task", method: "PATCH", path: "/api/v1/tasks/{id}", authentication: "member", description: "Update, complete, reassign, recolor, or relink a task." },
         { id: "delete_task", method: "DELETE", path: "/api/v1/tasks/{id}", authentication: "member", description: "Delete a task." },
+        { id: "get_task_workflow", method: "GET", path: "/api/v1/task-workflows", authentication: "member", description: "Read a person's personal task stages, with GTD defaults." },
+        { id: "put_task_workflow", method: "PUT", path: "/api/v1/task-workflows", authentication: "member", description: "Customize the caller's personal task stages." },
       ] },
       { id: "workflow", name: "Workflow", description: "Configure the stages used by the feature board.", access: "admin", operations: [
         { id: "get_ticket_config", method: "GET", path: "/api/v1/services/noxticket/config", authentication: "member", description: "Read the feature repository and workflow stages." },
