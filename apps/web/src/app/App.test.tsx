@@ -891,7 +891,7 @@ describe("NoxHere API-backed platform", () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/widgets");
     expect(await screen.findByRole("heading", { name: "Capture widgets" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Playnist" })).toBeInTheDocument();
-    expect(screen.getByText(/api\.feedback\.dev\/widget\/site-playnist\.js/)).toBeInTheDocument();
+    expect(screen.getByText(/app\.noxhere\.com\/widget\/site-playnist\.js/)).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
       "/api/v1/feedback/sites",
       expect.objectContaining({

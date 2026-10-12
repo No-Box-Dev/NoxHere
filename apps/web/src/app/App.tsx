@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { AuthBoundary } from "./AuthBoundary";
 import { PlatformShell } from "./PlatformShell";
 
@@ -55,8 +55,9 @@ function LegacyIssuesRoute() {
 
 function LegacyCapabilityRoute({ capability }: { capability: "connections" | "planning" | "activity" | "feedback" }) {
   const { organizationId = "", projectId = "", view = "", person } = useParams();
+  const { search } = useLocation();
   const suffix = person ? `/${encodeURIComponent(person)}` : "";
-  return <Navigate replace to={`/${organizationId}/${projectId}/${capability}/${view}${suffix}`} />;
+  return <Navigate replace to={`/${organizationId}/${projectId}/${capability}/${view}${suffix}${search}`} />;
 }
 
 function LegacyTelemetryRoute() {

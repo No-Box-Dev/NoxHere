@@ -27,7 +27,7 @@ export default function PlanningPage() {
   const [searchParams] = useSearchParams();
   const project = bootstrap.projects.find((item) => item.id === projectId);
   const isGuest = bootstrap.actor.accessLevel === "guest";
-  const base = `/${organizationId}/${projectId}/ticket`;
+  const base = `/${organizationId}/${projectId}/planning`;
   const [stages, setStages] = useState<Stage[]>(productionStages);
   const [features, setFeatures] = useState<PlanningFeature[]>([]);
   const nextOptimisticFeatureId = useRef(-1);
@@ -173,11 +173,6 @@ const defaultTaskStages: Stage[] = [
   { id: "someday-maybe", label: "Someday / Maybe", color: "#9a938d" },
   { id: "done", label: "Done", color: "#6e9970", completed: true },
 ];
-
-function ensureCompletedStage(stages: Stage[]): Stage[] {
-  if (stages.some((stage) => stage.completed)) return stages;
-  return stages.map((stage, index) => ({ ...stage, completed: index === stages.length - 1 }));
-}
 
 function mapFeature(record: PlanningFeatureRecord): PlanningFeature {
   const labels = record.labels.map((label) => typeof label === "string" ? label : label.name);
