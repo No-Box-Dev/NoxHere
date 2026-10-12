@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generate Mac App Store screenshots for Unticket.
+ * Generate Mac App Store screenshots for Planning.
  *
  * Pure HTML → PNG via Puppeteer. Each slot renders the menubar popover
  * mockup on a branded frame (warm stone surface + purple #6d5cc8 accent —
@@ -25,7 +25,7 @@ mkdirSync(OUT, { recursive: true });
 // 1440x900 viewport at 2x = 2880x1800 PNG (the retina size ASC accepts for macOS).
 const W = 1440, H = 900;
 
-// Brand palette — matches NoxFeed/Views/Theme.swift exactly.
+// Brand palette — matches NoxHere/Views/Theme.swift exactly.
 const C = {
   surface: '#fafaf9',
   card: '#ffffff',
@@ -179,7 +179,7 @@ function feedHeader(active = 'Posts') {
   return `
     <div class="pop-header">
       <span class="ic">≣</span>
-      <span class="title">NoxFeed</span>
+      <span class="title">NoxHere</span>
       <span class="spacer"></span>
       ${pills}
     </div>`;
@@ -191,7 +191,7 @@ function frame(headline, sub, popoverInner) {
     <div class="accent-bar"></div>
     <div class="glow"></div>
     <div class="glow two"></div>
-    <div class="label">NoxFeed</div>
+    <div class="label">NoxHere</div>
     <div class="headline">${headline}</div>
     <div class="sub">${sub}</div>
     <div class="popover">${popoverInner}</div>

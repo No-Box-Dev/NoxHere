@@ -9,10 +9,10 @@ WHAT YOU GET
 • Global hotkey (⌘⇧X) to open the popover from anywhere
 
 HOW IT WORKS
-Sign in with GitHub and pick an organization. NoxHere reads that org's pull-request activity through NoxConnect and renders it in your menubar — no separate account or dashboard to set up.
+Sign in with GitHub and pick an organization. NoxHere reads that org's pull-request activity through NoxHere and renders it in your menubar — no separate account or dashboard to set up.
 
 PRIVACY
-NoxHere stores only short-lived NoxConnect credentials in the macOS Keychain, gated by the app sandbox. GitHub access and activity data are brokered through NoxConnect. NoxHere records limited first-party account, organization, registration, and last-active metadata to operate the service and understand product adoption. There are no third-party analytics or advertising trackers.
+NoxHere stores only short-lived NoxHere credentials in the macOS Keychain, gated by the app sandbox. GitHub access and activity data are brokered through NoxHere. NoxHere records limited first-party account, organization, registration, and last-active metadata to operate the service and understand product adoption. There are no third-party analytics or advertising trackers.
 
 REQUIRES
-A GitHub account that's a member of at least one organization, with NoxConnect installed on that org. No separate account or signup needed — just GitHub.
+A GitHub account that's a member of at least one organization, with NoxHere installed on that org. No separate account or signup needed — just GitHub.

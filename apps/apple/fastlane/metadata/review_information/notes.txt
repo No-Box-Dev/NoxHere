@@ -1,4 +1,4 @@
-NoxHere is a macOS menu bar app that surfaces a GitHub organization's pull-request activity. It is a native client for the unified NoxHere workspace and uses NoxConnect for GitHub access.
+NoxHere is a macOS menu bar app that surfaces a GitHub organization's pull-request activity. It is a native client for the unified NoxHere workspace and uses NoxHere for GitHub access.
 
 NO ACCOUNT OR CREDENTIALS ARE REQUIRED FOR REVIEW.
 
@@ -17,12 +17,12 @@ Testing instructions:
 The interface keeps production administrative features visible during the demo. Actions that would mutate an organization—AI-provider configuration, tracked-repository changes, team-visibility changes, adding an account, and manual synchronization—are clearly disabled because the demo workspace is read-only. The demo API also rejects every non-GET request server-side.
 
 Production authentication:
-"Sign in with GitHub" uses GitHub's OAuth Device Authorization Flow brokered by NoxConnect. NoxHere presents github.com/login/device with ASWebAuthenticationSession, shows the one-time code in the app, and waits for authorization to finish. Only short-lived NoxConnect credentials are stored in the macOS Keychain. Signing out removes the local credentials.
+"Sign in with GitHub" uses GitHub's OAuth Device Authorization Flow brokered by NoxHere. NoxHere presents github.com/login/device with ASWebAuthenticationSession, shows the one-time code in the app, and waits for authorization to finish. Only short-lived NoxHere credentials are stored in the macOS Keychain. Signing out removes the local credentials.
 
 Organization setup behavior:
-- If NoxConnect is not installed on a selected organization, NoxHere explains this and provides an Install NoxConnect button.
-- If NoxConnect is installed but the organization has no activity yet, NoxHere confirms that the organization is connected and waiting for new pull-request activity.
+- If NoxHere is not installed on a selected organization, NoxHere explains this and provides an Install NoxHere button.
+- If NoxHere is installed but the organization has no activity yet, NoxHere confirms that the organization is connected and waiting for new pull-request activity.
 
-Privacy: the app is sandboxed with only the outgoing-network entitlement. It has no third-party analytics or advertising trackers. Limited first-party lifecycle metadata is recorded through NoxConnect, and GitHub tokens live in the macOS Keychain.
+Privacy: the app is sandboxed with only the outgoing-network entitlement. It has no third-party analytics or advertising trackers. Limited first-party lifecycle metadata is recorded through NoxHere, and GitHub tokens live in the macOS Keychain.
 
 Source code / product: https://noboxdev.com

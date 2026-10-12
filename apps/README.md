@@ -7,9 +7,8 @@ but do not own provider credentials or service business logic.
 | --- | --- |
 | `web` | Canonical NoxHere browser application deployed with Gateway |
 | `cli` | Command-line client and local-agent session integration |
+| `apple` | Native NoxHere client for macOS, iPhone, and iPad |
 
-The native Apple client remains a separate repository because its Xcode,
-signing, TestFlight, and App Store lifecycle is independent. Use
-`noxhere-apple` as the repository name and `NoxHere` as the app name; avoid a
-service name such as `ActivityApp`, because Feed is now one capability inside
-NoxHere. NoxKey also remains a separate product and repository.
+The Apple client keeps its independent Xcode, signing, TestFlight, and App Store
+release lifecycle inside `apps/apple`; it shares the unified API and repository.
+NoxKey remains a separate product and repository.

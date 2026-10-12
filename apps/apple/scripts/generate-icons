@@ -9,8 +9,8 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_SRC="$SCRIPT_DIR/icon-sources/app-icon.svg"
 IOS_APP_SRC="$SCRIPT_DIR/icon-sources/app-icon-ios.svg"
 MENU_SRC="$SCRIPT_DIR/icon-sources/menubar-icon.svg"
-APP_OUT="$ROOT/NoxFeed/Assets.xcassets/AppIcon.appiconset"
-MENU_OUT="$ROOT/NoxFeed/Assets.xcassets/MenuBarIcon.imageset"
+APP_OUT="$ROOT/NoxHere/Assets.xcassets/AppIcon.appiconset"
+MENU_OUT="$ROOT/NoxHere/Assets.xcassets/MenuBarIcon.imageset"
 
 command -v rsvg-convert >/dev/null || {
   echo "rsvg-convert not installed (brew install librsvg)" >&2

@@ -1,4 +1,4 @@
-NoxHere for iPhone and iPad is the mobile companion to the NoxHere macOS menu bar app. Both use the same NoxHere session, GitHub organizations, and tracked repositories through NoxConnect.
+NoxHere for iPhone and iPad is the mobile companion to the NoxHere macOS menu bar app. Both use the same NoxHere session, GitHub organizations, and tracked repositories through NoxHere.
 
 NO ACCOUNT OR CREDENTIALS ARE REQUIRED FOR REVIEW.
 
@@ -8,11 +8,11 @@ Testing instructions:
 3. The app creates a short-lived, read-only session for the populated demo organization.
 4. Use Posts, Opened, and Notes in the Feed tab to inspect pull-request activity and release notes.
 5. Open Current to see demo pull requests and assigned issues.
-6. Open Account to see the connected organization and NoxConnect relationship.
+6. Open Account to see the connected organization and NoxHere relationship.
 7. Tap "Exit demo" or "Sign out" to return to the welcome screen.
 
 The demo is isolated from customer data. It does not use a GitHub account, and its API rejects mutations server-side.
 
-Production authentication uses GitHub's device authorization flow brokered by NoxConnect. NoxHere stores short-lived NoxConnect credentials rather than GitHub access tokens. If a selected organization does not have NoxConnect installed, the app explains the requirement and links to the NoxConnect GitHub App installation flow.
+Production authentication uses GitHub's device authorization flow brokered by NoxHere. NoxHere stores short-lived NoxHere credentials rather than GitHub access tokens. If a selected organization does not have NoxHere installed, the app explains the requirement and links to the NoxHere GitHub App installation flow.
 
 NoxHere contains no advertising or third-party analytics trackers.

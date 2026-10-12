@@ -45,16 +45,16 @@ def setup_api_key!
   }))
   File.chmod(0o600, key_path)
   ENV["APP_STORE_CONNECT_API_KEY_PATH"] = key_path
-  ENV["NOXFEED_TEMP_ASC_KEY"] = key_path
+  ENV["NOXHERE_TEMP_ASC_KEY"] = key_path
   UI.success("App Store Connect API key configured for key #{key_id}")
 end
 
 def xcode_auth_args!
   config = JSON.parse(File.read(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH")))
-  key_path = "/tmp/noxfeed-asc-api-key.p8"
+  key_path = "/tmp/noxhere-asc-api-key.p8"
   File.write(key_path, config.fetch("key"))
   File.chmod(0o600, key_path)
-  ENV["NOXFEED_TEMP_ASC_P8"] = key_path
+  ENV["NOXHERE_TEMP_ASC_P8"] = key_path
 
   [
     "-allowProvisioningUpdates",
@@ -66,23 +66,23 @@ end
 
 platform :ios do
   after_all do
-    key_path = ENV.delete("NOXFEED_TEMP_ASC_KEY")
+    key_path = ENV.delete("NOXHERE_TEMP_ASC_KEY")
     File.delete(key_path) if key_path && File.exist?(key_path)
-    p8_path = ENV.delete("NOXFEED_TEMP_ASC_P8")
+    p8_path = ENV.delete("NOXHERE_TEMP_ASC_P8")
     File.delete(p8_path) if p8_path && File.exist?(p8_path)
   end
 
   error do
-    key_path = ENV.delete("NOXFEED_TEMP_ASC_KEY")
+    key_path = ENV.delete("NOXHERE_TEMP_ASC_KEY")
     File.delete(key_path) if key_path && File.exist?(key_path)
-    p8_path = ENV.delete("NOXFEED_TEMP_ASC_P8")
+    p8_path = ENV.delete("NOXHERE_TEMP_ASC_P8")
     File.delete(p8_path) if p8_path && File.exist?(p8_path)
   end
 
   desc "Create or download the iOS App Store certificate and profile"
   lane :fetch_signing do
     setup_api_key!
-    signing_path = "/tmp/noxfeed-ios-signing"
+    signing_path = "/tmp/noxhere-ios-signing"
     FileUtils.mkdir_p(signing_path)
     get_certificates(
       api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
@@ -95,7 +95,7 @@ platform :ios do
       app_identifier: "dev.noboxdev.noxfeed",
       platform: "ios",
       provisioning_name: "NoxFeed iOS App Store",
-      filename: "NoxFeed_iOS_App_Store.mobileprovision",
+      filename: "NoxHere_iOS_App_Store.mobileprovision",
       output_path: signing_path,
       cert_id: lane_context[SharedValues::CERT_CERTIFICATE_ID],
     )
@@ -131,8 +131,8 @@ platform :ios do
     prepare_store
 
     build_app(
-      project: "NoxFeed.xcodeproj",
-      scheme: "NoxFeedMobile",
+      project: "NoxHere.xcodeproj",
+      scheme: "NoxHereMobile",
       configuration: "Release",
       export_method: "app-store",
       output_directory: "build/ios",
@@ -347,12 +347,12 @@ end
 
 platform :mac do
   after_all do
-    key_path = ENV.delete("NOXFEED_TEMP_ASC_KEY")
+    key_path = ENV.delete("NOXHERE_TEMP_ASC_KEY")
     File.delete(key_path) if key_path && File.exist?(key_path)
   end
 
   error do
-    key_path = ENV.delete("NOXFEED_TEMP_ASC_KEY")
+    key_path = ENV.delete("NOXHERE_TEMP_ASC_KEY")
     File.delete(key_path) if key_path && File.exist?(key_path)
   end
 
@@ -368,8 +368,8 @@ platform :mac do
   lane :build_only do
     generate
     build_app(
-      project: "NoxFeed.xcodeproj",
-      scheme: "NoxFeed",
+      project: "NoxHere.xcodeproj",
+      scheme: "NoxHere",
       configuration: "Release",
       export_method: "app-store",
       export_options: {
@@ -451,7 +451,7 @@ platform :mac do
     require "spaceship"
     bundle = "dev.noboxdev.noxfeed"
     Spaceship::ConnectAPI::Profile.all.select { |p|
-      p.bundle_id == bundle || (p.name && p.name.downcase.include?("noxfeed"))
+      p.bundle_id == bundle || (p.name && p.name.downcase.include?("noxhere"))
     }.each do |p|
       UI.message("Deleting stale MAS profile: #{p.name}")
       p.delete!
@@ -474,8 +474,8 @@ platform :mac do
     # export_options below sign the .pkg installer with the Installer cert.
     # gym (build_app) drives xcodebuild + productbuild.
     build_app(
-      project: "NoxFeed.xcodeproj",
-      scheme: "NoxFeed",
+      project: "NoxHere.xcodeproj",
+      scheme: "NoxHere",
       configuration: "Release",
       export_method: "app-store",
       # Automatic signing doesn't reliably resolve the MAS profile during
@@ -511,7 +511,7 @@ platform :mac do
   desc "Push metadata to App Store Connect (no build)"
   lane :push_metadata do
     setup_api_key!
-    app_version = get_version_number(xcodeproj: "NoxFeed.xcodeproj", target: "NoxFeed")
+    app_version = get_version_number(xcodeproj: "NoxHere.xcodeproj", target: "NoxHere")
     deliver(
       api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
       app_version: app_version,
@@ -530,7 +530,7 @@ platform :mac do
   desc "Push screenshots to App Store Connect (overwrites existing)"
   lane :push_screenshots do
     setup_api_key!
-    app_version = get_version_number(xcodeproj: "NoxFeed.xcodeproj", target: "NoxFeed")
+    app_version = get_version_number(xcodeproj: "NoxHere.xcodeproj", target: "NoxHere")
     deliver(
       api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
       app_version: app_version,
@@ -590,7 +590,7 @@ platform :mac do
   desc "Submit the latest uploaded build for App Store review"
   lane :submit_for_review do
     setup_api_key!
-    app_version = get_version_number(xcodeproj: "NoxFeed.xcodeproj", target: "NoxFeed")
+    app_version = get_version_number(xcodeproj: "NoxHere.xcodeproj", target: "NoxHere")
     deliver(
       api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
       app_version: app_version,
