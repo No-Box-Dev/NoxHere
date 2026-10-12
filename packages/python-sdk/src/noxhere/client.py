@@ -64,7 +64,7 @@ class Operation:
     servers: tuple[str, ...]
 
 
-SDK_VERSION = "0.2.2"
+SDK_VERSION = "0.2.3"
 DEFAULT_BASE_URL = "https://app.noxhere.com"
 MAX_RETRY_AFTER_SECONDS = 30.0
 
@@ -303,11 +303,6 @@ class NoxHereClient:
         self.feedback = resources["feedback"]
         self.stats = resources["stats"]
         self.incidents = resources["incidents"]
-        self.connect = self.workspace
-        self.feed = self.activity
-        self.ticket = self.planning
-        self.spot = self.feedback
-        self.cue = ResourceClient(self, [operation for operation in self._operations.values() if operation.namespace in {"stats", "incidents"}])
 
     def request(
         self,
@@ -423,11 +418,6 @@ class AsyncNoxHereClient:
         self.feedback = resources["feedback"]
         self.stats = resources["stats"]
         self.incidents = resources["incidents"]
-        self.connect = self.workspace
-        self.feed = self.activity
-        self.ticket = self.planning
-        self.spot = self.feedback
-        self.cue = AsyncResourceClient(self, [operation for operation in self._operations.values() if operation.namespace in {"stats", "incidents"}])
 
     async def request(
         self,

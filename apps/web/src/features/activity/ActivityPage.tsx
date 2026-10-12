@@ -84,7 +84,7 @@ export default function ActivityPage() {
     }
   }, [organizationId, projectId, queryClient, planningEnabled]);
 
-  const base = `/${organizationId}/${projectId}/feed`;
+  const base = `/${organizationId}/${projectId}/activity`;
   const streamEvents = stream.data?.pages.flatMap((page) => page.events ?? []) ?? [];
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
     {(!isFeedStream && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}

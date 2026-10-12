@@ -13,8 +13,8 @@ describe("Planning tasks", () => {
     await createFeature(db, scope, { title: "Search" });
     const general = await createTask(db, scope, { title: "Call customer", color: "yellow" });
     const linked = await createTask(db, scope, { title: "Write empty state", owner: "alex", color: "purple", featureNumber: 1 });
-    expect(general).toMatchObject({ status: 201, data: { owner: "jasper", color: "yellow", featureNumber: null, stageId: "todo", status: "open" } });
-    expect(linked).toMatchObject({ status: 201, data: { owner: "alex", color: "purple", featureNumber: 1, stageId: "todo" } });
+    expect(general).toMatchObject({ status: 201, data: { owner: "jasper", color: "yellow", featureNumber: null, stageId: "inbox", status: "open" } });
+    expect(linked).toMatchObject({ status: 201, data: { owner: "alex", color: "purple", featureNumber: 1, stageId: "inbox" } });
     expect((await listTasks(db, scope, { owner: "alex" })).data).toMatchObject([{ title: "Write empty state" }]);
   });
 

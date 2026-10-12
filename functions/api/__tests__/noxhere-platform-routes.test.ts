@@ -59,7 +59,7 @@ describe("NoxHere platform routes", () => {
     } as never);
     await expect(response.json()).resolves.toEqual([
       expect.objectContaining({ id: "person:1", serviceId: "connections", href: "/acme/project-1/activity/current/jasper" }),
-      expect.objectContaining({ id: "feature:2", serviceId: "planning", href: "/acme/project-1/ticket/board" }),
+      expect.objectContaining({ id: "feature:2", serviceId: "planning", href: "/acme/project-1/planning/board" }),
     ]);
   });
 

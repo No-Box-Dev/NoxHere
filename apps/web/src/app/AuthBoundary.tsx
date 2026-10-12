@@ -69,7 +69,7 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     const chooseProject = new URLSearchParams(location.search).get("choose") === "1";
     const lastProject = chooseProject ? null : readLastProject(profile.user.login);
     const canOpenLastProject = lastProject && profile.orgs.some((organization) => organization.login.toLowerCase() === lastProject.organizationId.toLowerCase());
-    if (canOpenLastProject) return <Navigate replace to={`/${encodeURIComponent(lastProject.organizationId)}/${encodeURIComponent(lastProject.projectId)}/connect/overview`} />;
+    if (canOpenLastProject) return <Navigate replace to={`/${encodeURIComponent(lastProject.organizationId)}/${encodeURIComponent(lastProject.projectId)}/connections/overview`} />;
     return <WorkspaceProjectSelector profile={profile} />;
   }
   return children;

@@ -864,6 +864,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "getPersonalTaskWorkflow",
+    "method": "GET",
+    "path": "/api/v1/task-workflows",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "getProjectActivity",
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/activity",
@@ -1712,6 +1727,23 @@ export const operationDefinitions = [
     "path": "/api/v1/llm-settings",
     "namespace": "activity",
     "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "putPersonalTaskWorkflow",
+    "method": "PUT",
+    "path": "/api/v1/task-workflows",
+    "namespace": "workspace",
+    "authentication": "member",
     "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",

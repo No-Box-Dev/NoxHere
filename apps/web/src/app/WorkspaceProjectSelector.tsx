@@ -51,7 +51,7 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
     mutationFn: (name: string) => platformApi.createProject(effectiveWorkspace, name),
     onSuccess: async (project) => {
       await queryClient.invalidateQueries({ queryKey: ["platform", "bootstrap", effectiveWorkspace] });
-      void navigate(`/${encodeURIComponent(effectiveWorkspace)}/${encodeURIComponent(project.id)}/connect/overview`);
+      void navigate(`/${encodeURIComponent(effectiveWorkspace)}/${encodeURIComponent(project.id)}/connections/overview`);
     },
   });
 
@@ -67,7 +67,7 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
     const guestService = services.find((service) => !service.hidden && currentBootstrap.actor.allowedServiceIds.includes(service.id));
     const view = currentBootstrap.actor.accessLevel === "guest" && guestService
       ? `${guestService.id}/${guestService.defaultView}`
-      : "connect/overview";
+      : "connections/overview";
     queryClient.setQueryData(["platform", "bootstrap", effectiveWorkspace, project.id], currentBootstrap);
     void navigate(`/${encodeURIComponent(effectiveWorkspace)}/${encodeURIComponent(project.id)}/${view}`);
   }

@@ -91,6 +91,21 @@ beforeEach(() => {
       excludedMembers: ["memenoboxdev"],
     });
     if (url.startsWith("/api/v1/features?state=all")) return json([]);
+    if (url === "/api/v1/task-workflows" && init?.method === "PUT") {
+      const body = JSON.parse(String(init.body));
+      return json({ owner: body.owner, stages: body.stages, source: "custom", updatedAt: "2026-10-12T00:00:00Z" });
+    }
+    if (url.startsWith("/api/v1/task-workflows?owner=")) {
+      const owner = new URL(`https://app.noxhere.com${url}`).searchParams.get("owner");
+      return json({ owner, source: "gtd-default", updatedAt: null, stages: [
+        { id: "inbox", label: "Inbox", color: "#94a3b8" },
+        { id: "next-actions", label: "Next actions", color: "#6f88b8" },
+        { id: "in-progress", label: "In progress", color: "#8b83b8" },
+        { id: "waiting-for", label: "Waiting for", color: "#c79263" },
+        { id: "someday-maybe", label: "Someday / Maybe", color: "#9a938d" },
+        { id: "done", label: "Done", color: "#6e9970", completed: true },
+      ] });
+    }
     if (url === "/api/v1/tasks?status=all") return json([]);
     if (url.startsWith("/api/v1/specs")) return json({ specs: [] });
     if (url.startsWith("/api/v1/prs") || url.startsWith("/api/v1/issues")) return json({ data: [], totalCount: 0, page: 1, pageSize: 100 });
@@ -187,7 +202,7 @@ describe("NoxHere API-backed platform", () => {
     expect(await screen.findByRole("combobox", { name: "Project" })).toHaveValue(project.id);
     expect(screen.getByTestId("current-route")).toHaveTextContent("/");
     await user.click(screen.getByRole("button", { name: "Open project" }));
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connections/overview`));
     expect(vi.mocked(fetch).mock.calls.some(([, init]) => new Headers(init?.headers).get("X-Project-ID") === "select")).toBe(false);
   });
 
@@ -195,7 +210,7 @@ describe("NoxHere API-backed platform", () => {
     localStorage.setItem("noxhere.last-project.jaspernoboxdev", JSON.stringify({ organizationId: "no-box-dev", projectId: project.id }));
     renderApp(<><App /><CurrentRoute /></>, "/");
 
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connections/overview`));
     expect(screen.queryByRole("heading", { name: "Choose a project" })).not.toBeInTheDocument();
   });
 
@@ -217,7 +232,7 @@ describe("NoxHere API-backed platform", () => {
     await user.type(screen.getByRole("textbox", { name: "New project name" }), "First project");
     await user.click(screen.getByRole("button", { name: "Create project" }));
 
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/jaspernoboxdev/proj_created/connect/overview"));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/jaspernoboxdev/proj_created/connections/overview"));
     expect(fetch).toHaveBeenCalledWith("/api/v1/projects", expect.objectContaining({
       method: "POST",
       headers: expect.objectContaining({ "X-Org": "jaspernoboxdev" }),
@@ -227,7 +242,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("keeps the workspace selector reachable from every project", async () => {
     const user = userEvent.setup();
-    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/connect/overview`);
+    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/connections/overview`);
 
     await user.click(await screen.findByRole("link", { name: "All workspaces and projects" }));
     expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
@@ -235,7 +250,7 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("uses permanent NoxHere branding and keeps project selection in the top bar", async () => {
-    renderApp(<App />, `/no-box-dev/${project.id}/connect/overview`);
+    renderApp(<App />, `/no-box-dev/${project.id}/connections/overview`);
 
     expect(await screen.findByRole("link", { name: "NoxHere home" })).toHaveTextContent("NoxHere");
     expect(screen.getByRole("button", { name: "Open project switcher" })).toHaveTextContent("Projects");
@@ -244,14 +259,14 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("returns an unknown project URL to the chooser instead of selecting the first project", async () => {
-    renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/unknown-project/connect/overview");
+    renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/unknown-project/connections/overview");
 
     await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/"));
     expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
   });
 
   it("remembers the selected project separately for the signed-in person", async () => {
-    renderApp(<App />, `/no-box-dev/${project.id}/connect/overview`);
+    renderApp(<App />, `/no-box-dev/${project.id}/connections/overview`);
 
     await screen.findByRole("link", { name: "NoxHere home" });
     await waitFor(() => expect(JSON.parse(localStorage.getItem("noxhere.last-project.jaspernoboxdev") ?? "null")).toEqual({
@@ -261,7 +276,7 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("returns the former placeholder project URL to the project selector", async () => {
-    renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/select/connect/overview");
+    renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/select/connections/overview");
 
     await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/"));
     expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
@@ -269,7 +284,7 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("always shows every available capability for a verified member", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connect/overview");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connections/overview");
 
     expect(await screen.findByRole("link", { name: "Planning" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Activity" })).toBeInTheDocument();
@@ -277,7 +292,7 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByRole("link", { name: "Stats" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "NoxHere" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Connections" })).toBeInTheDocument();
   });
 
   it("returns to sign-in when an authenticated API request reports an expired session", async () => {
@@ -289,14 +304,14 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
 
-    renderApp(<App />, "/n1healthcare/select/connect/overview");
+    renderApp(<App />, "/n1healthcare/select/connections/overview");
 
     expect(await screen.findByRole("heading", { name: "Sign in to Nox" })).toBeInTheDocument();
     expect(screen.queryByText("Could not load this view")).not.toBeInTheDocument();
   });
 
   it("renders the main project with API-backed empty states", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     expect(await screen.findByRole("button", { name: "New feature" }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.queryByText("No Planning records yet")).not.toBeInTheDocument();
     expect(screen.getByText("To do")).toBeInTheDocument();
@@ -313,7 +328,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     await user.click(await screen.findByRole("button", { name: "New feature" }));
     await user.type(screen.getByRole("textbox", { name: "Feature title" }), "Instant feature");
     await user.click(screen.getByRole("button", { name: "Create feature" }));
@@ -340,7 +355,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     const title = await screen.findByText("Move me");
     const card = title.closest("article");
     const target = screen.getByText("Specced").closest("section");
@@ -369,7 +384,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
 
-    const settingsView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/settings");
+    const settingsView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/settings");
     const speccedInput = await screen.findByDisplayValue("Specced");
     await userEvent.click(within(speccedInput.closest(".stage-editor-row")!).getByRole("button", { name: "Remove" }));
 
@@ -379,7 +394,7 @@ describe("NoxHere API-backed platform", () => {
     }));
     settingsView.unmount();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     expect(await screen.findByText("To do")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("Specced")).not.toBeInTheDocument());
   });
@@ -397,7 +412,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     await user.click(await screen.findByRole("button", { name: "Move production to completed (1)" }));
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/features/8", expect.objectContaining({
       method: "PATCH",
@@ -408,7 +423,7 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("uses one Planning menu for Features, Tasks, Backlog, Completed, and Settings", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
 
     const planningMenu = await screen.findByRole("navigation", { name: "Service views" });
     expect(within(planningMenu).getByRole("link", { name: "Features" })).toHaveClass("active");
@@ -434,7 +449,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
 
     expect(await screen.findByRole("combobox", { name: "Planning for person" })).toHaveValue("JasperNoBoxDev (you)");
     expect(screen.getByText("My feature")).toBeInTheDocument();
@@ -450,6 +465,29 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.queryByText("My task")).not.toBeInTheDocument();
   });
 
+  it("gives each person a GTD task workflow and only lets the signed-in person customize their own", async () => {
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/tasks");
+
+    expect(await screen.findByText("Inbox")).toBeInTheDocument();
+    expect(screen.getByText("Next actions")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Customize my workflow" }));
+    expect(screen.getByText("My task workflow")).toBeInTheDocument();
+    const inboxName = screen.getByRole("textbox", { name: "Stage 1 name" });
+    await user.clear(inboxName);
+    await user.type(inboxName, "Capture");
+    await user.tab();
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/task-workflows", expect.objectContaining({
+      method: "PUT",
+      body: expect.stringContaining('"owner":"JasperNoBoxDev"'),
+    })));
+
+    await user.click(screen.getByRole("combobox", { name: "Tasks for person" }));
+    await user.click(screen.getByRole("option", { name: "memenoboxdev" }));
+    expect(await screen.findByText("memenoboxdev's workflow")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Customize my workflow" })).not.toBeInTheDocument();
+  });
+
   it("keeps known Planning owners assignable when the shared member directory fails", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -463,7 +501,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     expect(await screen.findByText("Owned already")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Assign owner for Needs owner" }));
     await user.click(screen.getByRole("combobox", { name: "Assign owner for Needs owner" }));
@@ -494,7 +532,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/tasks");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/tasks");
     await user.click(await screen.findByRole("button", { name: "New task" }));
     await user.type(screen.getByRole("textbox", { name: "Task title" }), "Check mobile payment");
     await user.click(screen.getByRole("combobox", { name: "Tie task to feature" }));
@@ -503,7 +541,7 @@ describe("NoxHere API-backed platform", () => {
 
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/tasks", expect.objectContaining({
       method: "POST",
-      body: JSON.stringify({ title: "Check mobile payment", owner: "JasperNoBoxDev", featureNumber: 9, stageId: "todo" }),
+      body: JSON.stringify({ title: "Check mobile payment", owner: "JasperNoBoxDev", featureNumber: 9, stageId: "inbox" }),
     })));
     const taskCard = (await screen.findByText("Check mobile payment")).closest(".task-card");
     expect(within(taskCard as HTMLElement).getByText("Feature #9 · New checkout")).toBeInTheDocument();
@@ -523,8 +561,8 @@ describe("NoxHere API-backed platform", () => {
       if (url === "/api/v1/features/7" && init?.method === "PATCH") return json({ ...feature, ...JSON.parse(String(init.body)) });
       return baseFetch(input, init);
     });
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/tasks");
-    const todo = (await screen.findByText("To do")).closest("section")!;
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/tasks");
+    const todo = (await screen.findByText("Next actions")).closest("section")!;
     expect(within(todo).getByText("Sticky task")).toBeInTheDocument();
     expect([...todo.querySelectorAll(".ticket-card-title")].map((item) => item.textContent)).toEqual(["Sticky task", "Alpha task"]);
     expect(within(todo).getAllByText("Feature #7 · Sticky feature")).toHaveLength(2);
@@ -541,7 +579,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board?view=backlog");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board?view=backlog");
     await user.click(await screen.findByRole("button", { name: "Delete Parked idea" }));
     await user.click(screen.getByRole("button", { name: "Delete feature" }));
 
@@ -560,7 +598,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board?view=backlog");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board?view=backlog");
     await user.click(await screen.findByRole("button", { name: "Move to features" }));
 
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/features/10", expect.objectContaining({
@@ -583,7 +621,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board?view=backlog");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board?view=backlog");
     const firstPriority = await screen.findByRole("button", { name: "Priority 3 · Medium for Prioritise me" });
     await user.click(firstPriority);
     const firstMenu = screen.getByRole("listbox", { name: "Set priority for Prioritise me" });
@@ -619,7 +657,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     expect(await screen.findByRole("button", { name: "Priority 1 · Urgent for Active priority" })).toBeInTheDocument();
     await user.click(screen.getByRole("link", { name: "Backlog" }));
     expect(await screen.findByRole("button", { name: "Priority 3 · Medium for Backlog priority" })).toBeInTheDocument();
@@ -640,7 +678,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     const featureSearch = await screen.findByRole("textbox", { name: "Search features" });
     await user.type(featureSearch, "discovery");
     expect(featureSearch).toHaveValue("discovery");
@@ -670,7 +708,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     await user.click(await screen.findByText("Sharing"));
     const dialog = screen.getByRole("dialog", { name: "Feature Sharing" });
     await user.click(within(dialog).getByRole("combobox", { name: "Feature owner" }));
@@ -714,7 +752,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     await user.click(await screen.findByRole("button", { name: "More actions for Attachable" }));
     expect(await screen.findByRole("menuitem", { name: "Attach file to Attachable" })).toBeInTheDocument();
     await user.click(screen.getByText("Attachable"));
@@ -731,13 +769,13 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("removes the separate Specs workspace and returns old links to Features", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/specs");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/specs");
     expect(await screen.findByRole("button", { name: "New feature" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Specs" })).not.toBeInTheDocument();
   });
 
   it("shows tracked people in Activity even when their workload is empty", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feed/current");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/current");
     expect(await screen.findByText("JasperNoBoxDev")).toBeInTheDocument();
     expect(screen.getByText("0 open items")).toBeInTheDocument();
     expect(screen.queryByText("memenoboxdev")).not.toBeInTheDocument();
@@ -745,7 +783,7 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("prefetches Activity data before a user selects another tab", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feed/current");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/current");
     const merged = await screen.findByRole("link", { name: "Merged" });
 
     fireEvent.mouseEnter(merged);
@@ -771,7 +809,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feed/current");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/current");
     expect(await screen.findByText("3 open items")).toBeInTheDocument();
     await user.click(screen.getByText("JasperNoBoxDev"));
     expect(await screen.findByRole("heading", { name: "JasperNoBoxDev" })).toBeInTheDocument();
@@ -794,7 +832,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feed/merged");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/merged");
     expect(await screen.findByText("Player controls shipped")).toBeInTheDocument();
     expect(screen.queryByText("Loading activity")).not.toBeInTheDocument();
     expect(screen.getByText("Plain-English summary")).toBeInTheDocument();
@@ -818,7 +856,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feed/opened");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/opened");
     expect(await screen.findByText("First page")).toBeInTheDocument();
     expect(screen.getByText("pr:opened")).toBeInTheDocument();
     expect(screen.getByText("Plain-English summary")).toBeInTheDocument();
@@ -840,22 +878,22 @@ describe("NoxHere API-backed platform", () => {
       })) });
       return baseFetch(input, init);
     });
-    renderApp(<App />, "/n1healthcare/select/connect/overview");
+    renderApp(<App />, "/n1healthcare/select/connections/overview");
     expect((await screen.findAllByText("N1 project 0")).length).toBeGreaterThan(0);
     expect(vi.mocked(fetch).mock.calls.filter(([input]) => String(input) === "/api/v1/services")).toHaveLength(0);
   });
 
   it("labels the active Feedback queue as Open", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/issues");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
     expect(await screen.findByRole("link", { name: "Open" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Issues" })).not.toBeInTheDocument();
   });
 
   it("loads project capture widgets instead of showing a placeholder", async () => {
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/widgets");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/widgets");
     expect(await screen.findByRole("heading", { name: "Capture widgets" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Playnist" })).toBeInTheDocument();
-    expect(screen.getByText(/api\.feedback\.dev\/widget\/site-playnist\.js/)).toBeInTheDocument();
+    expect(screen.getByText(/app\.noxhere\.com\/widget\/site-playnist\.js/)).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
       "/api/v1/feedback/sites",
       expect.objectContaining({
@@ -874,7 +912,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/issues");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
     expect(await screen.findByText("Widget report")).toBeInTheDocument();
     expect(screen.getByText("Repository issue")).toBeInTheDocument();
     await user.selectOptions(screen.getByRole("combobox", { name: "Issue source" }), "github");
@@ -907,7 +945,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/issues");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
     const title = await screen.findByText("Rich feedback report");
     const report = title.closest("details");
     expect(report).not.toBeNull();
@@ -931,7 +969,7 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/issues");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
     expect(await screen.findByText("First feedback page")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Load more" }));
     expect(await screen.findByText("Second feedback page")).toBeInTheDocument();
@@ -953,7 +991,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    const messagingView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/messaging");
+    const messagingView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/messaging");
     expect(await screen.findByRole("heading", { name: "Reporter messaging" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("#C62E07")).toBeInTheDocument();
     expect(screen.getByText("Playnist", { selector: ".email-card header" })).toBeInTheDocument();
@@ -969,7 +1007,7 @@ describe("NoxHere API-backed platform", () => {
     await waitFor(() => expect(savedTemplate.senderName).toBe("Playnist Support"));
     messagingView.unmount();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/messaging");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/messaging");
     expect(await screen.findByDisplayValue("Playnist Support")).toBeInTheDocument();
   });
 
@@ -1031,7 +1069,7 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByText("↑ 25.0% vs previous 7 days")).toBeInTheDocument();
   });
 
-  it("keeps Stats and Incidents separate while redirecting former Telemetry links", async () => {
+  it("keeps Stats and Incidents as separate unified capabilities", async () => {
     const stats = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/stats/overview`);
     expect(await screen.findByRole("navigation", { name: "Stats views" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Incident views" })).not.toBeInTheDocument();
@@ -1041,9 +1079,6 @@ describe("NoxHere API-backed platform", () => {
     expect(await screen.findByRole("tablist", { name: "Alert views" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Stats views" })).not.toBeInTheDocument();
     incidents.unmount();
-
-    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/telemetry/stats`);
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/stats/overview`));
   });
 
   it("hands NoxKey management off to the separate app", async () => {
@@ -1055,7 +1090,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("uses actual project and collaborator responses in NoxHere", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connect/overview");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connections/overview");
     await user.click(await screen.findByRole("button", { name: "Toggle People and access" }));
     expect(await screen.findByText("JasperNoBoxDev")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Toggle Connections" }));
@@ -1064,7 +1099,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("shows every project capability as always available", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connect/overview");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connections/overview");
     const toggle = await screen.findByRole("button", { name: "Toggle Capabilities" });
     await user.click(toggle);
     expect(screen.getByText("Always available")).toBeInTheDocument();
@@ -1075,7 +1110,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("creates a project directly from the compact project picker", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connect/overview");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connections/overview");
     await user.click(await screen.findByRole("button", { name: "Open project switcher" }));
     expect(screen.queryByText("Choose or edit a project")).not.toBeInTheDocument();
     expect(screen.queryByText(/GitHub.*No-Box-Dev/)).not.toBeInTheDocument();
@@ -1139,7 +1174,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("creates one guest invitation for all capabilities by default", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connect/people");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connections/people");
     await user.click(await screen.findByRole("button", { name: "Invite guest" }));
     await user.type(screen.getByRole("textbox", { name: "Email address" }), "guest@example.com");
     expect(screen.getByRole("combobox", { name: "Capability access" })).toHaveValue("all");
@@ -1222,7 +1257,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    const planningSettings = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/settings");
+    const planningSettings = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/settings");
     const channel = await screen.findByRole("combobox", { name: "Planning feature alert channel" });
     await screen.findByRole("option", { name: "#feature-alerts" });
     await user.selectOptions(channel, "C-FEATURES");
@@ -1235,7 +1270,7 @@ describe("NoxHere API-backed platform", () => {
     expect(await screen.findByText("Feature alerts are on.")).toBeInTheDocument();
     planningSettings.unmount();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/ticket/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/settings");
     await waitFor(() => expect(screen.getByRole("combobox", { name: "Planning feature alert channel" })).toHaveValue("C-FEATURES"));
   });
 });

@@ -4368,6 +4368,143 @@
         "x-project-scope": "optional"
       }
     },
+    "/api/v1/task-workflows": {
+      "get": {
+        "operationId": "getPersonalTaskWorkflow",
+        "summary": "Get a personal task workflow",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "GitHub login whose personal task workflow should be returned. Defaults to the signed-in member.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9-]{1,39}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Personal task workflow",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskWorkflow"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Get the task columns chosen by a project member, or the standard Getting Things Done workflow when they have not customized them. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "put": {
+        "operationId": "putPersonalTaskWorkflow",
+        "summary": "Replace a personal task workflow",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskWorkflowPut"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Personal task workflow replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskWorkflow"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/V1Error"
+          }
+        },
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Replace the signed-in member's personal task columns. Each member can change only their own workflow. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
     "/api/v1/tasks/{id}": {
       "patch": {
         "operationId": "updatePlanningTask",
@@ -12588,7 +12725,7 @@
           "stageId": {
             "type": "string",
             "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "default": "todo"
+            "default": "inbox"
           },
           "position": {
             "type": "integer",
@@ -12638,6 +12775,94 @@
           "position": {
             "type": "integer",
             "minimum": 0
+          }
+        }
+      },
+      "TaskStage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "completed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TaskWorkflow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "owner",
+          "stages",
+          "source",
+          "updatedAt"
+        ],
+        "properties": {
+          "owner": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,39}$"
+          },
+          "stages": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/TaskStage"
+            }
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "gtd-default",
+              "custom"
+            ]
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskWorkflowPut": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stages"
+        ],
+        "properties": {
+          "owner": {
+            "type": "string",
+            "description": "Defaults to the signed-in member and must match the signed-in member when provided.",
+            "pattern": "^[A-Za-z0-9-]{1,39}$"
+          },
+          "stages": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 10,
+            "description": "Ordered personal columns. Exactly one stage must set completed to true.",
+            "items": {
+              "$ref": "#/components/schemas/TaskStage"
+            }
           }
         }
       },

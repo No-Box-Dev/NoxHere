@@ -8,7 +8,7 @@ test("opens the main Playnist view", async ({ page }) => {
 });
 
 test("keeps administration in Settings and NoxHere last", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/connect/overview");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/connections/overview");
   await expect(page.getByText("API access", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Maintenance", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Projects belong to NoxHere", { exact: true })).toHaveCount(0);
@@ -22,7 +22,7 @@ test("keeps administration in Settings and NoxHere last", async ({ page }) => {
 });
 
 test("collapses the capability sidebar and remembers the preference", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/feed/current");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/activity/current");
   const nav = page.locator(".service-nav");
   await expect(nav.locator("a").last()).toHaveAccessibleName("NoxHere");
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
@@ -52,7 +52,7 @@ test("switches between actual projects", async ({ page }) => {
 });
 
 test("keeps the empty Planning board usable", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/ticket/board");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/planning/board");
   await expect(page.getByRole("link", { name: "Features", exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("To do", { exact: true })).toBeVisible();
   await expect(page.getByText("On production", { exact: true })).toBeVisible();
@@ -61,20 +61,20 @@ test("keeps the empty Planning board usable", async ({ page }) => {
 });
 
 const serviceRoutes = [
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/board", "Features"],
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/backlog", "Backlog"],
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/completed", "Completed"],
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/settings", "Settings"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/current", "Current"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/opened", "Opened"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/merged", "Merged"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/issues", "Issues"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/issues", "Open"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/resolved", "Resolved"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/widgets", "Widgets"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/messaging", "Messaging"],
-  ["/no-box-dev/proj_no-box-dev_playnist/telemetry/stats", "Stats"],
-  ["/no-box-dev/proj_no-box-dev_playnist/telemetry/alerts", "Alerts"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/board", "Features"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/backlog", "Backlog"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/completed", "Completed"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/settings", "Settings"],
+  ["/no-box-dev/proj_no-box-dev_playnist/activity/current", "Current"],
+  ["/no-box-dev/proj_no-box-dev_playnist/activity/opened", "Opened"],
+  ["/no-box-dev/proj_no-box-dev_playnist/activity/merged", "Merged"],
+  ["/no-box-dev/proj_no-box-dev_playnist/activity/issues", "Issues"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/issues", "Open"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/resolved", "Resolved"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/widgets", "Widgets"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/messaging", "Messaging"],
+  ["/no-box-dev/proj_no-box-dev_playnist/stats/overview", "Stats"],
+  ["/no-box-dev/proj_no-box-dev_playnist/incidents/alerts", "Alerts"],
 ] as const;
 
 test("opens every service tab without a page failure", async ({ page }) => {
@@ -96,7 +96,7 @@ test("opens NoxKey and its real download action", async ({ page }) => {
 });
 
 test("opens each NoxHere section and project settings controls", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/connect/overview");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/connections/overview");
   for (const section of ["Connections", "People and access", "Project repositories", "Capabilities"]) {
     const toggle = page.getByRole("button", { name: `Toggle ${section}` });
     await expect(toggle).toBeVisible({ timeout: 30_000 });
@@ -117,7 +117,7 @@ test("opens each NoxHere section and project settings controls", async ({ page }
 });
 
 test("shows Playnist merged work with its real release notes", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/feed/merged");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/activity/merged");
   const latest = page.locator(".feed-post-card").first();
   await expect(latest).toContainText("Refine collection previews and review cards", { timeout: 30_000 });
   await expect(latest.locator(".feed-post-author > b")).toHaveText("JasperNoBoxDev");
@@ -130,7 +130,7 @@ test("shows Playnist merged work with its real release notes", async ({ page }) 
 });
 
 test("expands a real Feedback report and opens its linked issue", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/spot/issues");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
   await expect(page.getByText("Live", { exact: true })).toBeVisible({ timeout: 30_000 });
   const refreshed = page.waitForResponse((response) => response.url().includes("/api/v1/feedback/project-overview") && response.ok());
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
@@ -149,7 +149,7 @@ test("expands a real Feedback report and opens its linked issue", async ({ page 
 });
 
 test("shows the mirrored Playnist stats dashboard", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/telemetry/stats");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/stats/overview");
   await expect(page.getByText("Total users", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Daily active users", { exact: true })).toBeVisible();
   await expect(page.getByText("Reported", { exact: true })).toBeVisible();

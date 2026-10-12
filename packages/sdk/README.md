@@ -25,9 +25,7 @@ See the repository's [direct HTTP guide](../../public/docs/direct-api.md) and th
 OpenAPI-generated operation examples in the developer reference.
 
 Namespaces are `workspace`, `activity`, `planning`, `feedback`, `stats`, and
-`incidents`. Compatibility aliases `connect`, `feed`, `ticket`, and `spot`
-point to the corresponding objects. The deprecated `cue` facade combines the
-`stats` and `incidents` operations so existing integrations continue to work.
+`incidents`. These unified namespaces are the only supported resource names.
 Every operation is also available by its
 OpenAPI operation ID through `nox.operations` and `nox.request()`.
 

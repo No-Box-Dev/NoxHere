@@ -264,13 +264,6 @@ def render_client_stub() -> str:
         lines.append(f"class Async{pascal(namespace)}Client(AsyncResourceClient):")
         lines.extend(render_method(*details, asynchronous=True) for details in details_list)
         lines.append("")
-    cue_details = grouped["stats"] + grouped["incidents"]
-    lines.append("class TelemetryClient(ResourceClient):")
-    lines.extend(render_method(*details) for details in cue_details)
-    lines.append("")
-    lines.append("class AsyncTelemetryClient(AsyncResourceClient):")
-    lines.extend(render_method(*details, asynchronous=True) for details in cue_details)
-    lines.append("")
     lines.extend([
         "class NoxHereClient:",
         "    base_url: str",
@@ -280,11 +273,6 @@ def render_client_stub() -> str:
         "    feedback: FeedbackClient",
         "    stats: StatsClient",
         "    incidents: IncidentsClient",
-        "    connect: WorkspaceClient",
-        "    feed: ActivityClient",
-        "    ticket: PlanningClient",
-        "    spot: FeedbackClient",
-        "    cue: TelemetryClient",
         "    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Transport | None = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ..., sleep: Callable[[float], None] = ...) -> None: ...",
         "    def request(self, operation_id: str, *, path: Mapping[str, str | int] | None = ..., query: Mapping[str, str | int | float | bool | Sequence[str | int | float | bool] | None] | None = ..., body: JsonValue | str | bytes | None = ..., headers: Mapping[str, str] | None = ...) -> Any: ...",
         "    def operation_ids(self) -> tuple[str, ...]: ...",
@@ -298,11 +286,6 @@ def render_client_stub() -> str:
         "    feedback: AsyncFeedbackClient",
         "    stats: AsyncStatsClient",
         "    incidents: AsyncIncidentsClient",
-        "    connect: AsyncWorkspaceClient",
-        "    feed: AsyncActivityClient",
-        "    ticket: AsyncPlanningClient",
-        "    spot: AsyncFeedbackClient",
-        "    cue: AsyncTelemetryClient",
         "    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Any = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ...) -> None: ...",
         "    async def request(self, operation_id: str, *, path: Mapping[str, str | int] | None = ..., query: Mapping[str, str | int | float | bool | Sequence[str | int | float | bool] | None] | None = ..., body: JsonValue | str | bytes | None = ..., headers: Mapping[str, str] | None = ...) -> Any: ...",
         "    def operation_ids(self) -> tuple[str, ...]: ...",

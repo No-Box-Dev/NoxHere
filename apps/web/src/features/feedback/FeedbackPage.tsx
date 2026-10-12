@@ -48,7 +48,7 @@ export default function FeedbackPage() {
   const isGuest = bootstrap.actor.accessLevel === "guest";
   const sourceParam = searchParams.get("source");
   const source: "all" | "feedback" | "github" = sourceParam === "feedback" || sourceParam === "github" ? sourceParam : "all";
-  const base = `/${organizationId}/${projectId}/spot`;
+  const base = `/${organizationId}/${projectId}/feedback`;
   const query = useInfiniteQuery({
     queryKey: ["feedback", organizationId, projectId, view],
     initialPageParam: "",

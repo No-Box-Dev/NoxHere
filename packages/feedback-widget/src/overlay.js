@@ -177,7 +177,10 @@ export function showOverlay(captureOrPromise, options = {}) {
     if (!overlayElement || !capture) return;
     hydrateCapture(capture);
     if (capture.captureError && options.onCaptureError) {
-      options.onCaptureError(new Error(capture.captureError.message));
+      const error = new Error(capture.captureError.message);
+      error.code = capture.captureError.code;
+      error.details = capture.captureError.details;
+      options.onCaptureError(error);
     }
   }).catch((err) => {
     if (!overlayElement) return;

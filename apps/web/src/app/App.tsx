@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthBoundary } from "./AuthBoundary";
 import { PlatformShell } from "./PlatformShell";
 
@@ -29,11 +29,16 @@ export function App() {
             <Route path="feedback/:view" element={<FeedbackPage />} />
             <Route path="key/:view" element={<NoxKeyPage />} />
             <Route path="settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate replace to="connections/overview" />} />
+            <Route path="*" element={<ProjectFallback />} />
           </Route>
           <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>
       </Suspense>
     </AuthBoundary>
   );
+}
+
+function ProjectFallback() {
+  const { organizationId = "", projectId = "" } = useParams();
+  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/connections/overview`} />;
 }

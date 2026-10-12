@@ -43,15 +43,11 @@ class AsyncRecorder:
 
 
 class ClientTest(unittest.TestCase):
-    def test_maps_every_operation_and_alias(self) -> None:
+    def test_maps_every_operation_to_unified_resources(self) -> None:
         client = NoxHereClient(transport=Recorder())
         self.assertGreater(len(client.operation_ids()), 100)
-        self.assertIsNot(client.cue, client.incidents)
         self.assertIn("getTelemetryDailyHealth", client.stats.operation_ids())
         self.assertIn("getProjectIncidents", client.incidents.operation_ids())
-        self.assertIn("getTelemetryDailyHealth", client.cue.operation_ids())
-        self.assertIn("getProjectIncidents", client.cue.operation_ids())
-        self.assertIs(client.spot, client.feedback)
 
     def test_encodes_path_query_and_auth(self) -> None:
         recorder = Recorder(response={"ok": True})
@@ -116,7 +112,7 @@ class ClientTest(unittest.TestCase):
         scoped = NoxHereClient(token="nox_sk_secret", transport=public, on_request=lambda event: observed.append(str(event["url"]))).with_context(organization="No-Box-Dev", project_id="project-1")
         scoped.feedback.get_public_feedback_config(path={"siteId": "site-1"})
         self.assertEqual(public.calls[0][1], "https://app.noxhere.com/api/feedback/public/v1/sites/site-1/config")
-        self.assertEqual(public.calls[0][2]["X-NoxHere-SDK"], "python/0.2.2")
+        self.assertEqual(public.calls[0][2]["X-NoxHere-SDK"], "python/0.2.3")
         self.assertNotIn("Authorization", public.calls[0][2])
         self.assertNotIn("X-Org", public.calls[0][2])
         self.assertNotIn("X-Project-ID", public.calls[0][2])

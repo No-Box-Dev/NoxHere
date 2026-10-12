@@ -120,9 +120,11 @@ function resolveCoreUrl() {
   // Fallback: scan script tags for anything that looks like our loader.
   // `.min` is optional so the non-minified dev build resolves too. `-core` is
   // excluded so an already-loaded core script isn't mistaken for the loader.
+  // `blindspot.min.js` is matched too — legacy embeds (n1.care) still load
+  // that filename and depend on it resolving the new core path.
   const scripts = document.querySelectorAll('script[src]');
   for (const s of scripts) {
-    if (/feedback(?!-core)(\.[^/]+)?(\.min)?\.js(?:[?#]|$)/.test(s.src)) {
+    if (/(?:feedback|blindspot)(?!-core)(\.[^/]+)?(\.min)?\.js(?:[?#]|$)/.test(s.src)) {
       coreUrl = s.src.replace(/[^/]+$/, CORE_FILENAME);
       return coreUrl;
     }
@@ -410,7 +412,12 @@ function overlayCallbacks() {
     blocks: config.blocks,
     reporter,
     onCaptureError: (error) => {
-      console.error('[Feedback] Capture failed:', error);
+      console.error('[Feedback] Capture failed', {
+        code: error?.code || 'capture_failed',
+        message: error instanceof Error ? error.message : String(error),
+        details: error?.details || null,
+        error,
+      });
       showToast({ message: 'Screenshot capture failed', variant: 'error', durationMs: 4000 });
     },
   };
