@@ -6,7 +6,7 @@ vi.mock("../slack.js", () => ({
   postSlackMessage: vi.fn(),
   actionableSlackError: vi.fn((error, fallback = "Check Slack, then try again.") => {
     const code = String(error?.code ?? error ?? "");
-    return code.includes("not_in_channel") ? "Invite @NoxConnect to the channel, then try again." : fallback;
+    return code.includes("not_in_channel") ? "Invite @NoxHere to the channel, then try again." : fallback;
   }),
 }));
 
@@ -41,19 +41,19 @@ describe("delivery outbox", () => {
   it("stages an idempotent source/destination row", async () => {
     const database = db({ first: { id: "delivery-1", status: "pending" } });
     const result = await stageSlackDelivery(database, {
-      orgId: 7, projectId: "project-1", source: "noxspot", sourceId: "capture-1", siteId: "site-1",
+      orgId: 7, projectId: "project-1", source: "feedback", sourceId: "capture-1", siteId: "site-1",
       connectionId: "conn-2", channelId: "C123", payload: { title: "Broken" },
     });
     expect(result).toEqual({ id: "delivery-1", status: "pending" });
     expect(database.calls[0].sql).toContain("ON CONFLICT(source, destination, source_id)");
-    expect(database.calls[0].binds.slice(1, 5)).toEqual([7, "project-1", "noxspot", "capture-1"]);
+    expect(database.calls[0].binds.slice(1, 5)).toEqual([7, "project-1", "feedback", "capture-1"]);
     expect(database.calls[0].binds).toContain("conn-2");
   });
 
   it("normalizes an empty connection id so legacy routes use the default workspace", async () => {
     const database = db({ first: { id: "delivery-1", status: "pending" } });
     await stageSlackDelivery(database, {
-      orgId: 7, projectId: "project-1", source: "noxspot", sourceId: "capture-2", siteId: "site-1",
+      orgId: 7, projectId: "project-1", source: "feedback", sourceId: "capture-2", siteId: "site-1",
       connectionId: "", channelId: "C123", payload: { title: "Broken" },
     });
     expect(database.calls[0].binds[6]).toBeNull();
@@ -96,7 +96,7 @@ describe("delivery outbox", () => {
     expect(database.calls.some((call) => call.binds?.[0] === "1723456789.123456")).toBe(true);
   });
 
-  it("blocks a queued legacy NoxFeed social post instead of duplicating the release note", async () => {
+  it("blocks a queued legacy Activity social post instead of duplicating the release note", async () => {
     const outbox = {
       id: "delivery-post", org_id: 7, source: "posts", destination: "slack", channel_id: "C123",
       payload_json: JSON.stringify({ message: { text: "social post" } }),
@@ -166,7 +166,7 @@ describe("delivery outbox", () => {
     const result = await requeueBlockedForSite({ DB: database, TASK_QUEUE: { send } }, 7, "site-1");
     expect(result).toEqual({ queued: 1 });
     expect(database.calls[0].sql).toContain("blocked_configuration");
-    expect(database.calls[0].sql).toContain("source = 'noxspot'");
+    expect(database.calls[0].sql).toContain("source = 'feedback'");
     expect(send).toHaveBeenCalledOnce();
   });
 });

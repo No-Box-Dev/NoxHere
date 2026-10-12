@@ -28,18 +28,18 @@ const ProjectRouting = z.object({
   enabled: z.boolean(),
   repositories: z.array(z.string().trim().min(1).max(240)).max(500),
   routes: z.object({
-    noxfeedPosts: Destination,
-    noxfeedReleaseNotes: Destination,
-    noxCue: Destination,
-    noxCueAlerts: Destination,
+    activityPosts: Destination,
+    activityReleaseNotes: Destination,
+    telemetry: Destination,
+    telemetryAlerts: Destination,
   }).strict(),
 }).strict();
 
 const ROUTE_FIELDS: Array<[keyof z.infer<typeof ProjectRouting>["routes"], ProjectRouteKey]> = [
-  ["noxfeedPosts", "noxfeed_posts"],
-  ["noxfeedReleaseNotes", "noxfeed_release_notes"],
-  ["noxCue", "noxcue"],
-  ["noxCueAlerts", "noxcue_alerts"],
+  ["activityPosts", "activity_posts"],
+  ["activityReleaseNotes", "activity_release_notes"],
+  ["telemetry", "telemetry"],
+  ["telemetryAlerts", "telemetry_alerts"],
 ];
 
 export async function onRequestPut(context: Ctx): Promise<Response> {

@@ -59,7 +59,7 @@ describe("GET /api/events", () => {
     expect(binds).toContain("a1");
   });
 
-  it("supports the NoxSpot issue feed type", async () => {
+  it("supports the Feedback issue feed type", async () => {
     const db = makeDb();
     await listEvents(makeCtx({ db, url: "http://x/api/events?type=spot%3Aissue_created" }));
     const { sql, binds } = db._calls.all[0];
@@ -93,7 +93,7 @@ describe("GET /api/events", () => {
 
   it("appends repo + pr_number filter matching pr.number OR pr_number", async () => {
     const db = makeDb();
-    await listEvents(makeCtx({ db, url: "http://x/api/events?repo=noxconnect&pr_number=42" }));
+    await listEvents(makeCtx({ db, url: "http://x/api/events?repo=noxhere&pr_number=42" }));
     const { sql, binds } = db._calls.all[0];
     expect(sql).toMatch(/repo = \?/);
     // Raw github events store the number at $.pr.number
@@ -101,7 +101,7 @@ describe("GET /api/events", () => {
     // Narrator rows (pr_narrative, narrative, release_notes) store it
     // at $.pr_number
     expect(sql).toMatch(/\$\.pr_number/);
-    expect(binds).toContain("noxconnect");
+    expect(binds).toContain("noxhere");
     // Bound twice — once per branch of the OR
     expect(binds.filter((b) => b === 42)).toHaveLength(2);
   });

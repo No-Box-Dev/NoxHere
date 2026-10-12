@@ -55,11 +55,11 @@ vi.mock("../llm-config.js", () => ({ resolveLlmConfig: provider.llmConfig }));
 import { executeConnectionCapability } from "../connection-capability-executor";
 
 const BASE = {
-  contract: "noxconnect.connection-capability" as const,
+  contract: "noxhere.connection-capability" as const,
   version: 1 as const,
   commandId: "command-1",
   idempotencyKey: "incident:production:checkout",
-  service: "noxcue" as const,
+  service: "telemetry" as const,
   organizationId: 7,
   projectId: "project-1",
 };
@@ -116,11 +116,11 @@ function githubCreate(overrides: Record<string, unknown> = {}) {
     capability: "github.issue.create" as const,
     input: {
       repository: "checkout",
-      idempotencyMarker: "<!-- noxcue:checkout -->",
+      idempotencyMarker: "<!-- telemetry:checkout -->",
       issue: {
         title: "Checkout is failing",
         body: "Observed failures",
-        labels: [{ name: "noxcue", color: "6f42c1" }],
+        labels: [{ name: "telemetry", color: "6f42c1" }],
       },
     },
   };
@@ -160,7 +160,7 @@ describe("connection capability contracts", () => {
 
   it("rejects credentials in receipts", () => {
     expect(() => parseConnectionCapabilityReceipt({
-      contract: "noxconnect.connection-receipt",
+      contract: "noxhere.connection-receipt",
       version: 1,
       commandId: "command-1",
       idempotencyKey: "key-1",
@@ -177,7 +177,7 @@ describe("connection capability contracts", () => {
     expect(provider.installationToken).not.toHaveBeenCalled();
     expect(provider.publishGithub).toHaveBeenCalledWith(expect.objectContaining({ DB }), expect.objectContaining({
       operation: "github.issue.create", idempotencyKey: BASE.idempotencyKey,
-      input: expect.objectContaining({ idempotencyMarker: "<!-- noxcue:checkout -->" }),
+      input: expect.objectContaining({ idempotencyMarker: "<!-- telemetry:checkout -->" }),
     }));
     expect(JSON.stringify(result)).not.toContain("provider-secret-token");
     expect(result).toMatchObject({ provider: "github", status: "queued", result: { deliveryId: "github-delivery-1", queued: true } });
@@ -203,17 +203,17 @@ describe("connection capability contracts", () => {
     expect(provider.installationToken).not.toHaveBeenCalled();
   });
 
-  it("stages Slack through NoxConnect routing and returns a bounded receipt", async () => {
+  it("stages Slack through NoxHere routing and returns a bounded receipt", async () => {
     const DB = new CapabilityDb();
     const result = await executeConnectionCapability(
       { DB: DB as unknown as D1Database, TASK_QUEUE: {} as Queue },
       {
         ...BASE,
-        service: "noxfeed",
+        service: "activity",
         commandId: "slack-command",
         idempotencyKey: "release:42",
         capability: "slack.message.deliver",
-        input: { route: "noxfeed_release_notes", message: { text: "Released", blocks: [] } },
+        input: { route: "activity_release_notes", message: { text: "Released", blocks: [] } },
       },
     );
     expect(provider.publishSlack).toHaveBeenCalledWith(expect.objectContaining({ DB }), expect.objectContaining({
@@ -229,7 +229,7 @@ describe("connection capability contracts", () => {
       { DB: DB as unknown as D1Database, TASK_QUEUE: {} as Queue },
       {
         ...BASE,
-        service: "noxfeed",
+        service: "activity",
         commandId: "ai-command",
         idempotencyKey: "narrative:42",
         capability: "ai.complete",

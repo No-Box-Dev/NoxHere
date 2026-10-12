@@ -1,5 +1,5 @@
 /**
- * NoxSpot loader — the bundle every page loads.
+ * Feedback loader — the bundle every page loads.
  *
  * Always-loaded: trigger button, console/error capture, keyboard shortcut,
  * toast, submit POST, config fetch. The heavy bits (overlay, canvas, capture,
@@ -14,9 +14,9 @@ import { setDebug, debugLog } from './debug.js';
 import { showToast, dismissToast } from './toast.js';
 import { hasBlock } from './utils.js';
 
-const API_URL = 'https://api.noxspot.dev';
+const API_URL = 'https://app.noxhere.com';
 const CONFIG_TIMEOUT_MS = 3000;
-const CORE_FILENAME = 'noxspot-core.min.js';
+const CORE_FILENAME = 'feedback-core.min.js';
 
 function isMac() {
   const plat = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
@@ -120,43 +120,41 @@ function resolveCoreUrl() {
   // Fallback: scan script tags for anything that looks like our loader.
   // `.min` is optional so the non-minified dev build resolves too. `-core` is
   // excluded so an already-loaded core script isn't mistaken for the loader.
-  // `blindspot.min.js` is matched too — legacy embeds (n1.care) still load
-  // that filename and depend on it resolving the new core path.
   const scripts = document.querySelectorAll('script[src]');
   for (const s of scripts) {
-    if (/(?:noxspot|blindspot)(?!-core)(\.[^/]+)?(\.min)?\.js(?:[?#]|$)/.test(s.src)) {
+    if (/feedback(?!-core)(\.[^/]+)?(\.min)?\.js(?:[?#]|$)/.test(s.src)) {
       coreUrl = s.src.replace(/[^/]+$/, CORE_FILENAME);
       return coreUrl;
     }
   }
 
-  debugLog('[NoxSpot] Could not resolve core URL from script tags');
+  debugLog('[Feedback] Could not resolve core URL from script tags');
   return null;
 }
 
 function loadCore() {
-  if (window.__NoxSpotCore) return Promise.resolve();
+  if (window.__FeedbackCore) return Promise.resolve();
   if (coreLoadPromise) return coreLoadPromise;
 
   const url = resolveCoreUrl();
-  if (!url) return Promise.reject(new Error('NoxSpot core URL unresolved'));
+  if (!url) return Promise.reject(new Error('Feedback core URL unresolved'));
 
   coreLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = url;
     script.async = true;
     script.onload = () => {
-      if (window.__NoxSpotCore) {
+      if (window.__FeedbackCore) {
         resolve();
       } else {
         // Registration failure — clear the promise so a retry can run again.
         coreLoadPromise = null;
-        reject(new Error('NoxSpot core loaded but did not register'));
+        reject(new Error('Feedback core loaded but did not register'));
       }
     };
     script.onerror = () => {
       coreLoadPromise = null;
-      reject(new Error('NoxSpot core failed to load from ' + url));
+      reject(new Error('Feedback core failed to load from ' + url));
     };
     document.head.appendChild(script);
   });
@@ -165,7 +163,7 @@ function loadCore() {
 }
 
 function prefetchCore() {
-  if (window.__NoxSpotCore) return;
+  if (window.__FeedbackCore) return;
   const url = resolveCoreUrl();
   if (!url) return;
   // Compare resolved hrefs directly — building a CSS selector from a URL
@@ -184,7 +182,7 @@ function prefetchCore() {
 
 export function init(options = {}) {
   if (!options.siteId) {
-    console.error('[NoxSpot] Missing required option: siteId');
+    console.error('[Feedback] Missing required option: siteId');
     return;
   }
 
@@ -236,7 +234,7 @@ export function init(options = {}) {
 
   scheduleCorePrefetch();
 
-  debugLog('[NoxSpot] Initialized', { siteId: config.siteId });
+  debugLog('[Feedback] Initialized', { siteId: config.siteId });
 }
 
 export function destroy() {
@@ -252,7 +250,7 @@ export function destroy() {
     shortcutCleanup = null;
   }
 
-  if (window.__NoxSpotCore) window.__NoxSpotCore.cleanup();
+  if (window.__FeedbackCore) window.__FeedbackCore.cleanup();
 
   destroyTrigger();
   removeLoaderStyles();
@@ -293,7 +291,7 @@ function normalizeReporter(reporter) {
 
 export function identify(reporter) {
   config.reporter = normalizeReporter(reporter);
-  const input = document.getElementById('noxspot-reporter');
+  const input = document.getElementById('feedback-reporter');
   if (input) input.value = config.reporter?.name || '';
 }
 
@@ -302,7 +300,7 @@ function currentReporter() {
   try {
     return normalizeReporter(config.getUser()) || config.reporter;
   } catch (error) {
-    debugLog('[NoxSpot] getUser() failed:', error?.message || error);
+    debugLog('[Feedback] getUser() failed:', error?.message || error);
     return config.reporter;
   }
 }
@@ -320,12 +318,12 @@ async function fetchMembers(siteId, generation) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CONFIG_TIMEOUT_MS);
   try {
-    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${siteId}/members`, { signal: controller.signal });
+    const response = await fetch(`${API_URL}/api/feedback/public/v1/sites/${siteId}/members`, { signal: controller.signal });
     if (!response.ok) return;
     const data = await response.json();
     if (generation === bootstrapGeneration && Array.isArray(data?.members)) config.members = data.members;
   } catch (e) {
-    debugLog('[NoxSpot] Members fetch failed:', e?.message || e);
+    debugLog('[Feedback] Members fetch failed:', e?.message || e);
   } finally {
     clearTimeout(timer);
   }
@@ -336,7 +334,7 @@ async function fetchConfig(siteId, generation) {
   const timer = setTimeout(() => controller.abort(), CONFIG_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${siteId}/config`, { signal: controller.signal });
+    const response = await fetch(`${API_URL}/api/feedback/public/v1/sites/${siteId}/config`, { signal: controller.signal });
     clearTimeout(timer);
     if (!response.ok) {
       if (response.status === 403 || response.status === 404) {
@@ -358,12 +356,12 @@ async function fetchConfig(siteId, generation) {
     if (environments.length > 0) {
       const matched = environments.find((env) => isUrlMatch(env.url));
       if (!matched) {
-        debugLog('[NoxSpot] No environment matches current host, widget hidden');
+        debugLog('[Feedback] No environment matches current host, widget hidden');
         destroyTrigger();
         return false;
       }
       if (matched.enabled === false) {
-        debugLog('[NoxSpot] Environment is disabled, widget hidden:', matched.name);
+        debugLog('[Feedback] Environment is disabled, widget hidden:', matched.name);
         destroyTrigger();
         return false;
       }
@@ -394,7 +392,7 @@ async function fetchConfig(siteId, generation) {
     return true;
   } catch (e) {
     clearTimeout(timer);
-    debugLog('[NoxSpot] Config fetch failed, using defaults:', e?.message || e);
+    debugLog('[Feedback] Config fetch failed, using defaults:', e?.message || e);
     return generation === bootstrapGeneration;
   }
 }
@@ -412,7 +410,7 @@ function overlayCallbacks() {
     blocks: config.blocks,
     reporter,
     onCaptureError: (error) => {
-      console.error('[NoxSpot] Capture failed', {
+      console.error('[Feedback] Capture failed', {
         code: error?.code || 'capture_failed',
         message: error instanceof Error ? error.message : String(error),
         details: error?.details || null,
@@ -424,7 +422,7 @@ function overlayCallbacks() {
 }
 
 async function handleTrigger() {
-  debugLog('[NoxSpot] Starting capture mode...');
+  debugLog('[Feedback] Starting capture mode...');
 
   releaseInputZoom();
   hideTrigger();
@@ -437,18 +435,18 @@ async function handleTrigger() {
       return;
     }
   } catch (error) {
-    console.error('[NoxSpot]', error);
+    console.error('[Feedback]', error);
     showToast({ message: 'Widget failed to load', variant: 'error', durationMs: 4000 });
     showTrigger();
     return;
   }
 
-  window.__NoxSpotCore.open({
+  window.__FeedbackCore.open({
     mode: 'click',
     callbacks: overlayCallbacks(),
     onCaptureReady: () => dismissToast(),
     onCaptureFailed: (error) => {
-      console.error('[NoxSpot] Capture failed:', error);
+      console.error('[Feedback] Capture failed:', error);
       showToast({ message: 'Screenshot capture failed', variant: 'error', durationMs: 4000 });
       showTrigger();
     },
@@ -466,7 +464,7 @@ function releaseInputZoom() {
 }
 
 async function handleShortcut() {
-  debugLog('[NoxSpot] Shortcut triggered, capturing before overlay...');
+  debugLog('[Feedback] Shortcut triggered, capturing before overlay...');
 
   releaseInputZoom();
   hideTrigger();
@@ -480,18 +478,18 @@ async function handleShortcut() {
       return;
     }
   } catch (error) {
-    console.error('[NoxSpot]', error);
+    console.error('[Feedback]', error);
     showToast({ message: 'Widget failed to load', variant: 'error', durationMs: 4000 });
     showTrigger();
     return;
   }
 
-  window.__NoxSpotCore.open({
+  window.__FeedbackCore.open({
     mode: 'shortcut',
     callbacks: overlayCallbacks(),
     onCaptureReady: () => dismissToast(),
     onCaptureFailed: (error) => {
-      console.error('[NoxSpot] Capture failed:', error);
+      console.error('[Feedback] Capture failed:', error);
       showToast({ message: 'Screenshot capture failed', variant: 'error', durationMs: 4000 });
       showTrigger();
     },
@@ -623,9 +621,9 @@ function openIssueAction(issueUrl) {
 }
 
 function handleSubmit(data) {
-  debugLog('[NoxSpot] Submitting report (optimistic)...');
+  debugLog('[Feedback] Submitting report (optimistic)...');
 
-  if (window.__NoxSpotCore) window.__NoxSpotCore.close();
+  if (window.__FeedbackCore) window.__FeedbackCore.close();
   showTrigger();
 
   showToast({ message: 'Sending…', variant: 'success', durationMs: 0 });
@@ -639,7 +637,7 @@ function handleSubmit(data) {
 
   sendReport(body)
     .then((result) => {
-      debugLog('[NoxSpot] Report submitted successfully', result);
+      debugLog('[Feedback] Report submitted successfully', result);
       showToast({
         message: 'Reported ✓',
         variant: 'success',
@@ -648,7 +646,7 @@ function handleSubmit(data) {
       });
     })
     .catch((error) => {
-      console.error('[NoxSpot] Submit failed:', error);
+      console.error('[Feedback] Submit failed:', error);
       showToast({
         message: 'Report failed to send',
         variant: 'error',
@@ -673,7 +671,7 @@ function retrySubmit(body) {
       });
     })
     .catch((error) => {
-      console.error('[NoxSpot] Retry failed:', error);
+      console.error('[Feedback] Retry failed:', error);
       showToast({
         message: 'Still failing — check your connection',
         variant: 'error',

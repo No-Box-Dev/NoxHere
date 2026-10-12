@@ -29,7 +29,7 @@ const SectionSchema = z.object({
 }).strict();
 
 const DefinitionSchema = z.object({
-  id: z.enum(["noxticket", "noxfeed", "noxspot", "noxcue"]),
+  id: z.enum(["planning", "activity", "feedback", "telemetry"]),
   name: z.string().min(1).max(100),
   kind: z.literal("product"),
   focus: z.string().min(1).max(300),
@@ -89,26 +89,26 @@ export interface ProductServiceBinding {
 }
 
 export interface ProductServiceEnvironment {
-  NOXTICKET_SERVICE?: ProductServiceBinding;
-  NOXFEED_RESPONSE?: ProductServiceBinding;
-  NOXSPOT_RESPONSE?: ProductServiceBinding;
-  NOXCUE_RESPONSE?: ProductServiceBinding;
+  PLANNING_SERVICE?: ProductServiceBinding;
+  ACTIVITY_RESPONSE?: ProductServiceBinding;
+  FEEDBACK_RESPONSE?: ProductServiceBinding;
+  TELEMETRY_RESPONSE?: ProductServiceBinding;
 }
 
 export interface LoadedServiceManifests {
   definitions: ServiceDefinition[];
-  manifests: Partial<Record<Exclude<ServiceId, "noxconnect">, ServiceManifest>>;
+  manifests: Partial<Record<Exclude<ServiceId, "noxhere">, ServiceManifest>>;
   runtimeStates: Partial<Record<ServiceId, { state: "ready" | "unavailable"; source: "binding" | "snapshot" }>>;
 }
 
 const BINDING_NAMES = {
-  noxticket: "NOXTICKET_SERVICE",
-  noxfeed: "NOXFEED_RESPONSE",
-  noxspot: "NOXSPOT_RESPONSE",
-  noxcue: "NOXCUE_RESPONSE",
+  planning: "PLANNING_SERVICE",
+  activity: "ACTIVITY_RESPONSE",
+  feedback: "FEEDBACK_RESPONSE",
+  telemetry: "TELEMETRY_RESPONSE",
 } as const;
 
-export function parseServiceManifest(value: unknown, expectedService: Exclude<ServiceId, "noxconnect">): ServiceManifest {
+export function parseServiceManifest(value: unknown, expectedService: Exclude<ServiceId, "noxhere">): ServiceManifest {
   const manifest = ManifestSchema.parse(value);
   if (manifest.service.id !== expectedService) throw new Error(`Expected ${expectedService} manifest`);
   return manifest;
@@ -117,9 +117,9 @@ export function parseServiceManifest(value: unknown, expectedService: Exclude<Se
 export async function loadServiceManifests(env: ProductServiceEnvironment): Promise<LoadedServiceManifests> {
   const manifests: LoadedServiceManifests["manifests"] = {};
   const runtimeStates: LoadedServiceManifests["runtimeStates"] = {
-    noxconnect: { state: "ready", source: "binding" },
+    noxhere: { state: "ready", source: "binding" },
   };
-  const ids = Object.keys(BINDING_NAMES) as Array<Exclude<ServiceId, "noxconnect">>;
+  const ids = Object.keys(BINDING_NAMES) as Array<Exclude<ServiceId, "noxhere">>;
   await Promise.all(ids.map(async (serviceId) => {
     const binding = env[BINDING_NAMES[serviceId]];
     if (!binding || typeof binding.describe !== "function") {
@@ -141,7 +141,7 @@ export async function loadServiceManifests(env: ProductServiceEnvironment): Prom
   }));
 
   const definitions = SERVICE_DEFINITIONS.map((snapshot) => {
-    if (snapshot.id === "noxconnect") return snapshot;
+    if (snapshot.id === "noxhere") return snapshot;
     return manifests[snapshot.id]?.service as ServiceDefinition | undefined ?? snapshot;
   });
   return { definitions, manifests, runtimeStates };
@@ -149,14 +149,14 @@ export async function loadServiceManifests(env: ProductServiceEnvironment): Prom
 
 export function bindingForService(
   env: ProductServiceEnvironment,
-  service: Exclude<ServiceId, "noxconnect">,
+  service: Exclude<ServiceId, "noxhere">,
 ): ProductServiceBinding | undefined {
   return env[BINDING_NAMES[service]];
 }
 
 export async function validateConfigPatchWithService(
   env: ProductServiceEnvironment,
-  service: Exclude<ServiceId, "noxconnect">,
+  service: Exclude<ServiceId, "noxhere">,
   current: unknown,
   patch: unknown,
 ): Promise<z.infer<typeof ConfigValidationSchema> | null> {

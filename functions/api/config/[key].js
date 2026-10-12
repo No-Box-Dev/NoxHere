@@ -3,15 +3,14 @@ import { validateBoardStages } from "../../lib/board-stages.js";
 import { extractStatusFromLabels } from "../../lib/feature-issues.js";
 import { actionableSlackError, getSlackChannel, resolveSlackInstall } from "../../lib/slack.js";
 import { recoverOutboxDeliveries } from "../../lib/delivery-outbox.js";
-import { LEGACY_NOXTICKET_SOURCE, normalizeNoxSettings } from "../../lib/naming-compat.js";
 import { requireAdmin } from "../../lib/access.js";
 
 const VALID_KEYS = ["features", "people", "settings"];
 const SLACK_CHANNEL_KEYS = [
   "fallbackChannelId",
-  "noxCueChannelId",
-  "noxTicketChannelId",
-  "noxFeedChannelId",
+  "telemetryChannelId",
+  "planningChannelId",
+  "activityChannelId",
   // Accepted during the compatibility window for older clients.
   "postsChannelId",
   "releaseNotesChannelId",
@@ -19,19 +18,19 @@ const SLACK_CHANNEL_KEYS = [
 ];
 const SLACK_ROUTES = [
   ["fallbackChannelId", "fallbackConnectionId"],
-  ["noxCueChannelId", "noxCueConnectionId"],
-  ["noxTicketChannelId", "noxTicketConnectionId"],
+  ["telemetryChannelId", "telemetryConnectionId"],
+  ["planningChannelId", "planningConnectionId"],
   ["postsChannelId", "postsConnectionId"],
   ["releaseNotesChannelId", "releaseNotesConnectionId"],
   ["dailySummaryChannelId", "dailySummaryConnectionId"],
-  ["noxFeedChannelId", null],
+  ["activityChannelId", null],
 ];
-const OPTIONAL_APP_KEYS = ["noxticket", "noxfeed", "noxspot", "noxcue"];
+const OPTIONAL_APP_KEYS = ["planning", "activity", "feedback", "telemetry"];
 const APP_DELIVERY_SOURCES = {
-  noxticket: ["noxticket", LEGACY_NOXTICKET_SOURCE],
-  noxfeed: ["posts", "release_notes", "noxfeed_daily_summary"],
-  noxspot: ["noxspot"],
-  noxcue: ["noxcue"],
+  planning: ["planning"],
+  activity: ["posts", "release_notes", "activity_daily_summary"],
+  feedback: ["feedback"],
+  telemetry: ["telemetry"],
 };
 
 const DEFAULTS = {
@@ -61,12 +60,12 @@ export async function onRequestGet(context) {
 
   try {
     const parsed = JSON.parse(row.data);
-    return jsonResponse(key === "settings" ? normalizeNoxSettings(parsed) : parsed);
+    return jsonResponse(parsed);
   } catch (err) {
     // Returning the default silently masked real corruption — drafts
-    // re-appeared, custom noxTicketRepo names reverted to "noxconnect".
+    // re-appeared, custom planningRepo names reverted to "noxhere".
     // Fail loud so the user sees a clear error and fixes the row.
-    console.error(`[noxconnect] Corrupt config data for key "${key}" (org ${orgId}):`, err?.message ?? err);
+    console.error(`[noxhere] Corrupt config data for key "${key}" (org ${orgId}):`, err?.message ?? err);
     return errorResponse(`Corrupt config row for "${key}" — repair before continuing`, 500);
   }
 }
@@ -95,8 +94,6 @@ export async function onRequestPut(context) {
   try { body = await context.request.json(); } catch {
     return errorResponse("Invalid JSON body", 400);
   }
-  if (key === "settings") body = normalizeNoxSettings(body);
-
   if (key === "settings" && body && typeof body === "object" && body.releaseNotesPrompt !== undefined) {
     if (typeof body.releaseNotesPrompt !== "string") {
       return errorResponse("Release-notes prompt must be text.", 422);
@@ -107,8 +104,8 @@ export async function onRequestPut(context) {
     if (!body.releaseNotesPrompt.trim()) delete body.releaseNotesPrompt;
   }
 
-  if (key === "settings" && body && typeof body === "object" && body.noxfeedDailySummary !== undefined) {
-    const summary = body.noxfeedDailySummary;
+  if (key === "settings" && body && typeof body === "object" && body.activityDailySummary !== undefined) {
+    const summary = body.activityDailySummary;
     if (!summary || typeof summary !== "object" || Array.isArray(summary)) {
       return errorResponse("Daily summary settings must be an object.", 422);
     }
@@ -201,7 +198,7 @@ export async function onRequestPut(context) {
           if (!install) return errorResponse("Connect the selected Slack workspace before choosing a channel", 409);
           const channel = await getSlackChannel(install.botToken, channelId);
           if (!channel || channel.is_archived) return errorResponse("This Slack channel is archived or unavailable. Choose an active channel, then save again.", 409);
-          if (channel.is_private && !channel.is_member) return errorResponse("NoxConnect is not in this private channel. Invite @NoxConnect in Slack, then save again.", 409);
+          if (channel.is_private && !channel.is_member) return errorResponse("NoxHere is not in this private channel. Invite @NoxHere in Slack, then save again.", 409);
         }
       } catch (error) {
         return errorResponse(actionableSlackError(error, "Slack could not verify this channel. Review the workspace and channel, then save again."), 409);
@@ -275,11 +272,11 @@ export async function onRequestPut(context) {
     const fallbackChannelId = clean(slack.fallbackChannelId);
     const fallbackConnectionId = clean(slack.fallbackConnectionId) || null;
     const routes = [
-      { sources: ["posts"], channelId: clean(slack.postsChannelId) || clean(slack.noxFeedChannelId) || fallbackChannelId, connectionId: clean(slack.postsConnectionId) || fallbackConnectionId },
-      { sources: ["release_notes"], channelId: clean(slack.releaseNotesChannelId) || clean(slack.noxFeedChannelId) || fallbackChannelId, connectionId: clean(slack.releaseNotesConnectionId) || clean(slack.postsConnectionId) || fallbackConnectionId },
-      { sources: ["noxfeed_daily_summary"], channelId: clean(slack.dailySummaryChannelId), connectionId: clean(slack.dailySummaryConnectionId) || null },
-      { sources: ["noxcue"], channelId: clean(slack.noxCueChannelId) || fallbackChannelId, connectionId: clean(slack.noxCueConnectionId) || fallbackConnectionId },
-      { sources: ["noxticket", LEGACY_NOXTICKET_SOURCE], channelId: clean(slack.noxTicketChannelId) || fallbackChannelId, connectionId: clean(slack.noxTicketConnectionId) || fallbackConnectionId },
+      { sources: ["posts"], channelId: clean(slack.postsChannelId) || clean(slack.activityChannelId) || fallbackChannelId, connectionId: clean(slack.postsConnectionId) || fallbackConnectionId },
+      { sources: ["release_notes"], channelId: clean(slack.releaseNotesChannelId) || clean(slack.activityChannelId) || fallbackChannelId, connectionId: clean(slack.releaseNotesConnectionId) || clean(slack.postsConnectionId) || fallbackConnectionId },
+      { sources: ["activity_daily_summary"], channelId: clean(slack.dailySummaryChannelId), connectionId: clean(slack.dailySummaryConnectionId) || null },
+      { sources: ["telemetry"], channelId: clean(slack.telemetryChannelId) || fallbackChannelId, connectionId: clean(slack.telemetryConnectionId) || fallbackConnectionId },
+      { sources: ["planning"], channelId: clean(slack.planningChannelId) || fallbackChannelId, connectionId: clean(slack.planningConnectionId) || fallbackConnectionId },
     ];
     for (const { sources, channelId, connectionId } of routes) {
       const placeholders = sources.map(() => "?").join(",");
@@ -302,14 +299,14 @@ export async function onRequestPut(context) {
       }
     }
 
-    // NoxSpot keeps its per-site override. Only captures from sites without
+    // Feedback keeps its per-site override. Only captures from sites without
     // one follow the organization fallback.
     if (fallbackChannelId) {
       dependentStatements.push(context.env.DB.prepare(
         `UPDATE delivery_outbox SET channel_id = ?, slack_connection_id = ?, status = 'pending',
            last_error_code = NULL, last_error = NULL, next_attempt_at = NULL,
            updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-         WHERE ${deliveryScope} AND source = 'noxspot' AND destination = 'slack'
+         WHERE ${deliveryScope} AND source = 'feedback' AND destination = 'slack'
            AND status != 'delivered' AND site_id IN (
              SELECT id FROM spot_sites WHERE ${deliveryScope} AND slack_channel_id IS NULL
            )${configGuard}`,
@@ -317,9 +314,9 @@ export async function onRequestPut(context) {
     } else {
       dependentStatements.push(context.env.DB.prepare(
         `UPDATE delivery_outbox SET status = 'blocked_configuration',
-           last_error_code = 'alerts_disabled', last_error = 'No NoxSpot site or organization fallback channel is configured',
+           last_error_code = 'alerts_disabled', last_error = 'No Feedback site or organization fallback channel is configured',
            updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-         WHERE ${deliveryScope} AND source = 'noxspot' AND destination = 'slack'
+         WHERE ${deliveryScope} AND source = 'feedback' AND destination = 'slack'
            AND status != 'delivered' AND site_id IN (
              SELECT id FROM spot_sites WHERE ${deliveryScope} AND slack_channel_id IS NULL
            )${configGuard}`,

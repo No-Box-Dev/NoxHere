@@ -23,7 +23,7 @@ generates a raw `curl` request for every OpenAPI operation.
 
 `requestData` preserves binary attachment responses as `Data`; JSON operations
 use `request`. Bearer credentials require HTTPS, except for loopback HTTP during
-local development, and are never attached to public NoxSpot operations.
+local development, and are never attached to public Feedback operations.
 
 The first release intentionally exposes a small, stable async transport and a
 generated operation catalog. It is built and tested in CI but is not yet

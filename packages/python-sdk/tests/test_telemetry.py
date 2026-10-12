@@ -13,12 +13,12 @@ from typing import Mapping
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "src"))
 
-from noxhere.telemetry import NoxCueClient, create_noxcue, safe_error_details  # noqa: E402
+from noxhere.telemetry import TelemetryClient, create_telemetry, safe_error_details  # noqa: E402
 
 SERVER_KEY = "nox_secret_" + "b" * 32
 IDENTITY_HASH_KEY = "identity-secret-key-that-is-at-least-32-bytes"
 FIXTURES = json.loads(
-    (PACKAGE.parents[1] / "services" / "cue" / "packages" / "sdk-contract" / "wire-fixtures.json").read_text()
+    (PACKAGE.parents[1] / "services" / "telemetry" / "packages" / "sdk-contract" / "wire-fixtures.json").read_text()
 )
 
 
@@ -48,7 +48,7 @@ class SDKTests(unittest.TestCase):
             self.requests.append((request, timeout))
             return MockResponse()
 
-        self.client = NoxCueClient(
+        self.client = TelemetryClient(
             key=SERVER_KEY,
             identity_hash_key=IDENTITY_HASH_KEY,
             environment="production",
@@ -93,7 +93,7 @@ class SDKTests(unittest.TestCase):
                 return MockResponse(503, b"busy", {"retry-after": "0"})
             return MockResponse()
 
-        with NoxCueClient(
+        with TelemetryClient(
             key=SERVER_KEY, identity_hash_key=IDENTITY_HASH_KEY, environment="production", transport=transport
         ) as client:
             result = client.activity("custom.journals.added", "user-42")
@@ -113,7 +113,7 @@ class SDKTests(unittest.TestCase):
             "NOXHERE_TELEMETRY_MODE": "memory",
         })
         try:
-            client = create_noxcue(flush_at_exit=False, transport=lambda *_: self.fail("network called"))
+            client = create_telemetry(flush_at_exit=False, transport=lambda *_: self.fail("network called"))
             result = client.events.report_generated("user-42", "report-7")
             client.flush()
             self.assertTrue(result.ok)
@@ -126,7 +126,7 @@ class SDKTests(unittest.TestCase):
             os.environ.update(previous)
 
     def test_rejects_wrong_key_without_network(self) -> None:
-        client = NoxCueClient(
+        client = TelemetryClient(
             key="nox_pub_" + "a" * 32,
             environment="production",
             transport=lambda *_: self.fail("network called"),
@@ -195,7 +195,7 @@ class SDKTests(unittest.TestCase):
         )
 
     def test_disabled_and_closed_clients_never_call_transport(self) -> None:
-        client = NoxCueClient(
+        client = TelemetryClient(
             key=SERVER_KEY,
             environment="production",
             enabled=False,

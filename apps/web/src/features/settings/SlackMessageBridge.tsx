@@ -47,7 +47,7 @@ export function SlackMessageBridge({ organizationId, projectId, isAdmin }: { org
   if (!isAdmin) return <div className="connect-empty"><b>Admin access required</b><p>Only an organization admin can send messages through a connected Slack workspace.</p></div>;
   if (status.isLoading) return <div className="connect-empty"><b>Loading Slack</b><p>Reading the connected workspaces…</p></div>;
   if (status.isError) return <div className="connect-empty"><b>Slack could not be loaded</b><p>{status.error instanceof Error ? status.error.message : "Try again after the connection is available."}</p></div>;
-  if (!status.data?.connected || connections.length === 0) return <div className="connect-empty"><b>Connect Slack first</b><p>Add a Slack workspace in NoxConnect before sending a message.</p></div>;
+  if (!status.data?.connected || connections.length === 0) return <div className="connect-empty"><b>Connect Slack first</b><p>Add a Slack workspace in NoxHere before sending a message.</p></div>;
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

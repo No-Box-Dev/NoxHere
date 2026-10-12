@@ -1,3 +1,3 @@
-export type ProductService = "noxticket" | "noxfeed" | "noxspot" | "noxcue";
+export type ProductService = "planning" | "activity" | "feedback" | "telemetry";
 export declare const PRODUCT_SERVICES: readonly ProductService[];
-export declare function serviceForApiPath(pathname: string): ProductService | "noxconnect" | null;
+export declare function serviceForApiPath(pathname: string): ProductService | "noxhere" | null;

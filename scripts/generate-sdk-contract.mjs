@@ -8,11 +8,11 @@ const methods = new Set(["get", "post", "put", "patch", "delete"]);
 
 export const namespaceForTag = Object.freeze({
   NoxHere: "workspace",
-  NoxConnect: "workspace",
+  NoxHere: "workspace",
   Activity: "activity",
-  NoxTicket: "planning",
-  NoxSpot: "feedback",
-  NoxCue: "incidents",
+  Planning: "planning",
+  Feedback: "feedback",
+  Telemetry: "incidents",
   Stats: "stats",
   Workspace: "workspace",
   Planning: "planning",

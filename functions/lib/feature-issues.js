@@ -1,4 +1,4 @@
-// Server-side helpers for the feature kanban (issues in {org}/noxconnect).
+// Server-side helpers for the feature kanban (issues in {org}/noxhere).
 //
 // Mirrors src/lib/github-features.ts's label/body conventions so that the
 // frontend can talk to /api/features instead of calling Octokit directly.
@@ -7,18 +7,17 @@
 // cards.
 
 import { parseFeatureMetadata, serializeFeatureMetadata } from "./feature-metadata.js";
-import { LEGACY_NOXTICKET_LABEL } from "./naming-compat.js";
 
-export const NOXTICKET_REPO = "noxconnect";
-export const NOXTICKET_LABEL = "noxticket";
+export const PLANNING_REPO = "noxhere";
+export const PLANNING_LABEL = "planning";
 export const FEATURE_LABEL = "feature";
 export const BACKLOG_LABEL = "backlog";
 const STATUS_PREFIX = "status:";
 
-// Fixed labels that always exist on the NoxTicket repo. `status:*` labels are
-// derived from the org's configured board stages — see ensureNoxTicketRepoLabels.
+// Fixed labels that always exist on the Planning repo. `status:*` labels are
+// derived from the org's configured board stages — see ensurePlanningRepoLabels.
 export const FEATURE_LABELS = [
-  { name: NOXTICKET_LABEL, color: "1B6971", description: "Tracked by NoxTicket" },
+  { name: PLANNING_LABEL, color: "1B6971", description: "Tracked by Planning" },
   { name: "feature", color: "1B6971", description: "Feature managed by Nox" },
   { name: "backlog", color: "94A3B8", description: "Feature parked in the backlog (hidden from the board)" },
 ];
@@ -32,16 +31,16 @@ export const FEATURE_LABELS = [
 // `backlog` is orthogonal to status — a backlogged feature keeps its status
 // label so moving back to the board lands it in the same column it left.
 export function buildFeatureLabels(status, backlog = false) {
-  const labels = [NOXTICKET_LABEL, FEATURE_LABEL];
+  const labels = [PLANNING_LABEL, FEATURE_LABEL];
   if (status && status !== "todo") labels.push(`${STATUS_PREFIX}${status}`);
   if (backlog) labels.push(BACKLOG_LABEL);
   return labels;
 }
 
-export function hasNoxTicketLabel(labels) {
+export function hasPlanningLabel(labels) {
   const names = new Set((labels ?? []).map((label) =>
     String(typeof label === "string" ? label : label?.name ?? "").toLowerCase()));
-  return names.has(NOXTICKET_LABEL) || names.has(LEGACY_NOXTICKET_LABEL);
+  return names.has(PLANNING_LABEL);
 }
 
 export function extractStatusFromLabels(labels) {
@@ -60,7 +59,7 @@ export function extractBacklogFromLabels(labels) {
 
 const GH_HEADERS = (token) => ({
   Authorization: `Bearer ${token}`,
-  "User-Agent": "NoxConnect",
+  "User-Agent": "NoxHere",
   Accept: "application/vnd.github+json",
 });
 
@@ -98,10 +97,10 @@ function stageSignature(stages) {
   return (stages ?? []).map((s) => `${s.id}:${(s.color || "").replace(/^#/, "")}`).join(",");
 }
 
-// Ensures `noxticket`, `feature`, and `status:<id>` labels exist on the NoxTicket
+// Ensures `planning`, `feature`, and `status:<id>` labels exist on the Planning
 // repo for every configured stage. `stages` is the array returned by
 // resolveBoardStages — caller is responsible for resolving them.
-export async function ensureNoxTicketRepoLabels(token, orgLogin, stages = []) {
+export async function ensurePlanningRepoLabels(token, orgLogin, stages = []) {
   const cacheKey = `${orgLogin}::${stageSignature(stages)}`;
   if (labelsEnsuredByOrg.has(cacheKey)) return;
 
@@ -115,7 +114,7 @@ export async function ensureNoxTicketRepoLabels(token, orgLogin, stages = []) {
   ];
 
   const existing = await ghFetch(
-    `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${NOXTICKET_REPO}/labels?per_page=100`,
+    `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${PLANNING_REPO}/labels?per_page=100`,
     { method: "GET" },
     token,
   );
@@ -126,7 +125,7 @@ export async function ensureNoxTicketRepoLabels(token, orgLogin, stages = []) {
     if (!current) {
       try {
         await ghFetch(
-          `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${NOXTICKET_REPO}/labels`,
+          `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${PLANNING_REPO}/labels`,
           { method: "POST", body: JSON.stringify(label) },
           token,
         );
@@ -141,7 +140,7 @@ export async function ensureNoxTicketRepoLabels(token, orgLogin, stages = []) {
     if (label.color && current.color !== label.color) {
       try {
         await ghFetch(
-          `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${NOXTICKET_REPO}/labels/${encodeURIComponent(label.name)}`,
+          `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${PLANNING_REPO}/labels/${encodeURIComponent(label.name)}`,
           { method: "PATCH", body: JSON.stringify({ color: label.color, description: label.description }) },
           token,
         );
@@ -155,7 +154,7 @@ export async function ensureNoxTicketRepoLabels(token, orgLogin, stages = []) {
 
 export async function createFeatureIssue(token, orgLogin, payload) {
   return ghFetch(
-    `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${NOXTICKET_REPO}/issues`,
+    `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${PLANNING_REPO}/issues`,
     { method: "POST", body: JSON.stringify(payload) },
     token,
   );
@@ -163,7 +162,7 @@ export async function createFeatureIssue(token, orgLogin, payload) {
 
 export async function patchFeatureIssue(token, orgLogin, number, payload) {
   return ghFetch(
-    `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${NOXTICKET_REPO}/issues/${number}`,
+    `https://api.github.com/repos/${encodeURIComponent(orgLogin)}/${PLANNING_REPO}/issues/${number}`,
     { method: "PATCH", body: JSON.stringify(payload) },
     token,
   );

@@ -32,7 +32,7 @@ final class NoxHereTests: XCTestCase {
     func testGeneratedCatalogAndRequestEncoding() throws {
         XCTAssertEqual(NoxHereOperations.all.count, NoxHereOperations.operationCount)
         XCTAssertEqual(NoxHereOperations.all["listProjects"]?.resource, .workspace)
-        XCTAssertEqual(NoxHereOperations.all["submitPublicNoxSpotReport"]?.servers, ["https://api.noxspot.dev"])
+        XCTAssertEqual(NoxHereOperations.all["submitPublicFeedbackReport"]?.servers, ["https://app.noxhere.com"])
 
         let client = NoxHereClient(token: "nox_sk_test", organization: "org-1", projectID: "project-1")
         let request = try client.makeRequest(
@@ -50,8 +50,8 @@ final class NoxHereTests: XCTestCase {
 
     func testPublicOperationsDoNotReceivePlatformCredentials() throws {
         let client = NoxHereClient(token: "nox_sk_test", organization: "org-1", projectID: "project-1")
-        let request = try client.makeRequest(operationID: "getPublicNoxSpotConfig", path: ["siteId": "site-1"])
-        XCTAssertEqual(request.url?.host, "api.noxspot.dev")
+        let request = try client.makeRequest(operationID: "getPublicFeedbackConfig", path: ["siteId": "site-1"])
+        XCTAssertEqual(request.url?.host, "app.noxhere.com")
         XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
         XCTAssertNil(request.value(forHTTPHeaderField: "X-Org"))
         XCTAssertNil(request.value(forHTTPHeaderField: "X-Project-ID"))
@@ -59,7 +59,7 @@ final class NoxHereTests: XCTestCase {
 
     func testExplicitBaseURLWinsAndCredentialedHTTPRequiresLoopback() throws {
         let staging = NoxHereClient(baseURL: URL(string: "https://staging.example.test/root")!, token: "secret")
-        let publicRequest = try staging.makeRequest(operationID: "getPublicNoxSpotConfig", path: ["siteId": "site-1"])
+        let publicRequest = try staging.makeRequest(operationID: "getPublicFeedbackConfig", path: ["siteId": "site-1"])
         XCTAssertEqual(publicRequest.url?.host, "staging.example.test")
         XCTAssertNil(publicRequest.value(forHTTPHeaderField: "Authorization"))
 

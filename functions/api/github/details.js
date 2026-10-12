@@ -3,7 +3,7 @@ import { getActiveRepoNames } from "../../lib/inactive-repos.js";
 import { getInstallationIdForOrg, getInstallationToken } from "../../lib/github-app.js";
 
 // GET /api/github/details?kind=issue|pr&repo=x&number=1
-// NoxConnect owns the live GitHub read. Clients receive a bounded projection,
+// NoxHere owns the live GitHub read. Clients receive a bounded projection,
 // never an installation token or raw GitHub client response.
 export async function onRequestGet(context) {
   const { orgId, orgLogin, projectId } = getCtx(context);
@@ -27,7 +27,7 @@ export async function onRequestGet(context) {
       { headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
-        "User-Agent": "noxconnect",
+        "User-Agent": "noxhere",
         "X-GitHub-Api-Version": "2022-11-28",
       } },
     );

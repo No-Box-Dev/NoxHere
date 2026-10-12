@@ -1,29 +1,26 @@
 # NoxHere maintainer guide
 
 NoxHere is one application with separate capability modules. Feed, Ticket,
-Spot, Cue, and Connect are not separate products or browser applications.
+Spot, Telemetry, and Connect are not separate products or browser applications.
 
 ## Repository map
 
 - `apps/web/` — the only NoxHere web application.
-- `apps/cli/` — the separately distributed `noxconnect` CLI.
+- `apps/cli/` — the separately distributed `noxhere` CLI.
 - `services/gateway/` — public identity, session, authorization, and SPA gateway.
-- `services/connect/` — private provider credentials and connection capabilities.
-- `services/feed/` — activity and release-note behavior.
-- `services/ticket/` — planning, features, specs, and attachments.
-- `services/spot/` — public feedback capture and resolution responses.
-- `services/cue/` — event ingestion, product metrics, health, and incidents.
+- `services/connections/` — private provider credentials and connection capabilities.
+- `services/activity/` — activity and release-note behavior.
+- `services/planning/` — planning, features, specs, and attachments.
+- `services/feedback/` — public feedback capture and resolution responses.
+- `services/telemetry/` — event ingestion, product metrics, health, and incidents.
 - `services/scheduler/` — scheduled reconciliation and queue consumption.
 - `packages/contracts/` — neutral platform-event and outbound-transport contracts.
 - `packages/sdk/` and `packages/python-sdk/` — generated unified public API clients.
-- `packages/feedback-widget/` — feedback capture widget source, tests, and R2 bundles; the shipped browser API remains `NoxSpot`.
+- `packages/feedback-widget/` — feedback capture widget source, tests, and R2 bundles; the shipped browser API remains `Feedback`.
 - `functions/` — compatibility and private API routes served by
   `workers/api-gateway/`; these remain live while handlers move to capability
   services.
 - `migrations/` — append-only platform D1 migrations.
-- `workers/legacy-bridge/` and `legacy-redirect/` — explicit compatibility
-  deployments, not alternate applications.
-
 The retired root `src/` frontend was removed. Do not recreate a second web
 application at the repository root.
 

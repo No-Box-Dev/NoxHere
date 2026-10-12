@@ -6,7 +6,7 @@ const document = JSON.parse(original);
 
 // The first API inventory documented existing UI routes in place. Promote all
 // first-party operations into the canonical v1 namespace while leaving the
-// old handlers deployed as compatibility adapters. NoxSpot's anonymous
+// old handlers deployed as compatibility adapters. Feedback's anonymous
 // capture API stays on its separately isolated public origin.
 for (const [path, pathItem] of Object.entries(document.paths)) {
   const canonicalPath = canonicalApiPath(path);
@@ -53,7 +53,7 @@ document.components.schemas.MutationReceipt = {
     updatedAt: { type: "string", format: "date-time" },
   },
 };
-document.components.schemas.FeedActor = {
+document.components.schemas.ActivityActor = {
   type: "object",
   additionalProperties: false,
   required: ["login", "name", "avatarUrl"],
@@ -63,7 +63,7 @@ document.components.schemas.FeedActor = {
     avatarUrl: { type: ["string", "null"], format: "uri" },
   },
 };
-document.components.schemas.FeedPullRequest = {
+document.components.schemas.ActivityPullRequest = {
   type: "object",
   additionalProperties: false,
   required: ["number", "title", "url"],
@@ -73,7 +73,7 @@ document.components.schemas.FeedPullRequest = {
     url: { type: "string", format: "uri" },
   },
 };
-document.components.schemas.FeedEvent = {
+document.components.schemas.ActivityEvent = {
   type: "object",
   additionalProperties: false,
   required: ["id", "type", "createdAt", "actor", "repo", "summary", "technicalSummary", "pr"],
@@ -81,19 +81,19 @@ document.components.schemas.FeedEvent = {
     id: { type: "string" },
     type: { type: "string", enum: ["opened", "merged", "release-notes"] },
     createdAt: { type: "string", format: "date-time" },
-    actor: { "$ref": "#/components/schemas/FeedActor" },
+    actor: { "$ref": "#/components/schemas/ActivityActor" },
     repo: { type: "string" },
     summary: { type: "string" },
     technicalSummary: { type: "string" },
-    pr: { oneOf: [{ "$ref": "#/components/schemas/FeedPullRequest" }, { type: "null" }] },
+    pr: { oneOf: [{ "$ref": "#/components/schemas/ActivityPullRequest" }, { type: "null" }] },
   },
 };
-document.components.schemas.FeedPage = {
+document.components.schemas.ActivityPage = {
   type: "object",
   additionalProperties: false,
   required: ["events", "nextCursor"],
   properties: {
-    events: { type: "array", items: { "$ref": "#/components/schemas/FeedEvent" } },
+    events: { type: "array", items: { "$ref": "#/components/schemas/ActivityEvent" } },
     nextCursor: { type: ["string", "null"] },
   },
 };
@@ -117,7 +117,7 @@ document.components.schemas.RecordCollection = {
 };
 document.components.schemas.Feature = {
   allOf: [{ "$ref": "#/components/schemas/ApiRecord" }],
-  description: "NoxTicket feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project.",
+  description: "Planning feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project.",
 };
 document.components.schemas.FeatureList = {
   type: "array",
@@ -125,7 +125,7 @@ document.components.schemas.FeatureList = {
 };
 document.components.schemas.Spec = {
   allOf: [{ "$ref": "#/components/schemas/ApiRecord" }],
-  description: "NoxTicket specification with its project, workflow state, content, and archive metadata.",
+  description: "Planning specification with its project, workflow state, content, and archive metadata.",
 };
 document.components.schemas.SpecList = {
   type: "object",
@@ -143,7 +143,7 @@ document.components.schemas.SpecAttachmentList = {
   required: ["attachments"],
   properties: { attachments: { type: "array", items: { "$ref": "#/components/schemas/SpecAttachment" } } },
 };
-document.components.schemas.NoxSpotErrorBatch = {
+document.components.schemas.FeedbackErrorBatch = {
   type: "object",
   additionalProperties: false,
   required: ["siteId", "errors"],
@@ -166,7 +166,7 @@ document.components.schemas.NoxSpotErrorBatch = {
     },
   },
 };
-document.components.schemas.NoxCueIngestResponse = {
+document.components.schemas.TelemetryIngestResponse = {
   type: "object",
   required: ["accepted", "stored", "eventId", "queued"],
   properties: {
@@ -179,7 +179,7 @@ document.components.schemas.NoxCueIngestResponse = {
     period: { type: "string" },
   },
 };
-document.components.schemas.NoxCueGitHubIssueSettingsUpdate = {
+document.components.schemas.TelemetryGitHubIssueSettingsUpdate = {
   type: "object",
   additionalProperties: false,
   required: ["projectId", "enabled", "environments"],
@@ -227,7 +227,7 @@ document.components.schemas.StatsDashboard = {
     stats: { type: "array", items: { "$ref": "#/components/schemas/StatCard" } },
   },
 };
-document.components.schemas.CueAction = {
+document.components.schemas.TelemetryAction = {
   type: "object", additionalProperties: false, required: ["slot", "key", "label"],
   properties: {
     slot: { type: "integer", minimum: 1, maximum: 3 },
@@ -235,11 +235,11 @@ document.components.schemas.CueAction = {
     label: { type: "string", minLength: 1, maxLength: 80 },
   },
 };
-document.components.schemas.CueActions = {
+document.components.schemas.TelemetryActions = {
   type: "object", additionalProperties: false, required: ["projectId", "windowDays", "actions", "snippet"],
   properties: {
     projectId: { type: "string" }, windowDays: { type: "integer", enum: [7, 14, 30] },
-    actions: { type: "array", maxItems: 3, items: { "$ref": "#/components/schemas/CueAction" } },
+    actions: { type: "array", maxItems: 3, items: { "$ref": "#/components/schemas/TelemetryAction" } },
     snippet: { type: "string" },
   },
 };
@@ -326,8 +326,8 @@ document.components.schemas.ApiTokenCreate = {
   properties: {
     name: { type: "string", minLength: 1, maxLength: 80 },
     environment: { type: "string", enum: ["live", "test"], default: "live" },
-    projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxConnect project. The token cannot access resources assigned to another project." },
-    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:write|(noxfeed|noxspot|noxcue):(read|write))$" } },
+    projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxHere project. The token cannot access resources assigned to another project." },
+    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:write|(activity|feedback|telemetry):(read|write))$" } },
     expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
   },
 };
@@ -374,7 +374,7 @@ document.components.schemas.DeveloperFeedbackReceipt = {
     },
   },
 };
-document.components.schemas.NoxSpotResolutionTemplate = {
+document.components.schemas.FeedbackResolutionTemplate = {
   type: "object",
   additionalProperties: false,
   required: ["tone", "senderName", "subject", "acknowledgement", "reopenText", "buttonLabel", "closing", "replyTo", "appearance"],
@@ -401,39 +401,39 @@ document.components.schemas.NoxSpotResolutionTemplate = {
       },
     },
   },
-  description: "Site-level content and brand presentation for NoxSpot resolution emails. Every site can configure this in NoxConnect or with a project-scoped API token. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxConnect owns the evidence rules, AI safety prompt, safe HTML rendering, verified sender address, and reopen behavior.",
+  description: "Site-level content and brand presentation for Feedback resolution emails. Every site can configure this in NoxHere or with a project-scoped API token. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxHere owns the evidence rules, AI safety prompt, safe HTML rendering, verified sender address, and reopen behavior.",
 };
-document.components.schemas.NoxSpotResolutionTemplateDocument = {
+document.components.schemas.FeedbackResolutionTemplateDocument = {
   type: "object",
   additionalProperties: false,
   required: ["template", "defaults", "usingDefault", "revision"],
   properties: {
-    template: { "$ref": "#/components/schemas/NoxSpotResolutionTemplate" },
-    defaults: { "$ref": "#/components/schemas/NoxSpotResolutionTemplate" },
+    template: { "$ref": "#/components/schemas/FeedbackResolutionTemplate" },
+    defaults: { "$ref": "#/components/schemas/FeedbackResolutionTemplate" },
     usingDefault: { type: "boolean" },
     revision: { type: "string", pattern: "^[a-f0-9]{64}$" },
   },
 };
 
-const resolutionTemplatePath = "/api/v1/spots/sites/{siteId}/resolution-template";
+const resolutionTemplatePath = "/api/v1/feedback/sites/{siteId}/resolution-template";
 const resolutionTemplateParameters = [{ name: "siteId", in: "path", required: true, schema: { type: "string", minLength: 1 } }];
 document.paths[resolutionTemplatePath] = {
   get: {
-    operationId: "getNoxSpotResolutionTemplate",
-    summary: "Read the effective NoxSpot resolution email template",
-    description: "Returns the site's custom content and appearance or the NoxConnect default plus a revision for conditional updates. Organization admins and project-scoped API tokens can use the same endpoint.",
+    operationId: "getFeedbackResolutionTemplate",
+    summary: "Read the effective Feedback resolution email template",
+    description: "Returns the site's custom content and appearance or the NoxHere default plus a revision for conditional updates. Organization admins and project-scoped API tokens can use the same endpoint.",
     parameters: resolutionTemplateParameters,
-    responses: { "200": { description: "Effective template", content: { "application/json": { schema: { "$ref": "#/components/schemas/NoxSpotResolutionTemplateDocument" } } } } },
+    responses: { "200": { description: "Effective template", content: { "application/json": { schema: { "$ref": "#/components/schemas/FeedbackResolutionTemplateDocument" } } } } },
     "x-required-role": "admin",
   },
   patch: {
-    operationId: "updateNoxSpotResolutionTemplate",
-    summary: "Update or reset a NoxSpot resolution email template",
-    description: "Send the revision returned by GET as If-Match. Set template to null to restore the default. This is the self-service configuration used by the NoxConnect UI and is also available to project-scoped API tokens. Postmark is transport-only; NoxConnect validates, renders, and snapshots the template used for each resolution.",
+    operationId: "updateFeedbackResolutionTemplate",
+    summary: "Update or reset a Feedback resolution email template",
+    description: "Send the revision returned by GET as If-Match. Set template to null to restore the default. This is the self-service configuration used by the NoxHere UI and is also available to project-scoped API tokens. Postmark is transport-only; NoxHere validates, renders, and snapshots the template used for each resolution.",
     parameters: [...resolutionTemplateParameters, { name: "If-Match", in: "header", required: true, schema: { type: "string" } }],
-    requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: false, required: ["template"], properties: { template: { oneOf: [{ "$ref": "#/components/schemas/NoxSpotResolutionTemplate" }, { type: "null" }] } } } } } },
+    requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: false, required: ["template"], properties: { template: { oneOf: [{ "$ref": "#/components/schemas/FeedbackResolutionTemplate" }, { type: "null" }] } } } } } },
     responses: {
-      "200": { description: "Saved template", content: { "application/json": { schema: { "$ref": "#/components/schemas/NoxSpotResolutionTemplateDocument" } } } },
+      "200": { description: "Saved template", content: { "application/json": { schema: { "$ref": "#/components/schemas/FeedbackResolutionTemplateDocument" } } } },
       "412": { description: "The template changed since it was read" },
       "428": { description: "If-Match is required" },
     },
@@ -442,21 +442,21 @@ document.paths[resolutionTemplatePath] = {
 };
 document.paths[`${resolutionTemplatePath}/preview`] = {
   post: {
-    operationId: "previewNoxSpotResolutionTemplate",
+    operationId: "previewFeedbackResolutionTemplate",
     summary: "Render a safe preview of a draft resolution email template",
     parameters: resolutionTemplateParameters,
-    requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: false, required: ["template"], properties: { template: { "$ref": "#/components/schemas/NoxSpotResolutionTemplate" } } } } } },
+    requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: false, required: ["template"], properties: { template: { "$ref": "#/components/schemas/FeedbackResolutionTemplate" } } } } } },
     responses: { "200": { description: "Rendered preview" } },
     "x-required-role": "admin",
   },
 };
 document.paths[`${resolutionTemplatePath}/test`] = {
   post: {
-    operationId: "testNoxSpotResolutionTemplate",
-    summary: "Send a draft resolution email through NoxConnect and Postmark",
-    description: "The draft does not need to be saved. NoxConnect renders the safe email and sends it through its private Postmark-backed email capability.",
+    operationId: "testFeedbackResolutionTemplate",
+    summary: "Send a draft resolution email through NoxHere and Postmark",
+    description: "The draft does not need to be saved. NoxHere renders the safe email and sends it through its private Postmark-backed email capability.",
     parameters: resolutionTemplateParameters,
-    requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: false, required: ["recipient", "template"], properties: { recipient: { type: "string", format: "email", maxLength: 254 }, template: { "$ref": "#/components/schemas/NoxSpotResolutionTemplate" } } } } } },
+    requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: false, required: ["recipient", "template"], properties: { recipient: { type: "string", format: "email", maxLength: 254 }, template: { "$ref": "#/components/schemas/FeedbackResolutionTemplate" } } } } } },
     responses: { "200": { description: "Postmark accepted the test email" }, "503": { description: "Email delivery is unavailable" } },
     "x-required-role": "admin",
   },
@@ -476,7 +476,7 @@ document.components.securitySchemes.noxApiToken = {
 };
 document.components.securitySchemes.nativeSession = {
   type: "http", scheme: "bearer", bearerFormat: "nox_at_…",
-  description: "Short-lived first-party native application session issued by NoxHere. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in NoxConnect.",
+  description: "Short-lived first-party native application session issued by NoxHere. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in NoxHere.",
 };
 document.components.parameters.projectContext = {
   name: "X-Project-ID",
@@ -516,14 +516,14 @@ for (const pathItem of Object.values(document.paths)) {
 document.paths["/api/v1/auth/native/device/start"] = {
   post: nativeAuthOperation("startNativeDeviceAuthorization", "Start native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client"],
-    properties: { client: { const: "noxfeed-mac" } },
-  }, "Returns an opaque NoxConnect device handle plus the GitHub verification URI and user code."),
+    properties: { client: { const: "activity-mac" } },
+  }, "Returns an opaque NoxHere device handle plus the GitHub verification URI and user code."),
 };
 document.paths["/api/v1/auth/native/device/poll"] = {
   post: nativeAuthOperation("pollNativeDeviceAuthorization", "Poll native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client", "device_code"],
-    properties: { client: { const: "noxfeed-mac" }, device_code: { type: "string", pattern: "^noxdc_" } },
-  }, "NoxConnect completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials."),
+    properties: { client: { const: "activity-mac" }, device_code: { type: "string", pattern: "^noxdc_" } },
+  }, "NoxHere completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials."),
 };
 document.paths["/api/v1/auth/native/refresh"] = {
   post: nativeAuthOperation("refreshNativeSession", "Rotate a native session", {
@@ -535,11 +535,11 @@ document.paths["/api/v1/auth/native/exchange"] = {
   post: nativeAuthOperation("exchangeLegacyNativeCredential", "Upgrade a legacy native session", {
     type: "object", additionalProperties: false, required: ["client", "access_token"],
     properties: {
-      client: { const: "noxfeed-mac" },
+      client: { const: "activity-mac" },
       access_token: { type: "string", writeOnly: true },
       refresh_token: { type: "string", writeOnly: true },
     },
-  }, "Temporary one-time migration route for older NoxFeed releases. Normal sign-in uses the brokered device flow."),
+  }, "Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow."),
 };
 document.paths["/api/v1/auth/native/revoke"] = {
   post: {
@@ -559,13 +559,13 @@ document.paths["/api/v1/auth/native/revoke"] = {
   },
 };
 
-document.paths["/api/spots/public/v1/sites/{siteId}/members"] = {
+document.paths["/api/feedback/public/v1/sites/{siteId}/members"] = {
   get: {
-    operationId: "getPublicNoxSpotMembers",
-    summary: "List public NoxSpot reporter choices for the request origin",
+    operationId: "getPublicFeedbackMembers",
+    summary: "List public Feedback reporter choices for the request origin",
     description: "Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.",
     security: [],
-    servers: [{ url: "https://api.noxspot.dev" }],
+    servers: [{ url: "https://app.noxhere.com" }],
     parameters: [{ "$ref": "#/components/parameters/siteId" }],
     responses: {
       "200": {
@@ -610,11 +610,11 @@ const clientRouteContracts = [
     ["get", "getWorkspaceConfig", "Read one shared workspace configuration document", "member"],
     ["put", "putWorkspaceConfig", "Replace one shared workspace configuration document", "admin"],
   ]],
-  ["/api/v1/cues/project-overview", [["get", "getNoxCueProjectOverview", "Read a guest-safe NoxCue project overview", "member"]]],
-  ["/api/v1/cues/sources/{sourceId}/health/test", [["post", "testNoxCueSource", "Test a NoxCue source destination", "admin"]]],
+  ["/api/v1/telemetry/project-overview", [["get", "getTelemetryProjectOverview", "Read a guest-safe Telemetry project overview", "member"]]],
+  ["/api/v1/telemetry/sources/{sourceId}/health/test", [["post", "testTelemetrySource", "Test a Telemetry source destination", "admin"]]],
   ["/api/v1/engineer-stats", [["get", "getEngineerStats", "Read current work counts by engineer", "member"]]],
-  ["/api/v1/events", [["get", "listFeedEvents", "List detailed NoxFeed events", "member"]]],
-  ["/api/v1/events/{id}", [["get", "getFeedEvent", "Read one detailed NoxFeed event", "member"]]],
+  ["/api/v1/events", [["get", "listActivityEvents", "List detailed Activity events", "member"]]],
+  ["/api/v1/events/{id}", [["get", "getActivityEvent", "Read one detailed Activity event", "member"]]],
   ["/api/v1/github/comments", [["get", "getGitHubComments", "Read comments for a tracked pull request", "member"]]],
   ["/api/v1/github/details", [["get", "getGitHubDetails", "Read live details for a tracked issue or pull request", "member"]]],
   ["/api/v1/github/rate-limit", [["get", "getGitHubRateLimit", "Read the connected GitHub installation rate limit", "member"]]],
@@ -628,25 +628,25 @@ const clientRouteContracts = [
   ["/api/v1/audit-log", [["get", "listOrganizationAuditLog", "List recent access and administration changes", "admin"]]],
   ["/api/v1/integrations/status", [["get", "getIntegrationStatus", "Read credential-free integration readiness", "member"]]],
   ["/api/v1/issue-state", [["post", "setIssueState", "Open or close a tracked GitHub issue", "member"]]],
-  ["/api/v1/me", [["get", "getCurrentMember", "Read membership and NoxConnect role for the current organization", "member"]]],
+  ["/api/v1/me", [["get", "getCurrentMember", "Read membership and NoxHere role for the current organization", "member"]]],
   ["/api/v1/members", [["get", "listMembers", "List members visible through the connected GitHub organization", "member"]]],
-  ["/api/v1/noxfeed/release-notes-prompt", [["get", "getNoxFeedDefaultPrompt", "Read the server-owned NoxFeed release-notes prompt", "admin"]]],
+  ["/api/v1/activity/release-notes-prompt", [["get", "getActivityDefaultPrompt", "Read the server-owned Activity release-notes prompt", "admin"]]],
   ["/api/v1/op-failures", [["get", "listOperationFailures", "List recent background-operation failures", "admin"]]],
   ["/api/v1/operator/usage", [["get", "getOperatorUsage", "Read platform-wide operator usage", "platform_operator", false]]],
   ["/api/v1/projects", [["post", "createProject", "Create an empty project scope", "admin"]]],
   ["/api/v1/projects/{projectId}/retrieval", [["get", "retrieveProject", "Search the selected project across Nox services", "member"]]],
-  ["/api/v1/projects/{projectId}/cue/dashboard", [["get", "getProjectCueDashboard", "Read the selected project's NoxCue dashboard", "member"]]],
-  ["/api/v1/projects/{projectId}/cue/stat-events", [["get", "listProjectCueStatEvents", "List accepted NoxCue events for the selected project", "member"]]],
-  ["/api/v1/projects/{projectId}/cue/alerts", [["get", "listProjectCueAlerts", "List NoxCue alerts for the selected project", "member"]]],
-  ["/api/v1/projects/{projectId}/cue/alert-rules", [["get", "listProjectCueAlertRules", "List effective NoxCue alert rules for the selected project", "member"]]],
-  ["/api/v1/projects/{projectId}/backfill-prs", [["post", "backfillProjectPullRequests", "Queue bounded NoxFeed pull-request history", "admin"]]],
+  ["/api/v1/projects/{projectId}/telemetry/dashboard", [["get", "getProjectTelemetryDashboard", "Read the selected project's Telemetry dashboard", "member"]]],
+  ["/api/v1/projects/{projectId}/telemetry/stat-events", [["get", "listProjectTelemetryStatEvents", "List accepted Telemetry events for the selected project", "member"]]],
+  ["/api/v1/projects/{projectId}/telemetry/alerts", [["get", "listProjectTelemetryAlerts", "List Telemetry alerts for the selected project", "member"]]],
+  ["/api/v1/projects/{projectId}/telemetry/alert-rules", [["get", "listProjectTelemetryAlertRules", "List effective Telemetry alert rules for the selected project", "member"]]],
+  ["/api/v1/projects/{projectId}/backfill-prs", [["post", "backfillProjectPullRequests", "Queue bounded Activity pull-request history", "admin"]]],
   ["/api/v1/recover-repo-history", [["post", "recoverRepositoryHistory", "Recover bounded repository history", "admin"]]],
   ["/api/v1/search", [["get", "searchWorkspace", "Search tracked work and people", "member"]]],
   ["/api/v1/slack/disconnect", [["post", "disconnectSlackWorkspace", "Disconnect one Slack workspace", "admin"]]],
   ["/api/v1/slack/status", [["get", "getSlackStatus", "Read Slack connections and delivery health", "member"]]],
   ["/api/v1/slack/test", [["post", "testSlackDestination", "Send a test message to a Slack destination", "admin"]]],
-  ["/api/v1/spots/project-overview", [["get", "getNoxSpotProjectOverview", "Read a guest-safe NoxSpot project overview", "member"]]],
-  ["/api/v1/feed/current-summary", [["get", "getCurrentWorkSummary", "Read per-person current-work counts for the selected project", "member"]]],
+  ["/api/v1/feedback/project-overview", [["get", "getFeedbackProjectOverview", "Read a guest-safe Feedback project overview", "member"]]],
+  ["/api/v1/activity/current-summary", [["get", "getCurrentWorkSummary", "Read per-person current-work counts for the selected project", "member"]]],
   ["/api/v1/sync", [
     ["get", "getSyncStatus", "Read GitHub synchronization freshness", "member"],
     ["post", "syncGitHubData", "Synchronize bounded GitHub data", "admin"],
@@ -665,36 +665,36 @@ for (const [path, methods] of clientRouteContracts) {
     document.paths[path][method] ??= firstPartyClientOperation(operationId, summary, role, organization, method);
   }
 }
-document.paths["/api/v1/cues/project-overview"].get["x-guest-access"] = "read";
-document.paths["/api/v1/spots/project-overview"].get["x-guest-access"] = "read";
-for (const path of ["/api/v1/tasks", "/api/v1/task-workflows", "/api/v1/projects/{projectId}/cue/dashboard"]) {
+document.paths["/api/v1/telemetry/project-overview"].get["x-guest-access"] = "read";
+document.paths["/api/v1/feedback/project-overview"].get["x-guest-access"] = "read";
+for (const path of ["/api/v1/tasks", "/api/v1/task-workflows", "/api/v1/projects/{projectId}/telemetry/dashboard"]) {
   if (document.paths[path]?.get) document.paths[path].get["x-guest-access"] = "read";
 }
 document.paths["/api/v1/auth/logout"].post["x-browser-session-only"] = true;
 document.paths["/api/v1/projects"].post.requestBody.required = true;
 document.paths["/api/v1/projects"].post.responses["201"] ??= document.paths["/api/v1/projects"].post.responses["200"];
 delete document.paths["/api/v1/projects"].post.responses["200"];
-document.paths["/api/v1/feed/current-summary"].get.tags = ["Activity"];
+document.paths["/api/v1/activity/current-summary"].get.tags = ["Activity"];
 for (const path of ["dashboard", "stat-events", "alerts", "alert-rules"]) {
-  document.paths[`/api/v1/projects/{projectId}/cue/${path}`].get.tags = ["NoxCue"];
+  document.paths[`/api/v1/projects/{projectId}/telemetry/${path}`].get.tags = ["Telemetry"];
 }
 
-document.paths["/api/v1/cues/github-issues"] = {
+document.paths["/api/v1/telemetry/github-issues"] = {
   get: {
-    operationId: "getNoxCueGitHubIssueSettings",
+    operationId: "getTelemetryGitHubIssueSettings",
     summary: "List project GitHub-incident settings",
-    description: "Returns each active project's repository mapping, routing policy, and open NoxCue incident count.",
+    description: "Returns each active project's repository mapping, routing policy, and open Telemetry incident count.",
     "x-required-role": "admin",
     responses: { "200": { description: "Project incident settings" } },
   },
   put: {
-    operationId: "putNoxCueGitHubIssueSettings",
+    operationId: "putTelemetryGitHubIssueSettings",
     summary: "Update project GitHub-incident settings",
-    description: "Controls whether NoxCue opens or updates a GitHub issue for incidents in the selected project and environments.",
+    description: "Controls whether Telemetry opens or updates a GitHub issue for incidents in the selected project and environments.",
     "x-required-role": "admin",
     requestBody: {
       required: true,
-      content: { "application/json": { schema: { "$ref": "#/components/schemas/NoxCueGitHubIssueSettingsUpdate" } } },
+      content: { "application/json": { schema: { "$ref": "#/components/schemas/TelemetryGitHubIssueSettingsUpdate" } } },
     },
     responses: {
       "200": { description: "Project incident settings updated" },
@@ -709,23 +709,23 @@ function automationScope(path, method) {
   if (method === "post" && path === "/api/v1/developer-feedback") return "developer-feedback:write";
   if (method === "post" && path === "/api/v1/integrations/slack/messages") return "slack:write";
   if (method === "get" && path === "/api/v1/services") return "services:read";
-  const service = path.match(/^\/api\/v1\/services\/(noxfeed|noxspot|noxcue)(?:\/(?:setup|health))?$/)?.[1];
+  const service = path.match(/^\/api\/v1\/services\/(activity|feedback|telemetry)(?:\/(?:setup|health))?$/)?.[1];
   if (method === "get" && service) return `${service}:read`;
-  if (method === "get" && path === "/api/v1/feed") return "noxfeed:read";
+  if (method === "get" && path === "/api/v1/activity") return "activity:read";
   path = compatibilityApiPath(path);
-  if (method === "get" && /^\/api\/(?:issues|prs)(?:\/|$)/.test(path)) return "noxfeed:read";
-  if (/^\/api\/spots\/sites(?:\/|$)/.test(path)) return `noxspot:${access}`;
-  if (/^\/api\/cues\/sources(?:\/|$)/.test(path)) return `noxcue:${access}`;
-  if (method === "get" && (path === "/api/cues/events" || path === "/api/cues/metrics")) return "noxcue:read";
-  if (/^\/api\/cues\/projects\/[^/]+\/metrics$/.test(path)) return `noxcue:${access}`;
+  if (method === "get" && /^\/api\/(?:issues|prs)(?:\/|$)/.test(path)) return "activity:read";
+  if (/^\/api\/feedback\/sites(?:\/|$)/.test(path)) return `feedback:${access}`;
+  if (/^\/api\/telemetry\/sources(?:\/|$)/.test(path)) return `telemetry:${access}`;
+  if (method === "get" && (path === "/api/telemetry/events" || path === "/api/telemetry/metrics")) return "telemetry:read";
+  if (/^\/api\/telemetry\/projects\/[^/]+\/metrics$/.test(path)) return `telemetry:${access}`;
   return null;
 }
 
-document.paths["/api/v1/cues/errors/{sourceId}/{fingerprint}"] = {
+document.paths["/api/v1/telemetry/errors/{sourceId}/{fingerprint}"] = {
   put: {
-    operationId: "updateNoxCueErrorStatus",
+    operationId: "updateTelemetryErrorStatus",
     summary: "Update an error incident status",
-    description: "Acknowledge, resolve, or reopen one NoxCue error group in the optional project context.",
+    description: "Acknowledge, resolve, or reopen one Telemetry error group in the optional project context.",
     parameters: [
       { name: "sourceId", in: "path", required: true, schema: { type: "string" } },
       { name: "fingerprint", in: "path", required: true, schema: { type: "string" } },
@@ -779,17 +779,17 @@ document.paths["/api/v1/api-tokens/{id}/rotate"] = {
   post: apiTokenOperation("rotateApiToken", "Rotate an API token and return its replacement once", "201"),
 };
 
-const oldCuePath = document.paths["/v1/events"];
-if (oldCuePath) {
-  document.paths["/api/v1/cues/public/events"] = oldCuePath;
+const oldTelemetryPath = document.paths["/v1/events"];
+if (oldTelemetryPath) {
+  document.paths["/api/v1/telemetry/public/events"] = oldTelemetryPath;
   delete document.paths["/v1/events"];
 }
-const cueIngest = document.paths["/api/v1/cues/public/events"].post;
-delete cueIngest.servers;
-cueIngest.summary = "Submit one standardized NoxCue event through the stable NoxConnect gateway";
-cueIngest.description = "Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.";
-cueIngest.responses["202"].content = { "application/json": { schema: { "$ref": "#/components/schemas/NoxCueIngestResponse" } } };
-cueIngest.requestBody.content["application/json"].examples = {
+const telemetryIngest = document.paths["/api/v1/telemetry/public/events"].post;
+delete telemetryIngest.servers;
+telemetryIngest.summary = "Submit one standardized Telemetry event through the stable NoxHere gateway";
+telemetryIngest.description = "Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.";
+telemetryIngest.responses["202"].content = { "application/json": { schema: { "$ref": "#/components/schemas/TelemetryIngestResponse" } } };
+telemetryIngest.requestBody.content["application/json"].examples = {
   anonymousWebsiteActivity: {
     summary: "Anonymous count-only browser activity",
     value: {
@@ -807,17 +807,17 @@ cueIngest.requestBody.content["application/json"].examples = {
     },
   },
 };
-cueIngest.responses["413"] = { description: "Payload exceeds 32 KiB", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } };
-cueIngest.responses["415"] = { description: "Content-Type must be application/json", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } };
+telemetryIngest.responses["413"] = { description: "Payload exceeds 32 KiB", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } };
+telemetryIngest.responses["415"] = { description: "Content-Type must be application/json", content: { "application/json": { schema: { "$ref": "#/components/schemas/LegacyError" } } } };
 
-const browserErrors = document.paths["/api/spots/public/v1/errors"].post;
+const browserErrors = document.paths["/api/feedback/public/v1/errors"].post;
 browserErrors.requestBody = {
   required: true,
-  content: { "application/json": { schema: { "$ref": "#/components/schemas/NoxSpotErrorBatch" } } },
+  content: { "application/json": { schema: { "$ref": "#/components/schemas/FeedbackErrorBatch" } } },
 };
 
 const queryParameters = {
-  "/api/v1/feed": [
+  "/api/v1/activity": [
     parameter("mode", { type: "string", enum: ["opened", "merged", "release-notes"], default: "merged" }, "Feed event mode"),
     parameter("repo", { type: "string", maxLength: 200 }, "Repository name"),
     parameter("actor", { type: "string", maxLength: 100 }, "GitHub login"),
@@ -839,7 +839,7 @@ const queryParameters = {
     parameter("page", { type: "integer", minimum: 1, default: 1 }, "Page number"),
     parameter("page_size", { type: "integer", minimum: 1, maximum: 500, default: 100 }, "Results per page"),
   ],
-  "/api/v1/cues/events": [
+  "/api/v1/telemetry/events": [
     parameter("sourceId", { type: "string", format: "uuid" }, "Optional source filter"),
     parameter("limit", { type: "integer", minimum: 1, maximum: 100, default: 25 }, "Maximum recent events"),
   ],
@@ -848,7 +848,7 @@ for (const [path, parameters] of Object.entries(queryParameters)) {
   document.paths[path].get.parameters = parameters;
 }
 
-delete document.components.schemas.NoxFeedConfigPatch?.properties?.projectScope;
+delete document.components.schemas.ActivityConfigPatch?.properties?.projectScope;
 
 // Feature attachments use the same bounded storage contract as specification
 // attachments, but are addressed by the feature number.
@@ -907,21 +907,21 @@ document.paths["/api/v1/projects/{projectId}/incidents/{incidentId}"] = {
   patch: projectCapabilityOperation("updateProjectIncident", "Update one project incident", { write: true, incident: true }),
 };
 document.paths["/api/v1/projects/{projectId}/incidents/{incidentId}"].patch.requestBody.content["application/json"].schema = { "$ref": "#/components/schemas/ProjectIncidentUpdate" };
-document.paths["/api/v1/projects/{projectId}/cue/dashboard"] = { get: projectCapabilityOperation("getCueProjectDashboard", "Read the project Cue dashboard") };
-document.paths["/api/v1/projects/{projectId}/cue/actions"] = {
-  get: projectCapabilityOperation("getCueProjectActions", "Read project Cue actions"),
-  put: projectCapabilityOperation("updateCueProjectActions", "Update project Cue actions", { write: true }),
+document.paths["/api/v1/projects/{projectId}/telemetry/dashboard"] = { get: projectCapabilityOperation("getTelemetryProjectDashboard", "Read the project Telemetry dashboard") };
+document.paths["/api/v1/projects/{projectId}/telemetry/actions"] = {
+  get: projectCapabilityOperation("getTelemetryProjectActions", "Read project Telemetry actions"),
+  put: projectCapabilityOperation("updateTelemetryProjectActions", "Update project Telemetry actions", { write: true }),
 };
-document.paths["/api/v1/projects/{projectId}/cue/alerts"] = { get: projectCapabilityOperation("getCueProjectAlerts", "Read project Cue alerts") };
-document.paths["/api/v1/projects/{projectId}/cue/alert-rules"] = { get: projectCapabilityOperation("getCueProjectAlertRules", "Read project Cue alert rules") };
-document.paths["/api/v1/projects/{projectId}/cue/stat-events"] = { get: projectCapabilityOperation("getCueProjectStatEvents", "Read project Cue statistic events") };
+document.paths["/api/v1/projects/{projectId}/telemetry/alerts"] = { get: projectCapabilityOperation("getTelemetryProjectAlerts", "Read project Telemetry alerts") };
+document.paths["/api/v1/projects/{projectId}/telemetry/alert-rules"] = { get: projectCapabilityOperation("getTelemetryProjectAlertRules", "Read project Telemetry alert rules") };
+document.paths["/api/v1/projects/{projectId}/telemetry/stat-events"] = { get: projectCapabilityOperation("getTelemetryProjectStatEvents", "Read project Telemetry statistic events") };
 
-setJsonSuccessSchema("/api/v1/feed", "get", "FeedPage");
+setJsonSuccessSchema("/api/v1/activity", "get", "ActivityPage");
 for (const path of ["/api/v1/issues", "/api/v1/prs"]) setJsonSuccessSchema(path, "get", "RecordCollection");
 for (const path of ["/api/v1/issues/{repo}/{number}", "/api/v1/prs/{repo}/{number}", "/api/v1/engineer-activity", "/api/v1/engineer-stats", "/api/v1/events", "/api/v1/events/{id}", "/api/v1/github/comments", "/api/v1/github/details", "/api/v1/search"]) {
   setJsonSuccessSchema(path, "get", "ApiRecord");
 }
-setJsonSuccessSchema("/api/v1/noxfeed/release-notes-prompt", "get", "ApiRecord");
+setJsonSuccessSchema("/api/v1/activity/release-notes-prompt", "get", "ApiRecord");
 setJsonSuccessSchema("/api/v1/llm-settings", "get", "ApiRecord");
 setJsonSuccessSchema("/api/v1/llm-settings", "put", "MutationReceipt");
 setJsonSuccessSchema("/api/v1/prs/close", "post", "MutationReceipt");
@@ -943,11 +943,11 @@ setJsonSuccessSchema("/api/v1/specs/{specId}/attachments", "post", "SpecAttachme
 setJsonSuccessSchema("/api/v1/specs/{specId}/attachments/{attachmentId}", "delete", "MutationReceipt");
 setJsonSuccessSchema("/api/v1/assign", "post", "ApiRecord");
 setJsonSuccessSchema("/api/v1/issue-state", "post", "MutationReceipt");
-setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/dashboard", "get", "StatsDashboard");
-for (const method of ["get", "put"]) setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/actions", method, "CueActions");
-setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/stat-events", "get", "StatEventList");
-setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/alerts", "get", "IncidentAlertList");
-setJsonSuccessSchema("/api/v1/projects/{projectId}/cue/alert-rules", "get", "IncidentAlertRuleList");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/telemetry/dashboard", "get", "StatsDashboard");
+for (const method of ["get", "put"]) setJsonSuccessSchema("/api/v1/projects/{projectId}/telemetry/actions", method, "TelemetryActions");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/telemetry/stat-events", "get", "StatEventList");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/telemetry/alerts", "get", "IncidentAlertList");
+setJsonSuccessSchema("/api/v1/projects/{projectId}/telemetry/alert-rules", "get", "IncidentAlertRuleList");
 setJsonSuccessSchema("/api/v1/projects/{projectId}/incidents", "get", "ProjectIncidentOverview");
 for (const method of ["get", "patch"]) setJsonSuccessSchema("/api/v1/projects/{projectId}/incidents/{incidentId}", method, "ProjectIncidentResponse");
 
@@ -986,7 +986,7 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
     if (!isV1 && ["member", "admin"].includes(operation["x-authentication"])) {
       operation.responses["401"] ??= { description: "Authentication required" };
       operation.responses["403"] ??= { description: "Insufficient access" };
-      if (/^\/api\/(?:features|specs|spots|cues)(?:\/|$)/.test(path) || path === "/api/v1/feed") {
+      if (/^\/api\/(?:features|specs|spots|cues)(?:\/|$)/.test(path) || path === "/api/v1/activity") {
         operation.responses["409"] ??= { description: "Product service is not enabled" };
       }
     }
@@ -1096,15 +1096,15 @@ function firstPartyClientOperation(operationId, summary, role, organization, met
 function serviceTag(path) {
   const compatibilityPath = compatibilityApiPath(path);
   if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(compatibilityPath)) return "Planning";
-  if (/^\/api\/v1\/feed(?:\/|$)/.test(path)
-      || /^\/api\/(?:issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(compatibilityPath)
+  if (/^\/api\/v1\/activity(?:\/|$)/.test(path)
+      || /^\/api\/(?:issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|activity)(?:\/|$)/.test(compatibilityPath)
       || /^\/api\/github\/(?:comments|details)$/.test(compatibilityPath)) return "Activity";
-  if (compatibilityPath.startsWith("/api/spots")) return "Feedback";
+  if (compatibilityPath.startsWith("/api/feedback")) return "Feedback";
   if (/^\/api\/v1\/projects\/[^/]+\/incidents(?:\/|$)/.test(path)
-      || /^\/api\/cues\/(?:github-issues|errors)(?:\/|$)/.test(compatibilityPath)
-      || /^\/api\/cues\/sources\/[^/]+\/features(?:\/|$)/.test(compatibilityPath)
-      || /^\/api\/v1\/projects\/[^/]+\/cue\/(?:alerts|alert-rules)(?:\/|$)/.test(path)) return "Incidents";
-  if (compatibilityPath.startsWith("/api/cues") || /^\/api\/v1\/projects\/[^/]+\/cue(?:\/|$)/.test(path)) return "Stats";
+      || /^\/api\/telemetry\/(?:github-issues|errors)(?:\/|$)/.test(compatibilityPath)
+      || /^\/api\/telemetry\/sources\/[^/]+\/features(?:\/|$)/.test(compatibilityPath)
+      || /^\/api\/v1\/projects\/[^/]+\/telemetry\/(?:alerts|alert-rules)(?:\/|$)/.test(path)) return "Incidents";
+  if (compatibilityPath.startsWith("/api/telemetry") || /^\/api\/v1\/projects\/[^/]+\/telemetry(?:\/|$)/.test(path)) return "Stats";
   return "NoxHere";
 }
 
@@ -1115,8 +1115,8 @@ function acceptsOptionalProjectContext(operation) {
 
 function canonicalApiPath(path) {
   if (path.startsWith("/api/v1/")) return path;
-  if (path.startsWith("/api/spots/public/v1/")) return path;
-  if (path === "/api/cues/public/v1/events") return "/api/v1/cues/public/events";
+  if (path.startsWith("/api/feedback/public/v1/")) return path;
+  if (path === "/api/telemetry/public/v1/events") return "/api/v1/telemetry/public/events";
   if (path === "/api/projects/routing/{projectId}") return "/api/v1/projects/{projectId}/routing";
   if (path.startsWith("/api/")) return path.replace(/^\/api\//, "/api/v1/");
   return path;
@@ -1124,12 +1124,12 @@ function canonicalApiPath(path) {
 
 function compatibilityApiPath(path) {
   if (!path.startsWith("/api/v1/")) return path;
-  if (/^\/api\/v1\/(?:services|api-tokens|feed)(?:\/|$)/.test(path)) return path;
+  if (/^\/api\/v1\/(?:services|api-tokens|activity)(?:\/|$)/.test(path)) return path;
   if (/^\/api\/v1\/projects\/[^/]+\/routing$/.test(path)) return path.replace(
     /^\/api\/v1\/projects\/([^/]+)\/routing$/,
     "/api/projects/routing/$1",
   );
-  if (path === "/api/v1/cues/public/events") return "/api/cues/public/v1/events";
+  if (path === "/api/v1/telemetry/public/events") return "/api/telemetry/public/v1/events";
   return path.replace(/^\/api\/v1\//, "/api/");
 }
 
@@ -1137,19 +1137,19 @@ function authenticationFor(operation) {
   if (operation["x-required-role"] === "platform_operator") return "platform_operator";
   if (operation["x-native-refresh"]) return "native_refresh";
   if (Array.isArray(operation.security) && operation.security.length === 0) return "public";
-  if (operation.security?.some((entry) => Object.hasOwn(entry, "noxCueKey"))) return "ingest_key";
+  if (operation.security?.some((entry) => Object.hasOwn(entry, "telemetryKey"))) return "ingest_key";
   if (operation.security?.length === 1 && Object.hasOwn(operation.security[0], "nativeSession")) return "native_session";
   const adminOperations = new Set([
     "startConnection", "disconnectConnection", "assignSlackConnectionProject",
     "getSlackRouting", "patchSlackRouting", "testSlackRoute", "archiveProject",
     "restoreProject", "acknowledgeRepositories", "updateActor", "archiveSpec",
     "restoreSpec", "closePullRequest", "getLlmSettings", "putLlmSettings",
-    "createNoxSpotSite", "updateNoxSpotSite", "deleteNoxSpotSite",
-    "retryNoxSpotDeliveries", "listNoxCueSources", "createNoxCueSource",
-    "updateNoxCueSource", "deleteNoxCueSource", "createNoxCueKey",
-    "revokeNoxCueKey", "listNoxCueEvents", "getNoxCueDailyHealth",
+    "createFeedbackSite", "updateFeedbackSite", "deleteFeedbackSite",
+    "retryFeedbackDeliveries", "listTelemetrySources", "createTelemetrySource",
+    "updateTelemetrySource", "deleteTelemetrySource", "createTelemetryKey",
+    "revokeTelemetryKey", "listTelemetryEvents", "getTelemetryDailyHealth",
     "patchNoxServiceConfig",
-    "getNoxCueGitHubIssueSettings", "putNoxCueGitHubIssueSettings",
+    "getTelemetryGitHubIssueSettings", "putTelemetryGitHubIssueSettings",
   ]);
   return operation["x-required-role"] === "admin" || adminOperations.has(operation.operationId) ? "admin" : "member";
 }
@@ -1157,8 +1157,8 @@ function authenticationFor(operation) {
 function changeSafety(method, operationId) {
   if (method === "get") return "safe_read";
   if (operationId === "submitDeveloperFeedback") return "idempotent_with_key";
-  if (["patchNoxServiceConfig", "updateNoxSpotResolutionTemplate"].includes(operationId)) return "conditional_write";
-  if (operationId === "ingestNoxCueEvent") return "idempotent_with_event_key";
+  if (["patchNoxServiceConfig", "updateFeedbackResolutionTemplate"].includes(operationId)) return "conditional_write";
+  if (operationId === "ingestTelemetryEvent") return "idempotent_with_event_key";
   if (method === "delete" || /disconnect|archive|close|revoke|delete/i.test(operationId)) return "destructive";
   return "write_not_safe_to_retry";
 }

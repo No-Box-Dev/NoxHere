@@ -4,7 +4,7 @@ import {
   apiTokenProjectResource,
   projectScopedApiTokenPathSupported,
 } from "./lib/api-auth.js";
-import { reportNoxCueHttpFailure } from "./lib/noxcue-client";
+import { reportTelemetryHttpFailure } from "./lib/telemetry-client";
 import { resolveIdentityConnection } from "./lib/connection-identity";
 import { verifyNoxHereAssertion } from "./lib/noxhere-assertion";
 import {
@@ -31,7 +31,7 @@ export async function onRequest(context) {
   if (url.pathname === "/api/health/live" || url.pathname === "/api/health/ready") {
     return nextApiResponse(context, url);
   }
-  if (url.pathname === "/api/cues/public/v1/events" || url.pathname === "/api/v1/cues/public/events") {
+  if (url.pathname === "/api/telemetry/public/v1/events" || url.pathname === "/api/v1/telemetry/public/events") {
     return nextApiResponse(context, url);
   }
   if (url.pathname === "/api/webhook") {
@@ -40,10 +40,10 @@ export async function onRequest(context) {
   if (url.pathname === "/api/postmark/webhook") {
     return nextApiResponse(context, url);
   }
-  if (url.pathname.startsWith("/api/spots/public/v1/resolution-responses/")) {
+  if (url.pathname.startsWith("/api/feedback/public/v1/resolution-responses/")) {
     return nextApiResponse(context, url);
   }
-  if (url.pathname.startsWith("/api/spots/public/v1/resolution/")) {
+  if (url.pathname.startsWith("/api/feedback/public/v1/resolution/")) {
     return nextApiResponse(context, url);
   }
   if (url.pathname === "/api/slack/oauth/callback" || url.pathname === "/api/slack/oauth/handoff") {
@@ -77,12 +77,12 @@ export async function onRequest(context) {
     return apiError(
       url,
       "missing_internal_assertion",
-      "NoxConnect accepts authenticated requests only from NoxHere",
+      "NoxHere accepts authenticated requests only from NoxHere",
       401,
     );
   }
 
-  if (/^\/api\/(?:v1\/)?(?:spots|cues)\/shares(?:\/|$)/.test(url.pathname)) {
+  if (/^\/api\/(?:v1\/)?(?:feedback|telemetry)\/shares(?:\/|$)/.test(url.pathname)) {
     return apiError(url, "password_shares_retired", "Use project guest invitations instead of password shares", 410);
   }
 
@@ -99,10 +99,10 @@ export async function onRequest(context) {
     if (!guestCollection && !guestService) {
       return apiError(url, "guest_scope_forbidden", "This operation is not available to guests", 403);
     }
-    if (!guestCollection && guestService === "noxconnect") {
+    if (!guestCollection && guestService === "noxhere") {
       return apiError(url, "guest_scope_forbidden", "This operation is not available to guests", 403);
     }
-    if (guestService && guestService !== "noxconnect") {
+    if (guestService && guestService !== "noxhere") {
       const projectId = presentedProjectId(context.request) || projectIdInPath(url.pathname) || auth.projectId;
       if (!guestCanAccess(auth.guestAccess, projectId, guestService)) {
         return apiError(url, "resource_not_found", "The requested resource was not found", 404);
@@ -156,10 +156,10 @@ export async function onRequest(context) {
       return apiError(url, "project_not_enabled", "The project is not enabled for service operations", 409);
     }
     const requestApp = serviceForProjectRequest(url.pathname) || appForApiPath(url.pathname);
-    // NoxTicket owns its feature/spec rows in a separate D1 database. Looking
-    // those resource numbers up in NoxConnect's retired mirror produces false
+    // Planning owns its feature/spec rows in a separate D1 database. Looking
+    // those resource numbers up in NoxHere's retired mirror produces false
     // 404s before the service can enforce its own project scope.
-    const resource = requestApp === "noxticket" ? null : await apiTokenProjectResource(
+    const resource = requestApp === "planning" ? null : await apiTokenProjectResource(
       context.env.DB,
       url.pathname,
       auth.orgId,
@@ -238,12 +238,12 @@ async function nextApiResponse(context, url) {
       headers.append("Link", '</openapi.json>; rel="deprecation"; type="application/vnd.oai.openapi+json"');
       response = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
     }
-    if (response.status >= 500) reportNoxCueHttpFailure(context, null, response.status);
+    if (response.status >= 500) reportTelemetryHttpFailure(context, null, response.status);
     return response;
   } catch (error) {
-    reportNoxCueHttpFailure(context, error);
+    reportTelemetryHttpFailure(context, error);
     if (!versioned) throw error;
-    console.error("[noxconnect] API v1 handler failed:", error);
+    console.error("[noxhere] API v1 handler failed:", error);
     return apiError(url, "internal_error", "Request failed", 500);
   }
 }

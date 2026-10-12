@@ -29,7 +29,7 @@ interface Options {
   idConflict?: boolean;
   claim?: Record<string, unknown> | null;
   recovery?: Array<{ id: string }>;
-  callbackClaim?: { kind: "noxspot_issue" | "noxcue_incident"; payload_json: string };
+  callbackClaim?: { kind: "feedback_issue" | "telemetry_incident"; payload_json: string };
   callbackTransport?: { command_json: string; receipt_json: string };
 }
 
@@ -189,13 +189,13 @@ describe("provider-neutral transport outbox", () => {
       result: { channelId: "C123", messageId: "123.456" },
     };
     const database = new FakeDatabase({
-      callbackClaim: { kind: "noxspot_issue", payload_json: JSON.stringify({ captureId: "capture-1" }) },
+      callbackClaim: { kind: "feedback_issue", payload_json: JSON.stringify({ captureId: "capture-1" }) },
       callbackTransport: { command_json: JSON.stringify(COMMAND), receipt_json: JSON.stringify(receipt) },
     });
     const callback = vi.fn().mockResolvedValue(undefined);
     await expect(executeTransportCallback(database as unknown as D1Database, "command-1", {
-      noxspot_issue: callback,
-      noxcue_incident: vi.fn(),
+      feedback_issue: callback,
+      telemetry_incident: vi.fn(),
     }, new Date("2026-10-04T10:21:00Z"))).resolves.toEqual({ completed: true });
     expect(callback).toHaveBeenCalledWith(expect.objectContaining({ payload: { captureId: "capture-1" } }));
     expect(database.calls.some((call) => call.method === "run" && call.sql.includes("status = 'completed'"))).toBe(true);

@@ -132,7 +132,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
       return v1Error("slack_channel_unavailable", "This Slack channel is archived or unavailable. Choose an active channel, then try again.", 409);
     }
     if (channel.is_private && !channel.is_member) {
-      return v1Error("slack_channel_membership_required", "NoxConnect is not in this private channel. Invite @NoxConnect in Slack, then try again.", 409);
+      return v1Error("slack_channel_membership_required", "NoxHere is not in this private channel. Invite @NoxHere in Slack, then try again.", 409);
     }
 
     const message: SlackMessagePayload = parsed.data.message;

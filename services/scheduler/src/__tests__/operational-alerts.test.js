@@ -59,7 +59,7 @@ describe("operational Slack alerts", () => {
       org_login: "acme",
       kind: "delivery_failure",
       source_id: "delivery_failure:d-1",
-      subject: "noxspot",
+      subject: "feedback",
       detail: "channel_not_found",
       occurred_at: "2026-09-09T08:00:00Z",
     }] });

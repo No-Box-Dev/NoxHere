@@ -17,8 +17,8 @@ export async function onRequestGet(context) {
     capabilities: auth?.capabilities ?? (isAdmin ? ["organization.manage"] : ["content.read", "content.write"]),
     allowedServices: auth?.accessLevel === "guest"
       ? (auth.guestAccess?.organizationWide === true || projectServices === null
-        ? ["noxticket", "noxfeed", "noxspot", "noxcue"]
+        ? ["planning", "activity", "feedback", "telemetry"]
         : projectServices ?? [])
-      : ["noxticket", "noxfeed", "noxspot", "noxcue"],
+      : ["planning", "activity", "feedback", "telemetry"],
   });
 }

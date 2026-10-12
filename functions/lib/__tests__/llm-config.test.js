@@ -62,7 +62,7 @@ describe("resolveLlmConfig", () => {
 });
 
 describe("resolveAiMode", () => {
-  it("enables product-owned generation without requiring a provider key in NoxConnect", async () => {
+  it("enables product-owned generation without requiring a provider key in NoxHere", async () => {
     await expect(resolveAiMode({ DB: dbResult(null) }, 7, "project-1")).resolves.toEqual({
       status: "enabled",
       mode: AI_MODE_MANAGED,

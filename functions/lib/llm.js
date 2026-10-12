@@ -1,4 +1,4 @@
-// Bounded, retrying client for NoxConnect's managed Anthropic service.
+// Bounded, retrying client for NoxHere's managed Anthropic service.
 
 import { MANAGED_LLM } from "./llm-config";
 import { sleep } from "./pacing";

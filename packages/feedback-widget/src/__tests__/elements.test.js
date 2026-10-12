@@ -61,11 +61,11 @@ describe('generateSelector', () => {
     expect(selector).toBeTruthy();
   });
 
-  it('ignores noxspot classes', () => {
-    document.body.innerHTML = '<div class="noxspot-overlay real-class">test</div>';
+  it('ignores feedback classes', () => {
+    document.body.innerHTML = '<div class="feedback-overlay real-class">test</div>';
     const el = document.querySelector('div');
     const selector = generateSelector(el);
-    expect(selector).not.toContain('noxspot-overlay');
+    expect(selector).not.toContain('feedback-overlay');
   });
 });
 
@@ -89,14 +89,14 @@ describe('extractElementInfo', () => {
     expect(info.text).toContain('Submit');
   });
 
-  it('extracts classes excluding noxspot classes', () => {
-    document.body.innerHTML = '<div class="card noxspot-temp active">test</div>';
+  it('extracts classes excluding feedback classes', () => {
+    document.body.innerHTML = '<div class="card feedback-temp active">test</div>';
     const el = document.querySelector('div');
     const info = extractElementInfo(el);
 
     expect(info.classes).toContain('card');
     expect(info.classes).toContain('active');
-    expect(info.classes).not.toContain('noxspot-temp');
+    expect(info.classes).not.toContain('feedback-temp');
   });
 
   it('extracts aria-label', () => {

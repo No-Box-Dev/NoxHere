@@ -1,22 +1,22 @@
 import { errorResponse, getCtx } from "../lib/db";
-import { callNoxTicket, type NoxTicketEnvironment, type NoxTicketScope, type NoxTicketServiceBinding, type NoxTicketServiceResult } from "../lib/noxticket-service";
+import { callPlanning, type PlanningEnvironment, type PlanningScope, type PlanningServiceBinding, type PlanningServiceResult } from "../lib/planning-service";
 
 interface Ctx {
-  env: NoxTicketEnvironment;
+  env: PlanningEnvironment;
   data: { orgId: number; projectId?: string | null; userLogin: string; isAdmin?: boolean };
   request: Request;
 }
 
-function scope(context: Ctx): NoxTicketScope {
+function scope(context: Ctx): PlanningScope {
   const { orgId, projectId, userLogin, isAdmin } = getCtx(context) as Ctx["data"];
   return { orgId, projectId, userLogin, isAdmin };
 }
 
-async function callWorkflowService(context: Ctx, operation: (service: NoxTicketServiceBinding, caller: NoxTicketScope) => Promise<NoxTicketServiceResult>) {
+async function callWorkflowService(context: Ctx, operation: (service: PlanningServiceBinding, caller: PlanningScope) => Promise<PlanningServiceResult>) {
   const caller = scope(context);
   if (!caller.projectId) return errorResponse("Select a project to use personal task workflows", 400);
-  const delegated = await callNoxTicket(context.env, (service) => operation(service, caller));
-  return delegated ?? Response.json({ error: "Personal task workflows are unavailable", code: "service_unavailable", service: "noxticket" }, { status: 503 });
+  const delegated = await callPlanning(context.env, (service) => operation(service, caller));
+  return delegated ?? Response.json({ error: "Personal task workflows are unavailable", code: "service_unavailable", service: "planning" }, { status: 503 });
 }
 
 export async function onRequestGet(context: Ctx): Promise<Response> {

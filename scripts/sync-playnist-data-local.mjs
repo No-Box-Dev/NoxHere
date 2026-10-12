@@ -39,7 +39,7 @@ const tables = [
     ],
   },
   { table: "spot_report_activity", where: `report_id IN (SELECT id FROM spot_reports WHERE project_id = '${projectId}')` },
-  { table: "noxspot_config_audit", where: `project_id = '${projectId}'` },
+  { table: "feedback_config_audit", where: `project_id = '${projectId}'` },
   {
     table: "cue_sources",
     where: `project_id = '${projectId}'`,
@@ -70,7 +70,7 @@ const tables = [
 function executeRemote(command) {
   const result = spawnSync(
     runner,
-    ["wrangler", "d1", "execute", "noxconnect", "--remote", "--command", command, "--json"],
+    ["wrangler", "d1", "execute", "noxhere", "--remote", "--command", command, "--json"],
     { cwd: process.cwd(), encoding: "utf8", env: process.env, maxBuffer: 64 * 1024 * 1024 },
   );
   if (result.status !== 0) {
@@ -122,7 +122,7 @@ for (const entry of selectedTables) {
   console.log(`${entry.table}: ${rows.length}`);
 }
 
-// The D1 issue cache historically omitted GitHub bodies. NoxSpot's real
+// The D1 issue cache historically omitted GitHub bodies. Feedback's real
 // description, screenshot URL and capture context live in that body, so enrich
 // the local mirror from the authenticated GitHub CLI when it is available.
 const issueMirror = mirrored.find((entry) => entry.table === "issues");
@@ -130,7 +130,7 @@ if (issueMirror?.rows.length) {
   const github = spawnSync(
     "gh",
     ["api", "--method", "GET", "--paginate", "--slurp", `repos/${ownerId}/${repository}/issues`,
-      "-f", "state=all", "-f", "labels=noxspot", "-f", "per_page=100"],
+      "-f", "state=all", "-f", "labels=feedback", "-f", "per_page=100"],
     { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
   );
   if (github.status === 0) {
@@ -140,9 +140,9 @@ if (issueMirror?.rows.length) {
     for (const row of issueMirror.rows) {
       if (bodies.has(Number(row.number))) row.body = bodies.get(Number(row.number));
     }
-    console.log(`issues: enriched ${bodies.size} NoxSpot bodies from GitHub`);
+    console.log(`issues: enriched ${bodies.size} Feedback bodies from GitHub`);
   } else {
-    console.warn("issues: GitHub CLI unavailable; NoxSpot body enrichment skipped");
+    console.warn("issues: GitHub CLI unavailable; Feedback body enrichment skipped");
   }
 }
 
@@ -162,7 +162,7 @@ for (const entry of mirrored) {
 function executeLocal(batch) {
   const local = spawnSync(
     runner,
-    ["wrangler", "d1", "execute", "noxconnect", "--local", "--command", batch],
+    ["wrangler", "d1", "execute", "noxhere", "--local", "--command", batch],
     { cwd: process.cwd(), env: process.env, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
   );
   if (local.status !== 0) {
@@ -183,4 +183,4 @@ for (const statement of statements) {
 if (batch) executeLocal(batch);
 
 const total = mirrored.reduce((sum, entry) => sum + entry.rows.length, 0);
-console.log(`Mirrored ${total} safe Playnist records into local NoxConnect. Production was read-only.`);
+console.log(`Mirrored ${total} safe Playnist records into local NoxHere. Production was read-only.`);

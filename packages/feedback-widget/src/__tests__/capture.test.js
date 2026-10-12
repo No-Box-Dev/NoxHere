@@ -27,9 +27,9 @@ describe('shouldSkipDataAttr', () => {
     expect(shouldSkipDataAttr('data-sentry-element')).toBe(true);
   });
 
-  it('skips noxspot own attrs', () => {
-    expect(shouldSkipDataAttr('data-noxspot')).toBe(true);
-    expect(shouldSkipDataAttr('data-noxspot-ignore')).toBe(true);
+  it('skips feedback own attrs', () => {
+    expect(shouldSkipDataAttr('data-feedback')).toBe(true);
+    expect(shouldSkipDataAttr('data-feedback-ignore')).toBe(true);
   });
 
   it('keeps meaningful data attrs', () => {

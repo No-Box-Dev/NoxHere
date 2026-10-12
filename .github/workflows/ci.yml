@@ -27,7 +27,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: node scripts/check-migration-immutability.mjs "$BASE_REF"
       - name: Apply migrations to a fresh database
-        run: npx wrangler d1 migrations apply DB --local --persist-to "$RUNNER_TEMP/noxconnect-d1" --config workers/api-gateway/wrangler.jsonc --env=""
+        run: npx wrangler d1 migrations apply DB --local --persist-to "$RUNNER_TEMP/noxhere-d1" --config workers/api-gateway/wrangler.jsonc --env=""
       - run: npm run lint
 
   typecheck:
@@ -44,7 +44,7 @@ jobs:
       - run: npm run build:api-gateway
       - name: Dry-run private Workers
         run: |
-          npx wrangler deploy --dry-run --config services/connect/wrangler.jsonc --env="" --outdir "$RUNNER_TEMP/capabilities"
+          npx wrangler deploy --dry-run --config services/connections/wrangler.jsonc --env="" --outdir "$RUNNER_TEMP/capabilities"
           npx wrangler deploy --dry-run --config services/scheduler/wrangler.toml --env="" --outdir "$RUNNER_TEMP/orchestrator"
 
   test:
@@ -86,14 +86,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/ticket
+        working-directory: services/planning
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: services/ticket/package-lock.json
+          cache-dependency-path: services/planning/package-lock.json
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
@@ -103,32 +103,32 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/feed
+        working-directory: services/activity
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: services/feed/package-lock.json
+          cache-dependency-path: services/activity/package-lock.json
       - run: npm ci
       - run: npm test
       - name: Verify the unified public API contract
         run: NOX_OPENAPI_PATH=../../public/openapi.json npm run docs:check
       - run: npm run build
 
-  noxspot-capture:
+  feedback:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/spot
+        working-directory: services/feedback
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: services/spot/package-lock.json
+          cache-dependency-path: services/feedback/package-lock.json
       - run: npm ci
       - run: npm run types
       - run: npx tsc --noEmit
@@ -181,7 +181,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/cue
+        working-directory: services/telemetry
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -190,7 +190,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            services/cue/package-lock.json
+            services/telemetry/package-lock.json
       - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
@@ -201,14 +201,14 @@ jobs:
       - run: npm ci
       - name: Install unified Python SDK for compatibility tests
         run: python3 -m pip install -e ../../packages/python-sdk
-      - name: Enforce active NoxCue telemetry milestone
+      - name: Enforce active Telemetry telemetry milestone
         working-directory: ${{ github.workspace }}
         run: npm run telemetry:milestones:verify
-      - name: Verify Cue Worker, contracts, and build
+      - name: Verify Telemetry Worker, contracts, and build
         run: npm run check
-      - name: Verify NoxCue RPC capabilities through a real Worker harness
+      - name: Verify Telemetry RPC capabilities through a real Worker harness
         working-directory: ${{ github.workspace }}
-        run: npm run health:noxcue-capability -- services/cue/wrangler.jsonc
+        run: npm run health:telemetry-capability -- services/telemetry/wrangler.jsonc
       - name: Verify TypeScript/Python SDK parity
         run: npm run sdk:parity
       - name: Build Python distribution

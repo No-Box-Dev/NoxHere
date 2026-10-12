@@ -28,7 +28,7 @@ The TypeScript package is
 npm install @noxhere/sdk
 ```
 
-New Python integrations should use `noxhere`; the former `noxcue` package is
+New Python integrations should use `noxhere`; the former `telemetry` package is
 only a compatibility forwarder.
 
 ## Authentication
@@ -42,7 +42,7 @@ Use the credential intended for the caller:
 - browser applications: the HttpOnly session cookie, plus `X-CSRF-Token` for
   mutations;
 - incident ingestion: `X-Nox-Ingest-Key: $NOXHERE_INGEST_KEY`; and
-- public NoxSpot capture: no platform bearer credential.
+- public Feedback capture: no platform bearer credential.
 
 Never send GitHub or Slack credentials to the public API. Automation tokens
 already carry their organization and project bounds, so `X-Org` and

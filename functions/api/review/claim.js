@@ -1,5 +1,5 @@
 // POST /api/review/claim — the noxreview runner asks for the next job.
-// Returns the claimed job plus a short-lived NoxConnect installation token
+// Returns the claimed job plus a short-lived NoxHere installation token
 // (the runner never holds the App private key) and the org's global review
 // instructions. 200 {job: null} when nothing is actionable.
 

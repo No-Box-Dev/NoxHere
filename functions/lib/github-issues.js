@@ -1,4 +1,4 @@
-// NoxConnect's GitHub issue transport. Product code supplies validated issue
+// NoxHere's GitHub issue transport. Product code supplies validated issue
 // presentation; only this connector layer knows GitHub authentication and API
 // mechanics. Product Workers must never receive the installation token.
 
@@ -64,7 +64,7 @@ async function githubRequest(token, path, init = {}) {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      "User-Agent": "noxconnect",
+      "User-Agent": "noxhere",
       "X-GitHub-Api-Version": "2022-11-28",
       ...init.headers,
     },

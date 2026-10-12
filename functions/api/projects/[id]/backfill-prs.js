@@ -4,7 +4,7 @@ import { resolveActorFromGithub } from "../../../lib/actors";
 import { narrateEvent, narrateReleaseNotes } from "../../../lib/narrator";
 import { recordFailure } from "../../../lib/op-failures";
 import { sleep, NARRATOR_PACING_MS } from "../../../lib/pacing";
-import { getNoxFeedGenerationInfo } from "../../../lib/noxfeed-response.js";
+import { getActivityGenerationInfo } from "../../../lib/activity-response.js";
 
 // POST /api/projects/:id/backfill-prs
 // Body: {
@@ -98,12 +98,12 @@ export async function onRequestPost(context) {
     let currentModel = null;
     if (rewriteOtherModels) {
       try {
-        const info = await getNoxFeedGenerationInfo(context.env);
+        const info = await getActivityGenerationInfo(context.env);
         currentModel = info.model;
       } catch (error) {
-        console.error("[noxconnect backfill] NoxFeed generation info unavailable:", error);
+        console.error("[noxhere backfill] Activity generation info unavailable:", error);
         return errorResponse(
-          "NoxFeed generation service is unavailable",
+          "Activity generation service is unavailable",
           503,
           "dependency_unavailable",
         );
@@ -141,7 +141,7 @@ export async function onRequestPost(context) {
     })();
     context.waitUntil(
       work.catch(async (err) => {
-        console.error("[noxconnect backfill] failed:", err);
+        console.error("[noxhere backfill] failed:", err);
         await recordFailure(db, {
           ownerId: orgLogin,
           op: "backfillPrs",
@@ -162,7 +162,7 @@ export async function onRequestPost(context) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
-    console.error("[noxconnect backfill] unhandled error:", message, stack);
+    console.error("[noxhere backfill] unhandled error:", message, stack);
     return errorResponse(`Backfill failed: ${message}`, 500);
   }
 }
@@ -244,7 +244,7 @@ async function renarrateFallbacks(env, fallbacks) {
         narrateReleaseNotes(env, triggerEventId),
       ]);
     } catch (err) {
-      console.error(`[noxconnect backfill] re-narrate trigger ${triggerEventId} failed:`, err);
+      console.error(`[noxhere backfill] re-narrate trigger ${triggerEventId} failed:`, err);
     }
   }
 }
@@ -258,7 +258,7 @@ async function fetchRecentPrs(env, installationId, org, repo, days) {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
-      "User-Agent": "NoxConnect",
+      "User-Agent": "NoxHere",
     },
   });
   if (!res.ok) {
@@ -280,7 +280,7 @@ async function processBackfill(env, args) {
     try {
       await backfillOnePr(env, args, pr);
     } catch (err) {
-      console.error(`[noxconnect backfill] PR #${pr.number} failed:`, err);
+      console.error(`[noxhere backfill] PR #${pr.number} failed:`, err);
     }
   }
 }

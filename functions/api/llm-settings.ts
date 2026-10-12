@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { getCtx, jsonResponse, errorResponse } from "../lib/db";
 import { AI_MODE_DISABLED, AI_MODE_MANAGED, MANAGED_LLM } from "../lib/llm-config";
-import { getNoxFeedGenerationInfo } from "../lib/noxfeed-response.js";
+import { getActivityGenerationInfo } from "../lib/activity-response.js";
 import { validate } from "../lib/validate";
 
 interface Ctx {
-  env: { DB: D1Database; ANTHROPIC_API_KEY?: string; NOXFEED_RESPONSE?: unknown };
+  env: { DB: D1Database; ANTHROPIC_API_KEY?: string; ACTIVITY_RESPONSE?: unknown };
   data: { orgId: number; projectId?: string | null; orgLogin: string; userLogin?: string; isAdmin: boolean };
   request: Request;
 }
@@ -26,28 +26,28 @@ type ManagedServiceStatus = {
 };
 
 async function managedStatus(context: Ctx) {
-  let noxfeed: ManagedServiceStatus = {
+  let activity: ManagedServiceStatus = {
     provider: MANAGED_LLM.provider,
     model: MANAGED_LLM.model,
     available: false,
   };
   try {
-    noxfeed = await getNoxFeedGenerationInfo(context.env);
+    activity = await getActivityGenerationInfo(context.env);
   } catch (error) {
-    console.error("[noxconnect llm-settings] NoxFeed generation info unavailable:", error);
+    console.error("[noxhere llm-settings] Activity generation info unavailable:", error);
   }
 
-  const noxconnect: ManagedServiceStatus = {
+  const noxhere: ManagedServiceStatus = {
     provider: MANAGED_LLM.provider,
     model: MANAGED_LLM.model,
     available: Boolean(context.env.ANTHROPIC_API_KEY),
   };
 
   return {
-    provider: noxfeed.provider,
-    model: noxfeed.model,
-    available: noxfeed.available && noxconnect.available,
-    services: { noxfeed, noxconnect },
+    provider: activity.provider,
+    model: activity.model,
+    available: activity.available && noxhere.available,
+    services: { activity, noxhere },
   };
 }
 

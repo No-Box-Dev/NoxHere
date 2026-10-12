@@ -10,7 +10,7 @@ export async function onRequestGet(context) {
     const response = await fetch("https://api.github.com/rate_limit", { headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
-      "User-Agent": "noxconnect",
+      "User-Agent": "noxhere",
       "X-GitHub-Api-Version": "2022-11-28",
     } });
     const data = await response.json().catch(() => ({}));

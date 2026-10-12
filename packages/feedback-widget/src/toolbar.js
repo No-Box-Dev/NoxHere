@@ -56,35 +56,35 @@ const ICONS = {
 export function createToolbarHTML(opts = {}) {
   const showElementPicker = opts.showElementPicker !== false;
   const elementGroup = showElementPicker ? `
-    <div class="noxspot-tool-group">
-      <button class="noxspot-tool-btn active" data-tool="element" title="Select Element" aria-label="Select element">
+    <div class="feedback-tool-group">
+      <button class="feedback-tool-btn active" data-tool="element" title="Select Element" aria-label="Select element">
         ${ICONS.element}
       </button>
     </div>
-    <div class="noxspot-tool-divider"></div>
+    <div class="feedback-tool-divider"></div>
   ` : '';
   return `
     ${elementGroup}
-    <div class="noxspot-tool-group">
-      <button class="noxspot-tool-btn${showElementPicker ? '' : ' active'}" data-tool="arrow" title="Arrow" aria-label="Draw arrow">
+    <div class="feedback-tool-group">
+      <button class="feedback-tool-btn${showElementPicker ? '' : ' active'}" data-tool="arrow" title="Arrow" aria-label="Draw arrow">
         ${ICONS.arrow}
       </button>
-      <button class="noxspot-tool-btn" data-tool="rectangle" title="Box" aria-label="Draw rectangle">
+      <button class="feedback-tool-btn" data-tool="rectangle" title="Box" aria-label="Draw rectangle">
         ${ICONS.rectangle}
       </button>
-      <button class="noxspot-tool-btn" data-tool="text" title="Text" aria-label="Add text">
+      <button class="feedback-tool-btn" data-tool="text" title="Text" aria-label="Add text">
         ${ICONS.text}
       </button>
-      <button class="noxspot-tool-btn" data-tool="draw" title="Freeform" aria-label="Freeform draw">
+      <button class="feedback-tool-btn" data-tool="draw" title="Freeform" aria-label="Freeform draw">
         ${ICONS.draw}
       </button>
     </div>
-    <div class="noxspot-tool-divider"></div>
-    <div class="noxspot-tool-group">
-      <button class="noxspot-tool-btn" data-action="undo" title="Undo" aria-label="Undo last action">
+    <div class="feedback-tool-divider"></div>
+    <div class="feedback-tool-group">
+      <button class="feedback-tool-btn" data-action="undo" title="Undo" aria-label="Undo last action">
         ${ICONS.undo}
       </button>
-      <button class="noxspot-tool-btn" data-action="clear" title="Clear all" aria-label="Clear all annotations">
+      <button class="feedback-tool-btn" data-action="clear" title="Clear all" aria-label="Clear all annotations">
         ${ICONS.clear}
       </button>
     </div>
@@ -133,7 +133,7 @@ export function initToolbar(container, options = {}) {
 
   // Pick the initial active tool from the rendered HTML — element when
   // present, arrow as the fallback when the picker has been disabled.
-  activeButton = container.querySelector('.noxspot-tool-btn.active') || container.querySelector('[data-tool]');
+  activeButton = container.querySelector('.feedback-tool-btn.active') || container.querySelector('[data-tool]');
   const initialTool = activeButton?.dataset?.tool;
   if (initialTool && initialTool !== 'element') {
     setTool(initialTool);

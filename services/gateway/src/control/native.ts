@@ -7,7 +7,7 @@ import {
 import { apiError, boundedJson } from "./http";
 import { persistIdentityClaims, validIdentityExchangeResult, type IdentityService } from "./oauth";
 
-export const NATIVE_CLIENTS = ["noxconnect-cli", "noxfeed-mac"] as const;
+export const NATIVE_CLIENTS = ["noxhere-cli", "activity-mac"] as const;
 const Client = z.enum(NATIVE_CLIENTS);
 const Start = z.object({ client: Client }).strict();
 const Poll = z.object({ client: Client, device_code: z.string().startsWith("noxid_").max(96) }).strict();

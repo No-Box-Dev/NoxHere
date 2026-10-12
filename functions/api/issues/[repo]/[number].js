@@ -8,7 +8,7 @@ const ISSUE_COLUMNS = [
 ].join(", ");
 
 // GET /api/issues/:repo/:number — one cached issue. Returns 404 for unknown
-// numbers and for repos not in the active set (drafts, archived, noxconnect).
+// numbers and for repos not in the active set (drafts, archived, noxhere).
 export async function onRequestGet(context) {
   const { orgId, orgLogin, projectId } = getCtx(context);
   const { repo, number } = context.params;

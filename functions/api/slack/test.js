@@ -2,20 +2,20 @@ import { getCtx, jsonResponse, errorResponse } from "../../lib/db";
 import { actionableSlackError, checkSlackOrgHealth, getSlackChannel, resolveSlackInstall } from "../../lib/slack";
 import { deliverResolvedSlackMessage } from "../../lib/transports/slack";
 import { markSlackChannelIssue, markSlackChannelVerified } from "../../lib/slack-channel-status";
-import { getNoxCueDigestResponse, getNoxCueTestResponse } from "../../lib/noxcue-response.js";
-import { completedPeriodAt, loadNoxCueDigestData } from "../../lib/noxcue-digest-data.js";
-import { loadEnabledNoxCueMetricKeys, selectNoxCueDigestMetrics } from "../../lib/noxcue-project-metrics.js";
-import { getNoxSpotDailyDigestResponse, getNoxSpotTestResponse } from "../../lib/noxspot-response.js";
-import { summarizeNoxSpotResolutions } from "../../lib/noxspot-digest-ai.js";
+import { getTelemetryDigestResponse, getTelemetryTestResponse } from "../../lib/telemetry-response.js";
+import { completedPeriodAt, loadTelemetryDigestData } from "../../lib/telemetry-digest-data.js";
+import { loadEnabledTelemetryMetricKeys, selectTelemetryDigestMetrics } from "../../lib/telemetry-project-metrics.js";
+import { getFeedbackDailyDigestResponse, getFeedbackTestResponse } from "../../lib/feedback-response.js";
+import { summarizeFeedbackResolutions } from "../../lib/feedback-digest-ai.js";
 import {
   completedDailyDigestPeriod,
-  loadNoxSpotDailyDigestData,
-} from "../../../services/scheduler/src/noxspot-digests.js";
-import { getNoxFeedTestResponse } from "../../lib/noxfeed-response.js";
-import { buildNoxTicketTestResponse } from "../../products/noxticket/response.js";
+  loadFeedbackDailyDigestData,
+} from "../../../services/scheduler/src/feedback-digests.js";
+import { getActivityTestResponse } from "../../lib/activity-response.js";
+import { buildPlanningTestResponse } from "../../products/planning/response.js";
 
 // POST /api/slack/test
-// Body: { connectionId?: string, channelId?: string, kind: "connection" | "fallback" | "noxcue" | "noxcue_alerts" | "noxspot" | "noxticket" | "noxfeed_posts" | "noxfeed_release_notes" | "noxfeed_daily_summary", sourceId?: string }
+// Body: { connectionId?: string, channelId?: string, kind: "connection" | "fallback" | "telemetry" | "telemetry_alerts" | "feedback" | "planning" | "activity_posts" | "activity_release_notes" | "activity_daily_summary", sourceId?: string }
 //
 // Admin-only. Posts a sample message to the given channel so the admin can
 // verify the bot is installed in the right workspace + the channel routes
@@ -32,13 +32,13 @@ export async function onRequestPost(context) {
   const connectionId = typeof body?.connectionId === "string" ? body.connectionId.trim() : null;
   const channelId = typeof body?.channelId === "string" ? body.channelId.trim() : "";
   const sourceId = typeof body?.sourceId === "string" ? body.sourceId.trim() : "";
-  const legacyKinds = { narrative: "noxfeed_posts", release_notes: "noxfeed_release_notes" };
+  const legacyKinds = { narrative: "activity_posts", release_notes: "activity_release_notes" };
   const allowedKinds = new Set([
-    "connection", "fallback", "noxcue", "noxcue_alerts", "noxspot", "noxticket", "noxfeed",
-    "noxfeed_posts", "noxfeed_release_notes", "noxfeed_daily_summary",
+    "connection", "fallback", "telemetry", "telemetry_alerts", "feedback", "planning", "activity",
+    "activity_posts", "activity_release_notes", "activity_daily_summary",
   ]);
   const kind = legacyKinds[body?.kind] ?? (allowedKinds.has(body?.kind) ? body.kind : null);
-  if (!kind) return errorResponse("This Slack test type is not supported. Refresh NoxConnect and run the test again.", 400);
+  if (!kind) return errorResponse("This Slack test type is not supported. Refresh NoxHere and run the test again.", 400);
   if (kind === "connection") {
     if (!connectionId) return errorResponse("Choose a Slack workspace before sending a connection test.", 400);
     if (!channelId) return errorResponse("Choose a Slack channel before sending a connection test.", 400);
@@ -55,18 +55,18 @@ export async function onRequestPost(context) {
 
   try {
     let payload;
-    if (kind === "noxcue") {
+    if (kind === "telemetry") {
       if (sourceId) {
         const source = await context.env.DB.prepare(
           `SELECT name, timezone, project_id FROM cue_sources WHERE id = ? AND org_id = ?`,
         ).bind(sourceId, orgId).first();
-        if (!source) return errorResponse("This NoxCue source no longer exists. Refresh the source list and choose an existing source.", 404);
+        if (!source) return errorResponse("This Telemetry source no longer exists. Refresh the source list and choose an existing source.", 404);
         const period = completedPeriodAt(source.timezone);
-        const digest = await loadNoxCueDigestData(context.env.DB, sourceId, period);
-        if (!digest.hasData) return errorResponse("This NoxCue source has no completed daily user statistics yet. Send user events for the source, wait until its first day is complete, then test again.", 404);
-        const enabledKeys = await loadEnabledNoxCueMetricKeys(context.env.DB, orgId, source.project_id, sourceId);
-        const selected = selectNoxCueDigestMetrics(digest, enabledKeys);
-        payload = (await getNoxCueDigestResponse(
+        const digest = await loadTelemetryDigestData(context.env.DB, sourceId, period);
+        if (!digest.hasData) return errorResponse("This Telemetry source has no completed daily user statistics yet. Send user events for the source, wait until its first day is complete, then test again.", 404);
+        const enabledKeys = await loadEnabledTelemetryMetricKeys(context.env.DB, orgId, source.project_id, sourceId);
+        const selected = selectTelemetryDigestMetrics(digest, enabledKeys);
+        payload = (await getTelemetryDigestResponse(
           context.env,
           source.name,
           period,
@@ -77,17 +77,17 @@ export async function onRequestPost(context) {
           source.project_id ? { organizationId: orgId, projectId: source.project_id, sourceId } : undefined,
         )).message;
       } else {
-        payload = (await getNoxCueTestResponse(context.env, orgLogin)).message;
+        payload = (await getTelemetryTestResponse(context.env, orgLogin)).message;
       }
-    } else if (kind === "noxcue_alerts") {
+    } else if (kind === "telemetry_alerts") {
       payload = {
-        text: `NoxCue alert delivery test for ${orgLogin}`,
+        text: `Telemetry alert delivery test for ${orgLogin}`,
         blocks: [
-          { type: "header", text: { type: "plain_text", text: "🚨 NoxCue alert delivery test", emoji: true } },
-          { type: "section", text: { type: "mrkdwn", text: `Immediate app errors for *${orgLogin}* will be delivered to this channel through NoxConnect.` } },
+          { type: "header", text: { type: "plain_text", text: "🚨 Telemetry alert delivery test", emoji: true } },
+          { type: "section", text: { type: "mrkdwn", text: `Immediate app errors for *${orgLogin}* will be delivered to this channel through NoxHere.` } },
         ],
       };
-    } else if (kind === "noxspot") {
+    } else if (kind === "feedback") {
       if (sourceId) {
         const site = await context.env.DB.prepare(
           `SELECT site.id, site.org_id, site.project_id, site.repo, site.name, site.widget_config,
@@ -97,11 +97,11 @@ export async function onRequestPost(context) {
              JOIN orgs org ON org.id = site.org_id
             WHERE site.id = ? AND site.org_id = ? LIMIT 1`,
         ).bind(sourceId, orgId).first();
-        if (!site) return errorResponse("This NoxSpot site no longer exists. Refresh NoxConnect and try again.", 404);
+        if (!site) return errorResponse("This Feedback site no longer exists. Refresh NoxHere and try again.", 404);
         const period = completedDailyDigestPeriod(Date.now());
-        const digest = await loadNoxSpotDailyDigestData(context.env.DB, site, period);
-        const solved = await summarizeNoxSpotResolutions(context.env, orgId, context.data.projectId, digest.solved);
-        payload = (await getNoxSpotDailyDigestResponse(
+        const digest = await loadFeedbackDailyDigestData(context.env.DB, site, period);
+        const solved = await summarizeFeedbackResolutions(context.env, orgId, context.data.projectId, digest.solved);
+        payload = (await getFeedbackDailyDigestResponse(
           context.env,
           `${site.name} — test`,
           period,
@@ -110,33 +110,33 @@ export async function onRequestPost(context) {
           digest.totals,
         )).message;
       } else {
-        payload = (await getNoxSpotTestResponse(context.env, orgLogin)).message;
+        payload = (await getFeedbackTestResponse(context.env, orgLogin)).message;
       }
-    } else if (kind === "noxticket") {
-      payload = context.env.NOXTICKET_SERVICE?.buildTestMessage
-        ? await context.env.NOXTICKET_SERVICE.buildTestMessage(orgLogin)
-        : buildNoxTicketTestResponse(orgLogin).message;
-    } else if (kind === "noxfeed_daily_summary") {
+    } else if (kind === "planning") {
+      payload = context.env.PLANNING_SERVICE?.buildTestMessage
+        ? await context.env.PLANNING_SERVICE.buildTestMessage(orgLogin)
+        : buildPlanningTestResponse(orgLogin).message;
+    } else if (kind === "activity_daily_summary") {
       payload = {
-        text: `NoxFeed daily summary delivery test for ${orgLogin}`,
+        text: `Activity daily summary delivery test for ${orgLogin}`,
         blocks: [
           { type: "header", text: { type: "plain_text", text: "What happened today — test", emoji: true } },
           { type: "section", text: { type: "mrkdwn", text: `Daily summaries for *${orgLogin}* will be delivered to this channel at the saved local time.` } },
         ],
       };
-    } else if (kind === "noxfeed" || kind === "noxfeed_posts" || kind === "noxfeed_release_notes") {
-      const stream = kind === "noxfeed_posts" ? "posts" : kind === "noxfeed_release_notes" ? "release_notes" : "all";
-      payload = (await getNoxFeedTestResponse(context.env, orgLogin, stream)).message;
+    } else if (kind === "activity" || kind === "activity_posts" || kind === "activity_release_notes") {
+      const stream = kind === "activity_posts" ? "posts" : kind === "activity_release_notes" ? "release_notes" : "all";
+      payload = (await getActivityTestResponse(context.env, orgLogin, stream)).message;
     } else payload = kind === "connection" ? {
-        text: `NoxConnect workspace test for ${orgLogin}`,
+        text: `NoxHere workspace test for ${orgLogin}`,
         blocks: [
-          { type: "header", text: { type: "plain_text", text: "NoxConnect workspace test", emoji: true } },
+          { type: "header", text: { type: "plain_text", text: "NoxHere workspace test", emoji: true } },
           { type: "section", text: { type: "mrkdwn", text: `Workspace authentication and channel delivery are working for *${orgLogin}*.` } },
         ],
       }
     : kind === "fallback" ? {
-        text: `NoxConnect fallback test for ${orgLogin}`,
-        blocks: [{ type: "section", text: { type: "mrkdwn", text: `*NoxConnect — organization fallback test*\nUnassigned service messages for \`${orgLogin}\` can be delivered here.` } }],
+        text: `NoxHere fallback test for ${orgLogin}`,
+        blocks: [{ type: "section", text: { type: "mrkdwn", text: `*NoxHere — organization fallback test*\nUnassigned service messages for \`${orgLogin}\` can be delivered here.` } }],
       }
       : null;
 
@@ -166,7 +166,7 @@ export async function onRequestPost(context) {
       try {
         const channel = await getSlackChannel(install.botToken, channelId);
         if (channel && !channel.is_member) {
-          deliveryError = Object.assign(new Error("NoxConnect is not a member of this channel"), { code: "not_in_channel" });
+          deliveryError = Object.assign(new Error("NoxHere is not a member of this channel"), { code: "not_in_channel" });
         }
       } catch { /* Keep Slack's original error when the channel is not visible to this workspace token. */ }
     }

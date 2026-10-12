@@ -16,8 +16,8 @@ export const TASK = {
   SYNC_REPO: "sync_repo",             // { orgId, accountLogin, installationId, repo }
   SPOT_CREATE_GITHUB_ISSUE: "spot_create_github_issue", // transient capture → GitHub issue
   SPOT_PREPARE_RESOLUTION_EMAIL: "spot_prepare_resolution_email", // GitHub evidence → managed AI summary
-  SPOT_SEND_RESOLUTION_EMAIL: "spot_send_resolution_email", // durable NoxSpot reporter notification
-  NOXCUE_GITHUB_ISSUE: "noxcue_github_issue", // durable NoxCue incident → create/update GitHub issue
+  SPOT_SEND_RESOLUTION_EMAIL: "spot_send_resolution_email", // durable Feedback reporter notification
+  TELEMETRY_GITHUB_ISSUE: "telemetry_github_issue", // durable Telemetry incident → create/update GitHub issue
   DELIVER_SLACK: "deliver_slack",       // { outboxId } → durable delivery_outbox row
   PROJECT_PLATFORM_EVENT: "project_platform_event", // { eventId } → idempotent read-model projections
   DELIVER_TRANSPORT: "deliver_transport", // { outboxId } → provider-neutral transport command
@@ -33,7 +33,7 @@ export async function enqueueTask(env, ownerId, deliveryId, message) {
     // Stamp ownerId/deliveryId so the consumer can attribute terminal failures.
     await env.TASK_QUEUE.send({ ...message, ownerId, deliveryId });
   } catch (err) {
-    console.error(`[noxconnect queue] enqueue ${message.type} failed:`, err?.message ?? err);
+    console.error(`[noxhere queue] enqueue ${message.type} failed:`, err?.message ?? err);
     // Best-effort failure logging — wrapped so the "never throws into the
     // caller" contract holds even if the import or recordFailure itself fails.
     try {
@@ -45,7 +45,7 @@ export async function enqueueTask(env, ownerId, deliveryId, message) {
         error: err,
       });
     } catch (logErr) {
-      console.error("[noxconnect queue] recordFailure failed:", logErr?.message ?? logErr);
+      console.error("[noxhere queue] recordFailure failed:", logErr?.message ?? logErr);
     }
   }
 }

@@ -6,10 +6,10 @@ const ALLOWED_IP = "3.134.147.250";
 const delivery = {
   RecordType: "Delivery",
   MessageID: "message-123",
-  MessageStream: "noxspot-resolutions",
+  MessageStream: "feedback-resolutions",
   Recipient: "Person@Example.com",
   DeliveredAt: "2026-09-18T01:02:03Z",
-  Tag: "noxspot-resolved",
+  Tag: "feedback-resolved",
 };
 
 function context(options: { secret?: string; ip?: string; auth?: string; body?: unknown; trace?: string } = {}) {
@@ -50,8 +50,8 @@ describe("Postmark webhook", () => {
       "trace:trace-123",
       "delivery",
       "message-123",
-      "noxspot-resolutions",
-      "noxspot-resolved",
+      "feedback-resolutions",
+      "feedback-resolved",
       expect.stringMatching(/^[a-f0-9]{64}$/),
       "delivered",
       "2026-09-18T01:02:03Z",
@@ -65,7 +65,7 @@ describe("Postmark webhook", () => {
     const input = context({ body: {
       RecordType: "Bounce",
       MessageID: "message-hard-bounce",
-      MessageStream: "noxspot-resolutions",
+      MessageStream: "feedback-resolutions",
       Recipient: "gone@example.com",
       BouncedAt: "2026-09-20T03:00:00Z",
       Type: "HardBounce",
@@ -79,7 +79,7 @@ describe("Postmark webhook", () => {
     expect(input.bind).toHaveBeenCalledWith(
       expect.stringMatching(/^[a-f0-9]{64}$/),
       "hard_bounce",
-      "noxspot-resolutions",
+      "feedback-resolutions",
       "2026-09-20T03:00:00Z",
     );
   });
@@ -88,7 +88,7 @@ describe("Postmark webhook", () => {
     const input = context({ body: {
       RecordType: "Bounce",
       MessageID: "message-soft-bounce",
-      MessageStream: "noxspot-resolutions",
+      MessageStream: "feedback-resolutions",
       Recipient: "busy@example.com",
       BouncedAt: "2026-09-20T03:00:00Z",
       Type: "Transient",

@@ -1,5 +1,5 @@
-// NoxConnect's user-token GitHub facade. Native and web product clients send
-// their OAuth token to NoxConnect; only this server-side module calls GitHub.
+// NoxHere's user-token GitHub facade. Native and web product clients send
+// their OAuth token to NoxHere; only this server-side module calls GitHub.
 
 const API = "https://api.github.com";
 
@@ -17,7 +17,7 @@ async function githubUserRequest(token, path) {
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
-      "User-Agent": "noxconnect",
+      "User-Agent": "noxhere",
       "X-GitHub-Api-Version": "2022-11-28",
     },
   });

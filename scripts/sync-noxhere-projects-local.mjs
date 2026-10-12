@@ -12,7 +12,7 @@ if (!Number.isInteger(orgId) || orgId <= 0) {
 
 // Read-only against production. Nothing in this script writes to the remote D1.
 function readRemote(command) {
-  const remote = spawnSync(runner, ["wrangler", "d1", "execute", "noxconnect", "--remote", "--command", command, "--json"], {
+  const remote = spawnSync(runner, ["wrangler", "d1", "execute", "noxhere", "--remote", "--command", command, "--json"], {
     cwd: process.cwd(),
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
@@ -67,7 +67,7 @@ for (const project of projects) {
   );
 }
 
-const local = spawnSync(runner, ["wrangler", "d1", "execute", "noxconnect", "--local", "--command", statements.join(";"), "--json"], {
+const local = spawnSync(runner, ["wrangler", "d1", "execute", "noxhere", "--local", "--command", statements.join(";"), "--json"], {
   cwd: process.cwd(),
   encoding: "utf8",
   maxBuffer: 16 * 1024 * 1024,
@@ -77,4 +77,4 @@ if (local.status !== 0) {
   process.stderr.write(local.stderr || local.stdout);
   process.exit(local.status ?? 1);
 }
-console.log(`Mirrored ${projects.length} active ${org.github_login} projects (org ${orgId}) into local NoxConnect.`);
+console.log(`Mirrored ${projects.length} active ${org.github_login} projects (org ${orgId}) into local NoxHere.`);

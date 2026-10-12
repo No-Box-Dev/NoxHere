@@ -4,11 +4,11 @@ import { appForApiPath } from "../apps.js";
 
 describe("shared authorization route registry", () => {
   for (const [path, service] of [
-    ["/api/v1/tasks", "noxticket"],
-    ["/api/v1/task-workflows", "noxticket"],
-    ["/api/v1/projects/playnist/cue/dashboard", "noxcue"],
-    ["/api/v1/spots/project-overview", "noxspot"],
-    ["/api/v1/feed", "noxfeed"],
+    ["/api/v1/tasks", "planning"],
+    ["/api/v1/task-workflows", "planning"],
+    ["/api/v1/projects/playnist/cue/dashboard", "telemetry"],
+    ["/api/v1/spots/project-overview", "feedback"],
+    ["/api/v1/feed", "activity"],
   ]) {
     it(`${path} is consistently classified as ${service}`, () => {
       expect(serviceForApiPath(path)).toBe(service);

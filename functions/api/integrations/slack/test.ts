@@ -12,11 +12,11 @@ interface Ctx {
 
 const ROUTES = {
   fallback: { field: "fallbackChannelId", connectionField: "fallbackConnectionId", kind: "fallback" },
-  noxcue: { field: "noxCueChannelId", connectionField: "noxCueConnectionId", kind: "noxcue" },
-  noxticket: { field: "noxTicketChannelId", connectionField: "noxTicketConnectionId", kind: "noxticket" },
-  noxfeed_posts: { field: "postsChannelId", connectionField: "postsConnectionId", kind: "noxfeed_posts" },
-  noxfeed_release_notes: { field: "releaseNotesChannelId", connectionField: "releaseNotesConnectionId", kind: "noxfeed_release_notes" },
-  noxfeed_daily_summary: { field: "dailySummaryChannelId", connectionField: "dailySummaryConnectionId", kind: "noxfeed_daily_summary" },
+  telemetry: { field: "telemetryChannelId", connectionField: "telemetryConnectionId", kind: "telemetry" },
+  planning: { field: "planningChannelId", connectionField: "planningConnectionId", kind: "planning" },
+  activity_posts: { field: "postsChannelId", connectionField: "postsConnectionId", kind: "activity_posts" },
+  activity_release_notes: { field: "releaseNotesChannelId", connectionField: "releaseNotesConnectionId", kind: "activity_release_notes" },
+  activity_daily_summary: { field: "dailySummaryChannelId", connectionField: "dailySummaryConnectionId", kind: "activity_daily_summary" },
 } as const;
 
 const ROUTE_NAMES = Object.keys(ROUTES) as [keyof typeof ROUTES, ...(keyof typeof ROUTES)[]];
@@ -47,10 +47,10 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   if (!channelId || !connectionId) {
     try {
       const slack = (await readSlackSettings(context.env.DB, orgId, projectId)).slack;
-      channelId = body.route === "noxfeed_daily_summary"
+      channelId = body.route === "activity_daily_summary"
         ? channelId || String(slack[route.field] || "").trim()
         : channelId || resolveSavedSlackChannel(slack, route.field);
-      connectionId = body.route === "noxfeed_daily_summary"
+      connectionId = body.route === "activity_daily_summary"
         ? connectionId || String(slack[route.connectionField] || "").trim()
         : connectionId || String(slack[route.connectionField] || slack.fallbackConnectionId || "").trim();
     } catch (error) {

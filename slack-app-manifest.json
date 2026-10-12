@@ -3,13 +3,13 @@
     "major_version": 1
   },
   "display_information": {
-    "name": "NoxConnect",
-    "description": "Connects NoxCue, NoxFeed, NoxKey, NoxSpot, and NoxTicket to Slack.",
+    "name": "NoxHere",
+    "description": "Connects Telemetry, Activity, NoxKey, Feedback, and Planning to Slack.",
     "background_color": "#4A315F"
   },
   "features": {
     "bot_user": {
-      "display_name": "NoxConnect",
+      "display_name": "NoxHere",
       "always_online": false
     },
     "unfurl_domains": [

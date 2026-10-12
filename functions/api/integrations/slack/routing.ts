@@ -14,11 +14,11 @@ interface Ctx {
 
 const ROUTES: Record<string, { channel: string; connection: string }> = {
   fallback: { channel: "fallbackChannelId", connection: "fallbackConnectionId" },
-  noxcue: { channel: "noxCueChannelId", connection: "noxCueConnectionId" },
-  noxticket: { channel: "noxTicketChannelId", connection: "noxTicketConnectionId" },
-  noxfeed_posts: { channel: "postsChannelId", connection: "postsConnectionId" },
-  noxfeed_release_notes: { channel: "releaseNotesChannelId", connection: "releaseNotesConnectionId" },
-  noxfeed_daily_summary: { channel: "dailySummaryChannelId", connection: "dailySummaryConnectionId" },
+  telemetry: { channel: "telemetryChannelId", connection: "telemetryConnectionId" },
+  planning: { channel: "planningChannelId", connection: "planningConnectionId" },
+  activity_posts: { channel: "postsChannelId", connection: "postsConnectionId" },
+  activity_release_notes: { channel: "releaseNotesChannelId", connection: "releaseNotesConnectionId" },
+  activity_daily_summary: { channel: "dailySummaryChannelId", connection: "dailySummaryConnectionId" },
 };
 
 const RoutingPatch = z.object({
@@ -107,12 +107,12 @@ function routingResponse(settings: Record<string, unknown>) {
     routes,
     connections,
     resolution: {
-      noxcue: ["noxcue", "fallback"],
-      noxticket: ["noxticket", "fallback"],
-      noxfeed_posts: ["noxfeed_posts", "fallback"],
-      noxfeed_release_notes: ["noxfeed_release_notes", "fallback"],
-      noxfeed_daily_summary: ["noxfeed_daily_summary"],
-      noxspot: ["site channel", "fallback"],
+      telemetry: ["telemetry", "fallback"],
+      planning: ["planning", "fallback"],
+      activity_posts: ["activity_posts", "fallback"],
+      activity_release_notes: ["activity_release_notes", "fallback"],
+      activity_daily_summary: ["activity_daily_summary"],
+      feedback: ["site channel", "fallback"],
     },
   };
 }
@@ -195,12 +195,12 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     if (channelId && !connectionId) return errorResponse(`Choose a Slack workspace for the ${route} channel`, 409);
     slack[fields.connection] = connectionId;
   }
-  // Once either split NoxFeed route is managed through the canonical API,
+  // Once either split Activity route is managed through the canonical API,
   // retire the old combined value so it cannot silently override a cleared
   // posts or release-notes route during the compatibility window.
-  if (Object.prototype.hasOwnProperty.call(body.routes, "noxfeed_posts")
-    || Object.prototype.hasOwnProperty.call(body.routes, "noxfeed_release_notes")) {
-    delete slack.noxFeedChannelId;
+  if (Object.prototype.hasOwnProperty.call(body.routes, "activity_posts")
+    || Object.prototype.hasOwnProperty.call(body.routes, "activity_release_notes")) {
+    delete slack.activityChannelId;
   }
   const nextSettings = { ...settings, slack };
   const request = new Request(context.request.url, {

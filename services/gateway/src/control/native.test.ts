@@ -36,20 +36,20 @@ function identity(overrides: Partial<IdentityService> = {}): IdentityService {
 }
 
 describe("NoxHere native authentication", () => {
-  it("accepts the account-wide NoxConnect CLI client", async () => {
+  it("accepts the account-wide NoxHere CLI client", async () => {
     const provider = identity();
     const response = await handleNativeAuth(new Request(
       "https://app.noxhere.com/api/v1/auth/native/device/start",
-      { method: "POST", body: JSON.stringify({ client: "noxconnect-cli" }) },
+      { method: "POST", body: JSON.stringify({ client: "noxhere-cli" }) },
     ), database().db, provider);
     expect(response?.status).toBe(200);
-    expect(provider.startGitHubDeviceAuth).toHaveBeenCalledWith({ client: "noxconnect-cli" });
+    expect(provider.startGitHubDeviceAuth).toHaveBeenCalledWith({ client: "noxhere-cli" });
   });
 
   it("returns an opaque provider-device handle", async () => {
     const response = await handleNativeAuth(new Request(
       "https://app.noxhere.com/api/v1/auth/native/device/start",
-      { method: "POST", body: JSON.stringify({ client: "noxfeed-mac" }) },
+      { method: "POST", body: JSON.stringify({ client: "activity-mac" }) },
     ), database().db, identity());
     expect(response?.status).toBe(200);
     await expect(response?.json()).resolves.toMatchObject({
@@ -72,7 +72,7 @@ describe("NoxHere native authentication", () => {
     });
     const response = await handleNativeAuth(new Request(
       "https://app.noxhere.com/api/v1/auth/native/device/poll",
-      { method: "POST", body: JSON.stringify({ client: "noxfeed-mac", device_code: "noxid_attempt" }) },
+      { method: "POST", body: JSON.stringify({ client: "activity-mac", device_code: "noxid_attempt" }) },
     ), db, provider);
     expect(response?.status).toBe(200);
     const body = await response?.json() as { access_token: string; refresh_token: string };
@@ -89,7 +89,7 @@ describe("NoxHere native authentication", () => {
   it("preserves provider polling backoff", async () => {
     const response = await handleNativeAuth(new Request(
       "https://app.noxhere.com/api/auth/native/device/poll",
-      { method: "POST", body: JSON.stringify({ client: "noxfeed-mac", device_code: "noxid_attempt" }) },
+      { method: "POST", body: JSON.stringify({ client: "activity-mac", device_code: "noxid_attempt" }) },
     ), database().db, identity());
     expect(response?.status).toBe(202);
     expect(response?.headers.get("Retry-After")).toBe("5");

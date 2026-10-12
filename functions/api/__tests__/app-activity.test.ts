@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { onRequestPost } from "../app-activity";
 
-function makeContext(existing: { registered_at: string; last_active_period: string } | null, app?: "noxconnect" | "noxfeed") {
+function makeContext(existing: { registered_at: string; last_active_period: string } | null, app?: "noxhere" | "activity") {
   const writes: Array<{ sql: string; binds: unknown[] }> = [];
   const requests: Request[] = [];
   const db = {
@@ -23,10 +23,10 @@ function makeContext(existing: { registered_at: string; last_active_period: stri
     context: {
       env: {
         DB: db,
-        NOXCUE_INGEST_KEY: `nox_secret_${"a".repeat(40)}`,
-        NOXCUE_NOXFEED_INGEST_KEY: `nox_secret_${"b".repeat(40)}`,
+        TELEMETRY_INGEST_KEY: `nox_secret_${"a".repeat(40)}`,
+        TELEMETRY_ACTIVITY_INGEST_KEY: `nox_secret_${"b".repeat(40)}`,
         NOXHERE_IDENTITY_HASH_KEY: "identity-secret-key-that-is-at-least-32-bytes",
-        NOXCUE_INGEST: { fetch },
+        TELEMETRY_INGEST: { fetch },
       },
       data: { userLogin: "Alice" },
       request: new Request("https://app.noxhere.com/api/app-activity", app ? {
@@ -53,7 +53,7 @@ describe("POST /api/app-activity", () => {
       userId: "h1_primary_j4qar7Kpm3K3iUdOzKhKHtulpoo6u_2DZ-ElmSFlLp0",
     });
     expect(state.requests[0]!.headers.get("X-Nox-Ingest-Key")).toBe(`nox_secret_${"a".repeat(40)}`);
-    expect(state.writes.some(({ sql }) => sql.includes("INSERT INTO noxcue_app_user_activity"))).toBe(true);
+    expect(state.writes.some(({ sql }) => sql.includes("INSERT INTO telemetry_app_user_activity"))).toBe(true);
   });
 
   it("does not emit a duplicate event for an already-active user", async () => {
@@ -75,20 +75,20 @@ describe("POST /api/app-activity", () => {
       type: "user.active",
       userId: "h1_primary_j4qar7Kpm3K3iUdOzKhKHtulpoo6u_2DZ-ElmSFlLp0",
     });
-    expect(state.writes.some(({ sql }) => sql.includes("UPDATE noxcue_app_user_activity"))).toBe(true);
+    expect(state.writes.some(({ sql }) => sql.includes("UPDATE telemetry_app_user_activity"))).toBe(true);
   });
 
-  it("keeps NoxFeed users in its own source", async () => {
-    const state = makeContext(null, "noxfeed");
+  it("keeps Activity users in its own source", async () => {
+    const state = makeContext(null, "activity");
     const response = await onRequestPost(state.context as never);
 
     expect(response.status).toBe(202);
     expect(state.requests[0]!.headers.get("X-Nox-Ingest-Key")).toBe(`nox_secret_${"b".repeat(40)}`);
-    expect(state.writes.find(({ sql }) => sql.includes("INSERT INTO noxcue_app_user_activity"))?.binds[0]).toBe("noxfeed");
-    expect(await response.json()).toMatchObject({ app: "noxfeed", recorded: "registered" });
+    expect(state.writes.find(({ sql }) => sql.includes("INSERT INTO telemetry_app_user_activity"))?.binds[0]).toBe("activity");
+    expect(await response.json()).toMatchObject({ app: "activity", recorded: "registered" });
   });
 
-  it("does not advance local state when NoxCue rejects the event", async () => {
+  it("does not advance local state when Telemetry rejects the event", async () => {
     const state = makeContext(null);
     state.fetch.mockResolvedValueOnce(new Response("no", { status: 401 }));
     const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);

@@ -1,13 +1,13 @@
-// /api/features/:number — update or close one feature. NoxTicket owns the data.
+// /api/features/:number — update or close one feature. Planning owns the data.
 // PATCH covers title, status, backlog, owners, plan, and state (reopen/close);
 // DELETE is kept as the close shortcut.
 
 import { getCtx, errorResponse } from "../../lib/db";
-import { callFeatureService, delegateFeatureMutation } from "../../lib/noxticket-features";
-import type { NoxTicketEnvironment } from "../../lib/noxticket-service";
+import { callFeatureService, delegateFeatureMutation } from "../../lib/planning-features";
+import type { PlanningEnvironment } from "../../lib/planning-service";
 
 interface Ctx {
-  env: NoxTicketEnvironment;
+  env: PlanningEnvironment;
   data: { orgId: number; projectId?: string | null; userLogin: string; isAdmin?: boolean };
   request: Request;
   params?: { number?: string };

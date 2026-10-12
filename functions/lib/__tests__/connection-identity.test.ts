@@ -118,7 +118,7 @@ describe("GitHub OAuth identity connection", () => {
       DB: db,
       ENCRYPTION_KEY: "11".repeat(32),
     }, {
-      client: "noxfeed-mac",
+      client: "activity-mac",
       accessToken: "github-access-secret",
       refreshToken: "github-refresh-secret",
     });
@@ -161,7 +161,7 @@ describe("GitHub OAuth identity connection", () => {
       DB: db,
       GITHUB_APP_CLIENT_ID: "client-id",
       ENCRYPTION_KEY: "11".repeat(32),
-    }, { client: "noxfeed-mac" });
+    }, { client: "activity-mac" });
     expect(result.deviceCode).toMatch(/^noxid_/);
     expect(JSON.stringify(result)).not.toContain("github-provider-device-secret");
     const insert = calls.find((call) => call.sql.includes("INSERT INTO identity_device_authorizations"));
@@ -169,7 +169,7 @@ describe("GitHub OAuth identity connection", () => {
     expect(String(insert?.binds[2])).toContain(":");
   });
 
-  it("accepts the account-wide NoxConnect CLI client", async () => {
+  it("accepts the account-wide NoxHere CLI client", async () => {
     const { db, calls } = database();
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({
       device_code: "github-provider-device-secret",
@@ -182,8 +182,8 @@ describe("GitHub OAuth identity connection", () => {
       DB: db,
       GITHUB_APP_CLIENT_ID: "client-id",
       ENCRYPTION_KEY: "11".repeat(32),
-    }, { client: "noxconnect-cli" });
+    }, { client: "noxhere-cli" });
     const insert = calls.find((call) => call.sql.includes("INSERT INTO identity_device_authorizations"));
-    expect(insert?.binds).toContain("noxconnect-cli");
+    expect(insert?.binds).toContain("noxhere-cli");
   });
 });

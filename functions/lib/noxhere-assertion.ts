@@ -25,7 +25,7 @@ export interface NoxHereAuthContext {
 interface NoxHereAssertion {
   version: 1;
   issuer: "noxhere";
-  audience: "noxconnect";
+  audience: "noxhere";
   issuedAt: number;
   expiresAt: number;
   method: string;
@@ -57,7 +57,7 @@ export async function verifyNoxHereAssertion(
   const url = new URL(request.url);
   if (assertion.version !== 1
       || assertion.issuer !== "noxhere"
-      || assertion.audience !== "noxconnect"
+      || assertion.audience !== "noxhere"
       || assertion.expiresAt < now
       || assertion.expiresAt > now + 60
       || assertion.issuedAt > now + 5
@@ -104,7 +104,7 @@ function validGuestAccess(value: NoxHereAuthContext["guestAccess"]): boolean {
     && projectId.length <= 240
     && (services === null || (Array.isArray(services)
       && services.length <= 4
-      && services.every((service) => ["noxticket", "noxfeed", "noxspot", "noxcue"].includes(service)))));
+      && services.every((service) => ["planning", "activity", "feedback", "telemetry"].includes(service)))));
 }
 
 function base64UrlDecode(value: string): Uint8Array {

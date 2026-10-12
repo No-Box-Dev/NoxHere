@@ -13,7 +13,7 @@ const LOADING_SELECTOR = [
 function hasHostLoadingIndicator() {
   try {
     return [...document.querySelectorAll(LOADING_SELECTOR)]
-      .some((node) => !node.closest('.noxspot-overlay, .noxspot-trigger, .noxspot-toast'));
+      .some((node) => !node.closest('.feedback-overlay, .feedback-trigger, .feedback-toast'));
   } catch {
     return false;
   }
@@ -28,7 +28,7 @@ function nextPaint() {
 
 /**
  * Give client-rendered host applications a bounded chance to finish their
- * initial render before NoxSpot clones the page. `document.readyState` is not
+ * initial render before Feedback clones the page. `document.readyState` is not
  * sufficient for React/Vue/etc: their data-driven render commonly happens
  * after the document is already `complete`.
  *

@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { createNoxCue as createBrowserNoxCue } from "./browser.js";
-import { createNoxCue as createServerNoxCue, createNoxCueFromEnv, createNoxCueSpanProcessor } from "./server.js";
+import { createTelemetry as createBrowserTelemetry } from "./browser.js";
+import { createTelemetry as createServerTelemetry, createTelemetryFromEnv, createTelemetrySpanProcessor } from "./server.js";
 
 const browserKey = `nox_pub_${"a".repeat(32)}`;
 const serverKey = `nox_secret_${"b".repeat(32)}`;
 const identityHashKey = "identity-secret-key-that-is-at-least-32-bytes";
 const protectedUser42 = "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40";
-const wireFixtures = JSON.parse(readFileSync(new URL("../../../../services/cue/packages/sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
+const wireFixtures = JSON.parse(readFileSync(new URL("../../../../services/telemetry/packages/sdk-contract/wire-fixtures.json", import.meta.url), "utf8")) as Array<{
   name: string;
   operation: "user.registered" | "activity";
   arguments: { userId: string; metric?: `custom.${string}` };
@@ -25,13 +25,13 @@ function accepted(eventId = "stored-event") {
 describe("@noxhere/sdk telemetry", () => {
   it.each(wireFixtures)("matches the shared $name wire fixture", async (fixture) => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const noxcue = createServerNoxCue({
+    const telemetry = createServerTelemetry({
       key: serverKey, identityHashKey, environment: "production", release: "app@abc123", fetch: request,
     });
     if (fixture.operation === "user.registered") {
-      await noxcue.user.registered(fixture.arguments.userId, fixture.options);
+      await telemetry.user.registered(fixture.arguments.userId, fixture.options);
     } else {
-      await noxcue.activity(fixture.arguments.metric!, fixture.arguments.userId, fixture.options);
+      await telemetry.activity(fixture.arguments.metric!, fixture.arguments.userId, fixture.options);
     }
     const payload = JSON.parse(String(request.mock.calls[0]![1]?.body));
     if (!("eventId" in fixture.expected)) delete payload.eventId;
@@ -40,7 +40,7 @@ describe("@noxhere/sdk telemetry", () => {
 
   it("sends a one-line server-side registered-user event through the stable gateway", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const noxcue = createServerNoxCue({
+    const telemetry = createServerTelemetry({
       key: serverKey,
       identityHashKey,
       environment: "production",
@@ -48,10 +48,10 @@ describe("@noxhere/sdk telemetry", () => {
       fetch: request,
     });
 
-    await expect(noxcue.user.registered("user-42")).resolves.toMatchObject({ ok: true, eventId: "stored-event", status: 202 });
+    await expect(telemetry.user.registered("user-42")).resolves.toMatchObject({ ok: true, eventId: "stored-event", status: 202 });
     expect(request).toHaveBeenCalledOnce();
     const [url, init] = request.mock.calls[0]!;
-    expect(url).toBe("https://app.noxhere.com/api/v1/cues/public/events");
+    expect(url).toBe("https://app.noxhere.com/api/v1/telemetry/public/events");
     expect(init?.headers).toMatchObject({ "X-Nox-Ingest-Key": serverKey });
     expect(init?.headers).toMatchObject({ "User-Agent": "noxhere-typescript/0.2.1" });
     expect(JSON.parse(String(init?.body))).toMatchObject({
@@ -75,18 +75,18 @@ describe("@noxhere/sdk telemetry", () => {
     vi.stubEnv("NOXHERE_IDENTITY_HASH_KEY", identityHashKey);
     vi.stubEnv("NOXHERE_ENVIRONMENT", "test");
     vi.stubEnv("NOXHERE_TELEMETRY_MODE", "memory");
-    const noxcue = createNoxCueFromEnv();
+    const telemetry = createTelemetryFromEnv();
 
-    await expect(noxcue.events.reportGenerated("user-42", "report-7")).resolves.toMatchObject({ ok: true });
-    expect(noxcue.capturedEvents()).toHaveLength(1);
-    expect(noxcue.capturedEvents()[0]).toMatchObject({ name: "reports.generated", attributes: { reportId: "report-7" }, environment: "test" });
-    expect(JSON.stringify(noxcue.capturedEvents())).not.toContain("user-42");
+    await expect(telemetry.events.reportGenerated("user-42", "report-7")).resolves.toMatchObject({ ok: true });
+    expect(telemetry.capturedEvents()).toHaveLength(1);
+    expect(telemetry.capturedEvents()[0]).toMatchObject({ name: "reports.generated", attributes: { reportId: "report-7" }, environment: "test" });
+    expect(JSON.stringify(telemetry.capturedEvents())).not.toContain("user-42");
     vi.unstubAllEnvs();
   });
 
   it("bridges only explicitly marked OpenTelemetry spans", async () => {
-    const noxcue = createServerNoxCue({ key: serverKey, identityHashKey, mode: "memory" });
-    const processor = createNoxCueSpanProcessor(noxcue);
+    const telemetry = createServerTelemetry({ key: serverKey, identityHashKey, mode: "memory" });
+    const processor = createTelemetrySpanProcessor(telemetry);
     processor.onEnd({ attributes: { "http.route": "/patients/:id" } });
     processor.onEnd({ attributes: {
       "noxhere.event.name": "custom.report.shared",
@@ -95,32 +95,32 @@ describe("@noxhere/sdk telemetry", () => {
       "http.route": "/patients/:id",
     } });
     await processor.forceFlush();
-    expect(noxcue.capturedEvents()).toHaveLength(1);
-    expect(noxcue.capturedEvents()[0]).toMatchObject({ metric: "custom.report.shared", attributes: { channel: "email" } });
-    expect(JSON.stringify(noxcue.capturedEvents())).not.toContain("/patients/:id");
+    expect(telemetry.capturedEvents()).toHaveLength(1);
+    expect(telemetry.capturedEvents()[0]).toMatchObject({ metric: "custom.report.shared", attributes: { channel: "email" } });
+    expect(JSON.stringify(telemetry.capturedEvents())).not.toContain("/patients/:id");
   });
 
   it("rejects the wrong key kind without making a request", async () => {
     const request = vi.fn<typeof fetch>();
-    const noxcue = createBrowserNoxCue({ key: serverKey, environment: "production", fetch: request });
+    const telemetry = createBrowserTelemetry({ key: serverKey, environment: "production", fetch: request });
 
-    await expect(noxcue.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
+    await expect(telemetry.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
     expect(request).not.toHaveBeenCalled();
   });
 
   it("does not expose trusted statistics methods in the browser", () => {
-    const noxcue = createBrowserNoxCue({ key: browserKey, environment: "production" });
-    expect("user" in noxcue).toBe(false);
-    expect("activity" in noxcue).toBe(false);
+    const telemetry = createBrowserTelemetry({ key: browserKey, environment: "production" });
+    expect("user" in telemetry).toBe(false);
+    expect("activity" in telemetry).toBe(false);
   });
 
   it("retries a transient response with the same event identity", async () => {
     const request = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response("busy", { status: 503, headers: { "Retry-After": "0" } }))
       .mockResolvedValueOnce(accepted("stored-after-retry"));
-    const noxcue = createServerNoxCue({ key: serverKey, identityHashKey, environment: "production", fetch: request });
+    const telemetry = createServerTelemetry({ key: serverKey, identityHashKey, environment: "production", fetch: request });
 
-    const result = await noxcue.activity("custom.journals.added", "user-42");
+    const result = await telemetry.activity("custom.journals.added", "user-42");
 
     expect(result).toMatchObject({ ok: true, eventId: "stored-after-retry" });
     expect(request).toHaveBeenCalledTimes(2);
@@ -131,7 +131,7 @@ describe("@noxhere/sdk telemetry", () => {
 
   it("redacts sensitive error evidence and automatically adds context", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const noxcue = createServerNoxCue({
+    const telemetry = createServerTelemetry({
       key: serverKey,
       environment: "staging",
       release: "playnist@2026.09.07",
@@ -142,7 +142,7 @@ describe("@noxhere/sdk telemetry", () => {
       status: 503,
     });
 
-    await noxcue.error(error, {
+    await telemetry.error(error, {
       title: "Signup failed",
       component: "auth",
       fingerprint: "auth/signup/provider",
@@ -164,11 +164,11 @@ describe("@noxhere/sdk telemetry", () => {
 
   it("preserves a wrapped operation error while reporting it in the background", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const noxcue = createBrowserNoxCue({ key: browserKey, environment: "production", fetch: request });
+    const telemetry = createBrowserTelemetry({ key: browserKey, environment: "production", fetch: request });
     const original = Object.assign(new Error("provider unavailable"), { status: 503, code: "AUTH_DOWN" });
 
-    await expect(noxcue.auth.signup(async () => { throw original; })).rejects.toBe(original);
-    await noxcue.flush();
+    await expect(telemetry.auth.signup(async () => { throw original; })).rejects.toBe(original);
+    await telemetry.flush();
 
     const event = JSON.parse(String(request.mock.calls[0]![1]?.body));
     expect(event).toMatchObject({
@@ -182,16 +182,16 @@ describe("@noxhere/sdk telemetry", () => {
 
   it("returns delivery failure instead of throwing into the app", async () => {
     const request = vi.fn<typeof fetch>(async () => { throw new TypeError("offline"); });
-    const noxcue = createBrowserNoxCue({ key: browserKey, environment: "production", fetch: request });
+    const telemetry = createBrowserTelemetry({ key: browserKey, environment: "production", fetch: request });
 
-    await expect(noxcue.error(new Error("Signup failed"), { title: "Signup failed" }))
+    await expect(telemetry.error(new Error("Signup failed"), { title: "Signup failed" }))
       .resolves.toMatchObject({ ok: false, error: "network_error" });
     expect(request).toHaveBeenCalledTimes(3);
   });
 
   it("preserves the released controls and request-scoped identity behavior", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const browser = createBrowserNoxCue({ key: browserKey, fetch: request, maxRetries: 0 });
+    const browser = createBrowserTelemetry({ key: browserKey, fetch: request, maxRetries: 0 });
     browser.identify({ id: "user-42", name: "Ada", email: "private@example.com" });
     await browser.auth.login(async () => ({ ok: true }));
     await browser.flush();
@@ -201,7 +201,7 @@ describe("@noxhere/sdk telemetry", () => {
     expect(JSON.stringify(feature)).not.toContain("private@example.com");
     expect(JSON.stringify(feature)).not.toContain("Ada");
 
-    const server = createServerNoxCue({ key: serverKey, identityHashKey, fetch: request });
+    const server = createServerTelemetry({ key: serverKey, identityHashKey, fetch: request });
     await server.forUser("user-99").error(new Error("failed"));
     const scoped = JSON.parse(String(request.mock.calls.at(-1)?.[1]?.body));
     expect(scoped.data.affectedUser).toBe("h1_primary_ofqGXPyat7KK5ahKDwoHUnwy2rtCkjQKU5qH04t8mXE");
@@ -212,11 +212,11 @@ describe("@noxhere/sdk telemetry", () => {
 
   it("supports disabled clients and explicit fire-and-forget capture", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const disabled = createServerNoxCue({ key: serverKey, enabled: false, fetch: request });
+    const disabled = createServerTelemetry({ key: serverKey, enabled: false, fetch: request });
     await expect(disabled.test()).resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
     expect(request).not.toHaveBeenCalled();
 
-    const enabled = createServerNoxCue({ key: serverKey, fetch: request });
+    const enabled = createServerTelemetry({ key: serverKey, fetch: request });
     enabled.capture(new Error("background"));
     await enabled.flush();
     expect(request).toHaveBeenCalledOnce();

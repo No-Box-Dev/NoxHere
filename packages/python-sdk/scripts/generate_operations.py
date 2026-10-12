@@ -19,6 +19,13 @@ document = json.loads(CONTRACT.read_text())
 operations = document["x-sdk-operations"]
 components = document.get("components", {})
 
+# The runtime keeps these pre-unification names as aliases. Emit them in the
+# typing surface as well so existing consumers remain valid under Pyright.
+LEGACY_OPERATION_ALIASES = {
+    "getNoxFeed": "getActivity",
+    "getPublicNoxSpotConfig": "getPublicFeedbackConfig",
+}
+
 
 def snake(value: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower().replace("-", "_")
@@ -207,6 +214,8 @@ operation_details = [
     for operation in operations
 ]
 
+operation_details_by_id = {details[0]["id"]: details for details in operation_details}
+
 
 def render_method(operation: dict[str, Any], groups: dict[str, tuple[str, bool]], body: tuple[str, bool] | None, response: str, *, asynchronous: bool = False) -> str:
     arguments: list[str] = []
@@ -227,6 +236,9 @@ def render_client_stub() -> str:
     grouped = {namespace: [] for namespace in ("workspace", "activity", "planning", "feedback", "stats", "incidents")}
     for details in operation_details:
         grouped[details[0]["namespace"]].append(details)
+    for alias, operation_id in LEGACY_OPERATION_ALIASES.items():
+        operation, groups, body, response = operation_details_by_id[operation_id]
+        grouped[operation["namespace"]].append(({**operation, "id": alias}, groups, body, response))
     lines = [
         "# Generated public typing surface. Runtime implementation lives in client.py.",
         "from __future__ import annotations",
@@ -265,10 +277,10 @@ def render_client_stub() -> str:
         lines.extend(render_method(*details, asynchronous=True) for details in details_list)
         lines.append("")
     cue_details = grouped["stats"] + grouped["incidents"]
-    lines.append("class CueClient(ResourceClient):")
+    lines.append("class TelemetryClient(ResourceClient):")
     lines.extend(render_method(*details) for details in cue_details)
     lines.append("")
-    lines.append("class AsyncCueClient(AsyncResourceClient):")
+    lines.append("class AsyncTelemetryClient(AsyncResourceClient):")
     lines.extend(render_method(*details, asynchronous=True) for details in cue_details)
     lines.append("")
     lines.extend([
@@ -284,7 +296,7 @@ def render_client_stub() -> str:
         "    feed: ActivityClient",
         "    ticket: PlanningClient",
         "    spot: FeedbackClient",
-        "    cue: CueClient",
+        "    cue: TelemetryClient",
         "    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Transport | None = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ..., sleep: Callable[[float], None] = ...) -> None: ...",
         "    def request(self, operation_id: str, *, path: Mapping[str, str | int] | None = ..., query: Mapping[str, str | int | float | bool | Sequence[str | int | float | bool] | None] | None = ..., body: JsonValue | str | bytes | None = ..., headers: Mapping[str, str] | None = ...) -> Any: ...",
         "    def operation_ids(self) -> tuple[str, ...]: ...",
@@ -302,7 +314,7 @@ def render_client_stub() -> str:
         "    feed: AsyncActivityClient",
         "    ticket: AsyncPlanningClient",
         "    spot: AsyncFeedbackClient",
-        "    cue: AsyncCueClient",
+        "    cue: AsyncTelemetryClient",
         "    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Any = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ...) -> None: ...",
         "    async def request(self, operation_id: str, *, path: Mapping[str, str | int] | None = ..., query: Mapping[str, str | int | float | bool | Sequence[str | int | float | bool] | None] | None = ..., body: JsonValue | str | bytes | None = ..., headers: Mapping[str, str] | None = ...) -> Any: ...",
         "    def operation_ids(self) -> tuple[str, ...]: ...",
@@ -322,7 +334,7 @@ outputs = {
     OPERATIONS_OUTPUT: "# Generated from packages/sdk-contract/public-api.json. Do not edit by hand.\nfrom typing import Final\n\n" + f"OPERATIONS: Final = {operation_tuples!r}\n",
     MODELS_OUTPUT: models.render(),
     CLIENT_STUB_OUTPUT: render_client_stub(),
-    INIT_STUB_OUTPUT: "from .auth import AsyncNativeAuth, DeviceAuthorization, NativeAuth, NativeSessionState\nfrom .client import AsyncNoxHereClient, NoxHereApiError, NoxHereClient, NoxHereTransportError, ResourceClient, create_async_noxhere, create_noxhere\nfrom .events import create_platform_event\nfrom .telemetry import NoxCueClient, create_noxcue, safe_error_details\nfrom . import models as models\n\n__all__ = [\"AsyncNativeAuth\", \"AsyncNoxHereClient\", \"DeviceAuthorization\", \"NativeAuth\", \"NativeSessionState\", \"NoxCueClient\", \"NoxHereApiError\", \"NoxHereClient\", \"NoxHereTransportError\", \"ResourceClient\", \"create_async_noxhere\", \"create_noxhere\", \"create_noxcue\", \"create_platform_event\", \"models\", \"safe_error_details\"]\n",
+    INIT_STUB_OUTPUT: "from .auth import AsyncNativeAuth, DeviceAuthorization, NativeAuth, NativeSessionState\nfrom .client import AsyncNoxHereClient, NoxHereApiError, NoxHereClient, NoxHereTransportError, ResourceClient, create_async_noxhere, create_noxhere\nfrom .events import create_platform_event\nfrom .telemetry import TelemetryClient, create_telemetry, safe_error_details\nfrom . import models as models\n\n__all__ = [\"AsyncNativeAuth\", \"AsyncNoxHereClient\", \"DeviceAuthorization\", \"NativeAuth\", \"NativeSessionState\", \"TelemetryClient\", \"NoxHereApiError\", \"NoxHereClient\", \"NoxHereTransportError\", \"ResourceClient\", \"create_async_noxhere\", \"create_noxhere\", \"create_telemetry\", \"create_platform_event\", \"models\", \"safe_error_details\"]\n",
 }
 
 if "--check" in sys.argv:

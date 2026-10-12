@@ -9,7 +9,7 @@ function response(body, status = 200, headers = {}) {
   });
 }
 
-test("login uses the account-wide NoxConnect CLI identity", async () => {
+test("login uses the account-wide NoxHere CLI identity", async () => {
   const calls = [];
   const fetchImpl = async (url, init) => {
     calls.push({ url: String(url), body: JSON.parse(init.body) });
@@ -17,7 +17,7 @@ test("login uses the account-wide NoxConnect CLI identity", async () => {
   };
   await startLogin({ baseURL: "https://example.test", fetchImpl });
   assert.equal(calls[0].url, "https://example.test/api/v1/auth/native/device/start");
-  assert.deepEqual(calls[0].body, { client: "noxconnect-cli" });
+  assert.deepEqual(calls[0].body, { client: "noxhere-cli" });
 });
 
 test("poll returns every organization from one login", async () => {
@@ -45,6 +45,6 @@ test("poll keeps waiting when the API returns a 202 OAuth pending response", asy
 test("a session cannot be stored without both native credentials", () => {
   assert.throws(
     () => normalizedSession({ error: "authorization_pending" }),
-    /without valid NoxConnect session credentials/,
+    /without valid NoxHere session credentials/,
   );
 });

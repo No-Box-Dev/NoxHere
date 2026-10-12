@@ -1,9 +1,9 @@
 /**
- * Core bundle entry — registers window.__NoxSpotCore for the loader to call.
+ * Core bundle entry — registers window.__FeedbackCore for the loader to call.
  *
  * Loader owns the trigger, toast, console capture, config fetch, shortcut, and
  * submit POST. Core owns the overlay, capture, annotation canvas, and element
- * picker. The two communicate through the single global __NoxSpotCore.
+ * picker. The two communicate through the single global __FeedbackCore.
  */
 
 import { injectStyles } from './styles.js';
@@ -43,7 +43,7 @@ function open({ callbacks, onCaptureReady, onCaptureFailed }) {
   // A host app can report readyState=complete while its framework is still
   // hydrating or waiting for its first API response. Observe a bounded DOM
   // settling window before cloning, and do not mount our overlay until the
-  // clone has started so NoxSpot itself can never enter the screenshot.
+  // clone has started so Feedback itself can never enter the screenshot.
   waitForHostDomStable()
     .then(() => {
       if (generation !== openGeneration) return;
@@ -67,9 +67,9 @@ function close() {
 function cleanup() {
   openGeneration += 1;
   hideOverlay();
-  const style = document.getElementById('noxspot-styles');
+  const style = document.getElementById('feedback-styles');
   if (style) style.remove();
   stylesInjected = false;
 }
 
-window.__NoxSpotCore = { open, close, cleanup };
+window.__FeedbackCore = { open, close, cleanup };

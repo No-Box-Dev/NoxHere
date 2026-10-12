@@ -20,7 +20,7 @@ export interface GuestEnv {
 
 export interface TransactionalEmailService {
   sendEmail(input: unknown): Promise<{
-    contract: "noxconnect.transactional-email-receipt";
+    contract: "noxhere.transactional-email-receipt";
     version: 1;
     requestId: string;
     status: "accepted";
@@ -463,15 +463,15 @@ export async function sendEmail(
   detail: string,
 ): Promise<void> {
   const receipt = await env.email.sendEmail({
-    contract: "noxconnect.transactional-email",
+    contract: "noxhere.transactional-email",
     version: 1,
     requestId,
     recipient: to,
     template: subject.includes("invited") ? "platform.guest-invitation" : "platform.email-login",
     model: { subject, heading, detail, actionUrl: link },
   });
-  if (receipt?.contract !== "noxconnect.transactional-email-receipt" || receipt.status !== "accepted") {
-    throw new Error("NoxConnect returned an invalid email receipt");
+  if (receipt?.contract !== "noxhere.transactional-email-receipt" || receipt.status !== "accepted") {
+    throw new Error("NoxHere returned an invalid email receipt");
   }
 }
 

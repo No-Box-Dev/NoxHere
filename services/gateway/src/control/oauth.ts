@@ -25,7 +25,7 @@ export interface IdentityService {
 
 export interface EmailService {
   sendEmail(input: unknown): Promise<{
-    contract: "noxconnect.transactional-email-receipt";
+    contract: "noxhere.transactional-email-receipt";
     version: 1;
     requestId: string;
     status: "accepted";

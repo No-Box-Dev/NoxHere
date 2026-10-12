@@ -11,7 +11,7 @@ function context({ isAdmin = true, name = "Client portal", duplicate = null } = 
         bind(...values) { this.values = values; return this; },
         async first() {
           if (sql.includes("SELECT id FROM projects")) return duplicate;
-          if (sql.includes("SELECT data FROM config")) return { data: JSON.stringify({ apps: { noxspot: false } }) };
+          if (sql.includes("SELECT data FROM config")) return { data: JSON.stringify({ apps: { feedback: false } }) };
           return null;
         },
       };
@@ -47,7 +47,7 @@ describe("project creation", () => {
       org: "acme",
       repo: null,
       routing_enabled: 1,
-      enabled_services: ["noxticket", "noxfeed", "noxspot", "noxcue"],
+      enabled_services: ["planning", "activity", "feedback", "telemetry"],
     });
     expect(body.project.id).toMatch(/^proj_acme_client-portal_[a-f0-9-]{8}$/);
     expect(state.db.batch).toHaveBeenCalledTimes(1);

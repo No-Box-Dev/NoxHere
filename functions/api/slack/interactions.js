@@ -28,7 +28,7 @@ export async function onRequestPost(context) {
     return Response.json({ error: "bad payload" }, { status: 400 });
   }
 
-  const action = payload.actions?.find((item) => item.action_id === "noxfeed_release_note_menu");
+  const action = payload.actions?.find((item) => item.action_id === "activity_release_note_menu");
   const value = action?.selected_option?.value ?? "";
   if (payload.type === "block_actions" && value.startsWith("release_note:")) {
     context.waitUntil(openReleaseNote(env, payload, value.slice("release_note:".length)));

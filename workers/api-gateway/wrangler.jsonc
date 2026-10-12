@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "noxconnect-api",
+  "name": "noxhere-api",
   "main": ".generated/index.js",
   "compatibility_date": "2026-09-10",
   "compatibility_flags": ["nodejs_compat"],
@@ -21,70 +21,68 @@
     "GITHUB_APP_ID": "3652510",
     "GITHUB_APP_CLIENT_ID": "Iv23liSD7Nx3fmV1OQfr",
     "SLACK_APP_ID": "A0BQAKAPG2Y",
-    "SLACK_ACCEPT_LEGACY_INSTALLS": "true",
     "BUILD_SHA": "development"
   },
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "noxconnect",
+      "database_name": "noxhere",
       "database_id": "c94084e6-d0be-423c-8de6-249e7cf8bf25",
       "migrations_dir": "../../migrations"
     }
   ],
   "queues": {
     "producers": [
-      { "binding": "TASK_QUEUE", "queue": "noxconnect-tasks" }
+      { "binding": "TASK_QUEUE", "queue": "noxhere-tasks" }
     ]
   },
   "services": [
-    { "binding": "NOXSPOT_RESPONSE", "service": "noxspot-api" },
-    { "binding": "NOXCONNECT_EMAIL", "service": "noxconnect-capabilities" },
-    { "binding": "NOXTICKET_SERVICE", "service": "noxticket" },
-    { "binding": "NOXCUE_RESPONSE", "service": "noxcue" },
-    { "binding": "NOXCUE_INGEST", "service": "noxcue" },
-    { "binding": "NOXFEED_RESPONSE", "service": "noxfeed-response" }
+    { "binding": "FEEDBACK_RESPONSE", "service": "noxhere-feedback" },
+    { "binding": "NOXHERE_EMAIL", "service": "noxhere-connections" },
+    { "binding": "PLANNING_SERVICE", "service": "noxhere-planning" },
+    { "binding": "TELEMETRY_RESPONSE", "service": "noxhere-telemetry" },
+    { "binding": "TELEMETRY_INGEST", "service": "noxhere-telemetry" },
+    { "binding": "ACTIVITY_RESPONSE", "service": "noxhere-activity" }
   ],
   "r2_buckets": [
-    { "binding": "SPEC_ATTACHMENTS", "bucket_name": "noxconnect-spec-attachments" },
-    { "binding": "NOXSPOT_ASSETS", "bucket_name": "noxspot-assets" }
+    { "binding": "SPEC_ATTACHMENTS", "bucket_name": "noxhere-spec-attachments" },
+    { "binding": "FEEDBACK_ASSETS", "bucket_name": "feedback-assets" }
   ],
   "env": {
     "staging": {
-      "name": "noxconnect-staging",
+      "name": "noxhere-staging",
       "vars": {
         "PLATFORM_ADMIN_GITHUB_IDS": "196446605",
         "GITHUB_APP_ID": "3652510",
         "GITHUB_APP_CLIENT_ID": "Iv23liSD7Nx3fmV1OQfr",
         "SLACK_APP_ID": "A0BQAKAPG2Y",
         "SLACK_OAUTH_REDIRECT_URI": "https://noxhere-staging.jasper-414.workers.dev/api/slack/oauth/callback",
-        "SLACK_ACCEPT_LEGACY_INSTALLS": "false",
         "BUILD_SHA": "development"
       },
       "services": [
-        { "binding": "NOXSPOT_RESPONSE", "service": "noxspot-api-staging" },
-        { "binding": "NOXCONNECT_EMAIL", "service": "noxconnect-capabilities-staging" },
-        { "binding": "NOXTICKET_SERVICE", "service": "noxticket-staging" },
-        { "binding": "NOXCUE_RESPONSE", "service": "noxcue-staging" },
-        { "binding": "NOXCUE_INGEST", "service": "noxcue-staging" },
-        { "binding": "NOXFEED_RESPONSE", "service": "noxfeed-response-staging" }
+        { "binding": "FEEDBACK_RESPONSE", "service": "noxhere-feedback-staging" },
+        { "binding": "NOXHERE_EMAIL", "service": "noxhere-connections-staging" },
+        { "binding": "PLANNING_SERVICE", "service": "planning-staging" },
+        { "binding": "TELEMETRY_RESPONSE", "service": "telemetry-staging" },
+        { "binding": "TELEMETRY_INGEST", "service": "telemetry-staging" },
+        { "binding": "ACTIVITY_RESPONSE", "service": "noxhere-activity-staging" }
       ],
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "noxconnect-staging",
+          "database_name": "noxhere-staging",
           "database_id": "3a9d9857-c26d-4421-9fbd-b81f474864d3",
           "migrations_dir": "../../migrations"
         }
       ],
       "queues": {
         "producers": [
-          { "binding": "TASK_QUEUE", "queue": "noxconnect-tasks-staging" }
+          { "binding": "TASK_QUEUE", "queue": "noxhere-tasks-staging" }
         ]
       },
       "r2_buckets": [
-        { "binding": "SPEC_ATTACHMENTS", "bucket_name": "noxconnect-spec-attachments-staging" },
-        { "binding": "NOXSPOT_ASSETS", "bucket_name": "noxspot-assets-staging" }
+        { "binding": "SPEC_ATTACHMENTS", "bucket_name": "noxhere-spec-attachments-staging" },
+        { "binding": "FEEDBACK_ASSETS", "bucket_name": "feedback-assets-staging" }
       ]
     }
   }

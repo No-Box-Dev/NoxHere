@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { acceptanceHostname, findCueEvent, findIssue, findRelease, hasTestLabel, validateSafety, WRITE_CONFIRMATION } from "./staging-acceptance-lib.mjs";
+import { acceptanceHostname, findTelemetryEvent, findIssue, findRelease, hasTestLabel, validateSafety, WRITE_CONFIRMATION } from "./staging-acceptance-lib.mjs";
 
 const safe = {
   baseUrl: "https://noxhere-staging.jasper-414.workers.dev",
-  noxspotUrl: "https://noxspot-api-staging.jasper-414.workers.dev",
-  noxspotOrigin: "https://widget-test.example.com",
+  feedbackUrl: "https://noxhere-feedback-staging.jasper-414.workers.dev",
+  feedbackOrigin: "https://widget-test.example.com",
   org: "No-Box-Dev",
   repo: "test",
   slackConnectionId: "connection-1",
   slackChannelId: "C123456",
   projectId: "project-1",
   accessToken: "nox_at_redacted",
-  noxcueSourceId: "source-1",
-  noxcueIngestKey: "cue-redacted",
-  noxspotSiteId: "site-1",
+  telemetrySourceId: "source-1",
+  telemetryIngestKey: "cue-redacted",
+  feedbackSiteId: "site-1",
   confirm: WRITE_CONFIRMATION,
 };
 
@@ -21,7 +21,7 @@ describe("staging acceptance safety", () => {
   it("accepts shared provider apps with a test-labelled repository", () => {
     expect(validateSafety(safe, { writes: true })).toEqual([]);
     expect(acceptanceHostname("app.noxhere.com", "noxhere")).toBe(true);
-    expect(acceptanceHostname("api.noxspot.dev", "noxspot")).toBe(true);
+    expect(acceptanceHostname("noxhere-feedback-staging.jasper-414.workers.dev", "feedback")).toBe(true);
     expect(hasTestLabel("nox-acceptance")).toBe(true);
   });
 
@@ -29,13 +29,13 @@ describe("staging acceptance safety", () => {
     const errors = validateSafety({
       ...safe,
       baseUrl: "https://app.noxhere.com",
-      noxspotUrl: "https://api.noxspot.dev",
-      noxspotOrigin: "https://app.noxhere.com",
+      feedbackUrl: "https://app.noxhere.com",
+      feedbackOrigin: "https://app.noxhere.com",
       org: "No-Box-Dev",
-      repo: "noxconnect",
+      repo: "noxhere",
       confirm: "yes",
     }, { writes: true });
-    expect(errors).toHaveLength(3);
+    expect(errors).toHaveLength(4);
     expect(errors).toContain("NOX_ACCEPTANCE_REPO must be an explicitly named staging/sandbox/test repository");
   });
 
@@ -58,9 +58,9 @@ describe("staging acceptance safety", () => {
 
 describe("staging acceptance receipts", () => {
   it("finds provider resources by the unique marker", () => {
-    const issue = { number: 2, title: "NoxSpot [nox-acceptance:abc]" };
+    const issue = { number: 2, title: "Feedback [nox-acceptance:abc]" };
     expect(findIssue([{ pull_request: {}, title: issue.title }, issue], "[nox-acceptance:abc]")).toBe(issue);
     expect(findRelease([{ repo: "staging-cert", pr: { number: 3, title: "Release [nox-acceptance:abc]" } }], "staging-cert", 3, "[nox-acceptance:abc]")).toBeTruthy();
-    expect(findCueEvent([{ title: "Failure [nox-acceptance:abc]" }], "[nox-acceptance:abc]")).toBeTruthy();
+    expect(findTelemetryEvent([{ title: "Failure [nox-acceptance:abc]" }], "[nox-acceptance:abc]")).toBeTruthy();
   });
 });

@@ -93,7 +93,7 @@ describe("NoxHere gateway", () => {
     await expect(response.json()).resolves.toEqual({
       service: "noxhere",
       status: "ok",
-      dependency: "noxconnect",
+      dependency: "noxhere",
       downstreamStatus: 200,
     });
     expect(connector.fetch).toHaveBeenCalledOnce();
@@ -152,7 +152,7 @@ describe("NoxHere gateway", () => {
   it("relays reporter resolution links without requiring a user session", async () => {
     const connector = { fetch: vi.fn(async () => new Response("resolution form")) };
     const bindings = services({ connector });
-    const request = new Request("https://app.noxhere.com/api/spots/public/v1/resolution/token_123");
+    const request = new Request("https://app.noxhere.com/api/feedback/public/v1/resolution/token_123");
 
     const response = await handleRequest(request, bindings);
 
@@ -246,7 +246,7 @@ describe("NoxHere gateway", () => {
     expect(connector.fetch).not.toHaveBeenCalled();
   });
 
-  it("retires the non-canonical API callback without invoking NoxConnect", async () => {
+  it("retires the non-canonical API callback without invoking NoxHere", async () => {
     const connector = { fetch: vi.fn(async () => new Response(null, { status: 500 })) };
     const response = await handleRequest(
       new Request("https://app.noxhere.com/api/auth/callback?code=one"),
@@ -264,7 +264,7 @@ describe("NoxHere gateway", () => {
       error: { code: "revision_conflict", message: "The resource changed" },
     }, { status: 409 })) };
     const response = await handleRequest(
-      new Request("https://app.noxhere.com/api/v1/feed", {
+      new Request("https://app.noxhere.com/api/v1/activity", {
         headers: { Cookie: "__Host-nox_session=opaque", "X-Org": "acme" },
       }),
       controlledServices(connector),
@@ -277,13 +277,13 @@ describe("NoxHere gateway", () => {
     expect(connector.fetch).toHaveBeenCalledOnce();
   });
 
-  it("passes only a short-lived signed identity assertion to NoxConnect", async () => {
+  it("passes only a short-lived signed identity assertion to NoxHere", async () => {
     const connector = { fetch: vi.fn(async (request: Request) => Response.json({
       assertion: request.headers.get("X-NoxHere-Internal-Assertion"),
       signature: request.headers.get("X-NoxHere-Internal-Signature"),
     })) };
     const response = await handleRequest(
-      new Request("https://app.noxhere.com/api/v1/feed?limit=5", {
+      new Request("https://app.noxhere.com/api/v1/activity?limit=5", {
         headers: {
           Cookie: "__Host-nox_session=opaque",
           "X-Org": "acme",
@@ -300,9 +300,9 @@ describe("NoxHere gateway", () => {
     const assertion = JSON.parse(atob(encoded)) as Record<string, unknown>;
     expect(assertion).toMatchObject({
       issuer: "noxhere",
-      audience: "noxconnect",
+      audience: "noxhere",
       method: "GET",
-      path: "/api/v1/feed?limit=5",
+      path: "/api/v1/activity?limit=5",
       auth: { userLogin: "octocat", orgLogin: "acme", connectionId: "noxic_connection" },
     });
     expect(JSON.stringify(assertion)).not.toContain("providerToken");
@@ -314,7 +314,7 @@ describe("NoxHere gateway", () => {
       project: request.headers.get("X-Project-ID"),
       assertion: request.headers.get("X-NoxHere-Internal-Assertion"),
     })) };
-    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/feed", {
+    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/activity", {
       headers: { Cookie: "__Host-nox_session=opaque", "X-Org": "acme" },
     }), controlledServices(connector));
     const body = await response.json() as { project: string | null; assertion: string };
@@ -328,7 +328,7 @@ describe("NoxHere gateway", () => {
       project: request.headers.get("X-Project-ID"),
       assertion: request.headers.get("X-NoxHere-Internal-Assertion"),
     })) };
-    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/feed", {
+    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/activity", {
       headers: { Cookie: "__Host-nox_session=opaque", "X-Org": "acme", "X-Project-ID": "project-a" },
     }), controlledServices(connector));
     const body = await response.json() as { project: string; assertion: string };
@@ -346,7 +346,7 @@ describe("NoxHere gateway", () => {
       authorization: request.headers.get("Authorization"),
       assertion: request.headers.get("X-NoxHere-Internal-Assertion"),
     })) };
-    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/feed", {
+    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/activity", {
       headers: { Authorization: "Bearer nox_at_example", "X-Org": "acme" },
     }), controlledServices(connector, controlDb({ nativeSession })));
     const body = await response.json() as { authorization: string | null; assertion: string };
@@ -358,13 +358,13 @@ describe("NoxHere gateway", () => {
   it("accepts a correctly scoped automation token and forwards only its signed project", async () => {
     const apiToken = {
       id: "noxkey_1", org_id: 7, project_id: "project-a",
-      scopes_json: JSON.stringify(["noxfeed:read"]), org_login: "acme", project_enabled: 1,
+      scopes_json: JSON.stringify(["activity:read"]), org_login: "acme", project_enabled: 1,
     };
     const connector = { fetch: vi.fn(async (request: Request) => Response.json({
       authorization: request.headers.get("Authorization"),
       assertion: request.headers.get("X-NoxHere-Internal-Assertion"),
     })) };
-    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/feed", {
+    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/activity", {
       headers: { Authorization: "Bearer nox_sk_live_example", "X-Project-ID": "project-a" },
     }), controlledServices(connector, controlDb({ apiToken })));
     const body = await response.json() as { authorization: string | null; assertion: string };
@@ -375,7 +375,7 @@ describe("NoxHere gateway", () => {
 
   it("rejects raw GitHub bearer credentials before invoking the connector", async () => {
     const connector = { fetch: vi.fn(async () => Response.json({ ok: true })) };
-    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/feed", {
+    const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/activity", {
       headers: { Authorization: "Bearer github_pat_example", "X-Org": "acme" },
     }), controlledServices(connector));
     expect(response.status).toBe(401);
@@ -400,12 +400,12 @@ describe("NoxHere gateway", () => {
       id: "noxkey_1",
       org_id: 7,
       project_id: "project-a",
-      scopes_json: JSON.stringify(["noxfeed:read"]),
+      scopes_json: JSON.stringify(["activity:read"]),
       org_login: "acme",
       project_enabled: 1,
     };
     const response = await handleRequest(
-      new Request("https://app.noxhere.com/api/v1/feed?project=project-b", {
+      new Request("https://app.noxhere.com/api/v1/activity?project=project-b", {
         headers: { Authorization: "Bearer nox_sk_live_example" },
       }),
       controlledServices(connector, controlDb({ apiToken: tokenRow })),
@@ -422,12 +422,12 @@ describe("NoxHere gateway", () => {
       id: "noxkey_1",
       org_id: 7,
       project_id: "project-a",
-      scopes_json: JSON.stringify(["noxfeed:read"]),
+      scopes_json: JSON.stringify(["activity:read"]),
       org_login: "acme",
       project_enabled: 1,
     };
     const response = await handleRequest(
-      new Request("https://app.noxhere.com/api/v1/feed?project=project-b", {
+      new Request("https://app.noxhere.com/api/v1/activity?project=project-b", {
         headers: { Authorization: "Bearer nox_sk_test_example" },
       }),
       controlledServices(connector, controlDb({ apiToken: tokenRow })),

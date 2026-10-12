@@ -39,10 +39,10 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   })));
 }
 
-function serviceForKind(kind: SearchResult["kind"]): "connect" | "ticket" | "feed" {
-  if (kind === "person") return "connect";
-  if (kind === "feature") return "ticket";
-  return "feed";
+function serviceForKind(kind: SearchResult["kind"]): "connections" | "planning" | "activity" {
+  if (kind === "person") return "connections";
+  if (kind === "feature") return "planning";
+  return "activity";
 }
 
 function labelForKind(kind: SearchResult["kind"]): string {
@@ -51,7 +51,7 @@ function labelForKind(kind: SearchResult["kind"]): string {
 
 function hrefForResult(org: string, projectId: string, result: SearchResult): string {
   const base = `/${encodeURIComponent(org)}/${encodeURIComponent(projectId)}`;
-  if (result.kind === "person" && result.login) return `${base}/feed/current/${encodeURIComponent(result.login)}`;
+  if (result.kind === "person" && result.login) return `${base}/activity/current/${encodeURIComponent(result.login)}`;
   if (result.kind === "feature") return `${base}/ticket/board`;
   if (result.kind === "issue") return `${base}/feed/issues`;
   if (result.kind === "release_note") return `${base}/feed/merged`;

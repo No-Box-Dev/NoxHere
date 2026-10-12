@@ -10,36 +10,36 @@ import { encryptToken } from "../functions/lib/crypto.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const webDist = join(root, "apps/web/dist");
-const noxCueDir = resolve(process.env.NOXCUE_DIR || join(root, "services/cue"));
-const noxFeedDir = resolve(process.env.NOXFEED_SERVICE_DIR || join(root, "services/feed"));
-const noxSpotDir = resolve(process.env.NOXSPOT_CAPTURE_DIR || join(root, "services/spot"));
-const noxTicketDir = resolve(process.env.NOXTICKET_SERVICE_DIR || join(root, "services/ticket"));
-const capabilityDir = join(root, "services/connect");
+const telemetryDir = resolve(process.env.TELEMETRY_DIR || join(root, "services/telemetry"));
+const activityDir = resolve(process.env.ACTIVITY_SERVICE_DIR || join(root, "services/activity"));
+const feedbackDir = resolve(process.env.FEEDBACK_CAPTURE_DIR || join(root, "services/feedback"));
+const planningDir = resolve(process.env.PLANNING_SERVICE_DIR || join(root, "services/planning"));
+const capabilityDir = join(root, "services/connections");
 const wrangler = join(root, "node_modules/.bin/wrangler");
 const keepState = process.argv.includes("--keep-state");
 const allowAuthSkip = process.argv.includes("--allow-auth-skip");
-const portOffset = Number.parseInt(process.env.NOXCONNECT_E2E_PORT_OFFSET || "0", 10);
+const portOffset = Number.parseInt(process.env.NOXHERE_E2E_PORT_OFFSET || "0", 10);
 if (!Number.isInteger(portOffset) || portOffset < 0 || portOffset > 50_000) {
-  throw new Error("NOXCONNECT_E2E_PORT_OFFSET must be an integer from 0 through 50000");
+  throw new Error("NOXHERE_E2E_PORT_OFFSET must be an integer from 0 through 50000");
 }
 const port = (defaultPort) => defaultPort + portOffset;
-const org = process.env.NOXCONNECT_E2E_ORG || "No-Box-Dev";
-const repo = process.env.NOXCONNECT_E2E_REPO || "noxconnect";
+const org = process.env.NOXHERE_E2E_ORG || "No-Box-Dev";
+const repo = process.env.NOXHERE_E2E_REPO || "noxhere";
 const projectId = `proj_${org}_${repo}`.toLowerCase();
 const otherProjectId = `${projectId}_other`;
 const otherRepo = `${repo}-other`;
 const base = `http://127.0.0.1:${port(8788)}`;
 const internalSecret = randomBytes(32).toString("base64url");
-const stateRoot = mkdtempSync(join(tmpdir(), "noxconnect-local-e2e-"));
+const stateRoot = mkdtempSync(join(tmpdir(), "noxhere-local-e2e-"));
 const runId = randomBytes(5).toString("hex");
 const serviceNames = {
-  capabilities: `noxconnect-capabilities-e2e-${runId}`,
-  cue: `noxcue-e2e-${runId}`,
-  spot: `noxspot-e2e-${runId}`,
-  feed: `noxfeed-e2e-${runId}`,
-  ticket: `noxticket-e2e-${runId}`,
-  cron: `noxconnect-orchestrator-e2e-${runId}`,
-  rpc: `noxconnect-rpc-e2e-${runId}`,
+  capabilities: `noxhere-connections-e2e-${runId}`,
+  cue: `telemetry-e2e-${runId}`,
+  spot: `feedback-e2e-${runId}`,
+  feed: `activity-e2e-${runId}`,
+  ticket: `planning-e2e-${runId}`,
+  cron: `noxhere-orchestrator-e2e-${runId}`,
+  rpc: `noxhere-rpc-e2e-${runId}`,
 };
 const persistence = join(stateRoot, "state");
 const logsDir = join(stateRoot, "logs");
@@ -58,14 +58,14 @@ function print(message) {
 
 function checkPrerequisites() {
   const required = [
-    [wrangler, "Run npm install in NoxConnect"],
+    [wrangler, "Run npm install in NoxHere"],
     [join(webDist, "index.html"), "Run npm run build:web in NoxHere"],
-    [join(noxCueDir, "wrangler.jsonc"), "Run npm ci in services/cue"],
-    [join(noxCueDir, "node_modules"), "Run npm ci in services/cue"],
-    [join(noxFeedDir, "wrangler.toml"), "Run npm ci in services/feed"],
-    [join(noxFeedDir, "node_modules"), "Run npm ci in services/feed"],
-    [join(noxSpotDir, "node_modules"), "Run npm ci in services/spot"],
-    [join(noxTicketDir, "node_modules"), "Run npm ci in services/ticket"],
+    [join(telemetryDir, "wrangler.jsonc"), "Run npm ci in services/telemetry"],
+    [join(telemetryDir, "node_modules"), "Run npm ci in services/telemetry"],
+    [join(activityDir, "wrangler.toml"), "Run npm ci in services/activity"],
+    [join(activityDir, "node_modules"), "Run npm ci in services/activity"],
+    [join(feedbackDir, "node_modules"), "Run npm ci in services/feedback"],
+    [join(planningDir, "node_modules"), "Run npm ci in services/planning"],
   ];
   const missing = required.filter(([path]) => !existsSync(path));
   if (missing.length) {
@@ -139,7 +139,7 @@ async function request(label, path, options = {}, expected = 200) {
     const method = (fetchOptions.method || "GET").toUpperCase();
     const now = Math.floor(Date.now() / 1000);
     const assertion = {
-      version: 1, issuer: "noxhere", audience: "noxconnect",
+      version: 1, issuer: "noxhere", audience: "noxhere",
       issuedAt: now, expiresAt: now + 30, method, path, auth: noxHereAuth,
     };
     const payload = Buffer.from(JSON.stringify(assertion)).toString("base64url");
@@ -216,19 +216,19 @@ function makeRpcSmokeWorker() {
     main: "index.js",
     compatibility_date: "2026-09-09",
     services: [
-      { binding: "NOXSPOT", service: serviceNames.spot },
-      { binding: "NOXCUE", service: serviceNames.cue },
-      { binding: "NOXFEED", service: serviceNames.feed },
-      { binding: "NOXTICKET", service: serviceNames.ticket },
+      { binding: "FEEDBACK", service: serviceNames.spot },
+      { binding: "TELEMETRY", service: serviceNames.cue },
+      { binding: "ACTIVITY", service: serviceNames.feed },
+      { binding: "PLANNING", service: serviceNames.ticket },
     ],
   }, null, 2), { mode: 0o600 });
   writeFileSync(join(rpcDir, "index.js"), `export default {
   async fetch(_request, env) {
     const [spot, cue, feed, ticket] = await Promise.all([
-      env.NOXSPOT.describe(),
-      env.NOXCUE.describe(),
-      env.NOXFEED.describe(),
-      env.NOXTICKET.describe(),
+      env.FEEDBACK.describe(),
+      env.TELEMETRY.describe(),
+      env.ACTIVITY.describe(),
+      env.PLANNING.describe(),
     ]);
     return Response.json({ spot, cue, feed, ticket });
   }
@@ -239,12 +239,12 @@ async function main() {
   print(`Local E2E state: ${stateRoot}`);
   checkPrerequisites();
 
-  run("apply all NoxConnect migrations to a fresh local D1", wrangler, [
-    "d1", "migrations", "apply", "noxconnect", "--local", "--persist-to", persistence,
+  run("apply all NoxHere migrations to a fresh local D1", wrangler, [
+    "d1", "migrations", "apply", "noxhere", "--local", "--persist-to", persistence,
   ]);
   run("apply Ticket migrations to its fresh local D1", wrangler, [
     "d1", "migrations", "apply", "DB", "--local", "--persist-to", persistence,
-  ], { cwd: noxTicketDir });
+  ], { cwd: planningDir });
   const fixtureSql = [
     `INSERT INTO orgs (id, github_login) VALUES (910004, '${org.replaceAll("'", "''")}');`,
     `INSERT INTO installations (installation_id, owner_id, account_login, account_type, repos_json, installed_at, updated_at) VALUES (910004, '${org.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', 'Organization', '["${org.replaceAll('"', '\\"')}/${repo.replaceAll('"', '\\"')}"]', unixepoch(), unixepoch());`,
@@ -258,20 +258,20 @@ async function main() {
     `INSERT INTO events (delivery_id, source, type, project_id, org, repo, summary, technical_summary, payload_json, owner_id) VALUES ('local-feed-denied', 'github', 'narrative', '${otherProjectId.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', '${otherRepo.replaceAll("'", "''")}', 'other project event', 'denied', '{"trigger_type":"github:pr:merged","pr":{"number":2,"title":"Denied","html_url":"https://example.test/denied","author":{"login":"local"}}}', '${org.replaceAll("'", "''")}');`,
   ].join(" ");
   run("seed a credential-free local organization and project", wrangler, [
-    "d1", "execute", "noxconnect", "--local", "--persist-to", persistence, "--command", fixtureSql,
+    "d1", "execute", "noxhere", "--local", "--persist-to", persistence, "--command", fixtureSql,
   ]);
 
   const commonDev = ["--local", "--persist-to", persistence, "--log-level", "warn", "--show-interactive-dev-session=false"];
   start("capabilities", capabilityDir, ["dev", "--name", serviceNames.capabilities, "--port", String(port(8796)), "--inspector-port", String(port(9236)), ...commonDev]);
   await waitFor("capabilities", `http://127.0.0.1:${port(8796)}/`, { expected: 404 });
-  start("noxcue", noxCueDir, ["dev", "--name", serviceNames.cue, "--port", String(port(8792)), "--inspector-port", String(port(9232)), ...commonDev]);
-  await waitFor("noxcue", `http://127.0.0.1:${port(8792)}/health`);
-  start("noxspot", noxSpotDir, ["dev", "--name", serviceNames.spot, "--port", String(port(8790)), "--inspector-port", String(port(9229)), ...commonDev]);
-  await waitFor("noxspot", `http://127.0.0.1:${port(8790)}/health`);
-  start("noxfeed", noxFeedDir, ["dev", "--name", serviceNames.feed, "--port", String(port(8791)), "--inspector-port", String(port(9230)), ...commonDev]);
-  await waitFor("noxfeed", `http://127.0.0.1:${port(8791)}/health`);
-  start("noxticket", noxTicketDir, ["dev", "--name", serviceNames.ticket, "--port", String(port(8795)), "--inspector-port", String(port(9235)), ...commonDev]);
-  await waitFor("noxticket", `http://127.0.0.1:${port(8795)}/health`);
+  start("telemetry", telemetryDir, ["dev", "--name", serviceNames.cue, "--port", String(port(8792)), "--inspector-port", String(port(9232)), ...commonDev]);
+  await waitFor("telemetry", `http://127.0.0.1:${port(8792)}/health`);
+  start("feedback", feedbackDir, ["dev", "--name", serviceNames.spot, "--port", String(port(8790)), "--inspector-port", String(port(9229)), ...commonDev]);
+  await waitFor("feedback", `http://127.0.0.1:${port(8790)}/health`);
+  start("activity", activityDir, ["dev", "--name", serviceNames.feed, "--port", String(port(8791)), "--inspector-port", String(port(9230)), ...commonDev]);
+  await waitFor("activity", `http://127.0.0.1:${port(8791)}/health`);
+  start("planning", planningDir, ["dev", "--name", serviceNames.ticket, "--port", String(port(8795)), "--inspector-port", String(port(9235)), ...commonDev]);
+  await waitFor("planning", `http://127.0.0.1:${port(8795)}/health`);
 
   start("cron", root, ["dev", "-c", "services/scheduler/wrangler.toml", "--name", serviceNames.cron, "--port", String(port(8794)), "--inspector-port", String(port(9234)), ...commonDev]);
   makeRpcSmokeWorker();
@@ -279,28 +279,28 @@ async function main() {
 
   const encryptionKey = randomBytes(32).toString("hex");
   const webhookSecret = randomBytes(32).toString("hex");
-  start("noxconnect", root, [
+  start("noxhere", root, [
     "pages", "dev", webDist, "--port", String(port(8788)), "--inspector-port", String(port(9231)),
     "--persist-to", persistence, "--log-level", "warn", "--show-interactive-dev-session=false",
     "--binding", `ENCRYPTION_KEY=${encryptionKey}`,
     "--binding", `GITHUB_WEBHOOK_SECRET=${webhookSecret}`,
     "--binding", `NOXHERE_INTERNAL_SECRET=${internalSecret}`,
-    "--service", `NOXSPOT_RESPONSE=${serviceNames.spot}`,
-    "--service", `NOXCUE_RESPONSE=${serviceNames.cue}`,
-    "--service", `NOXCUE_INGEST=${serviceNames.cue}`,
-    "--service", `NOXFEED_RESPONSE=${serviceNames.feed}`,
-    "--service", `NOXTICKET_SERVICE=${serviceNames.ticket}`,
+    "--service", `FEEDBACK_RESPONSE=${serviceNames.spot}`,
+    "--service", `TELEMETRY_RESPONSE=${serviceNames.cue}`,
+    "--service", `TELEMETRY_INGEST=${serviceNames.cue}`,
+    "--service", `ACTIVITY_RESPONSE=${serviceNames.feed}`,
+    "--service", `PLANNING_SERVICE=${serviceNames.ticket}`,
   ]);
-  await waitFor("noxconnect", `${base}/developers`);
+  await waitFor("noxhere", `${base}/developers`);
   await waitFor("rpc", `http://127.0.0.1:${port(8793)}/`);
   await waitFor("cron", `http://127.0.0.1:${port(8794)}/`, { expected: 404 });
 
   const docs = await request("developer documentation HTML", "/developers");
-  if (!String(docs.body).includes("NoxConnect API")) throw new Error("Developer documentation is missing its title");
+  if (!String(docs.body).includes("NoxHere API")) throw new Error("Developer documentation is missing its title");
   await request("OpenAPI contract", "/openapi.json");
   await request("developer documentation JavaScript", "/developers.js");
   const rpc = await request("private RPC contracts for all product services", `http://127.0.0.1:${port(8793)}/`);
-  for (const service of ["spot", "cue", "feed", "ticket"]) {
+  for (const service of ["feedback", "telemetry", "activity", "planning"]) {
     if (rpc.body?.[service]?.contract !== "nox.service-manifest" || rpc.body[service].version !== 1) throw new Error(`Invalid ${service} RPC contract`);
   }
 
@@ -325,8 +325,8 @@ async function main() {
     `INSERT OR IGNORE INTO org_admins (org_id, login, granted_by_login) VALUES (910004, '${githubLogin.replaceAll("'", "''")}', '${githubLogin.replaceAll("'", "''")}');`,
     `INSERT INTO identity_connections (id, github_user_id, github_login, encrypted_access_token) VALUES ('${connectionId}', ${githubUserId}, '${githubLogin.replaceAll("'", "''")}', '${encryptedGitHubToken}');`,
   ].join(" ");
-  run("seed a connector identity without creating a NoxConnect login session", wrangler, [
-    "d1", "execute", "noxconnect", "--local", "--persist-to", persistence, "--command", authFixtureSql,
+  run("seed a connector identity without creating a NoxHere login session", wrangler, [
+    "d1", "execute", "noxhere", "--local", "--persist-to", persistence, "--command", authFixtureSql,
   ]);
 
   const sessionAuth = {
@@ -336,10 +336,10 @@ async function main() {
   };
   const projectAuth = {
     ...sessionAuth, credentialType: "api_token", credentialId: "local-project-token",
-    projectId, scopes: ["services:read", "noxfeed:read", "noxspot:write", "noxcue:write"], connectionId: null,
+    projectId, scopes: ["services:read", "activity:read", "feedback:write", "telemetry:write"], connectionId: null,
   };
   await request("signed NoxHere session authenticates without exposing a provider bearer", "/api/v1/services", signedOptions(sessionAuth));
-  await request("GitHub provider bearer is not a NoxConnect API credential", "/api/v1/services", { headers: { Authorization: `Bearer ${token}` } }, 401);
+  await request("GitHub provider bearer is not a NoxHere API credential", "/api/v1/services", { headers: { Authorization: `Bearer ${token}` } }, 401);
   await request("signed NoxHere session reads its organization role", "/api/v1/me", signedOptions(sessionAuth));
   await request("signed NoxHere session reads integration readiness", "/api/v1/integrations/status", signedOptions(sessionAuth));
   await request("signed NoxHere session reads bootstrap status", "/api/v1/bootstrap-status", signedOptions(sessionAuth));
@@ -348,84 +348,84 @@ async function main() {
   await request("signed NoxHere session searches its organization", "/api/v1/search?q=allowed", signedOptions(sessionAuth));
   await request("signed NoxHere session reads members", "/api/v1/members", signedOptions(sessionAuth));
   await request("signed NoxHere session reads Slack health without receiving credentials", "/api/v1/slack/status", signedOptions(sessionAuth));
-  await request("signed NoxHere admin reads its bound default prompt", "/api/v1/noxfeed/release-notes-prompt", signedOptions(sessionAuth));
+  await request("signed NoxHere admin reads its bound default prompt", "/api/v1/activity/release-notes-prompt", signedOptions(sessionAuth));
   await request("project-scoped NoxHere credential reads the service catalog", "/api/v1/services", signedOptions(projectAuth));
-  const scopedFeed = await request("project credential reads only its own feed", "/api/v1/feed", signedOptions(projectAuth));
+  const scopedFeed = await request("project credential reads only its own feed", "/api/v1/activity", signedOptions(projectAuth));
   if (scopedFeed.body?.events?.length !== 1 || scopedFeed.body.events[0]?.summary !== "allowed project event") {
     throw new Error("Project token crossed its feed project boundary");
   }
-  await request("project credential cannot select another project", "/api/v1/feed", signedOptions(projectAuth, { headers: { "X-Project-ID": otherProjectId } }), 404);
-  await request("project credential cannot read organization-level configuration", "/api/v1/services/noxfeed/config", signedOptions(projectAuth), 403);
-  await request("all project capabilities remain available", "/api/v1/feed", signedOptions(projectAuth));
-  await request("configure project-scoped NoxCue GitHub incident routing", "/api/v1/cues/github-issues", signedOptions(sessionAuth, {
+  await request("project credential cannot select another project", "/api/v1/activity", signedOptions(projectAuth, { headers: { "X-Project-ID": otherProjectId } }), 404);
+  await request("project credential cannot read organization-level configuration", "/api/v1/services/activity/config", signedOptions(projectAuth), 403);
+  await request("all project capabilities remain available", "/api/v1/activity", signedOptions(projectAuth));
+  await request("configure project-scoped Telemetry GitHub incident routing", "/api/v1/telemetry/github-issues", signedOptions(sessionAuth, {
     method: "PUT",
     body: JSON.stringify({
       projectId, enabled: false, environments: ["production", "staging"],
       commentOnRepeat: false, repeatIntervalMinutes: 360,
     }),
   }));
-  const incidentSettings = await request("read NoxCue GitHub incident routing", "/api/v1/cues/github-issues", signedOptions(sessionAuth));
+  const incidentSettings = await request("read Telemetry GitHub incident routing", "/api/v1/telemetry/github-issues", signedOptions(sessionAuth));
   if (!incidentSettings.body?.projects?.some((project) => project.projectId === projectId
       && project.environments?.includes("staging"))) {
-    throw new Error("NoxCue GitHub incident settings were not persisted");
+    throw new Error("Telemetry GitHub incident settings were not persisted");
   }
-  const ownSource = await request("project credential creates a source in its implicit project", "/api/v1/cues/sources", signedOptions(projectAuth, {
+  const ownSource = await request("project credential creates a source in its implicit project", "/api/v1/telemetry/sources", signedOptions(projectAuth, {
     method: "POST",
     body: JSON.stringify({ name: "Token project", enabled: true, timezone: "UTC", digestEnabled: false, digestTimeLocal: "00:30", allowedOrigins: [], healthEnabled: false, healthUrl: null, slackChannelId: null, slackConnectionId: null }),
   }), 201);
   if (ownSource.body?.projectId !== projectId) throw new Error("Token-created source was not assigned to the token project");
-  const ownSite = await request("project credential creates a site in its implicit project", "/api/v1/spots/sites", signedOptions(projectAuth, {
+  const ownSite = await request("project credential creates a site in its implicit project", "/api/v1/feedback/sites", signedOptions(projectAuth, {
     method: "POST", body: JSON.stringify({ name: "Token project", widgetMode: "development" }),
   }), 201);
   if (ownSite.body?.site?.projectId !== projectId) throw new Error("Token-created site was not assigned to the token project");
-  const otherSource = await request("create another project's NoxCue source as a NoxHere admin", "/api/v1/cues/sources", signedOptions(sessionAuth, {
+  const otherSource = await request("create another project's Telemetry source as a NoxHere admin", "/api/v1/telemetry/sources", signedOptions(sessionAuth, {
     method: "POST",
     body: JSON.stringify({ name: "Other project", projectId: otherProjectId, enabled: true, timezone: "UTC", digestEnabled: false, digestTimeLocal: "00:30", allowedOrigins: [], healthEnabled: false, healthUrl: null, slackChannelId: null, slackConnectionId: null }),
   }), 201);
-  await request("project credential cannot read another project's source", `/api/v1/cues/sources/${otherSource.body.id}`, signedOptions(projectAuth), 404);
-  await request("project credential cannot read another project's metrics", `/api/v1/cues/metrics?sourceId=${encodeURIComponent(otherSource.body.id)}&days=1`, signedOptions(projectAuth), 404);
-  await request("project credential cannot create a source for another project", "/api/v1/cues/sources", signedOptions(projectAuth, {
+  await request("project credential cannot read another project's source", `/api/v1/telemetry/sources/${otherSource.body.id}`, signedOptions(projectAuth), 404);
+  await request("project credential cannot read another project's metrics", `/api/v1/telemetry/metrics?sourceId=${encodeURIComponent(otherSource.body.id)}&days=1`, signedOptions(projectAuth), 404);
+  await request("project credential cannot create a source for another project", "/api/v1/telemetry/sources", signedOptions(projectAuth, {
     method: "POST",
     body: JSON.stringify({ name: "Cross-project source", projectId: otherProjectId, enabled: true, timezone: "UTC", digestEnabled: false, digestTimeLocal: "00:30", allowedOrigins: [], healthEnabled: false, healthUrl: null, slackChannelId: null, slackConnectionId: null }),
   }), 404);
-  const scopedSources = await request("project credential lists only its own sources", "/api/v1/cues/sources", signedOptions(projectAuth));
+  const scopedSources = await request("project credential lists only its own sources", "/api/v1/telemetry/sources", signedOptions(projectAuth));
   if (!scopedSources.body?.sources?.length || scopedSources.body.sources.some((source) => source.projectId !== projectId)) {
-    throw new Error("NoxCue source collection crossed the token project boundary");
+    throw new Error("Telemetry source collection crossed the token project boundary");
   }
-  const otherSite = await request("create another project's NoxSpot site as a NoxHere admin", "/api/v1/spots/sites", signedOptions(sessionAuth, {
+  const otherSite = await request("create another project's Feedback site as a NoxHere admin", "/api/v1/feedback/sites", signedOptions(sessionAuth, {
     method: "POST", body: JSON.stringify({ name: "Other project", projectId: otherProjectId, widgetMode: "development" }),
   }), 201);
-  await request("project credential cannot change another project's site", `/api/v1/spots/sites/${otherSite.body.site.id}`, signedOptions(projectAuth, {
+  await request("project credential cannot change another project's site", `/api/v1/feedback/sites/${otherSite.body.site.id}`, signedOptions(projectAuth, {
     method: "PATCH", body: JSON.stringify({ name: "Cross-project change" }),
   }), 404);
-  await request("project credential cannot create a site for another project", "/api/v1/spots/sites", signedOptions(projectAuth, {
+  await request("project credential cannot create a site for another project", "/api/v1/feedback/sites", signedOptions(projectAuth, {
     method: "POST", body: JSON.stringify({ name: "Cross-project site", projectId: otherProjectId, widgetMode: "development" }),
   }), 404);
-  const scopedSites = await request("project credential lists only its own sites", "/api/v1/spots/sites", signedOptions(projectAuth));
+  const scopedSites = await request("project credential lists only its own sites", "/api/v1/feedback/sites", signedOptions(projectAuth));
   if (!scopedSites.body?.sites?.length || scopedSites.body.sites.some((site) => site.projectId !== projectId)) {
-    throw new Error("NoxSpot site collection crossed the token project boundary");
+    throw new Error("Feedback site collection crossed the token project boundary");
   }
   const catalog = await request("authenticated service catalog using a NoxHere session assertion", "/api/v1/services", signedOptions(sessionAuth));
   if (!Array.isArray(catalog.body?.services) || catalog.body.services.length !== 5) throw new Error("Expected all five service families");
-  for (const service of ["noxconnect", "noxticket", "noxfeed", "noxspot", "noxcue"]) {
+  for (const service of ["noxhere", "planning", "activity", "feedback", "telemetry"]) {
     await request(`${service} setup contract`, `/api/v1/services/${service}/setup`, signedOptions(sessionAuth));
     await request(`${service} health contract`, `/api/v1/services/${service}/health`, signedOptions(sessionAuth));
     await request(`${service} config contract`, `/api/v1/services/${service}/config`, signedOptions(sessionAuth));
   }
 
-  const currentConfig = await request("read versioned config and ETag", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth));
+  const currentConfig = await request("read versioned config and ETag", "/api/v1/services/noxhere/config", signedOptions(sessionAuth));
   const etag = currentConfig.response.headers.get("etag");
   if (!etag) throw new Error("Config response did not return ETag");
-  await request("config write requires If-Match", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
+  await request("config write requires If-Match", "/api/v1/services/noxhere/config", signedOptions(sessionAuth, {
     method: "PATCH", body: JSON.stringify({ newRepositoryPolicy: "exclude" }),
   }), 428);
-  await request("stale config write is rejected", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
+  await request("stale config write is rejected", "/api/v1/services/noxhere/config", signedOptions(sessionAuth, {
     method: "PATCH", headers: { "If-Match": '"stale"' }, body: JSON.stringify({ newRepositoryPolicy: "exclude" }),
   }), 412);
-  const updated = await request("config compare-and-swap update", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
+  const updated = await request("config compare-and-swap update", "/api/v1/services/noxhere/config", signedOptions(sessionAuth, {
     method: "PATCH", headers: { "If-Match": etag }, body: JSON.stringify({ newRepositoryPolicy: "exclude" }),
   }));
-  await request("restore config after compare-and-swap check", "/api/v1/services/noxconnect/config", signedOptions(sessionAuth, {
+  await request("restore config after compare-and-swap check", "/api/v1/services/noxhere/config", signedOptions(sessionAuth, {
     method: "PATCH", headers: { "If-Match": updated.response.headers.get("etag") }, body: JSON.stringify({ newRepositoryPolicy: "include" }),
   }));
 
@@ -438,48 +438,48 @@ async function main() {
     throw new Error("Canonical and legacy project discovery returned different resources");
   }
 
-  const source = await request("create a NoxCue source through the control API", "/api/v1/cues/sources", signedOptions(sessionAuth, {
+  const source = await request("create a Telemetry source through the control API", "/api/v1/telemetry/sources", signedOptions(sessionAuth, {
     method: "POST",
     body: JSON.stringify({ name: "Local E2E", projectId, enabled: true, timezone: "UTC", digestEnabled: false, digestTimeLocal: "00:30", allowedOrigins: [], healthEnabled: false, healthUrl: null, slackChannelId: null, slackConnectionId: null }),
   }), 201);
   const sourceId = source.body.id;
-  const key = await request("create a one-time NoxCue ingest key", `/api/v1/cues/sources/${sourceId}/keys`, signedOptions(sessionAuth, {
+  const key = await request("create a one-time Telemetry ingest key", `/api/v1/telemetry/sources/${sourceId}/keys`, signedOptions(sessionAuth, {
     method: "POST", body: JSON.stringify({ name: "Local E2E", kind: "secret" }),
   }), 201);
   const keyId = key.body.key.id;
   const keyValue = key.body.key.value;
-  const event = await request("ingest a real NoxCue event through the NoxConnect binding", "/api/v1/cues/public/events", {
+  const event = await request("ingest a real Telemetry event through the NoxHere binding", "/api/v1/telemetry/public/events", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": keyValue },
     body: JSON.stringify({ version: 1, type: "user.registered", userId: "h1_local-e2e_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", idempotencyKey: "local-e2e-registration" }),
   }, 202);
-  if (!event.body?.accepted || event.body?.stored !== true) throw new Error("NoxCue did not persist the event");
-  const duplicate = await request("NoxCue ingestion is idempotent", "/api/v1/cues/public/events", {
+  if (!event.body?.accepted || event.body?.stored !== true) throw new Error("Telemetry did not persist the event");
+  const duplicate = await request("Telemetry ingestion is idempotent", "/api/v1/telemetry/public/events", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": keyValue },
     body: JSON.stringify({ version: 1, type: "user.registered", userId: "h1_local-e2e_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", idempotencyKey: "local-e2e-registration" }),
   }, 202);
-  if (duplicate.body?.duplicate !== true) throw new Error("NoxCue duplicate was not detected");
-  const metrics = await request("read persisted NoxCue metrics", `/api/v1/cues/metrics?sourceId=${encodeURIComponent(sourceId)}&days=1`, signedOptions(sessionAuth));
-  if (!Array.isArray(metrics.body?.days)) throw new Error("NoxCue metrics response is malformed");
-  await request("revoke the NoxCue ingest key", `/api/v1/cues/sources/${sourceId}/keys/${keyId}`, signedOptions(sessionAuth, { method: "DELETE" }));
-  await request("revoked NoxCue key is rejected", "/api/v1/cues/public/events", {
+  if (duplicate.body?.duplicate !== true) throw new Error("Telemetry duplicate was not detected");
+  const metrics = await request("read persisted Telemetry metrics", `/api/v1/telemetry/metrics?sourceId=${encodeURIComponent(sourceId)}&days=1`, signedOptions(sessionAuth));
+  if (!Array.isArray(metrics.body?.days)) throw new Error("Telemetry metrics response is malformed");
+  await request("revoke the Telemetry ingest key", `/api/v1/telemetry/sources/${sourceId}/keys/${keyId}`, signedOptions(sessionAuth, { method: "DELETE" }));
+  await request("revoked Telemetry key is rejected", "/api/v1/telemetry/public/events", {
     method: "POST", headers: { "Content-Type": "application/json", "X-Nox-Ingest-Key": keyValue },
     body: JSON.stringify({ version: 1, type: "user.active", userId: "local-e2e-user" }),
   }, 401);
 
-  const site = await request("create a NoxSpot site through the control API", "/api/v1/spots/sites", signedOptions(sessionAuth, {
+  const site = await request("create a Feedback site through the control API", "/api/v1/feedback/sites", signedOptions(sessionAuth, {
     method: "POST", body: JSON.stringify({ name: "Local E2E", projectId, widgetMode: "development", autoErrorLogging: true }),
   }), 201);
   const siteId = site.body.site.id;
-  const publicConfig = await request("read NoxSpot public widget config", `http://127.0.0.1:${port(8790)}/api/spots/public/v1/sites/${siteId}/config`);
-  await request("read NoxSpot public widget members", `http://127.0.0.1:${port(8790)}/api/spots/public/v1/sites/${siteId}/members`);
-  if (publicConfig.body?.siteId !== siteId) throw new Error("NoxSpot config did not use the shared D1 state");
-  const report = await request("queue a real NoxSpot public report", `http://127.0.0.1:${port(8790)}/api/spots/public/v1/reports`, {
+  const publicConfig = await request("read Feedback public widget config", `http://127.0.0.1:${port(8790)}/api/feedback/public/v1/sites/${siteId}/config`);
+  await request("read Feedback public widget members", `http://127.0.0.1:${port(8790)}/api/feedback/public/v1/sites/${siteId}/members`);
+  if (publicConfig.body?.siteId !== siteId) throw new Error("Feedback config did not use the shared D1 state");
+  const report = await request("queue a real Feedback public report", `http://127.0.0.1:${port(8790)}/api/feedback/public/v1/reports`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ siteId, title: "Local E2E feedback", description: "Disposable local queue smoke test" }),
   });
-  if (!report.body?.queued) throw new Error("NoxSpot did not enqueue the report");
+  if (!report.body?.queued) throw new Error("Feedback did not enqueue the report");
 
   const pingBody = JSON.stringify({ zen: "local e2e" });
   await request("reject an invalid GitHub webhook signature", "/api/webhook", {

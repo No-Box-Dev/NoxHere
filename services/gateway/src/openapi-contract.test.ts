@@ -4,9 +4,9 @@ import openapi from "../../../public/openapi.json";
 const methods = new Set(["get", "post", "put", "patch", "delete"]);
 
 describe("public API documentation contract", () => {
-  it("makes project context optional and removes the retired NoxFeed config field", () => {
+  it("makes project context optional and removes the retired Activity config field", () => {
     expect(openapi.components.parameters.projectContext.required).toBe(false);
-    expect(openapi.components.schemas.NoxFeedConfigPatch.properties).not.toHaveProperty("projectScope");
+    expect(openapi.components.schemas.ActivityConfigPatch.properties).not.toHaveProperty("projectScope");
     for (const pathItem of Object.values(openapi.paths)) {
       for (const [method, operation] of Object.entries(pathItem)) {
         if (!methods.has(method)) continue;

@@ -11,13 +11,13 @@ function database() {
         }
         if (sql.includes("GROUP BY app_id")) {
           return { results: [
-            { app_id: "noxconnect", total_users: 3, daily_users: 1, weekly_users: 2, monthly_users: 3, last_event_at: "2026-09-06T01:00:00Z" },
-            { app_id: "noxfeed", total_users: 2, daily_users: 1, weekly_users: 1, monthly_users: 2, last_event_at: "2026-09-05T01:00:00Z" },
+            { app_id: "noxhere", total_users: 3, daily_users: 1, weekly_users: 2, monthly_users: 3, last_event_at: "2026-09-06T01:00:00Z" },
+            { app_id: "activity", total_users: 2, daily_users: 1, weekly_users: 1, monthly_users: 2, last_event_at: "2026-09-05T01:00:00Z" },
           ] };
         }
         return { results: [
-          { id: 1, github_login: "acme", created_at: "2026-08-01T00:00:00Z", suspended_at: null, settings_data: JSON.stringify({ apps: { noxspot: false } }), known_accounts: 2, active_accounts_30d: 2, last_active_at: "2026-09-06T01:00:00Z" },
-          { id: 2, github_login: "beta", created_at: "2026-08-02T00:00:00Z", suspended_at: null, settings_data: JSON.stringify({ apps: { noxfeed: false } }), known_accounts: 1, active_accounts_30d: 0, last_active_at: "2026-08-10T01:00:00Z" },
+          { id: 1, github_login: "acme", created_at: "2026-08-01T00:00:00Z", suspended_at: null, settings_data: JSON.stringify({ apps: { feedback: false } }), known_accounts: 2, active_accounts_30d: 2, last_active_at: "2026-09-06T01:00:00Z" },
+          { id: 2, github_login: "beta", created_at: "2026-08-02T00:00:00Z", suspended_at: null, settings_data: JSON.stringify({ apps: { activity: false } }), known_accounts: 1, active_accounts_30d: 0, last_active_at: "2026-08-10T01:00:00Z" },
         ] };
       });
     },
@@ -39,12 +39,12 @@ describe("GET /api/operator/usage", () => {
 
     expect(response.status).toBe(200);
     expect(body.totals).toMatchObject({ organizations: 2, knownAccounts: 3, activeAccounts30d: 2 });
-    expect(body.services.find((service: { id: string }) => service.id === "noxfeed")).toMatchObject({
+    expect(body.services.find((service: { id: string }) => service.id === "activity")).toMatchObject({
       availableOrganizations: 2,
       telemetryConnected: true,
       users: { total: 2, daily: 1, weekly: 1, monthly: 2 },
     });
-    expect(body.services.find((service: { id: string }) => service.id === "noxspot")).toMatchObject({
+    expect(body.services.find((service: { id: string }) => service.id === "feedback")).toMatchObject({
       availableOrganizations: 2,
       telemetryConnected: false,
       users: null,

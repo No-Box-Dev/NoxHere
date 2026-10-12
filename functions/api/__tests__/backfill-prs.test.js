@@ -9,7 +9,7 @@ import { onRequestPost } from "../projects/[id]/backfill-prs.js";
 afterEach(() => vi.restoreAllMocks());
 
 describe("pull-request post backfill dependencies", () => {
-  it("returns a sanitized dependency error when NoxFeed generation info is unreachable", async () => {
+  it("returns a sanitized dependency error when Activity generation info is unreachable", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const recent = new Date().toISOString();
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify([{
@@ -40,7 +40,7 @@ describe("pull-request post backfill dependencies", () => {
     const context = {
       env: {
         DB,
-        NOXFEED_RESPONSE: {
+        ACTIVITY_RESPONSE: {
           async generationInfo() { throw new Error("secret internal binding detail"); },
         },
       },
@@ -57,7 +57,7 @@ describe("pull-request post backfill dependencies", () => {
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
-      error: "NoxFeed generation service is unavailable",
+      error: "Activity generation service is unavailable",
       code: "dependency_unavailable",
     });
     expect(context.waitUntil).not.toHaveBeenCalled();

@@ -16,7 +16,7 @@ async function assertionHeaders(method, signedPath = pathname) {
   const assertion = {
     version: 1,
     issuer: "noxhere",
-    audience: "noxconnect",
+    audience: "noxhere",
     issuedAt: now,
     expiresAt: now + 30,
     method,

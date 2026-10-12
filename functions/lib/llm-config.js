@@ -1,4 +1,4 @@
-// NoxConnect's server-owned Anthropic route. Customers never provide keys or
+// NoxHere's server-owned Anthropic route. Customers never provide keys or
 // endpoints; an organization can only disable AI when policy requires it.
 
 export const AI_MODE_MANAGED = "managed";

@@ -15,12 +15,12 @@
   },
   "services": [
     {
-      "binding": "NOXCONNECT",
-      "service": "noxconnect-api"
+      "binding": "NOXHERE",
+      "service": "noxhere-api"
     },
     {
-      "binding": "NOXCONNECT_IDENTITY",
-      "service": "noxconnect-capabilities"
+      "binding": "NOXHERE_IDENTITY",
+      "service": "noxhere-connections"
     }
   ],
   "d1_databases": [
@@ -56,12 +56,12 @@
       },
       "services": [
         {
-          "binding": "NOXCONNECT",
-          "service": "noxconnect-staging"
+          "binding": "NOXHERE",
+          "service": "noxhere-staging"
         },
         {
-          "binding": "NOXCONNECT_IDENTITY",
-          "service": "noxconnect-capabilities-staging"
+          "binding": "NOXHERE_IDENTITY",
+          "service": "noxhere-connections-staging"
         }
       ],
       "d1_databases": [

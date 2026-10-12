@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export const CONNECTION_CAPABILITY_CONTRACT = "noxconnect.connection-capability" as const;
+export const CONNECTION_CAPABILITY_CONTRACT = "noxhere.connection-capability" as const;
 export const CONNECTION_CAPABILITY_VERSION = 1 as const;
 
-const ServiceId = z.enum(["noxticket", "noxfeed", "noxspot", "noxcue"]);
+const ServiceId = z.enum(["planning", "activity", "feedback", "telemetry"]);
 const CapabilityId = z.enum([
   "github.issue.create",
   "github.issue.update",
@@ -71,13 +71,13 @@ const GitHubIssueComment = BaseCommand.extend({
 }).strict();
 
 export const SlackRouteKey = z.enum([
-  "noxticket",
-  "noxfeed_posts",
-  "noxfeed_release_notes",
-  "noxfeed_daily_summary",
-  "noxspot",
-  "noxcue",
-  "noxcue_alerts",
+  "planning",
+  "activity_posts",
+  "activity_release_notes",
+  "activity_daily_summary",
+  "feedback",
+  "telemetry",
+  "telemetry_alerts",
 ]);
 
 const SlackMessage = z.object({
@@ -119,7 +119,7 @@ export const ConnectionCapabilityCommandSchema = z.discriminatedUnion("capabilit
 export type ConnectionCapabilityCommand = z.infer<typeof ConnectionCapabilityCommandSchema>;
 
 const ReceiptBase = z.object({
-  contract: z.literal("noxconnect.connection-receipt"),
+  contract: z.literal("noxhere.connection-receipt"),
   version: z.literal(1),
   commandId: Identifier,
   idempotencyKey: Identifier,

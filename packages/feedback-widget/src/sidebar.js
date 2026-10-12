@@ -46,11 +46,11 @@ const FALLBACK_BLOCKS = [
 // Hardcoded ids for the four "core" form fields keep the existing CSS,
 // validation, and combobox event wiring intact.
 const CORE_IDS = {
-  title: 'noxspot-title',
-  description: 'noxspot-description',
-  reporter: 'noxspot-reporter',
-  contactEmail: 'noxspot-contact-email',
-  category: 'noxspot-category',
+  title: 'feedback-title',
+  description: 'feedback-description',
+  reporter: 'feedback-reporter',
+  contactEmail: 'feedback-contact-email',
+  category: 'feedback-category',
 };
 
 // Strip block IDs to a safe DOM-id charset before interpolating into HTML.
@@ -60,7 +60,7 @@ const CORE_IDS = {
 // inject markup. Anything outside [a-z0-9-] is dropped.
 function customBlockDomId(blockId) {
   const safe = String(blockId || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
-  return `noxspot-block-${safe}`;
+  return `feedback-block-${safe}`;
 }
 
 /**
@@ -83,7 +83,7 @@ export function createSidebarHTML(opts) {
   defaultReporter = typeof reporter?.name === 'string' ? reporter.name.slice(0, REPORTER_MAX) : '';
 
   const thumbnailHTML = `
-    <div class="noxspot-mobile-thumbnail" style="display:none">
+    <div class="feedback-mobile-thumbnail" style="display:none">
       <img src="${screenshotDataUrl || ''}" alt="Screenshot preview" />
     </div>
   `;
@@ -91,18 +91,18 @@ export function createSidebarHTML(opts) {
   const blocksHTML = formBlocks.map((b) => renderBlock(b, metadata)).join('');
 
   return `
-    <div class="noxspot-sidebar-content">
+    <div class="feedback-sidebar-content">
       ${thumbnailHTML}
-      <div class="noxspot-sidebar-header" style="display: flex; align-items: center;">
-        <button type="button" class="noxspot-mobile-back" style="display:none">&larr; Back</button>
-        <h2 class="noxspot-sidebar-title">Report Issue</h2>
+      <div class="feedback-sidebar-header" style="display: flex; align-items: center;">
+        <button type="button" class="feedback-mobile-back" style="display:none">&larr; Back</button>
+        <h2 class="feedback-sidebar-title">Report Issue</h2>
       </div>
 
-      <form class="noxspot-form" id="noxspot-form">
+      <form class="feedback-form" id="feedback-form">
         ${blocksHTML}
 
-        <div class="noxspot-submit-row">
-          <button type="submit" class="noxspot-submit-btn">
+        <div class="feedback-submit-row">
+          <button type="submit" class="feedback-submit-btn">
             Submit
           </button>
         </div>
@@ -134,17 +134,17 @@ function renderBlock(block, metadata) {
 function renderTitle(block) {
   const labelText = block.label || 'Title';
   return `
-    <div class="noxspot-form-group">
-      <label class="noxspot-label" for="${CORE_IDS.title}">${escapeHtml(labelText)} <span class="noxspot-title-required">*</span></label>
+    <div class="feedback-form-group">
+      <label class="feedback-label" for="${CORE_IDS.title}">${escapeHtml(labelText)} <span class="feedback-title-required">*</span></label>
       <input
         type="text"
         id="${CORE_IDS.title}"
-        class="noxspot-input"
+        class="feedback-input"
         placeholder="Brief description of the issue"
         maxlength="${TITLE_MAX}"
         required
       />
-      <div class="noxspot-field-error" id="${CORE_IDS.title}-error" role="alert"></div>
+      <div class="feedback-field-error" id="${CORE_IDS.title}-error" role="alert"></div>
     </div>
   `;
 }
@@ -152,16 +152,16 @@ function renderTitle(block) {
 function renderDescription(block) {
   const labelText = block.label || 'Description';
   return `
-    <div class="noxspot-form-group">
-      <label class="noxspot-label" for="${CORE_IDS.description}">${escapeHtml(labelText)}</label>
+    <div class="feedback-form-group">
+      <label class="feedback-label" for="${CORE_IDS.description}">${escapeHtml(labelText)}</label>
       <textarea
         id="${CORE_IDS.description}"
-        class="noxspot-textarea"
+        class="feedback-textarea"
         placeholder="Steps to reproduce, expected behavior, etc."
         rows="4"
         maxlength="${DESCRIPTION_MAX}"
       ></textarea>
-      <div class="noxspot-field-error" id="${CORE_IDS.description}-error" role="alert"></div>
+      <div class="feedback-field-error" id="${CORE_IDS.description}-error" role="alert"></div>
     </div>
   `;
 }
@@ -170,20 +170,20 @@ function renderReporter(block) {
   const labelText = block.label || 'Submitted by';
   const requiredMark = block.required ? ' *' : '';
   return `
-    <div class="noxspot-form-group">
-      <label class="noxspot-label" for="${CORE_IDS.reporter}">${escapeHtml(labelText)}${requiredMark}</label>
-      <div class="noxspot-combobox">
+    <div class="feedback-form-group">
+      <label class="feedback-label" for="${CORE_IDS.reporter}">${escapeHtml(labelText)}${requiredMark}</label>
+      <div class="feedback-combobox">
         <input
           type="text"
           id="${CORE_IDS.reporter}"
-          class="noxspot-input"
+          class="feedback-input"
           placeholder="Your name or GitHub handle"
           autocomplete="off"
           spellcheck="false"
           role="combobox"
           aria-autocomplete="list"
           aria-expanded="false"
-          aria-controls="noxspot-reporter-menu"
+          aria-controls="feedback-reporter-menu"
           data-1p-ignore
           data-lpignore="true"
           maxlength="${REPORTER_MAX}"
@@ -191,12 +191,12 @@ function renderReporter(block) {
           ${block.required ? 'required' : ''}
         />
         <div
-          id="noxspot-reporter-menu"
-          class="noxspot-dropdown-menu"
+          id="feedback-reporter-menu"
+          class="feedback-dropdown-menu"
           role="listbox"
         ></div>
       </div>
-      <div class="noxspot-field-error" id="${CORE_IDS.reporter}-error" role="alert"></div>
+      <div class="feedback-field-error" id="${CORE_IDS.reporter}-error" role="alert"></div>
     </div>
   `;
 }
@@ -205,18 +205,18 @@ function renderContactEmail(block) {
   const labelText = block.label || 'Contact email (optional)';
   const requiredMark = block.required ? ' *' : '';
   return `
-    <div class="noxspot-form-group">
-      <label class="noxspot-label" for="${CORE_IDS.contactEmail}">${escapeHtml(labelText)}${requiredMark}</label>
+    <div class="feedback-form-group">
+      <label class="feedback-label" for="${CORE_IDS.contactEmail}">${escapeHtml(labelText)}${requiredMark}</label>
       <input
         type="email"
         id="${CORE_IDS.contactEmail}"
-        class="noxspot-input"
+        class="feedback-input"
         placeholder="you@example.com"
         autocomplete="email"
         maxlength="${EMAIL_MAX}"
         ${block.required ? 'required' : ''}
       />
-      <div class="noxspot-field-error" id="${CORE_IDS.contactEmail}-error" role="alert"></div>
+      <div class="feedback-field-error" id="${CORE_IDS.contactEmail}-error" role="alert"></div>
     </div>
   `;
 }
@@ -228,9 +228,9 @@ function renderCategory(block) {
   if (reportCategories.length < 2) return '';
   const labelText = block.label || 'Category';
   return `
-    <div class="noxspot-form-group">
-      <label class="noxspot-label" for="${CORE_IDS.category}">${escapeHtml(labelText)}</label>
-      <select id="${CORE_IDS.category}" class="noxspot-input">
+    <div class="feedback-form-group">
+      <label class="feedback-label" for="${CORE_IDS.category}">${escapeHtml(labelText)}</label>
+      <select id="${CORE_IDS.category}" class="feedback-input">
         <option value="">— Select a category (optional) —</option>
         ${reportCategories.map(c => `<option value="${escapeHtml(c.label)}">${escapeHtml(c.label)}</option>`).join('')}
       </select>
@@ -241,18 +241,18 @@ function renderCategory(block) {
 function renderCustomText(block) {
   const id = customBlockDomId(block.id);
   const labelText = block.label || 'Answer';
-  const requiredMark = block.required ? ' <span class="noxspot-title-required">*</span>' : '';
+  const requiredMark = block.required ? ' <span class="feedback-title-required">*</span>' : '';
   return `
-    <div class="noxspot-form-group" data-block-id="${escapeHtml(block.id)}" data-block-type="custom_text">
-      <label class="noxspot-label" for="${id}">${escapeHtml(labelText)}${requiredMark}</label>
+    <div class="feedback-form-group" data-block-id="${escapeHtml(block.id)}" data-block-type="custom_text">
+      <label class="feedback-label" for="${id}">${escapeHtml(labelText)}${requiredMark}</label>
       <input
         type="text"
         id="${id}"
-        class="noxspot-input"
+        class="feedback-input"
         maxlength="${CUSTOM_TEXT_MAX}"
         ${block.required ? 'required' : ''}
       />
-      <div class="noxspot-field-error" id="${id}-error" role="alert"></div>
+      <div class="feedback-field-error" id="${id}-error" role="alert"></div>
     </div>
   `;
 }
@@ -260,18 +260,18 @@ function renderCustomText(block) {
 function renderCustomTextarea(block) {
   const id = customBlockDomId(block.id);
   const labelText = block.label || 'Answer';
-  const requiredMark = block.required ? ' <span class="noxspot-title-required">*</span>' : '';
+  const requiredMark = block.required ? ' <span class="feedback-title-required">*</span>' : '';
   return `
-    <div class="noxspot-form-group" data-block-id="${escapeHtml(block.id)}" data-block-type="custom_textarea">
-      <label class="noxspot-label" for="${id}">${escapeHtml(labelText)}${requiredMark}</label>
+    <div class="feedback-form-group" data-block-id="${escapeHtml(block.id)}" data-block-type="custom_textarea">
+      <label class="feedback-label" for="${id}">${escapeHtml(labelText)}${requiredMark}</label>
       <textarea
         id="${id}"
-        class="noxspot-textarea"
+        class="feedback-textarea"
         rows="3"
         maxlength="${CUSTOM_TEXT_MAX}"
         ${block.required ? 'required' : ''}
       ></textarea>
-      <div class="noxspot-field-error" id="${id}-error" role="alert"></div>
+      <div class="feedback-field-error" id="${id}-error" role="alert"></div>
     </div>
   `;
 }
@@ -279,25 +279,25 @@ function renderCustomTextarea(block) {
 function renderCustomSelect(block) {
   const id = customBlockDomId(block.id);
   const labelText = block.label || 'Select';
-  const requiredMark = block.required ? ' <span class="noxspot-title-required">*</span>' : '';
+  const requiredMark = block.required ? ' <span class="feedback-title-required">*</span>' : '';
   const options = Array.isArray(block.options) ? block.options : [];
   return `
-    <div class="noxspot-form-group" data-block-id="${escapeHtml(block.id)}" data-block-type="custom_select">
-      <label class="noxspot-label" for="${id}">${escapeHtml(labelText)}${requiredMark}</label>
-      <select id="${id}" class="noxspot-input" ${block.required ? 'required' : ''}>
+    <div class="feedback-form-group" data-block-id="${escapeHtml(block.id)}" data-block-type="custom_select">
+      <label class="feedback-label" for="${id}">${escapeHtml(labelText)}${requiredMark}</label>
+      <select id="${id}" class="feedback-input" ${block.required ? 'required' : ''}>
         <option value="">— Select —</option>
         ${options.map((opt) => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('')}
       </select>
-      <div class="noxspot-field-error" id="${id}-error" role="alert"></div>
+      <div class="feedback-field-error" id="${id}-error" role="alert"></div>
     </div>
   `;
 }
 
 function renderElementsSection() {
   return `
-    <div class="noxspot-form-group noxspot-elements-section" style="display: none;">
-      <label class="noxspot-label">Selected Elements</label>
-      <div class="noxspot-elements-list"></div>
+    <div class="feedback-form-group feedback-elements-section" style="display: none;">
+      <label class="feedback-label">Selected Elements</label>
+      <div class="feedback-elements-list"></div>
     </div>
   `;
 }
@@ -305,27 +305,27 @@ function renderElementsSection() {
 function renderMetadataSection(metadata) {
   if (!metadata) return '';
   return `
-    <div class="noxspot-form-group noxspot-form-group--metadata">
-      <label class="noxspot-label">Captured Info</label>
-      <div class="noxspot-metadata">
-        <div class="noxspot-metadata-item">
-          <span class="noxspot-metadata-label">URL</span>
-          <span class="noxspot-metadata-value" title="${escapeHtml(metadata.url)}">${escapeHtml(truncate(metadata.url, 35))}</span>
+    <div class="feedback-form-group feedback-form-group--metadata">
+      <label class="feedback-label">Captured Info</label>
+      <div class="feedback-metadata">
+        <div class="feedback-metadata-item">
+          <span class="feedback-metadata-label">URL</span>
+          <span class="feedback-metadata-value" title="${escapeHtml(metadata.url)}">${escapeHtml(truncate(metadata.url, 35))}</span>
         </div>
-        <div class="noxspot-metadata-item">
-          <span class="noxspot-metadata-label">Browser</span>
-          <span class="noxspot-metadata-value">${escapeHtml(metadata.browser)}</span>
+        <div class="feedback-metadata-item">
+          <span class="feedback-metadata-label">Browser</span>
+          <span class="feedback-metadata-value">${escapeHtml(metadata.browser)}</span>
         </div>
-        <div class="noxspot-metadata-item">
-          <span class="noxspot-metadata-label">OS</span>
-          <span class="noxspot-metadata-value">${escapeHtml(metadata.os)}</span>
+        <div class="feedback-metadata-item">
+          <span class="feedback-metadata-label">OS</span>
+          <span class="feedback-metadata-value">${escapeHtml(metadata.os)}</span>
         </div>
-        <div class="noxspot-metadata-item">
-          <span class="noxspot-metadata-label">Viewport</span>
-          <span class="noxspot-metadata-value">${escapeHtml(metadata.viewport)}</span>
+        <div class="feedback-metadata-item">
+          <span class="feedback-metadata-label">Viewport</span>
+          <span class="feedback-metadata-value">${escapeHtml(metadata.viewport)}</span>
         </div>
       </div>
-      <p class="noxspot-hint">Screenshot issues? Try disabling browser extensions.</p>
+      <p class="feedback-hint">Screenshot issues? Try disabling browser extensions.</p>
     </div>
   `;
 }
@@ -334,7 +334,7 @@ function renderMetadataSection(metadata) {
  * Initialize sidebar event listeners
  */
 export function initSidebarEvents() {
-  const form = document.getElementById('noxspot-form');
+  const form = document.getElementById('feedback-form');
   if (form) {
     form.addEventListener('submit', handleSubmit);
   }
@@ -360,7 +360,7 @@ function setFieldError(inputId, message) {
   const errorEl = document.getElementById(`${inputId}-error`);
   const inputEl = document.getElementById(inputId);
   if (errorEl) errorEl.textContent = message || '';
-  if (inputEl) inputEl.classList.toggle('noxspot-input--invalid', !!message);
+  if (inputEl) inputEl.classList.toggle('feedback-input--invalid', !!message);
 }
 
 export function validateFormData(data, blocks) {
@@ -451,7 +451,7 @@ function collectFormData() {
 
 function initReporterCombobox() {
   const input = document.getElementById(CORE_IDS.reporter);
-  const menu = document.getElementById('noxspot-reporter-menu');
+  const menu = document.getElementById('feedback-reporter-menu');
   if (!input || !menu) return;
 
   let highlightIndex = -1;
@@ -479,13 +479,13 @@ function initReporterCombobox() {
       return;
     }
     if (!items.length) {
-      menu.innerHTML = '<div class="noxspot-dropdown-empty">No matches — press Enter to use what you typed</div>';
+      menu.innerHTML = '<div class="feedback-dropdown-empty">No matches — press Enter to use what you typed</div>';
       return;
     }
     menu.innerHTML = items.map((m, i) =>
-      `<div class="noxspot-dropdown-item" role="option" data-index="${i}" data-login="${escapeHtml(m.login)}">@${escapeHtml(m.login)}</div>`
+      `<div class="feedback-dropdown-item" role="option" data-index="${i}" data-login="${escapeHtml(m.login)}">@${escapeHtml(m.login)}</div>`
     ).join('');
-    menu.querySelectorAll('.noxspot-dropdown-item').forEach((el) => {
+    menu.querySelectorAll('.feedback-dropdown-item').forEach((el) => {
       // mousedown (not click) so selection fires before blur hides the menu
       el.addEventListener('mousedown', (e) => {
         e.preventDefault();
@@ -500,10 +500,10 @@ function initReporterCombobox() {
   }
 
   function paintHighlight() {
-    menu.querySelectorAll('.noxspot-dropdown-item').forEach((el, i) => {
+    menu.querySelectorAll('.feedback-dropdown-item').forEach((el, i) => {
       el.classList.toggle('highlighted', i === highlightIndex);
     });
-    const active = menu.querySelector('.noxspot-dropdown-item.highlighted');
+    const active = menu.querySelector('.feedback-dropdown-item.highlighted');
     if (active) active.scrollIntoView({ block: 'nearest' });
   }
 
@@ -579,7 +579,7 @@ function handleSubmit(e) {
     if (firstInvalid) firstInvalid.focus();
     return;
   }
-  debugLog('[NoxSpot] Form submitted', data);
+  debugLog('[Feedback] Form submitted', data);
   if (onSubmitCallback) onSubmitCallback(data);
 }
 
@@ -599,8 +599,8 @@ export { escapeHtml };
  * @param {Function} onRemove - Callback when element is removed, receives index
  */
 export function updateSelectedElements(elements, onRemove) {
-  const section = document.querySelector('.noxspot-elements-section');
-  const list = document.querySelector('.noxspot-elements-list');
+  const section = document.querySelector('.feedback-elements-section');
+  const list = document.querySelector('.feedback-elements-list');
 
   if (!section || !list) return;
 
@@ -638,17 +638,17 @@ export function updateSelectedElements(elements, onRemove) {
     }
 
     const attrList = dedupedKeys.length > 0 ? `
-      <div class="noxspot-element-attrs">
-        ${dedupedKeys.map(k => `<span class="noxspot-attr-pill"><span class="noxspot-attr-key">${escapeHtml(k)}</span> ${escapeHtml(attrs[k])}</span>`).join('')}
+      <div class="feedback-element-attrs">
+        ${dedupedKeys.map(k => `<span class="feedback-attr-pill"><span class="feedback-attr-key">${escapeHtml(k)}</span> ${escapeHtml(attrs[k])}</span>`).join('')}
       </div>
     ` : '';
 
     return `
-      <div class="noxspot-element-chip" data-index="${index}">
-        <div class="noxspot-element-row">
-          <span class="noxspot-element-tag">${escapeHtml(el.tagName)}</span>
-          <span class="noxspot-element-detail">${escapeHtml(getElementLabel(el))}</span>
-          <button type="button" class="noxspot-element-remove" data-index="${index}" aria-label="Remove">
+      <div class="feedback-element-chip" data-index="${index}">
+        <div class="feedback-element-row">
+          <span class="feedback-element-tag">${escapeHtml(el.tagName)}</span>
+          <span class="feedback-element-detail">${escapeHtml(getElementLabel(el))}</span>
+          <button type="button" class="feedback-element-remove" data-index="${index}" aria-label="Remove">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -661,7 +661,7 @@ export function updateSelectedElements(elements, onRemove) {
   }).join('');
 
   // Add remove handlers
-  list.querySelectorAll('.noxspot-element-remove').forEach(btn => {
+  list.querySelectorAll('.feedback-element-remove').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const index = parseInt(btn.dataset.index, 10);

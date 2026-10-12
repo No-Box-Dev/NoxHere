@@ -11,5 +11,5 @@ but do not own provider credentials or service business logic.
 The native Apple client remains a separate repository because its Xcode,
 signing, TestFlight, and App Store lifecycle is independent. Use
 `noxhere-apple` as the repository name and `NoxHere` as the app name; avoid a
-service name such as `NoxFeedApp`, because Feed is now one capability inside
+service name such as `ActivityApp`, because Feed is now one capability inside
 NoxHere. NoxKey also remains a separate product and repository.

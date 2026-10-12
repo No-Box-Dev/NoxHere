@@ -66,7 +66,7 @@ describe("Slack transport adapter", () => {
       channelId: "C123",
       messageId: "100.1",
     });
-    expect(provider.projectRoute).toHaveBeenCalledWith({}, 7, "noxfeed_posts", { projectId: "project-1" });
+    expect(provider.projectRoute).toHaveBeenCalledWith({}, 7, "activity_posts", { projectId: "project-1" });
     expect(provider.post).toHaveBeenCalledWith("xoxb-secret", "C123", { text: "hello", blocks: [] });
     expect(provider.used).toHaveBeenCalledWith({}, 7, "connection-1");
   });
@@ -107,7 +107,7 @@ describe("Slack transport adapter", () => {
     const feedback = parseTransportCommand({
       ...command(),
       commandId: "feedback-1",
-      idempotencyKey: "noxspot:capture-1",
+      idempotencyKey: "feedback:capture-1",
       route: "feedback",
       routeContext: { kind: "site", id: "site-1" },
     });

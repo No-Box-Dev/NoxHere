@@ -222,7 +222,7 @@ function acceptedCredentials(operation) {
     browserSession: "browser session",
     nativeSession: "native nox_at_ token",
     noxApiToken: "automation nox_sk_ token",
-    noxCueKey: "source X-Nox-Ingest-Key",
+    telemetryKey: "source X-Nox-Ingest-Key",
     organization: "organization context",
     csrfProof: "CSRF proof",
   };

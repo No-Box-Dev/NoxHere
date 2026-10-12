@@ -7,7 +7,7 @@ function makeCtx({
   isAdmin = true,
   orgId = 7,
   key = "managed-key",
-  noxfeedAvailable = true,
+  activityAvailable = true,
   generationInfoError = null,
 } = {}) {
   const calls = { batches: [] };
@@ -31,15 +31,15 @@ function makeCtx({
       env: {
         DB,
         ANTHROPIC_API_KEY: key,
-        NOXFEED_RESPONSE: {
+        ACTIVITY_RESPONSE: {
           async generationInfo() {
             if (generationInfoError) throw generationInfoError;
             return {
-              contract: "noxfeed.response",
+              contract: "activity.response",
               version: 1,
               provider: "anthropic",
-              model: "noxfeed-model",
-              available: noxfeedAvailable,
+              model: "activity-model",
+              available: activityAvailable,
             };
           },
         },
@@ -62,11 +62,11 @@ describe("managed AI settings", () => {
       mode: "managed",
       managed: {
         provider: "anthropic",
-        model: "noxfeed-model",
+        model: "activity-model",
         available: true,
         services: {
-          noxfeed: { provider: "anthropic", model: "noxfeed-model", available: true },
-          noxconnect: {
+          activity: { provider: "anthropic", model: "activity-model", available: true },
+          noxhere: {
             provider: "anthropic",
             model: "claude-haiku-4-5-20251001",
             available: true,
@@ -77,25 +77,25 @@ describe("managed AI settings", () => {
   });
 
   it("reports per-service readiness and requires both services for aggregate readiness", async () => {
-    const response = await onRequestGet(makeCtx({ noxfeedAvailable: false }).ctx);
+    const response = await onRequestGet(makeCtx({ activityAvailable: false }).ctx);
     expect(await response.json()).toMatchObject({
       managed: {
         available: false,
         services: {
-          noxfeed: { available: false },
-          noxconnect: { available: true },
+          activity: { available: false },
+          noxhere: { available: true },
         },
       },
     });
   });
 
-  it("degrades safely when the private NoxFeed RPC is unavailable", async () => {
+  it("degrades safely when the private Activity RPC is unavailable", async () => {
     const response = await onRequestGet(makeCtx({ generationInfoError: new Error("private detail") }).ctx);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       managed: {
         available: false,
-        services: { noxfeed: { available: false }, noxconnect: { available: true } },
+        services: { activity: { available: false }, noxhere: { available: true } },
       },
     });
   });
@@ -115,10 +115,10 @@ describe("managed AI settings", () => {
   it("rejects BYOK fields and missing managed infrastructure", async () => {
     expect((await onRequestPut(makeCtx({ body: { mode: "byok" } }).ctx)).status).toBe(400);
     expect((await onRequestPut(makeCtx({ body: { mode: "managed", apiKey: "never" } }).ctx)).status).toBe(400);
-    const missingNoxConnect = await onRequestPut(makeCtx({ body: { mode: "managed" }, key: null }).ctx);
-    expect(missingNoxConnect.status).toBe(503);
-    expect(await missingNoxConnect.json()).toMatchObject({ code: "dependency_unavailable" });
-    expect((await onRequestPut(makeCtx({ body: { mode: "managed" }, noxfeedAvailable: false }).ctx)).status).toBe(503);
+    const missingNoxHere = await onRequestPut(makeCtx({ body: { mode: "managed" }, key: null }).ctx);
+    expect(missingNoxHere.status).toBe(503);
+    expect(await missingNoxHere.json()).toMatchObject({ code: "dependency_unavailable" });
+    expect((await onRequestPut(makeCtx({ body: { mode: "managed" }, activityAvailable: false }).ctx)).status).toBe(503);
   });
 
   it("preserves admin and organization boundaries", async () => {

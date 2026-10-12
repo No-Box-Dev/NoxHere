@@ -6,12 +6,12 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 
 const execute = promisify(execFile);
-const KEYCHAIN_SERVICE = "com.noxconnect.cli";
+const KEYCHAIN_SERVICE = "com.noxhere.cli";
 const LEGACY_KEYCHAIN_ACCOUNT = "session";
 const DEFAULT_API_BASE = "https://app.noxhere.com";
 
 function apiOrigin(env = process.env) {
-  const value = env.NOXCONNECT_API_BASE || env.NOXHERE_API_BASE || DEFAULT_API_BASE;
+  const value = env.NOXHERE_API_BASE || env.NOXHERE_API_BASE || DEFAULT_API_BASE;
   try { return new URL(value).origin.toLowerCase(); }
   catch { return value.toLowerCase(); }
 }
@@ -25,14 +25,14 @@ function keychainAccount(env = process.env) {
 }
 
 function explicitFileStore(env = process.env) {
-  return env.NOXCONNECT_CREDENTIAL_STORE === "file";
+  return env.NOXHERE_CREDENTIAL_STORE === "file";
 }
 
 export function sessionPath(env = process.env) {
-  const configHome = env.NOXCONNECT_CONFIG_HOME
+  const configHome = env.NOXHERE_CONFIG_HOME
     || env.XDG_CONFIG_HOME
     || join(homedir(), ".config");
-  return join(configHome, "noxconnect", "session.json");
+  return join(configHome, "noxhere", "session.json");
 }
 
 export function useMacKeychain(env = process.env, platformName = platform()) {
@@ -47,7 +47,7 @@ async function readKeychainAccount(account) {
     return JSON.parse(stdout.trim());
   } catch (error) {
     if (error?.code === 44 || error?.stderr?.includes("could not be found")) return null;
-    throw new Error(`Could not read the NoxConnect session from Keychain: ${error.message}`);
+    throw new Error(`Could not read the NoxHere session from Keychain: ${error.message}`);
   }
 }
 
@@ -104,14 +104,14 @@ async function readLinuxSecretService(env = process.env) {
   } catch (error) {
     if (error?.code === 1) return { available: true, value: null };
     if (secretToolUnavailable(error)) return { available: false, value: null };
-    throw new Error(`Could not read the NoxConnect session from Linux Secret Service: ${error.message}`);
+    throw new Error(`Could not read the NoxHere session from Linux Secret Service: ${error.message}`);
   }
 }
 
 async function writeLinuxSecretService(value, env = process.env) {
   return new Promise((resolve, reject) => {
     const child = spawn("secret-tool", [
-      "store", "--label=NoxConnect CLI session", "service", KEYCHAIN_SERVICE,
+      "store", "--label=NoxHere CLI session", "service", KEYCHAIN_SERVICE,
       "account", keychainAccount(env),
     ], { stdio: ["pipe", "ignore", "pipe"] });
     let stderr = "";
@@ -119,12 +119,12 @@ async function writeLinuxSecretService(value, env = process.env) {
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.on("error", (error) => {
       if (secretToolUnavailable(error)) resolve(false);
-      else reject(new Error(`Could not write the NoxConnect session to Linux Secret Service: ${error.message}`));
+      else reject(new Error(`Could not write the NoxHere session to Linux Secret Service: ${error.message}`));
     });
     child.on("close", (code) => {
       if (code === 0) resolve(true);
       else if (secretToolUnavailable({ message: stderr, stderr })) resolve(false);
-      else reject(new Error(`Could not write the NoxConnect session to Linux Secret Service: ${stderr.trim() || `exit ${code}`}`));
+      else reject(new Error(`Could not write the NoxHere session to Linux Secret Service: ${stderr.trim() || `exit ${code}`}`));
     });
     child.stdin.end(JSON.stringify(value));
   });
@@ -153,7 +153,7 @@ async function readWindowsDpapi(env = process.env) {
     return JSON.parse(Buffer.from(stdout.trim(), "base64").toString("utf8"));
   } catch (error) {
     if (error?.code === 44) return null;
-    throw new Error(`Could not read the NoxConnect session protected by Windows: ${error.message}`);
+    throw new Error(`Could not read the NoxHere session protected by Windows: ${error.message}`);
   }
 }
 
@@ -171,7 +171,7 @@ function sharedStateHome(env = process.env) {
 }
 
 export function sharedSessionPath(env = process.env) {
-  return join(sharedStateHome(env), "noxconnect", `session-${originKey(env)}.json`);
+  return join(sharedStateHome(env), "noxhere", `session-${originKey(env)}.json`);
 }
 
 async function readFileSession(path) {
@@ -283,7 +283,7 @@ async function staleSessionLock(path, details) {
 }
 
 export async function withSessionLock(name, task, { timeoutMs = 30_000, env = process.env } = {}) {
-  const path = join(sharedStateHome(env), "noxconnect", "locks", `${originKey(env)}-${name}.lock`);
+  const path = join(sharedStateHome(env), "noxhere", "locks", `${originKey(env)}-${name}.lock`);
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   const deadline = Date.now() + timeoutMs;
   let handle;
@@ -298,7 +298,7 @@ export async function withSessionLock(name, task, { timeoutMs = 30_000, env = pr
         await unlink(path).catch(() => {});
         continue;
       }
-      if (Date.now() >= deadline) throw new Error(`Timed out waiting for another NoxConnect ${name} operation.`);
+      if (Date.now() >= deadline) throw new Error(`Timed out waiting for another NoxHere ${name} operation.`);
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }

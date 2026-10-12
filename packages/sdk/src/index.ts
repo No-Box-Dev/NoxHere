@@ -1,11 +1,11 @@
 export { createNoxHere, NoxHereApiError, NoxHereTransportError } from "./client.js";
-export type { CueResourceClient, NoxHereClient, NoxHereOptions, NoxHereRequestEvent, NoxHereResponseEvent, Operation, OperationArguments, OperationIdFor, OperationInput, OperationMap, OperationOutput, ResourceClient } from "./client.js";
+export type { TelemetryResourceClient, NoxHereClient, NoxHereOptions, NoxHereRequestEvent, NoxHereResponseEvent, Operation, OperationArguments, OperationIdFor, OperationInput, OperationMap, OperationOutput, ResourceClient } from "./client.js";
 export type { OperationId, ResourceNamespace } from "./operations.generated.js";
 export type { components, operations, paths } from "./schema.generated.js";
 export { createNativeAuth } from "./auth.js";
 export type { DeviceAuthorization, NativeAuth, NativeAuthOptions, NativeSessionState, NativeSessionStorage } from "./auth.js";
-export { createNoxCue, createNoxCueFromEnv, createNoxCueSpanProcessor, safeErrorDetails } from "./telemetry/server.js";
-export type { NoxCueReadableSpan, NoxCueSpanProcessor } from "./telemetry/server.js";
-export type { BrowserNoxCueOptions, DeliveryResult, NoxCueEnvironment, NoxCueFeature, NoxCueIdentity, NoxCueOptions, NoxCueOutcome, NoxCueReason, ServerNoxCueClient } from "./telemetry/types.js";
+export { createTelemetry, createTelemetryFromEnv, createTelemetrySpanProcessor, safeErrorDetails } from "./telemetry/server.js";
+export type { TelemetryReadableSpan, TelemetrySpanProcessor } from "./telemetry/server.js";
+export type { BrowserTelemetryOptions, DeliveryResult, TelemetryEnvironment, TelemetryFeature, TelemetryIdentity, TelemetryOptions, TelemetryOutcome, TelemetryReason, ServerTelemetryClient } from "./telemetry/types.js";
 export { createPlatformEvent } from "./events.js";
 export type { CreatePlatformEvent, JsonValue, PlatformEventActor, PlatformEventEnvelope, PlatformEventType } from "./events.js";

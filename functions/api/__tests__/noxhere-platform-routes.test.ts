@@ -10,7 +10,7 @@ vi.mock("../search", () => ({
   ] })),
 }));
 
-import { onRequestGet as currentSummary } from "../v1/feed/current-summary";
+import { onRequestGet as currentSummary } from "../v1/activity/current-summary";
 import { onRequestGet as retrieveProject } from "../v1/projects/[id]/retrieval";
 
 describe("NoxHere platform routes", () => {
@@ -58,8 +58,8 @@ describe("NoxHere platform routes", () => {
       data: { orgId: 7, orgLogin: "acme", projectId: "project-1" },
     } as never);
     await expect(response.json()).resolves.toEqual([
-      expect.objectContaining({ id: "person:1", serviceId: "connect", href: "/acme/project-1/feed/current/jasper" }),
-      expect.objectContaining({ id: "feature:2", serviceId: "ticket", href: "/acme/project-1/ticket/board" }),
+      expect.objectContaining({ id: "person:1", serviceId: "connections", href: "/acme/project-1/activity/current/jasper" }),
+      expect.objectContaining({ id: "feature:2", serviceId: "planning", href: "/acme/project-1/ticket/board" }),
     ]);
   });
 

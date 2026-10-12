@@ -165,97 +165,29 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "createFeedbackSite",
+    "method": "POST",
+    "path": "/api/v1/feedback/sites",
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "feedback:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "createGuestInvitation",
     "method": "POST",
     "path": "/api/v1/guests/invites",
     "namespace": "workspace",
     "authentication": "admin",
     "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "createNoxCueCustomFeature",
-    "method": "POST",
-    "path": "/api/v1/cues/sources/{sourceId}/features",
-    "namespace": "incidents",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "createNoxCueCustomMetric",
-    "method": "POST",
-    "path": "/api/v1/cues/sources/{sourceId}/custom-metrics",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "createNoxCueKey",
-    "method": "POST",
-    "path": "/api/v1/cues/sources/{sourceId}/keys",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "createNoxCueSource",
-    "method": "POST",
-    "path": "/api/v1/cues/sources",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "createNoxSpotSite",
-    "method": "POST",
-    "path": "/api/v1/spots/sites",
-    "namespace": "feedback",
-    "authentication": "admin",
-    "automationScope": "noxspot:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [
@@ -318,6 +250,74 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "createTelemetryCustomFeature",
+    "method": "POST",
+    "path": "/api/v1/telemetry/sources/{sourceId}/features",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "createTelemetryCustomMetric",
+    "method": "POST",
+    "path": "/api/v1/telemetry/sources/{sourceId}/custom-metrics",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "createTelemetryKey",
+    "method": "POST",
+    "path": "/api/v1/telemetry/sources/{sourceId}/keys",
+    "namespace": "stats",
+    "authentication": "admin",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "createTelemetrySource",
+    "method": "POST",
+    "path": "/api/v1/telemetry/sources",
+    "namespace": "stats",
+    "authentication": "admin",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "deleteFeatureAttachment",
     "method": "DELETE",
     "path": "/api/v1/features/{number}/attachments/{attachmentId}",
@@ -333,57 +333,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "deleteNoxCueCustomFeature",
+    "id": "deleteFeedbackSite",
     "method": "DELETE",
-    "path": "/api/v1/cues/sources/{sourceId}/features/{featureKey}",
-    "namespace": "incidents",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "destructive",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "deleteNoxCueCustomMetric",
-    "method": "DELETE",
-    "path": "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "destructive",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "deleteNoxCueSource",
-    "method": "DELETE",
-    "path": "/api/v1/cues/sources/{sourceId}",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "destructive",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "deleteNoxSpotSite",
-    "method": "DELETE",
-    "path": "/api/v1/spots/sites/{siteId}",
+    "path": "/api/v1/feedback/sites/{siteId}",
     "namespace": "feedback",
     "authentication": "admin",
-    "automationScope": "noxspot:write",
+    "automationScope": "feedback:write",
     "projectScope": "optional",
     "changeSafety": "destructive",
     "requestContentTypes": [],
@@ -414,6 +369,51 @@ export const operationDefinitions = [
     "namespace": "planning",
     "authentication": "member",
     "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "deleteTelemetryCustomFeature",
+    "method": "DELETE",
+    "path": "/api/v1/telemetry/sources/{sourceId}/features/{featureKey}",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "deleteTelemetryCustomMetric",
+    "method": "DELETE",
+    "path": "/api/v1/telemetry/sources/{sourceId}/custom-metrics/{metricKey}",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "deleteTelemetrySource",
+    "method": "DELETE",
+    "path": "/api/v1/telemetry/sources/{sourceId}",
+    "namespace": "stats",
+    "authentication": "admin",
+    "automationScope": "telemetry:write",
     "projectScope": "optional",
     "changeSafety": "destructive",
     "requestContentTypes": [],
@@ -519,6 +519,36 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "getActivity",
+    "method": "GET",
+    "path": "/api/v1/activity",
+    "namespace": "activity",
+    "authentication": "member",
+    "automationScope": "activity:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getActivityDefaultPrompt",
+    "method": "GET",
+    "path": "/api/v1/activity/release-notes-prompt",
+    "namespace": "activity",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "getActor",
     "method": "GET",
     "path": "/api/v1/actors/{actorId}",
@@ -564,81 +594,6 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "getCueProjectActions",
-    "method": "GET",
-    "path": "/api/v1/projects/{projectId}/cue/actions",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getCueProjectAlertRules",
-    "method": "GET",
-    "path": "/api/v1/projects/{projectId}/cue/alert-rules",
-    "namespace": "incidents",
-    "authentication": "member",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getCueProjectAlerts",
-    "method": "GET",
-    "path": "/api/v1/projects/{projectId}/cue/alerts",
-    "namespace": "incidents",
-    "authentication": "member",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getCueProjectDashboard",
-    "method": "GET",
-    "path": "/api/v1/projects/{projectId}/cue/dashboard",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getCueProjectStatEvents",
-    "method": "GET",
-    "path": "/api/v1/projects/{projectId}/cue/stat-events",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
     "id": "getCurrentMember",
     "method": "GET",
     "path": "/api/v1/me",
@@ -656,7 +611,7 @@ export const operationDefinitions = [
   {
     "id": "getCurrentWorkSummary",
     "method": "GET",
-    "path": "/api/v1/feed/current-summary",
+    "path": "/api/v1/activity/current-summary",
     "namespace": "activity",
     "authentication": "member",
     "automationScope": null,
@@ -690,6 +645,36 @@ export const operationDefinitions = [
     "namespace": "activity",
     "authentication": "member",
     "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getFeedbackProjectOverview",
+    "method": "GET",
+    "path": "/api/v1/feedback/project-overview",
+    "namespace": "feedback",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getFeedbackResolutionTemplate",
+    "method": "GET",
+    "path": "/api/v1/feedback/sites/{siteId}/resolution-template",
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "feedback:read",
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -794,97 +779,7 @@ export const operationDefinitions = [
     "path": "/api/v1/issues/{repo}/{number}",
     "namespace": "activity",
     "authentication": "member",
-    "automationScope": "noxfeed:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxCueDailyHealth",
-    "method": "GET",
-    "path": "/api/v1/cues/metrics",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxCueGitHubIssueSettings",
-    "method": "GET",
-    "path": "/api/v1/cues/github-issues",
-    "namespace": "incidents",
-    "authentication": "admin",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxCueProjectMetrics",
-    "method": "GET",
-    "path": "/api/v1/cues/projects/{projectId}/metrics",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxCueProjectOverview",
-    "method": "GET",
-    "path": "/api/v1/cues/project-overview",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxFeed",
-    "method": "GET",
-    "path": "/api/v1/feed",
-    "namespace": "activity",
-    "authentication": "member",
-    "automationScope": "noxfeed:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxFeedDefaultPrompt",
-    "method": "GET",
-    "path": "/api/v1/noxfeed/release-notes-prompt",
-    "namespace": "activity",
-    "authentication": "admin",
-    "automationScope": null,
+    "automationScope": "activity:read",
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -945,36 +840,6 @@ export const operationDefinitions = [
     "namespace": "workspace",
     "authentication": "member",
     "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxSpotProjectOverview",
-    "method": "GET",
-    "path": "/api/v1/spots/project-overview",
-    "namespace": "feedback",
-    "authentication": "member",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "getNoxSpotResolutionTemplate",
-    "method": "GET",
-    "path": "/api/v1/spots/sites/{siteId}/resolution-template",
-    "namespace": "feedback",
-    "authentication": "admin",
-    "automationScope": "noxspot:read",
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -1104,9 +969,9 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "getPublicNoxSpotConfig",
+    "id": "getPublicFeedbackConfig",
     "method": "GET",
-    "path": "/api/spots/public/v1/sites/{siteId}/config",
+    "path": "/api/feedback/public/v1/sites/{siteId}/config",
     "namespace": "feedback",
     "authentication": "public",
     "automationScope": null,
@@ -1118,14 +983,14 @@ export const operationDefinitions = [
     ],
     "servers": [
       {
-        "url": "https://api.noxspot.dev"
+        "url": "https://app.noxhere.com"
       }
     ]
   },
   {
-    "id": "getPublicNoxSpotMembers",
+    "id": "getPublicFeedbackMembers",
     "method": "GET",
-    "path": "/api/spots/public/v1/sites/{siteId}/members",
+    "path": "/api/feedback/public/v1/sites/{siteId}/members",
     "namespace": "feedback",
     "authentication": "public",
     "automationScope": null,
@@ -1137,7 +1002,7 @@ export const operationDefinitions = [
     ],
     "servers": [
       {
-        "url": "https://api.noxspot.dev"
+        "url": "https://app.noxhere.com"
       }
     ]
   },
@@ -1147,7 +1012,7 @@ export const operationDefinitions = [
     "path": "/api/v1/prs/{repo}/{number}",
     "namespace": "activity",
     "authentication": "member",
-    "automationScope": "noxfeed:read",
+    "automationScope": "activity:read",
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -1232,6 +1097,141 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "getTelemetryDailyHealth",
+    "method": "GET",
+    "path": "/api/v1/telemetry/metrics",
+    "namespace": "stats",
+    "authentication": "admin",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryGitHubIssueSettings",
+    "method": "GET",
+    "path": "/api/v1/telemetry/github-issues",
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryProjectActions",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/telemetry/actions",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryProjectAlertRules",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/telemetry/alert-rules",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryProjectAlerts",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/telemetry/alerts",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryProjectDashboard",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/telemetry/dashboard",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryProjectMetrics",
+    "method": "GET",
+    "path": "/api/v1/telemetry/projects/{projectId}/metrics",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryProjectOverview",
+    "method": "GET",
+    "path": "/api/v1/telemetry/project-overview",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getTelemetryProjectStatEvents",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/telemetry/stat-events",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "getWorkspaceConfig",
     "method": "GET",
     "path": "/api/v1/config/{key}",
@@ -1247,9 +1247,9 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "ingestNoxCueEvent",
+    "id": "ingestTelemetryEvent",
     "method": "POST",
-    "path": "/api/v1/cues/public/events",
+    "path": "/api/v1/telemetry/public/events",
     "namespace": "stats",
     "authentication": "ingest_key",
     "automationScope": null,
@@ -1339,6 +1339,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "listFeedbackSites",
+    "method": "GET",
+    "path": "/api/v1/feedback/sites",
+    "namespace": "feedback",
+    "authentication": "member",
+    "automationScope": "feedback:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "listFeedEvents",
     "method": "GET",
     "path": "/api/v1/events",
@@ -1389,7 +1404,7 @@ export const operationDefinitions = [
     "path": "/api/v1/issues",
     "namespace": "activity",
     "authentication": "member",
-    "automationScope": "noxfeed:read",
+    "automationScope": "activity:read",
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -1414,117 +1429,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "listNoxCueCards",
-    "method": "GET",
-    "path": "/api/v1/cues/sources/{sourceId}/cards",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "listNoxCueCustomMetrics",
-    "method": "GET",
-    "path": "/api/v1/cues/sources/{sourceId}/custom-metrics",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "listNoxCueEvents",
-    "method": "GET",
-    "path": "/api/v1/cues/events",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "listNoxCueFeatures",
-    "method": "GET",
-    "path": "/api/v1/cues/sources/{sourceId}/features",
-    "namespace": "incidents",
-    "authentication": "member",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "listNoxCueKeys",
-    "method": "GET",
-    "path": "/api/v1/cues/sources/{sourceId}/keys",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "listNoxCueSources",
-    "method": "GET",
-    "path": "/api/v1/cues/sources",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
     "id": "listNoxServices",
     "method": "GET",
     "path": "/api/v1/services",
     "namespace": "workspace",
     "authentication": "member",
     "automationScope": "services:read",
-    "projectScope": "optional",
-    "changeSafety": "safe_read",
-    "requestContentTypes": [],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "listNoxSpotSites",
-    "method": "GET",
-    "path": "/api/v1/spots/sites",
-    "namespace": "feedback",
-    "authentication": "member",
-    "automationScope": "noxspot:read",
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -1614,7 +1524,7 @@ export const operationDefinitions = [
     "path": "/api/v1/prs",
     "namespace": "activity",
     "authentication": "member",
-    "automationScope": "noxfeed:read",
+    "automationScope": "activity:read",
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -1684,6 +1594,96 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "listTelemetryCards",
+    "method": "GET",
+    "path": "/api/v1/telemetry/sources/{sourceId}/cards",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listTelemetryCustomMetrics",
+    "method": "GET",
+    "path": "/api/v1/telemetry/sources/{sourceId}/custom-metrics",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listTelemetryEvents",
+    "method": "GET",
+    "path": "/api/v1/telemetry/events",
+    "namespace": "stats",
+    "authentication": "admin",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listTelemetryFeatures",
+    "method": "GET",
+    "path": "/api/v1/telemetry/sources/{sourceId}/features",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listTelemetryKeys",
+    "method": "GET",
+    "path": "/api/v1/telemetry/sources/{sourceId}/keys",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listTelemetrySources",
+    "method": "GET",
+    "path": "/api/v1/telemetry/sources",
+    "namespace": "stats",
+    "authentication": "admin",
+    "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "patchNoxServiceConfig",
     "method": "PATCH",
     "path": "/api/v1/services/{service}/config",
@@ -1735,12 +1735,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "previewNoxSpotResolutionTemplate",
+    "id": "previewFeedbackResolutionTemplate",
     "method": "POST",
-    "path": "/api/v1/spots/sites/{siteId}/resolution-template/preview",
+    "path": "/api/v1/feedback/sites/{siteId}/resolution-template/preview",
     "namespace": "feedback",
     "authentication": "admin",
-    "automationScope": "noxspot:write",
+    "automationScope": "feedback:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [
@@ -1769,11 +1769,11 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "putNoxCueGitHubIssueSettings",
+    "id": "putPersonalTaskWorkflow",
     "method": "PUT",
-    "path": "/api/v1/cues/github-issues",
-    "namespace": "incidents",
-    "authentication": "admin",
+    "path": "/api/v1/task-workflows",
+    "namespace": "workspace",
+    "authentication": "member",
     "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
@@ -1786,11 +1786,11 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "putPersonalTaskWorkflow",
+    "id": "putTelemetryGitHubIssueSettings",
     "method": "PUT",
-    "path": "/api/v1/task-workflows",
-    "namespace": "workspace",
-    "authentication": "member",
+    "path": "/api/v1/telemetry/github-issues",
+    "namespace": "incidents",
+    "authentication": "admin",
     "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
@@ -1871,9 +1871,9 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "reopenResolvedNoxSpotReport",
+    "id": "reopenResolvedFeedbackReport",
     "method": "POST",
-    "path": "/api/spots/public/v1/resolution-responses/{token}",
+    "path": "/api/feedback/public/v1/resolution-responses/{token}",
     "namespace": "feedback",
     "authentication": "public",
     "automationScope": null,
@@ -1887,7 +1887,7 @@ export const operationDefinitions = [
     ],
     "servers": [
       {
-        "url": "https://api.noxspot.dev"
+        "url": "https://app.noxhere.com"
       }
     ]
   },
@@ -1954,12 +1954,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "retryNoxSpotDeliveries",
+    "id": "retryFeedbackDeliveries",
     "method": "POST",
-    "path": "/api/v1/spots/sites/{siteId}/retry-deliveries",
+    "path": "/api/v1/feedback/sites/{siteId}/retry-deliveries",
     "namespace": "feedback",
     "authentication": "admin",
-    "automationScope": "noxspot:write",
+    "automationScope": "feedback:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [],
@@ -2048,12 +2048,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "revokeNoxCueKey",
+    "id": "revokeTelemetryKey",
     "method": "DELETE",
-    "path": "/api/v1/cues/sources/{sourceId}/keys/{keyId}",
+    "path": "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}",
     "namespace": "stats",
     "authentication": "admin",
-    "automationScope": "noxcue:write",
+    "automationScope": "telemetry:write",
     "projectScope": "optional",
     "changeSafety": "destructive",
     "requestContentTypes": [],
@@ -2078,12 +2078,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "rotateNoxCueKey",
+    "id": "rotateTelemetryKey",
     "method": "POST",
-    "path": "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate",
+    "path": "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}/rotate",
     "namespace": "stats",
     "authentication": "member",
-    "automationScope": "noxcue:write",
+    "automationScope": "telemetry:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [],
@@ -2193,9 +2193,9 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "submitPublicNoxSpotErrors",
+    "id": "submitPublicFeedbackErrors",
     "method": "POST",
-    "path": "/api/spots/public/v1/errors",
+    "path": "/api/feedback/public/v1/errors",
     "namespace": "feedback",
     "authentication": "public",
     "automationScope": null,
@@ -2209,14 +2209,14 @@ export const operationDefinitions = [
     ],
     "servers": [
       {
-        "url": "https://api.noxspot.dev"
+        "url": "https://app.noxhere.com"
       }
     ]
   },
   {
-    "id": "submitPublicNoxSpotReport",
+    "id": "submitPublicFeedbackReport",
     "method": "POST",
-    "path": "/api/spots/public/v1/reports",
+    "path": "/api/feedback/public/v1/reports",
     "namespace": "feedback",
     "authentication": "public",
     "automationScope": null,
@@ -2230,7 +2230,7 @@ export const operationDefinitions = [
     ],
     "servers": [
       {
-        "url": "https://api.noxspot.dev"
+        "url": "https://app.noxhere.com"
       }
     ]
   },
@@ -2269,29 +2269,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "testNoxCueSource",
+    "id": "testFeedbackResolutionTemplate",
     "method": "POST",
-    "path": "/api/v1/cues/sources/{sourceId}/health/test",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "testNoxSpotResolutionTemplate",
-    "method": "POST",
-    "path": "/api/v1/spots/sites/{siteId}/resolution-template/test",
+    "path": "/api/v1/feedback/sites/{siteId}/resolution-template/test",
     "namespace": "feedback",
     "authentication": "admin",
-    "automationScope": "noxspot:write",
+    "automationScope": "feedback:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [
@@ -2337,12 +2320,12 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "updateActor",
-    "method": "PATCH",
-    "path": "/api/v1/actors/{actorId}",
-    "namespace": "workspace",
+    "id": "testTelemetrySource",
+    "method": "POST",
+    "path": "/api/v1/telemetry/sources/{sourceId}/health/test",
+    "namespace": "stats",
     "authentication": "admin",
-    "automationScope": null,
+    "automationScope": "telemetry:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [
@@ -2354,11 +2337,11 @@ export const operationDefinitions = [
     "servers": []
   },
   {
-    "id": "updateCueProjectActions",
-    "method": "PUT",
-    "path": "/api/v1/projects/{projectId}/cue/actions",
-    "namespace": "stats",
-    "authentication": "member",
+    "id": "updateActor",
+    "method": "PATCH",
+    "path": "/api/v1/actors/{actorId}",
+    "namespace": "workspace",
+    "authentication": "admin",
     "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
@@ -2377,6 +2360,57 @@ export const operationDefinitions = [
     "namespace": "planning",
     "authentication": "member",
     "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateFeedbackReport",
+    "method": "PATCH",
+    "path": "/api/v1/feedback/reports/{reportId}",
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateFeedbackResolutionTemplate",
+    "method": "PATCH",
+    "path": "/api/v1/feedback/sites/{siteId}/resolution-template",
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "feedback:write",
+    "projectScope": "optional",
+    "changeSafety": "conditional_write",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateFeedbackSite",
+    "method": "PATCH",
+    "path": "/api/v1/feedback/sites/{siteId}",
+    "namespace": "feedback",
+    "authentication": "admin",
+    "automationScope": "feedback:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [
@@ -2411,159 +2445,6 @@ export const operationDefinitions = [
     "namespace": "workspace",
     "authentication": "admin",
     "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxCueCards",
-    "method": "PUT",
-    "path": "/api/v1/cues/sources/{sourceId}/cards",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxCueCustomFeature",
-    "method": "PUT",
-    "path": "/api/v1/cues/sources/{sourceId}/features/{featureKey}",
-    "namespace": "incidents",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxCueCustomMetric",
-    "method": "PUT",
-    "path": "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxCueErrorStatus",
-    "method": "PUT",
-    "path": "/api/v1/cues/errors/{sourceId}/{fingerprint}",
-    "namespace": "incidents",
-    "authentication": "admin",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxCueProjectMetrics",
-    "method": "PUT",
-    "path": "/api/v1/cues/projects/{projectId}/metrics",
-    "namespace": "stats",
-    "authentication": "member",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxCueSource",
-    "method": "PUT",
-    "path": "/api/v1/cues/sources/{sourceId}",
-    "namespace": "stats",
-    "authentication": "admin",
-    "automationScope": "noxcue:write",
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxSpotReport",
-    "method": "PATCH",
-    "path": "/api/v1/spots/reports/{reportId}",
-    "namespace": "feedback",
-    "authentication": "admin",
-    "automationScope": null,
-    "projectScope": "optional",
-    "changeSafety": "write_not_safe_to_retry",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxSpotResolutionTemplate",
-    "method": "PATCH",
-    "path": "/api/v1/spots/sites/{siteId}/resolution-template",
-    "namespace": "feedback",
-    "authentication": "admin",
-    "automationScope": "noxspot:write",
-    "projectScope": "optional",
-    "changeSafety": "conditional_write",
-    "requestContentTypes": [
-      "application/json"
-    ],
-    "responseContentTypes": [
-      "application/json"
-    ],
-    "servers": []
-  },
-  {
-    "id": "updateNoxSpotSite",
-    "method": "PATCH",
-    "path": "/api/v1/spots/sites/{siteId}",
-    "namespace": "feedback",
-    "authentication": "admin",
-    "automationScope": "noxspot:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [
@@ -2649,6 +2530,125 @@ export const operationDefinitions = [
     "namespace": "planning",
     "authentication": "member",
     "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateTelemetryCards",
+    "method": "PUT",
+    "path": "/api/v1/telemetry/sources/{sourceId}/cards",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateTelemetryCustomFeature",
+    "method": "PUT",
+    "path": "/api/v1/telemetry/sources/{sourceId}/features/{featureKey}",
+    "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateTelemetryCustomMetric",
+    "method": "PUT",
+    "path": "/api/v1/telemetry/sources/{sourceId}/custom-metrics/{metricKey}",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateTelemetryErrorStatus",
+    "method": "PUT",
+    "path": "/api/v1/telemetry/errors/{sourceId}/{fingerprint}",
+    "namespace": "incidents",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateTelemetryProjectActions",
+    "method": "PUT",
+    "path": "/api/v1/projects/{projectId}/telemetry/actions",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateTelemetryProjectMetrics",
+    "method": "PUT",
+    "path": "/api/v1/telemetry/projects/{projectId}/metrics",
+    "namespace": "stats",
+    "authentication": "member",
+    "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateTelemetrySource",
+    "method": "PUT",
+    "path": "/api/v1/telemetry/sources/{sourceId}",
+    "namespace": "stats",
+    "authentication": "admin",
+    "automationScope": "telemetry:write",
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [

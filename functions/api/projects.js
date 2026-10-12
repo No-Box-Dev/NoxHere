@@ -53,7 +53,7 @@ export async function onRequestGet(context) {
 }
 
 // POST /api/projects — create an empty project. Repository and delivery
-// connections can be attached later through the normal NoxConnect APIs.
+// connections can be attached later through the normal NoxHere APIs.
 export async function onRequestPost(context) {
   const { orgLogin, orgId, isAdmin } = getCtx(context);
   if (!orgLogin || !orgId) return errorResponse("Missing organization context", 400);
@@ -140,7 +140,7 @@ async function discoverInstallationViaApp(env, ownerId) {
   try {
     jwt = await signAppJwt(env);
   } catch (err) {
-    console.error("[noxconnect projects] signAppJwt failed:", err);
+    console.error("[noxhere projects] signAppJwt failed:", err);
     return;
   }
 
@@ -148,7 +148,7 @@ async function discoverInstallationViaApp(env, ownerId) {
     Authorization: `Bearer ${jwt}`,
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "NoxConnect",
+    "User-Agent": "NoxHere",
   };
 
   // Try org first, then user installation.
@@ -159,7 +159,7 @@ async function discoverInstallationViaApp(env, ownerId) {
     const res = await fetch(`https://api.github.com${path}`, { headers });
     if (res.status === 404) continue;
     if (!res.ok) {
-      console.error(`[noxconnect projects] discover ${path} ${res.status}`);
+      console.error(`[noxhere projects] discover ${path} ${res.status}`);
       return;
     }
     const data = await res.json();
@@ -186,7 +186,7 @@ async function bootstrapReposIfEmpty(env, ownerId) {
       const fullNames = await fetchInstallationRepos(env, inst.installation_id);
       await setInstallationRepos(env.DB, inst.installation_id, fullNames);
     } catch (err) {
-      console.error("[noxconnect projects] bootstrap fetch failed:", inst.installation_id, err);
+      console.error("[noxhere projects] bootstrap fetch failed:", inst.installation_id, err);
     }
   }
 }
@@ -203,7 +203,7 @@ async function fetchInstallationRepos(env, installationId) {
           Authorization: `Bearer ${token}`,
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
-          "User-Agent": "NoxConnect",
+          "User-Agent": "NoxHere",
         },
       }
     );
@@ -237,14 +237,14 @@ async function syncProjectsFromInstallations(db, ownerId) {
       // Surface corruption — silently skipping made installations look like
       // they had no repos and stranded projects in the dashboard.
       console.error(
-        `[noxconnect projects] Corrupt repos_json for installation ${inst.installation_id} owner=${ownerId}:`,
+        `[noxhere projects] Corrupt repos_json for installation ${inst.installation_id} owner=${ownerId}:`,
         err?.message ?? err,
       );
       continue;
     }
     if (!Array.isArray(repos)) {
       console.error(
-        `[noxconnect projects] repos_json is not an array for installation ${inst.installation_id} owner=${ownerId}`,
+        `[noxhere projects] repos_json is not an array for installation ${inst.installation_id} owner=${ownerId}`,
       );
       continue;
     }

@@ -12,18 +12,18 @@
     <script type="module" src="/src/main.tsx"></script>
     <script>
       (function () {
-        function loadNoxSpot() {
-          if (document.querySelector('script[data-noxspot-loader]')) return;
+        function loadFeedback() {
+          if (document.querySelector('script[data-feedback-loader]')) return;
           var script = document.createElement('script');
-          script.src = 'https://api.noxspot.dev/widget/8970ca4d-75ad-41d0-a5fa-e4e62e658635.js';
+          script.src = 'https://app.noxhere.com/widget/8970ca4d-75ad-41d0-a5fa-e4e62e658635.js';
           script.async = true;
-          script.dataset.noxspotLoader = 'true';
+          script.dataset.feedbackLoader = 'true';
           document.head.appendChild(script);
         }
         if ('requestIdleCallback' in window) {
-          window.requestIdleCallback(loadNoxSpot, { timeout: 2000 });
+          window.requestIdleCallback(loadFeedback, { timeout: 2000 });
         } else {
-          window.setTimeout(loadNoxSpot, 1000);
+          window.setTimeout(loadFeedback, 1000);
         }
       })();
     </script>

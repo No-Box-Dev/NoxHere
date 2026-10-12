@@ -12,7 +12,7 @@ function context({ method = "GET", url = "https://app.noxhere.com/api/v1/task-wo
   const binding = service();
   return {
     binding,
-    env: { NOXTICKET_SERVICE: binding as never },
+    env: { PLANNING_SERVICE: binding as never },
     data: { orgId: 1, projectId: "project-1", userLogin: "jasper", isAdmin: false },
     request: new Request(url, { method, ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } }) }),
   };

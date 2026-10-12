@@ -8,7 +8,7 @@ const PROJECT_ID_MAX_LENGTH = 240;
  * by appForApiPath.
  */
 export function serviceForProjectRequest(pathname) {
-  if (pathname === "/api/v1/services") return "noxconnect";
+  if (pathname === "/api/v1/services") return "noxhere";
   const serviceMatch = pathname.match(/^\/api\/v1\/services\/([^/]+)(?:\/|$)/);
   if (serviceMatch) return decodeURIComponent(serviceMatch[1]);
   return appForApiPath(pathname);
@@ -17,11 +17,11 @@ export function serviceForProjectRequest(pathname) {
 export function projectIdInPath(pathname) {
   const patterns = [
     /^\/api\/(?:v1\/)?projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval)$/,
-    /^\/api\/(?:v1\/)?projects\/([^/]+)\/cue(?:\/|$)/,
+    /^\/api\/(?:v1\/)?projects\/([^/]+)\/telemetry(?:\/|$)/,
     /^\/api\/v1\/projects\/([^/]+)\/(?:activity|incidents|issues|feedback)$/,
     /^\/api\/v1\/projects\/([^/]+)\/incidents\/[^/]+$/,
     /^\/api\/(?:v1\/)?projects\/routing\/([^/]+)$/,
-    /^\/api\/(?:v1\/)?cues\/projects\/([^/]+)(?:\/|$)/,
+    /^\/api\/(?:v1\/)?telemetry\/projects\/([^/]+)(?:\/|$)/,
   ];
   for (const pattern of patterns) {
     const match = pathname.match(pattern);
@@ -31,7 +31,7 @@ export function projectIdInPath(pathname) {
 }
 
 export function presentedProjectId(request) {
-  // NoxFeed's released native clients send their repository selection as the
+  // Activity's released native clients send their repository selection as the
   // legacy project_id query filter. Treat it as the same optional scope so it
   // receives the middleware's organization/project membership validation.
   const header = request.headers.get("X-Project-ID")?.trim() ?? "";

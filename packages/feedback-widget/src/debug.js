@@ -1,5 +1,5 @@
 /**
- * Debug logging — gated behind NoxSpot.init({ debug: true })
+ * Debug logging — gated behind Feedback.init({ debug: true })
  */
 
 let _debug = false;

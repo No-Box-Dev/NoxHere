@@ -1,4 +1,4 @@
-// GET /api/search — one authenticated, organization-wide search surface for NoxFeed.
+// GET /api/search — one authenticated, organization-wide search surface for Activity.
 //
 // The client makes one request while this endpoint fans out with D1 batch. Results
 // are deliberately returned in a stable, typed shape so the native app can group

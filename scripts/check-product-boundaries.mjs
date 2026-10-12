@@ -4,8 +4,8 @@ import process from "node:process";
 
 const requestedRoots = process.argv.slice(2);
 const roots = (requestedRoots.length ? requestedRoots : [
-  "functions/products/noxticket",
-  "services/spot/src",
+  "functions/products/planning",
+  "services/feedback/src",
 ]).map((root) => resolve(root));
 {
   const forbidden = [

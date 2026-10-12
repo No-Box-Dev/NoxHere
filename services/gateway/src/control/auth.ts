@@ -1,7 +1,6 @@
 import { apiError } from "./http";
 import { constantTimeHashEqual, randomToken, sha256 } from "./crypto";
 import { guestCanAccess, loadGuestAccess, type GuestAccess } from "./guest-access";
-import { serviceForApiPath } from "../../../../packages/authz/routes.js";
 
 export const SESSION_COOKIE = "__Host-nox_session";
 export const CSRF_COOKIE = "nox_csrf";
@@ -13,9 +12,9 @@ export const API_TOKEN_SCOPES = [
   "services:read",
   "developer-feedback:write",
   "slack:write",
-  "noxfeed:read", "noxfeed:write",
-  "noxspot:read", "noxspot:write",
-  "noxcue:read", "noxcue:write",
+  "activity:read", "activity:write",
+  "feedback:read", "feedback:write",
+  "telemetry:read", "telemetry:write",
 ] as const;
 
 type CredentialType = "session" | "native_session" | "api_token";
@@ -409,17 +408,22 @@ export function requiredScope(pathname: string, method: string): string | null {
   if (pathname === "/api/v1/developer-feedback" && access === "write") return "developer-feedback:write";
   if (pathname === "/api/v1/integrations/slack/messages" && access === "write") return "slack:write";
   const service = pathname.match(/^\/api\/v1\/services\/([^/]+)/)?.[1];
-  if (service && service !== "noxconnect") return `${service}:${access}`;
+  if (service && service !== "noxhere") return `${service}:${access}`;
   if (pathname === "/api/v1/services" && access === "read") return "services:read";
-  if (pathname === "/api/v1/feed" || /^\/api\/v1\/(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|noxfeed)(?:\/|$)/.test(pathname)) return `noxfeed:${access}`;
-  if (/^\/api\/v1\/spots(?:\/|$)/.test(pathname)) return `noxspot:${access}`;
-  if (/^\/api\/v1\/cues(?:\/|$)/.test(pathname)) return `noxcue:${access}`;
+  if (pathname === "/api/v1/activity" || /^\/api\/v1\/(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|activity)(?:\/|$)/.test(pathname)) return `activity:${access}`;
+  if (/^\/api\/v1\/feedback(?:\/|$)/.test(pathname)) return `feedback:${access}`;
+  if (/^\/api\/v1\/telemetry(?:\/|$)/.test(pathname)) return `telemetry:${access}`;
   return null;
 }
 
 export function serviceForPath(pathname: string): string | null {
-  const service = serviceForApiPath(pathname);
-  return service === "noxconnect" ? null : service;
+  const serviceControl = pathname.match(/^\/api\/v1\/services\/(planning|activity|feedback|telemetry)(?:\/|$)/)?.[1];
+  if (serviceControl) return serviceControl;
+  if (/^\/api\/(?:v1\/)?(features|tasks|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return "planning";
+  if (pathname === "/api/v1/activity" || /^\/api\/(?:v1\/)?(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|activity)(?:\/|$)/.test(pathname)) return "activity";
+  if (/^\/api\/(?:v1\/)?feedback(?:\/|$)/.test(pathname)) return "feedback";
+  if (/^\/api\/(?:v1\/)?telemetry(?:\/|$)/.test(pathname)) return "telemetry";
+  return null;
 }
 
 export function capabilitiesForRole(role: "owner" | "admin" | "member" | "viewer"): string[] {
@@ -437,8 +441,8 @@ export function requestProjectId(request: Request): string | null {
   // as though the collection name were a project ID. Keep path extraction
   // tied to the project-resource routes the platform actually exposes.
   const path = url.pathname.match(
-    /^\/api\/(?:v1\/)?projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|cue)(?:\/|$)/,
-  )?.[1] ?? url.pathname.match(/^\/api\/(?:v1\/)?cues\/projects\/([^/]+)(?:\/|$)/)?.[1];
+    /^\/api\/(?:v1\/)?projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|telemetry)(?:\/|$)/,
+  )?.[1] ?? url.pathname.match(/^\/api\/(?:v1\/)?telemetry\/projects\/([^/]+)(?:\/|$)/)?.[1];
   return header || query || (path ? decodeURIComponent(path) : null);
 }
 

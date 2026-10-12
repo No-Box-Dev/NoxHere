@@ -34,7 +34,7 @@ interface OrganizationRow {
   last_active_at: string | null;
 }
 
-const SERVICES = ["noxconnect", ...PRODUCT_APP_IDS] as const;
+const SERVICES = ["noxhere", ...PRODUCT_APP_IDS] as const;
 
 export async function onRequestGet(context: Context): Promise<Response> {
   if (!context.data.isPlatformOperator) {
@@ -60,7 +60,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
               SUM(CASE WHEN last_active_period >= date('now', '-6 days') THEN 1 ELSE 0 END) AS weekly_users,
               SUM(CASE WHEN last_active_period >= date('now', '-29 days') THEN 1 ELSE 0 END) AS monthly_users,
               MAX(last_event_at) AS last_event_at
-         FROM noxcue_app_user_activity
+         FROM telemetry_app_user_activity
         GROUP BY app_id`,
     ),
     db.prepare(
@@ -111,7 +111,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
       return {
         id,
         availableOrganizations: organizations.length,
-        telemetryConnected: id === "noxconnect" || id === "noxfeed",
+        telemetryConnected: id === "noxhere" || id === "activity",
         users: usage ? {
           total: Number(usage.total_users ?? 0),
           daily: Number(usage.daily_users ?? 0),

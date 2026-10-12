@@ -13,7 +13,6 @@ export interface ServiceCatalogContext {
     SLACK_CLIENT_SECRET?: string;
     SLACK_SIGNING_SECRET?: string;
     SLACK_APP_ID?: string;
-    SLACK_ACCEPT_LEGACY_INSTALLS?: string;
   };
   data: { orgId: number; projectId?: string | null; orgLogin: string; isAdmin: boolean };
 }

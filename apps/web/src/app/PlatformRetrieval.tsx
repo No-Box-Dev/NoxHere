@@ -21,11 +21,11 @@ export function PlatformRetrieval({ projectId }: PlatformRetrievalProps) {
     <div className="retrieval">
       <label>
         <span aria-hidden="true">⌕</span>
-        <input name="platformSearch" aria-label="Search NoxConnect" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search across NoxConnect" />
+        <input name="platformSearch" aria-label="Search NoxHere" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search across NoxHere" />
         {query ? <button type="button" aria-label="Clear search" onClick={() => setQuery("")}>×</button> : <kbd>⌘K</kbd>}
       </label>
       {open ? (
-        <div className="retrieval-panel" role="dialog" aria-label="NoxConnect search results">
+        <div className="retrieval-panel" role="dialog" aria-label="NoxHere search results">
           <header><div><span className="eyebrow">PLATFORM RETRIEVAL</span><b>Results for “{query.trim()}”</b></div><small>Links open in the owning service</small></header>
           <div className="retrieval-results">
             {results.isLoading ? <p>Searching…</p> : null}
@@ -35,7 +35,7 @@ export function PlatformRetrieval({ projectId }: PlatformRetrievalProps) {
             })}
             {!results.isLoading && results.data?.length === 0 ? <p>No results in this project.</p> : null}
           </div>
-          <footer>NoxConnect retrieves references from the selected project.</footer>
+          <footer>NoxHere retrieves references from the selected project.</footer>
         </div>
       ) : null}
     </div>

@@ -1,6 +1,6 @@
 # Unified event and transport operations
 
-NoxConnect is one application. Activity, Feedback, Incidents, and Planning are capabilities that share the same tenant/project identity, event envelope, and outbound transport lifecycle.
+NoxHere is one application. Activity, Feedback, Incidents, and Planning are capabilities that share the same tenant/project identity, event envelope, and outbound transport lifecycle.
 
 ## Runtime path
 

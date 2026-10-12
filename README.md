@@ -4,15 +4,12 @@ NoxHere is the public product, identity, API, and web application. A
 person signs in once and uses the same account session across every
 organization, project, and enabled capability.
 
-Feed, Ticket, Spot, Cue, and Connect are capability areas inside NoxHere rather
-than separate products:
+Activity, Planning, Feedback, Stats, Incidents, and Connections are capability
+areas inside NoxHere rather than separate products.
 
 The separate one-page product site for [noxhere.com](https://noxhere.com) lives
 in [`nox-site/`](./nox-site/) and deploys to its own static Cloudflare Pages
 project. It deliberately shares no application bindings or credentials.
-The retired `app.unticket.ai` host is a redirect-only deployment maintained in
-[`legacy-redirect/`](./legacy-redirect/); it does not run the application or API.
-
 - **Connections** — GitHub, Slack, provider credentials, and delivery
 - **Activity** — current work, releases, and engineering activity
 - **Planning** — features, backlog, specifications, and board stages
@@ -44,10 +41,10 @@ npm run cli -- whoami
 npm run cli -- incidents resolve inc_0123456789abcdef0123456789abcdef
 ```
 
-The package and executable are both `noxconnect`:
+The package and executable are both `noxhere`:
 
 ```bash
-npm install --global noxconnect
+npm install --global noxhere
 ```
 
 Incident actions use immutable `inc_…` IDs returned by incident reads. Error
@@ -76,9 +73,9 @@ Set `VITE_API_TARGET` in `.env.local` to point the dev proxy at your own deploym
 - **Connectors** completes private provider exchanges, encrypts provider
   credentials, and resolves only opaque connection IDs carried in verified
   gateway assertions.
-- **Direct provider tokens are rejected** as public NoxConnect credentials.
+- **Direct provider tokens are rejected** as public NoxHere credentials.
 
-Hosted browser sign-in creates an opaque HttpOnly session. `noxconnect login`
+Hosted browser sign-in creates an opaque HttpOnly session. `noxhere login`
 creates short-lived access and rotating refresh credentials for the person and
 returns every organization they may access. Automation remains separate and
 uses expiring tokens bound to one active project and explicit scopes. GitHub

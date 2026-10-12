@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   getInactiveRepoSet,
-  getNoxTicketRepoName,
+  getPlanningRepoName,
   filterInactive,
   getActiveRepoNames,
 } from "../inactive-repos.js";
@@ -60,33 +60,27 @@ function makeDb({
 afterEach(() => vi.restoreAllMocks());
 
 describe("getInactiveRepoSet", () => {
-  it("always excludes the default 'noxconnect' repo even with no settings", async () => {
+  it("always excludes the default 'noxhere' repo even with no settings", async () => {
     const db = makeDb();
     const set = await getInactiveRepoSet(db, 1, "acme");
-    expect(set.has("noxconnect")).toBe(true);
+    expect(set.has("noxhere")).toBe(true);
   });
 
-  it("respects a custom noxTicketRepo from settings", async () => {
-    const db = makeDb({ settings: { noxTicketRepo: "config" } });
+  it("respects a custom planningRepo from settings", async () => {
+    const db = makeDb({ settings: { planningRepo: "config" } });
     const set = await getInactiveRepoSet(db, 1, "acme");
     expect(set.has("config")).toBe(true);
-    expect(set.has("noxconnect")).toBe(false);
+    expect(set.has("noxhere")).toBe(false);
   });
 
-  it("adopts a pre-rename repository setting", async () => {
-    const legacyKey = `${["un", "ticket"].join("")}Repo`;
-    const db = makeDb({ settings: { [legacyKey]: "legacy-config" } });
-    expect(await getNoxTicketRepoName(db, 1)).toBe("legacy-config");
-  });
-
-  it("merges project archives, GitHub archives, and the noxconnect repo", async () => {
+  it("merges project archives, GitHub archives, and the noxhere repo", async () => {
     const db = makeDb({
       archivedProjects: ["archived-proj"],
       ghArchivedRepos: ["gh-archived"],
     });
     const set = await getInactiveRepoSet(db, 1, "acme");
     expect([...set].sort()).toEqual(
-      ["archived-proj", "gh-archived", "noxconnect"].sort(),
+      ["archived-proj", "gh-archived", "noxhere"].sort(),
     );
   });
 
@@ -107,39 +101,39 @@ describe("getInactiveRepoSet", () => {
     expect(errSpy).toHaveBeenCalled();
   });
 
-  it("ignores blank or non-string noxTicketRepo (falls back to 'noxconnect')", async () => {
-    const db = makeDb({ settings: { noxTicketRepo: "   " } });
+  it("ignores blank or non-string planningRepo (falls back to 'noxhere')", async () => {
+    const db = makeDb({ settings: { planningRepo: "   " } });
     const set = await getInactiveRepoSet(db, 1, "acme");
-    expect(set.has("noxconnect")).toBe(true);
+    expect(set.has("noxhere")).toBe(true);
   });
 
-  it("trims surrounding whitespace from custom noxTicketRepo", async () => {
-    const db = makeDb({ settings: { noxTicketRepo: "  cfg  " } });
+  it("trims surrounding whitespace from custom planningRepo", async () => {
+    const db = makeDb({ settings: { planningRepo: "  cfg  " } });
     const set = await getInactiveRepoSet(db, 1, "acme");
     expect(set.has("cfg")).toBe(true);
   });
 });
 
-describe("getNoxTicketRepoName", () => {
-  it("returns 'noxconnect' when no settings row exists", async () => {
+describe("getPlanningRepoName", () => {
+  it("returns 'noxhere' when no settings row exists", async () => {
     const db = makeDb();
-    expect(await getNoxTicketRepoName(db, 1)).toBe("noxconnect");
+    expect(await getPlanningRepoName(db, 1)).toBe("noxhere");
   });
 
   it("returns the configured value when present", async () => {
-    const db = makeDb({ settings: { noxTicketRepo: "cfg" } });
-    expect(await getNoxTicketRepoName(db, 1)).toBe("cfg");
+    const db = makeDb({ settings: { planningRepo: "cfg" } });
+    expect(await getPlanningRepoName(db, 1)).toBe("cfg");
   });
 
-  it("falls back to 'noxconnect' on blank values", async () => {
-    const db = makeDb({ settings: { noxTicketRepo: "" } });
-    expect(await getNoxTicketRepoName(db, 1)).toBe("noxconnect");
+  it("falls back to 'noxhere' on blank values", async () => {
+    const db = makeDb({ settings: { planningRepo: "" } });
+    expect(await getPlanningRepoName(db, 1)).toBe("noxhere");
   });
 
   it("throws on corrupt settings JSON", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const db = makeDb({ settings: "{bad" });
-    await expect(getNoxTicketRepoName(db, 9)).rejects.toThrow(/Corrupt settings JSON for org 9/);
+    await expect(getPlanningRepoName(db, 9)).rejects.toThrow(/Corrupt settings JSON for org 9/);
   });
 });
 
@@ -152,7 +146,7 @@ describe("filterInactive", () => {
 
   it("removes excluded repos from the list", async () => {
     const db = makeDb({ archivedProjects: ["draft"] });
-    const out = await filterInactive(db, 1, "acme", ["api", "draft", "web", "noxconnect"]);
+    const out = await filterInactive(db, 1, "acme", ["api", "draft", "web", "noxhere"]);
     expect(out).toEqual(["api", "web"]);
   });
 });
@@ -162,7 +156,7 @@ describe("getActiveRepoNames", () => {
     const db = makeDb({
       archivedProjects: ["arc"],
       ghArchivedRepos: ["gh"],
-      allRepos: ["api", "web", "arc", "gh", "noxconnect"],
+      allRepos: ["api", "web", "arc", "gh", "noxhere"],
     });
     const out = await getActiveRepoNames(db, 1, "acme");
     expect(out.sort()).toEqual(["api", "web"]);

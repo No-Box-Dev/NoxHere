@@ -6,7 +6,7 @@
  */
 
 const CSS = `
-.noxspot-trigger {
+.feedback-trigger {
   position: fixed;
   right: 0;
   top: 50%;
@@ -29,23 +29,23 @@ const CSS = `
   transition: background 0.2s ease;
 }
 
-.noxspot-trigger:hover {
+.feedback-trigger:hover {
   background: #e5684d;
 }
 
-.noxspot-trigger svg {
+.feedback-trigger svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
 }
 
-.noxspot-trigger-text {
+.feedback-trigger-text {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   letter-spacing: 0.5px;
 }
 
-.noxspot-trigger-shortcut {
+.feedback-trigger-shortcut {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   font-size: 10px;
@@ -57,14 +57,14 @@ const CSS = `
   color: rgba(255, 255, 255, 0.95);
 }
 
-.noxspot-trigger-dots {
+.feedback-trigger-dots {
   display: flex;
   flex-direction: column;
   gap: 3px;
   opacity: 0.7;
 }
 
-.noxspot-trigger-dots span {
+.feedback-trigger-dots span {
   width: 4px;
   height: 4px;
   background: white;
@@ -72,7 +72,7 @@ const CSS = `
 }
 
 /* Toast — optimistic submit feedback */
-.noxspot-toast {
+.feedback-toast {
   position: fixed;
   top: 24px;
   right: 24px;
@@ -95,37 +95,37 @@ const CSS = `
   max-width: calc(100vw - 48px);
 }
 
-.noxspot-toast--visible {
+.feedback-toast--visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.noxspot-toast--success {
+.feedback-toast--success {
   background: #16a34a;
 }
 
-.noxspot-toast-dot {
+.feedback-toast-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.noxspot-toast--success .noxspot-toast-dot {
+.feedback-toast--success .feedback-toast-dot {
   background: white;
 }
 
-.noxspot-toast--error .noxspot-toast-dot {
+.feedback-toast--error .feedback-toast-dot {
   background: #ef4444;
 }
 
-.noxspot-toast-text {
+.feedback-toast-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.noxspot-toast-action {
+.feedback-toast-action {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.3);
   color: white;
@@ -138,13 +138,13 @@ const CSS = `
   transition: background 0.15s;
 }
 
-.noxspot-toast-action:hover {
+.feedback-toast-action:hover {
   background: rgba(255,255,255,0.1);
 }
 
 /* Mobile: trigger becomes a circular FAB, lifted above iOS safe area */
 @media (max-width: 767px) {
-  .noxspot-trigger {
+  .feedback-trigger {
     position: fixed;
     bottom: calc(20px + env(safe-area-inset-bottom));
     right: 20px;
@@ -156,12 +156,12 @@ const CSS = `
     padding: 0;
     justify-content: center;
   }
-  .noxspot-trigger-text,
-  .noxspot-trigger-shortcut,
-  .noxspot-trigger-dots {
+  .feedback-trigger-text,
+  .feedback-trigger-shortcut,
+  .feedback-trigger-dots {
     display: none;
   }
-  .noxspot-trigger svg {
+  .feedback-trigger svg {
     width: 26px;
     height: 26px;
   }
@@ -169,14 +169,14 @@ const CSS = `
 `;
 
 export function injectLoaderStyles() {
-  if (document.getElementById('noxspot-loader-styles')) return;
+  if (document.getElementById('feedback-loader-styles')) return;
   const style = document.createElement('style');
-  style.id = 'noxspot-loader-styles';
+  style.id = 'feedback-loader-styles';
   style.textContent = CSS;
   document.head.appendChild(style);
 }
 
 export function removeLoaderStyles() {
-  const style = document.getElementById('noxspot-loader-styles');
+  const style = document.getElementById('feedback-loader-styles');
   if (style) style.remove();
 }

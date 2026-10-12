@@ -10,10 +10,9 @@
     "directory": "packages/feedback-widget"
   },
   "scripts": {
-    "build": "npm run build:loader && npm run build:legacy && npm run build:core",
-    "build:loader": "esbuild src/loader.js --bundle --minify --outfile=dist/noxspot.min.js --format=iife --global-name=NoxSpot",
-    "build:legacy": "esbuild src/loader.js --bundle --minify --outfile=dist/blindspot.min.js --format=iife --global-name=Blindspot",
-    "build:core": "esbuild src/core-entry.js --bundle --minify --outfile=dist/noxspot-core.min.js --format=iife",
+    "build": "npm run build:loader && npm run build:core",
+    "build:loader": "esbuild src/loader.js --bundle --minify --outfile=dist/feedback.min.js --format=iife --global-name=Feedback",
+    "build:core": "esbuild src/core-entry.js --bundle --minify --outfile=dist/feedback-core.min.js --format=iife",
     "test": "vitest run"
   },
   "devDependencies": {

@@ -68,6 +68,13 @@ SDK_VERSION = "0.2.1"
 DEFAULT_BASE_URL = "https://app.noxhere.com"
 MAX_RETRY_AFTER_SECONDS = 30.0
 
+# Keep the pre-unification method names working while the public product names
+# move from NoxFeed/NoxSpot to Activity/Feedback.
+LEGACY_OPERATION_ALIASES = {
+    "getNoxFeed": "getActivity",
+    "getPublicNoxSpotConfig": "getPublicFeedbackConfig",
+}
+
 
 def _retryable_status(status: int) -> bool:
     return status in {408, 429} or status >= 500
@@ -158,6 +165,11 @@ class ResourceClient:
         self._client = client
         self._operations = {_snake(operation.operation_id): operation.operation_id for operation in operations}
         self._operations.update({operation.operation_id: operation.operation_id for operation in operations})
+        operation_ids = set(self._operations.values())
+        for alias, operation_id in LEGACY_OPERATION_ALIASES.items():
+            if operation_id in operation_ids:
+                self._operations[alias] = operation_id
+                self._operations[_snake(alias)] = operation_id
 
     def __getattr__(self, name: str) -> Callable[..., Any]:
         operation_id = self._operations.get(name)
@@ -178,6 +190,11 @@ class AsyncResourceClient:
         self._client = client
         self._operations = {_snake(operation.operation_id): operation.operation_id for operation in operations}
         self._operations.update({operation.operation_id: operation.operation_id for operation in operations})
+        operation_ids = set(self._operations.values())
+        for alias, operation_id in LEGACY_OPERATION_ALIASES.items():
+            if operation_id in operation_ids:
+                self._operations[alias] = operation_id
+                self._operations[_snake(alias)] = operation_id
 
     def __getattr__(self, name: str) -> Callable[..., Awaitable[Any]]:
         operation_id = self._operations.get(name)

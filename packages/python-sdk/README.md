@@ -56,14 +56,14 @@ Server telemetry is available from the same distribution:
 ```python
 import os
 
-from noxhere.telemetry import create_noxcue
+from noxhere.telemetry import create_telemetry
 
-with create_noxcue() as telemetry:
+with create_telemetry() as telemetry:
     telemetry.user.registered("user-42")
     telemetry.events.record_parsed("user-42", "record-7")
 ```
 
-`create_noxcue()` reads `NOXHERE_INGEST_KEY`, `NOXHERE_IDENTITY_HASH_KEY`,
+`create_telemetry()` reads `NOXHERE_INGEST_KEY`, `NOXHERE_IDENTITY_HASH_KEY`,
 `NOXHERE_IDENTITY_KEY_ID`, `NOXHERE_ENVIRONMENT`, and `NOXHERE_RELEASE`.
 `track()` queues delivery and returns immediately; process shutdown or leaving
 the context flushes the queue. Delivery failures are returned or retained for
@@ -77,7 +77,7 @@ and `activity()` delegate to the same contract. The typed `events` helpers keep
 built-in event names out of application strings while event timing remains an
 explicit decision at the call site.
 
-`noxcue` remains available as a deprecated forwarding package for existing
+`telemetry` remains available as a deprecated forwarding package for existing
 applications; new code should import `noxhere.telemetry`.
 
 `noxhere.events.create_platform_event` builds the same common event envelope

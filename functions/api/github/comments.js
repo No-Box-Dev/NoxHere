@@ -9,7 +9,7 @@ const MAX_PAGES_PER_STREAM = 20;
 // Returns the complete PR conversation from GitHub's three comment streams:
 // issue comments, review summaries, and inline review comments. The payload is
 // a bounded projection; installation credentials and raw GitHub data never
-// cross the NoxConnect boundary.
+// cross the NoxHere boundary.
 export async function onRequestGet(context) {
   const { orgId, orgLogin, projectId } = getCtx(context);
   const url = new URL(context.request.url);
@@ -60,7 +60,7 @@ async function fetchAll(endpoint, token) {
       headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
-        "User-Agent": "noxconnect",
+        "User-Agent": "noxhere",
         "X-GitHub-Api-Version": "2022-11-28",
       },
     });

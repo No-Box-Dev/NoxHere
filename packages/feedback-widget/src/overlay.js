@@ -56,37 +56,37 @@ export function showOverlay(captureOrPromise, options = {}) {
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
 
   overlayElement = document.createElement('div');
-  overlayElement.className = 'noxspot-overlay';
-  if (isMobile) overlayElement.classList.add('noxspot-mobile');
+  overlayElement.className = 'feedback-overlay';
+  if (isMobile) overlayElement.classList.add('feedback-mobile');
 
   overlayElement.innerHTML = `
-    <div class="noxspot-overlay-backdrop"></div>
-    <div class="noxspot-overlay-content">
-      <div class="noxspot-toolbar">
-        <div class="noxspot-toolbar-tools noxspot-toolbar-tools--disabled">
+    <div class="feedback-overlay-backdrop"></div>
+    <div class="feedback-overlay-content">
+      <div class="feedback-toolbar">
+        <div class="feedback-toolbar-tools feedback-toolbar-tools--disabled">
           ${createToolbarHTML({ showElementPicker: hasBlock(options.blocks, 'element_picker') })}
         </div>
-        <button class="noxspot-close-btn" aria-label="Close">
+        <button class="feedback-close-btn" aria-label="Close">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
       </div>
-      <div class="noxspot-main">
-        <div class="noxspot-canvas-area">
-          <div class="noxspot-canvas-loading">
-            <div class="noxspot-spinner" aria-hidden="true"></div>
-            <div class="noxspot-canvas-loading-text">Capturing screenshot…</div>
+      <div class="feedback-main">
+        <div class="feedback-canvas-area">
+          <div class="feedback-canvas-loading">
+            <div class="feedback-spinner" aria-hidden="true"></div>
+            <div class="feedback-canvas-loading-text">Capturing screenshot…</div>
           </div>
-          <div class="noxspot-canvas-wrapper" style="display:none">
-            <img class="noxspot-screenshot" alt="Screenshot" />
-            <canvas class="noxspot-drawing-canvas"></canvas>
-            <div class="noxspot-selected-highlights"></div>
-            <div class="noxspot-element-highlight-overlay"></div>
+          <div class="feedback-canvas-wrapper" style="display:none">
+            <img class="feedback-screenshot" alt="Screenshot" />
+            <canvas class="feedback-drawing-canvas"></canvas>
+            <div class="feedback-selected-highlights"></div>
+            <div class="feedback-element-highlight-overlay"></div>
           </div>
         </div>
-        <div class="noxspot-sidebar">
+        <div class="feedback-sidebar">
           ${createSidebarHTML({
             blocks: options.blocks,
             metadata: metadataCache,
@@ -104,13 +104,13 @@ export function showOverlay(captureOrPromise, options = {}) {
   // Mobile: add Continue button + floating close button (top-right)
   if (isMobile) {
     const nextBtn = document.createElement('button');
-    nextBtn.className = 'noxspot-mobile-next';
+    nextBtn.className = 'feedback-mobile-next';
     nextBtn.textContent = 'Continue';
     nextBtn.addEventListener('click', () => setMobileStep(2));
-    overlayElement.querySelector('.noxspot-overlay-content').appendChild(nextBtn);
+    overlayElement.querySelector('.feedback-overlay-content').appendChild(nextBtn);
 
     const closeBtn = document.createElement('button');
-    closeBtn.className = 'noxspot-mobile-close';
+    closeBtn.className = 'feedback-mobile-close';
     closeBtn.setAttribute('aria-label', 'Close');
     closeBtn.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -119,12 +119,12 @@ export function showOverlay(captureOrPromise, options = {}) {
       </svg>
     `;
     closeBtn.addEventListener('click', hideOverlay);
-    overlayElement.querySelector('.noxspot-overlay-content').appendChild(closeBtn);
+    overlayElement.querySelector('.feedback-overlay-content').appendChild(closeBtn);
   }
 
   // Add event listeners
-  overlayElement.querySelector('.noxspot-close-btn').addEventListener('click', hideOverlay);
-  overlayElement.querySelector('.noxspot-overlay-backdrop').addEventListener('click', hideOverlay);
+  overlayElement.querySelector('.feedback-close-btn').addEventListener('click', hideOverlay);
+  overlayElement.querySelector('.feedback-overlay-backdrop').addEventListener('click', hideOverlay);
 
   // Save focus and trap it inside overlay
   previouslyFocusedElement = document.activeElement;
@@ -153,7 +153,7 @@ export function showOverlay(captureOrPromise, options = {}) {
   setTimeout(() => {
     if (!overlayElement) return; // Closed before setTimeout fired
     // Initialize toolbar with tool change handler (kept disabled until capture resolves)
-    const toolbarContainer = overlayElement.querySelector('.noxspot-toolbar-tools');
+    const toolbarContainer = overlayElement.querySelector('.feedback-toolbar-tools');
     initToolbar(toolbarContainer, {
       onToolChange: handleToolChange,
     });
@@ -163,7 +163,7 @@ export function showOverlay(captureOrPromise, options = {}) {
 
     // Mobile: wire up back button and start on step 1
     if (isMobile) {
-      const backBtn = overlayElement.querySelector('.noxspot-mobile-back');
+      const backBtn = overlayElement.querySelector('.feedback-mobile-back');
       if (backBtn) {
         backBtn.style.display = '';
         backBtn.addEventListener('click', () => setMobileStep(1));
@@ -189,7 +189,7 @@ export function showOverlay(captureOrPromise, options = {}) {
     if (errCb) errCb(err);
   });
 
-  debugLog('[NoxSpot] Overlay opened (awaiting capture)');
+  debugLog('[Feedback] Overlay opened (awaiting capture)');
 }
 
 /**
@@ -201,18 +201,18 @@ function hydrateCapture(capture) {
   viewportData = capture.viewport;
   captureReady = true;
 
-  const loading = overlayElement.querySelector('.noxspot-canvas-loading');
-  const wrapper = overlayElement.querySelector('.noxspot-canvas-wrapper');
-  const img = overlayElement.querySelector('.noxspot-screenshot');
-  const canvas = overlayElement.querySelector('.noxspot-drawing-canvas');
-  const toolbarTools = overlayElement.querySelector('.noxspot-toolbar-tools');
-  const thumbImg = overlayElement.querySelector('.noxspot-mobile-thumbnail img');
-  const thumbContainer = overlayElement.querySelector('.noxspot-mobile-thumbnail');
+  const loading = overlayElement.querySelector('.feedback-canvas-loading');
+  const wrapper = overlayElement.querySelector('.feedback-canvas-wrapper');
+  const img = overlayElement.querySelector('.feedback-screenshot');
+  const canvas = overlayElement.querySelector('.feedback-drawing-canvas');
+  const toolbarTools = overlayElement.querySelector('.feedback-toolbar-tools');
+  const thumbImg = overlayElement.querySelector('.feedback-mobile-thumbnail img');
+  const thumbContainer = overlayElement.querySelector('.feedback-mobile-thumbnail');
 
   if (!capture.dataUrl) {
     captureReady = true;
     if (loading) {
-      loading.classList.add('noxspot-canvas-unavailable');
+      loading.classList.add('feedback-canvas-unavailable');
       loading.innerHTML = '<strong>Screenshot unavailable</strong><span>You can still send your feedback.</span>';
     }
     // Annotation and element-picking controls have no target without a
@@ -224,12 +224,12 @@ function hydrateCapture(capture) {
       highlightOverlay = null;
     }
     if (thumbContainer) thumbContainer.style.display = 'none';
-    debugLog('[NoxSpot] Capture unavailable; form remains usable');
+    debugLog('[Feedback] Capture unavailable; form remains usable');
     return;
   }
 
   if (thumbImg) thumbImg.src = capture.dataUrl;
-  if (thumbContainer && overlayElement.classList.contains('noxspot-mobile') && mobileStep === 2) {
+  if (thumbContainer && overlayElement.classList.contains('feedback-mobile') && mobileStep === 2) {
     thumbContainer.style.display = '';
   }
 
@@ -246,22 +246,22 @@ function hydrateCapture(capture) {
     initCanvas(canvas);
     if (loading) loading.style.display = 'none';
     if (wrapper) wrapper.style.display = '';
-    if (toolbarTools) toolbarTools.classList.remove('noxspot-toolbar-tools--disabled');
+    if (toolbarTools) toolbarTools.classList.remove('feedback-toolbar-tools--disabled');
     // initToolbar fired onToolChange('element') before captureReady, so the
     // picker was never actually activated. Re-trigger the currently active
     // tool now — without this the canvas stays enabled with its default
     // 'arrow' tool and the user draws arrows instead of picking elements.
-    const activeBtn = toolbarTools?.querySelector('.noxspot-tool-btn.active');
+    const activeBtn = toolbarTools?.querySelector('.feedback-tool-btn.active');
     const activeTool = activeBtn?.dataset?.tool;
     if (activeTool) handleToolChange(activeTool);
-    debugLog('[NoxSpot] Capture hydrated');
+    debugLog('[Feedback] Capture hydrated');
   };
 
   img.addEventListener('load', finishHydrate, { once: true });
   // Without an error listener, a failed image load (CSP blocking data: URLs,
   // invalid/empty dataUrl, tainted canvas) leaves the spinner on-screen forever.
   img.addEventListener('error', () => {
-    debugLog('[NoxSpot] Screenshot image failed to load — continuing without screenshot');
+    debugLog('[Feedback] Screenshot image failed to load — continuing without screenshot');
     finishHydrate();
   }, { once: true });
   img.src = capture.dataUrl;
@@ -274,7 +274,7 @@ function hydrateCapture(capture) {
   // can still submit — they just won't have a screenshot preview.
   hydrateTimer = setTimeout(() => {
     if (!hydrated) {
-      debugLog('[NoxSpot] Screenshot hydration timed out — revealing form anyway');
+      debugLog('[Feedback] Screenshot hydration timed out — revealing form anyway');
       finishHydrate();
     }
   }, 8000);
@@ -323,7 +323,7 @@ export function hideOverlay() {
     onCloseCallback = null;
   }
 
-  debugLog('[NoxSpot] Overlay closed');
+  debugLog('[Feedback] Overlay closed');
 }
 
 function syncOverlayDimensions() {
@@ -342,8 +342,8 @@ function syncOverlayDimensions() {
   overlayElement.style.height = `${height}px`;
   overlayElement.style.left = `${offsetLeft}px`;
   overlayElement.style.top = `0px`;
-  overlayElement.style.setProperty('--noxspot-vw', `${width}px`);
-  overlayElement.style.setProperty('--noxspot-vh', `${height}px`);
+  overlayElement.style.setProperty('--feedback-vw', `${width}px`);
+  overlayElement.style.setProperty('--feedback-vh', `${height}px`);
 }
 
 function lockViewportZoom() {
@@ -424,28 +424,28 @@ function setMobileStep(step) {
   if (!overlayElement) return;
   mobileStep = step;
 
-  const toolbar = overlayElement.querySelector('.noxspot-toolbar');
-  const canvasArea = overlayElement.querySelector('.noxspot-canvas-area');
-  const sidebar = overlayElement.querySelector('.noxspot-sidebar');
-  const nextBtn = overlayElement.querySelector('.noxspot-mobile-next');
+  const toolbar = overlayElement.querySelector('.feedback-toolbar');
+  const canvasArea = overlayElement.querySelector('.feedback-canvas-area');
+  const sidebar = overlayElement.querySelector('.feedback-sidebar');
+  const nextBtn = overlayElement.querySelector('.feedback-mobile-next');
 
   if (step === 1) {
     // Show annotate view
     if (toolbar) toolbar.style.display = '';
     if (canvasArea) canvasArea.style.display = '';
-    if (sidebar) sidebar.classList.remove('noxspot-sidebar-visible');
+    if (sidebar) sidebar.classList.remove('feedback-sidebar-visible');
     if (nextBtn) nextBtn.style.display = '';
     // Hide thumbnail when going back
-    const thumb = overlayElement.querySelector('.noxspot-mobile-thumbnail');
+    const thumb = overlayElement.querySelector('.feedback-mobile-thumbnail');
     if (thumb) thumb.style.display = 'none';
   } else {
     // Show describe view
     if (toolbar) toolbar.style.display = 'none';
     if (canvasArea) canvasArea.style.display = 'none';
-    if (sidebar) sidebar.classList.add('noxspot-sidebar-visible');
+    if (sidebar) sidebar.classList.add('feedback-sidebar-visible');
     if (nextBtn) nextBtn.style.display = 'none';
     // Show thumbnail on mobile
-    const thumb = overlayElement.querySelector('.noxspot-mobile-thumbnail');
+    const thumb = overlayElement.querySelector('.feedback-mobile-thumbnail');
     if (thumb) thumb.style.display = '';
   }
 }
@@ -456,22 +456,22 @@ function setMobileStep(step) {
 function handleResize() {
   if (!overlayElement) return;
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
-  const wasMobile = overlayElement.classList.contains('noxspot-mobile');
+  const wasMobile = overlayElement.classList.contains('feedback-mobile');
 
   if (isMobile && !wasMobile) {
     // Switched to mobile
-    overlayElement.classList.add('noxspot-mobile');
+    overlayElement.classList.add('feedback-mobile');
     // Add next button if missing
-    if (!overlayElement.querySelector('.noxspot-mobile-next')) {
+    if (!overlayElement.querySelector('.feedback-mobile-next')) {
       const nextBtn = document.createElement('button');
-      nextBtn.className = 'noxspot-mobile-next';
+      nextBtn.className = 'feedback-mobile-next';
       nextBtn.textContent = 'Continue';
       nextBtn.addEventListener('click', () => setMobileStep(2));
-      overlayElement.querySelector('.noxspot-overlay-content').appendChild(nextBtn);
+      overlayElement.querySelector('.feedback-overlay-content').appendChild(nextBtn);
     }
-    if (!overlayElement.querySelector('.noxspot-mobile-close')) {
+    if (!overlayElement.querySelector('.feedback-mobile-close')) {
       const closeBtn = document.createElement('button');
-      closeBtn.className = 'noxspot-mobile-close';
+      closeBtn.className = 'feedback-mobile-close';
       closeBtn.setAttribute('aria-label', 'Close');
       closeBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -480,24 +480,24 @@ function handleResize() {
         </svg>
       `;
       closeBtn.addEventListener('click', hideOverlay);
-      overlayElement.querySelector('.noxspot-overlay-content').appendChild(closeBtn);
+      overlayElement.querySelector('.feedback-overlay-content').appendChild(closeBtn);
     }
     setMobileStep(1);
   } else if (!isMobile && wasMobile) {
     // Switched to desktop
-    overlayElement.classList.remove('noxspot-mobile');
+    overlayElement.classList.remove('feedback-mobile');
     // Show everything, remove mobile UI
-    const toolbar = overlayElement.querySelector('.noxspot-toolbar');
-    const canvasArea = overlayElement.querySelector('.noxspot-canvas-area');
-    const sidebar = overlayElement.querySelector('.noxspot-sidebar');
-    const nextBtn = overlayElement.querySelector('.noxspot-mobile-next');
-    const mobileClose = overlayElement.querySelector('.noxspot-mobile-close');
+    const toolbar = overlayElement.querySelector('.feedback-toolbar');
+    const canvasArea = overlayElement.querySelector('.feedback-canvas-area');
+    const sidebar = overlayElement.querySelector('.feedback-sidebar');
+    const nextBtn = overlayElement.querySelector('.feedback-mobile-next');
+    const mobileClose = overlayElement.querySelector('.feedback-mobile-close');
     if (toolbar) toolbar.style.display = '';
     if (canvasArea) canvasArea.style.display = '';
-    if (sidebar) sidebar.classList.remove('noxspot-sidebar-visible');
+    if (sidebar) sidebar.classList.remove('feedback-sidebar-visible');
     if (nextBtn) nextBtn.remove();
     if (mobileClose) mobileClose.remove();
-    const thumb = overlayElement.querySelector('.noxspot-mobile-thumbnail');
+    const thumb = overlayElement.querySelector('.feedback-mobile-thumbnail');
     if (thumb) thumb.style.display = 'none';
   }
 }
@@ -506,9 +506,9 @@ function activateScreenshotElementPicker() {
   elementPickerActive = true;
   disableCanvas(); // Prevent drawing while selecting elements
 
-  const wrapper = overlayElement.querySelector('.noxspot-canvas-wrapper');
-  const img = overlayElement.querySelector('.noxspot-screenshot');
-  highlightOverlay = overlayElement.querySelector('.noxspot-element-highlight-overlay');
+  const wrapper = overlayElement.querySelector('.feedback-canvas-wrapper');
+  const img = overlayElement.querySelector('.feedback-screenshot');
+  highlightOverlay = overlayElement.querySelector('.feedback-element-highlight-overlay');
 
   // Style the highlight overlay to exactly match the image
   // Use offsetWidth/offsetHeight to get the displayed size
@@ -546,7 +546,7 @@ function activateScreenshotElementPicker() {
   // Show instruction
   showPickerInstruction();
 
-  debugLog('[NoxSpot] Screenshot element picker activated');
+  debugLog('[Feedback] Screenshot element picker activated');
 }
 
 function deactivateScreenshotElementPicker() {
@@ -554,7 +554,7 @@ function deactivateScreenshotElementPicker() {
   elementPickerActive = false;
   enableCanvas(); // Re-enable drawing when leaving element picker
 
-  const wrapper = overlayElement?.querySelector('.noxspot-canvas-wrapper');
+  const wrapper = overlayElement?.querySelector('.feedback-canvas-wrapper');
   if (wrapper) {
     wrapper.style.cursor = '';
     wrapper.removeEventListener('mousemove', handleScreenshotMouseMove);
@@ -564,7 +564,7 @@ function deactivateScreenshotElementPicker() {
     wrapper.removeEventListener('touchend', handleScreenshotTouchEnd);
   }
   if (pickerImageLoadHandler) {
-    const img = overlayElement?.querySelector('.noxspot-screenshot');
+    const img = overlayElement?.querySelector('.feedback-screenshot');
     if (img) img.removeEventListener('load', pickerImageLoadHandler);
     pickerImageLoadHandler = null;
   }
@@ -575,13 +575,13 @@ function deactivateScreenshotElementPicker() {
   }
 
   hidePickerInstruction();
-  debugLog('[NoxSpot] Screenshot element picker deactivated');
+  debugLog('[Feedback] Screenshot element picker deactivated');
 }
 
 function handleScreenshotMouseMove(e) {
   if (!elementPickerActive || !elementMapData) return;
 
-  const img = overlayElement.querySelector('.noxspot-screenshot');
+  const img = overlayElement.querySelector('.feedback-screenshot');
   const imgRect = img.getBoundingClientRect();
 
   // Check if mouse is over the image
@@ -691,7 +691,7 @@ function handleScreenshotTouchStart(e) {
   touchMoved = false;
 
   const touch = e.touches[0];
-  const img = overlayElement.querySelector('.noxspot-screenshot');
+  const img = overlayElement.querySelector('.feedback-screenshot');
   const imgRect = img.getBoundingClientRect();
 
   const scaleX = imgRect.width / viewportData.width;
@@ -797,7 +797,7 @@ let pickerInstructionEl = null;
 function showPickerInstruction() {
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
   pickerInstructionEl = document.createElement('div');
-  pickerInstructionEl.className = 'noxspot-picker-instruction';
+  pickerInstructionEl.className = 'feedback-picker-instruction';
   pickerInstructionEl.style.cssText = `
     position: fixed;
     top: 70px;
@@ -832,9 +832,9 @@ function handleElementSelected(elementInfo) {
     selectedElements.push(elementInfo);
     updateSelectedElements(selectedElements, handleRemoveElement);
     drawSelectedElementHighlights();
-    debugLog('[NoxSpot] Element added:', elementInfo.fullSelector);
+    debugLog('[Feedback] Element added:', elementInfo.fullSelector);
   } else {
-    debugLog('[NoxSpot] Element already selected:', elementInfo.fullSelector);
+    debugLog('[Feedback] Element already selected:', elementInfo.fullSelector);
   }
 }
 
@@ -842,17 +842,17 @@ function handleRemoveElement(index) {
   selectedElements.splice(index, 1);
   updateSelectedElements(selectedElements, handleRemoveElement);
   drawSelectedElementHighlights();
-  debugLog('[NoxSpot] Element removed, remaining:', selectedElements.length);
+  debugLog('[Feedback] Element removed, remaining:', selectedElements.length);
 }
 
 /**
  * Draw permanent highlight boxes for all selected elements
  */
 function drawSelectedElementHighlights() {
-  const container = overlayElement?.querySelector('.noxspot-selected-highlights');
+  const container = overlayElement?.querySelector('.feedback-selected-highlights');
   if (!container) return;
 
-  const img = overlayElement.querySelector('.noxspot-screenshot');
+  const img = overlayElement.querySelector('.feedback-screenshot');
   if (!img) return;
 
   const imgRect = img.getBoundingClientRect();
@@ -958,7 +958,7 @@ function buildContext() {
         }
       }
     } catch (e) {
-      console.warn('[NoxSpot] getContext() threw an error:', e);
+      console.warn('[Feedback] getContext() threw an error:', e);
     }
   }
 
@@ -972,8 +972,8 @@ function buildContext() {
  */
 function captureCanvasArea() {
   if (!screenshotData || !overlayElement) return null;
-  const img = overlayElement.querySelector('.noxspot-screenshot');
-  const drawingCanvas = overlayElement.querySelector('.noxspot-drawing-canvas');
+  const img = overlayElement.querySelector('.feedback-screenshot');
+  const drawingCanvas = overlayElement.querySelector('.feedback-drawing-canvas');
 
   if (!img?.naturalWidth || !img?.naturalHeight) return null;
 

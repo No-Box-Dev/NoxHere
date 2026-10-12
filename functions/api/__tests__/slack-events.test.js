@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { onRequestPost, parseNoxConnectUrl } from "../slack/events.js";
+import { onRequestPost, parseNoxHereUrl } from "../slack/events.js";
 
 // Fixed signing secret so tests can pre-compute valid signatures.
 const SECRET = "signing-secret-fixture";
@@ -33,9 +33,9 @@ function makeCtx({ body, timestamp, signature, env = {}, waitUntil = () => {} })
   return { request: req, env, waitUntil: vi.fn(waitUntil) };
 }
 
-describe("parseNoxConnectUrl", () => {
+describe("parseNoxHereUrl", () => {
   it("parses a PR URL", () => {
-    expect(parseNoxConnectUrl("https://app.noxhere.com/prs/api/123")).toEqual({
+    expect(parseNoxHereUrl("https://app.noxhere.com/prs/api/123")).toEqual({
       kind: "pr",
       repo: "api",
       number: 123,
@@ -43,7 +43,7 @@ describe("parseNoxConnectUrl", () => {
   });
 
   it("parses an issue URL", () => {
-    expect(parseNoxConnectUrl("https://app.noxhere.com/issues/api/45")).toEqual({
+    expect(parseNoxHereUrl("https://app.noxhere.com/issues/api/45")).toEqual({
       kind: "issue",
       repo: "api",
       number: 45,
@@ -51,22 +51,22 @@ describe("parseNoxConnectUrl", () => {
   });
 
   it("parses a feature deep-link", () => {
-    expect(parseNoxConnectUrl("https://app.noxhere.com/?tab=sprint&f=7")).toEqual({
+    expect(parseNoxHereUrl("https://app.noxhere.com/?tab=sprint&f=7")).toEqual({
       kind: "feature",
       number: 7,
     });
   });
 
-  it("returns null for non-noxconnect hosts", () => {
-    expect(parseNoxConnectUrl("https://github.com/foo/bar/pull/1")).toBeNull();
+  it("returns null for non-noxhere hosts", () => {
+    expect(parseNoxHereUrl("https://github.com/foo/bar/pull/1")).toBeNull();
   });
 
   it("returns null for unknown paths", () => {
-    expect(parseNoxConnectUrl("https://app.noxhere.com/random/path")).toBeNull();
+    expect(parseNoxHereUrl("https://app.noxhere.com/random/path")).toBeNull();
   });
 
   it("returns null when the PR number isn't a number", () => {
-    expect(parseNoxConnectUrl("https://app.noxhere.com/prs/api/notanumber")).toBeNull();
+    expect(parseNoxHereUrl("https://app.noxhere.com/prs/api/notanumber")).toBeNull();
   });
 });
 

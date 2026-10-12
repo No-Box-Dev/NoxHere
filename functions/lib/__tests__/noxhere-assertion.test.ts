@@ -14,7 +14,7 @@ const auth: NoxHereAuthContext = {
   orgLogin: "acme",
   isAdmin: false,
   projectId: "project-a",
-  scopes: ["noxfeed:read"],
+  scopes: ["activity:read"],
   connectionId: null,
 };
 
@@ -29,11 +29,11 @@ async function requestWithAssertion(overrides: Record<string, unknown> = {}): Pr
   const assertion = {
     version: 1,
     issuer: "noxhere",
-    audience: "noxconnect",
+    audience: "noxhere",
     issuedAt: now,
     expiresAt: now + 30,
     method: "GET",
-    path: "/api/v1/feed?limit=5",
+    path: "/api/v1/activity?limit=5",
     auth,
     ...overrides,
   };
@@ -42,7 +42,7 @@ async function requestWithAssertion(overrides: Record<string, unknown> = {}): Pr
     "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
   );
   const signature = base64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(payload))));
-  return new Request("https://connector.internal/api/v1/feed?limit=5", { headers: {
+  return new Request("https://connector.internal/api/v1/activity?limit=5", { headers: {
     "X-NoxHere-Internal-Assertion": payload,
     "X-NoxHere-Internal-Signature": signature,
   } });
@@ -65,7 +65,7 @@ describe("NoxHere internal authorization assertion", () => {
 
   it("rejects replay against a different path", async () => {
     const signed = await requestWithAssertion();
-    const replay = new Request("https://connector.internal/api/v1/feed?limit=100", { headers: signed.headers });
+    const replay = new Request("https://connector.internal/api/v1/activity?limit=100", { headers: signed.headers });
     await expect(verifyNoxHereAssertion(replay, secret)).rejects.toThrow("invalid_internal_assertion");
   });
 
@@ -78,7 +78,7 @@ describe("NoxHere internal authorization assertion", () => {
   });
 
   it("ignores requests without internal assertion headers", async () => {
-    await expect(verifyNoxHereAssertion(new Request("https://connector.internal/api/v1/feed"), secret))
+    await expect(verifyNoxHereAssertion(new Request("https://connector.internal/api/v1/activity"), secret))
       .resolves.toBeNull();
   });
 });

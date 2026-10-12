@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { createNoxCue, withNoxCue } from "./server.js";
+import { createTelemetry, withTelemetry } from "./server.js";
 
 describe("telemetry framework adapters", () => {
   it("reports 5xx responses without changing them", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response('{"eventId":"stored"}', { status: 202 }));
-    const client = createNoxCue({ key: `nox_secret_${"a".repeat(32)}`, fetch: request });
+    const client = createTelemetry({ key: `nox_secret_${"a".repeat(32)}`, fetch: request });
     const expected = new Response("failed", { status: 503 });
-    const handler = withNoxCue(client, async () => expected, { component: "api.checkout" });
+    const handler = withTelemetry(client, async () => expected, { component: "api.checkout" });
 
     await expect(handler(new Request("https://example.com/checkout?token=secret"))).resolves.toBe(expected);
     await client.flush();

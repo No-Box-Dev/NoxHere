@@ -5,17 +5,16 @@ import { resolve } from "node:path";
 const read = (file) => readFileSync(resolve(process.cwd(), "nox-site", file), "utf8");
 
 describe("Nox landing site", () => {
-  it("presents Nox as the product and NoxConnect as its foundation", () => {
+  it("presents Nox as the product and NoxHere as its foundation", () => {
     const html = read("index.html");
     expect(html).toContain("<title>Nox — The developer workspace around your GitHub</title>");
-    expect(html).toContain("Managed by NoxConnect");
-    expect(html).toContain("Explore the NoxConnect API");
-    expect(html).not.toMatch(/unticket/i);
+    expect(html).toContain("Managed by NoxHere");
+    expect(html).toContain("Explore the NoxHere API");
   });
 
   it("links every key service to a working destination", () => {
     const html = read("index.html");
-    for (const service of ["NoxFeed", "NoxTicket", "NoxSpot", "NoxCue", "NoxKey"]) {
+    for (const service of ["Activity", "Planning", "Feedback", "Telemetry", "NoxKey"]) {
       expect(html).toContain(`<h3>${service}</h3>`);
     }
     expect(html).toContain('href="https://app.noxhere.com/?tab=posts"');
@@ -34,7 +33,7 @@ describe("Nox landing site", () => {
     expect(headers).toContain("frame-ancestors 'none'");
   });
 
-  it("deploys from its own directory so NoxConnect Functions cannot be bundled", () => {
+  it("deploys from its own directory so NoxHere Functions cannot be bundled", () => {
     const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/deploy-nox-site.yml"), "utf8");
     expect(workflow).toContain("working-directory: nox-site");
     expect(workflow).toContain("pages deploy . --project-name nox");

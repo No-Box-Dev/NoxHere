@@ -41,12 +41,12 @@ beforeEach(() => {
     const url = String(input);
     if (url === "/api/auth/profile") return json({ user: { login: "JasperNoBoxDev", email: "jasper@noboxdev.com" }, orgs: [{ login: "No-Box-Dev", role: "admin" }] });
     if (url === "/api/v1/me") return json({ login: "JasperNoBoxDev", org: "No-Box-Dev", isAdmin: true });
-    if (url === `/api/v1/projects/${project.id}/cue/actions`) return json({ projectId: project.id, windowDays: 7, actions: [
+    if (url === `/api/v1/projects/${project.id}/telemetry/actions`) return json({ projectId: project.id, windowDays: 7, actions: [
       { slot: 1, key: "custom.comments.written", label: "Comments written" },
       { slot: 2, key: "custom.journals.added", label: "Journals added" },
       { slot: 3, key: "custom.reviews.written", label: "Reviews written" },
     ], snippet: "" });
-    if (url.startsWith(`/api/v1/projects/${project.id}/cue/dashboard`)) return json({ range: "30d", dateLabel: "Last 30 days", reportStatus: "Live", stats: [] });
+    if (url.startsWith(`/api/v1/projects/${project.id}/telemetry/dashboard`)) return json({ range: "30d", dateLabel: "Last 30 days", reportStatus: "Live", stats: [] });
     if (url === "/api/v1/projects/routing") return json({
       projects: [{
         id: project.id,
@@ -55,10 +55,10 @@ beforeEach(() => {
         enabled: true,
         repositories: project.repositories,
         routes: {
-          noxfeedPosts: { connectionId: "", channelId: "" },
-          noxfeedReleaseNotes: { connectionId: "", channelId: "" },
-          noxCue: { connectionId: "", channelId: "" },
-          noxCueAlerts: { connectionId: "", channelId: "" },
+          activityPosts: { connectionId: "", channelId: "" },
+          activityReleaseNotes: { connectionId: "", channelId: "" },
+          telemetry: { connectionId: "", channelId: "" },
+          telemetryAlerts: { connectionId: "", channelId: "" },
         },
       }],
       repositories: ["api", "nox-test-sandbox"],
@@ -71,8 +71,8 @@ beforeEach(() => {
     if (url.startsWith("/api/v1/projects")) return json({ projects: [project] });
     if (url.startsWith("/api/v1/actors")) return json({ actors: [{ github_login: "JasperNoBoxDev", avatar_url: "https://avatars.githubusercontent.com/u/196446605?v=4" }] });
     if (url.startsWith("/api/v1/integrations/connections")) return json({ github: { connected: true }, slack: { connected: false } });
-    if (url === "/api/v1/integrations/slack/routing" && init?.method === "PATCH") return json({ routes: { noxticket: "C-FEATURES" }, connections: { noxticket: "conn-1" } });
-    if (url === "/api/v1/integrations/slack/routing") return json({ routes: { noxticket: null }, connections: { noxticket: null } });
+    if (url === "/api/v1/integrations/slack/routing" && init?.method === "PATCH") return json({ routes: { planning: "C-FEATURES" }, connections: { planning: "conn-1" } });
+    if (url === "/api/v1/integrations/slack/routing") return json({ routes: { planning: null }, connections: { planning: null } });
     if (url === "/api/v1/slack/status") return json({ connected: true, defaultConnectionId: "conn-1", canConfigure: true, connections: [{ id: "conn-1", teamId: "T123", teamName: "No Box Dev", displayName: null, isDefault: true, projectId: project.id, projectName: project.name, createdBy: "jasper", createdAt: "2026-10-01T00:00:00Z", connectedBy: "jasper", connectedAt: "2026-10-01T00:00:00Z", lastUsedAt: "2026-10-07T00:00:00Z", health: "ok" }] });
     if (url.startsWith("/api/v1/slack/channels")) return json({ connectionId: "conn-1", channels: [{ id: "C-FEATURES", name: "feature-alerts", is_private: false, is_archived: false, is_member: true }] });
     if (url === "/api/v1/guests/invites" && init?.method === "POST") return json({ invitation: { id: "invite-1", email: "guest@example.com", scopeType: "project", projectId: project.id, service: null, expiresAt: "2026-09-27T00:00:00.000Z" } }, 201);
@@ -84,7 +84,7 @@ beforeEach(() => {
     ]);
     if (url === "/api/v1/config/settings" && init?.method === "PUT") return json({ ok: true });
     if (url === "/api/v1/config/settings") return json({ excludedMembers: ["memenoboxdev"] });
-    if (url === "/api/v1/feed/current-summary") return json({
+    if (url === "/api/v1/activity/current-summary") return json({
       prs: [],
       issues: [],
       members: [{ login: "JasperNoBoxDev", avatar_url: "https://avatars.githubusercontent.com/u/196446605?v=4", kind: "human" }],
@@ -109,16 +109,16 @@ beforeEach(() => {
     if (url === "/api/v1/tasks?status=all") return json([]);
     if (url.startsWith("/api/v1/specs")) return json({ specs: [] });
     if (url.startsWith("/api/v1/prs") || url.startsWith("/api/v1/issues")) return json({ data: [], totalCount: 0, page: 1, pageSize: 100 });
-    if (url.startsWith("/api/v1/spots/project-overview")) return json({ issues: [] });
-    if (url === "/api/v1/spots/sites") return json({ sites: [{ id: "site-playnist", name: "Playnist", projectId: project.id }] });
-    if (url === "/api/v1/spots/sites/site-playnist/resolution-template" && init?.method === "PATCH") return json({
+    if (url.startsWith("/api/v1/feedback/project-overview")) return json({ issues: [] });
+    if (url === "/api/v1/feedback/sites") return json({ sites: [{ id: "site-playnist", name: "Playnist", projectId: project.id }] });
+    if (url === "/api/v1/feedback/sites/site-playnist/resolution-template" && init?.method === "PATCH") return json({
       template: JSON.parse(String(init.body)).template,
       defaults: resolutionTemplate,
       usingDefault: false,
       revision: "b".repeat(64),
     });
-    if (url === "/api/v1/spots/sites/site-playnist/resolution-template") return json({ template: resolutionTemplate, defaults: resolutionTemplate, usingDefault: false, revision: "a".repeat(64) });
-    if (url === "/api/v1/spots/sites/site-playnist/resolution-template/preview") return json({ preview: { ...resolutionTemplate, siteName: "Playnist", greeting: "Hi Alex,", summary: "The issue is fixed." } });
+    if (url === "/api/v1/feedback/sites/site-playnist/resolution-template") return json({ template: resolutionTemplate, defaults: resolutionTemplate, usingDefault: false, revision: "a".repeat(64) });
+    if (url === "/api/v1/feedback/sites/site-playnist/resolution-template/preview") return json({ preview: { ...resolutionTemplate, siteName: "Playnist", greeting: "Hi Alex,", summary: "The issue is fixed." } });
     return json({ error: { code: "not_found", message: "Not found" } }, 404);
   }));
 });
@@ -137,7 +137,7 @@ const resolutionTemplate = {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("NoxConnect API-backed platform", () => {
+describe("NoxHere API-backed platform", () => {
   it("sends a text and image message through the selected Slack connection", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -147,10 +147,10 @@ describe("NoxConnect API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/slack");
 
-    await user.click(await screen.findByRole("button", { name: "Toggle Send to Slack" }));
-    await user.click(screen.getByRole("button", { name: "Send to Slack" }));
+    await screen.findByRole("heading", { name: "Slack" });
+    await user.click(await screen.findByRole("button", { name: "Send to Slack" }));
     expect(await screen.findByText("Choose a Slack channel before sending the message.")).toHaveAttribute("role", "alert");
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Slack channel" }), "C-FEATURES");
@@ -180,9 +180,9 @@ describe("NoxConnect API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/slack");
 
-    await user.click(await screen.findByRole("button", { name: "Toggle Slack connections" }));
+    await screen.findByRole("heading", { name: "Slack" });
     expect(await screen.findByText(/Opened by jasper/)).toBeInTheDocument();
     expect(screen.getByText(/Last used/)).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: "Connection name for No Box Dev" }), "Product alerts");
@@ -202,7 +202,7 @@ describe("NoxConnect API-backed platform", () => {
     expect(await screen.findByRole("combobox", { name: "Project" })).toHaveValue(project.id);
     expect(screen.getByTestId("current-route")).toHaveTextContent("/");
     await user.click(screen.getByRole("button", { name: "Open project" }));
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connections/overview`));
     expect(vi.mocked(fetch).mock.calls.some(([, init]) => new Headers(init?.headers).get("X-Project-ID") === "select")).toBe(false);
   });
 
@@ -210,7 +210,7 @@ describe("NoxConnect API-backed platform", () => {
     localStorage.setItem("noxhere.last-project.jaspernoboxdev", JSON.stringify({ organizationId: "no-box-dev", projectId: project.id }));
     renderApp(<><App /><CurrentRoute /></>, "/");
 
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connections/overview`));
     expect(screen.queryByRole("heading", { name: "Choose a project" })).not.toBeInTheDocument();
   });
 
@@ -290,9 +290,9 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.getByRole("link", { name: "Activity" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feedback" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Stats" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "NoxConnect" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Connections" })).toBeInTheDocument();
   });
 
   it("returns to sign-in when an authenticated API request reports an expired session", async () => {
@@ -510,10 +510,8 @@ describe("NoxConnect API-backed platform", () => {
   });
 
   it("loads one shared member directory for the shell and Settings", async () => {
-    const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/people");
 
-    await user.click(await screen.findByRole("button", { name: "Toggle Members" }));
     expect(await screen.findByText("JasperNoBoxDev")).toBeInTheDocument();
     expect(vi.mocked(fetch).mock.calls.filter(([input]) => String(input) === "/api/v1/members")).toHaveLength(1);
   });
@@ -789,8 +787,8 @@ describe("NoxConnect API-backed platform", () => {
     fireEvent.mouseEnter(merged);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith("/api/v1/feed?mode=merged&limit=20", expect.any(Object));
-      expect(fetch).toHaveBeenCalledWith("/api/v1/feed?mode=release-notes", expect.any(Object));
+      expect(fetch).toHaveBeenCalledWith("/api/v1/activity?mode=merged&limit=20", expect.any(Object));
+      expect(fetch).toHaveBeenCalledWith("/api/v1/activity?mode=release-notes", expect.any(Object));
     });
     expect(screen.getByRole("link", { name: "Current" })).toHaveClass("active");
   });
@@ -799,7 +797,7 @@ describe("NoxConnect API-backed platform", () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === "/api/v1/feed/current-summary") return json({
+      if (url === "/api/v1/activity/current-summary") return json({
         prs: [{ id: 1, repo: "playnist", number: 10, title: "Ship player", state: "open", author: "JasperNoBoxDev" }],
         issues: [{ id: 2, repo: "playnist", number: 11, title: "Fix player", state: "open", assignees: [{ login: "JasperNoBoxDev" }] }],
         members: [{ login: "JasperNoBoxDev", avatar_url: "", kind: "human" }],
@@ -822,13 +820,13 @@ describe("NoxConnect API-backed platform", () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === "/api/v1/feed?mode=merged&limit=20") return json({ events: [{
+      if (url === "/api/v1/activity?mode=merged&limit=20") return json({ events: [{
         id: "merge-1", type: "merged", createdAt: "2026-09-27T00:00:00.000Z", repo: "playnist",
         summary: "Player controls shipped", technicalSummary: "Merged safely",
         actor: { login: "JasperNoBoxDev", name: "Jasper", avatarUrl: null },
         pr: { number: 42, title: "Ship player controls", url: "https://github.com/No-Box-Dev/playnist/pull/42" },
       }] });
-      if (url === "/api/v1/feed?mode=release-notes") return new Promise<Response>(() => {});
+      if (url === "/api/v1/activity?mode=release-notes") return new Promise<Response>(() => {});
       return baseFetch(input, init);
     });
 
@@ -843,7 +841,7 @@ describe("NoxConnect API-backed platform", () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === "/api/v1/feed?mode=opened&limit=20") return json({ events: [{
+      if (url === "/api/v1/activity?mode=opened&limit=20") return json({ events: [{
         id: "open-1", type: "opened", createdAt: "2026-09-27T00:00:00.000Z", repo: "playnist",
         summary: "First page", technicalSummary: "What it does: Adds a queue\nHow it works: Orders upcoming tracks\nWhat it touches: Player controls", actor: { login: "JasperNoBoxDev", name: "Jasper", avatarUrl: null },
         pr: { number: 43, title: "Add the player queue", url: "https://github.com/No-Box-Dev/playnist/pull/43" },
@@ -893,9 +891,9 @@ describe("NoxConnect API-backed platform", () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/spot/widgets");
     expect(await screen.findByRole("heading", { name: "Capture widgets" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Playnist" })).toBeInTheDocument();
-    expect(screen.getByText(/api\.noxspot\.dev\/widget\/site-playnist\.js/)).toBeInTheDocument();
+    expect(screen.getByText(/app\.noxhere\.com\/widget\/site-playnist\.js/)).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
-      "/api/v1/spots/sites",
+      "/api/v1/feedback/sites",
       expect.objectContaining({
         headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
       }),
@@ -905,8 +903,8 @@ describe("NoxConnect API-backed platform", () => {
   it("filters the complete Feedback issue inbox by source", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).startsWith("/api/v1/spots/project-overview")) return json({ issues: [
-        { number: 2000, repo: "playnist", title: "Widget report", source: "noxspot", reportStatus: "open", labels: [], author: { login: "reporter", avatarUrl: null }, contextSections: [], activity: [], notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null } },
+      if (String(input).startsWith("/api/v1/feedback/project-overview")) return json({ issues: [
+        { number: 2000, repo: "playnist", title: "Widget report", source: "feedback", reportStatus: "open", labels: [], author: { login: "reporter", avatarUrl: null }, contextSections: [], activity: [], notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null } },
         { number: 2001, repo: "playnist", title: "Repository issue", source: "github", reportStatus: "open", labels: [], author: { login: "maintainer", avatarUrl: null }, contextSections: [], activity: [], notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null } },
       ] });
       return baseFetch(input, init);
@@ -924,7 +922,7 @@ describe("NoxConnect API-backed platform", () => {
   it("renders rich Feedback capture details when the API supplies them", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).startsWith("/api/v1/spots/project-overview")) return json({ issues: [{
+      if (String(input).startsWith("/api/v1/feedback/project-overview")) return json({ issues: [{
         id: "report-rich",
         number: 2000,
         repo: "playnist",
@@ -933,11 +931,11 @@ describe("NoxConnect API-backed platform", () => {
         submittedBy: "Alex",
         internalReporter: { login: "alex", name: "Alex", avatarUrl: "https://avatars.githubusercontent.com/u/1" },
         reportStatus: "open",
-        screenshotUrl: "https://cdn.noxspot.dev/screenshots/report-rich.png",
+        screenshotUrl: "https://app.noxhere.com/api/feedback/assets/screenshots/report-rich.png",
         contextSections: [{ title: "Browser context", value: { browser: "Chromium" } }],
         author: null,
         labels: [],
-        source: "noxspot",
+        source: "feedback",
         activity: [],
         notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null },
         url: "https://github.com/No-Box-Dev/playnist/issues/2000",
@@ -949,7 +947,7 @@ describe("NoxConnect API-backed platform", () => {
     const title = await screen.findByText("Rich feedback report");
     const report = title.closest("details");
     expect(report).not.toBeNull();
-    expect(within(report!).getByRole("img", { name: "Screenshot attached to Rich feedback report" })).toHaveAttribute("src", "https://cdn.noxspot.dev/screenshots/report-rich.png");
+    expect(within(report!).getByRole("img", { name: "Screenshot attached to Rich feedback report" })).toHaveAttribute("src", "https://app.noxhere.com/api/feedback/assets/screenshots/report-rich.png");
     expect(report!.querySelector(".spot-report-avatar img")).toHaveAttribute("src", "https://avatars.githubusercontent.com/u/1");
     expect(within(report!).getByText("Browser context")).toBeInTheDocument();
     expect(within(report!).getByRole("link", { name: "Open GitHub issue ↗" })).toHaveAttribute("href", "https://github.com/No-Box-Dev/playnist/issues/2000");
@@ -959,10 +957,10 @@ describe("NoxConnect API-backed platform", () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === "/api/v1/spots/project-overview?view=open&limit=50") return json({ issues: [{
-        number: 2000, repo: "playnist", title: "First feedback page", source: "noxspot", reportStatus: "open", labels: [], author: null, contextSections: [], activity: [], notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null },
+      if (url === "/api/v1/feedback/project-overview?view=open&limit=50") return json({ issues: [{
+        number: 2000, repo: "playnist", title: "First feedback page", source: "feedback", reportStatus: "open", labels: [], author: null, contextSections: [], activity: [], notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null },
       }], nextCursor: "2026-09-27T00:00:00Z:2000" });
-      if (url.includes("/api/v1/spots/project-overview?view=open&limit=50&before=")) return json({ issues: [{
+      if (url.includes("/api/v1/feedback/project-overview?view=open&limit=50&before=")) return json({ issues: [{
         number: 1999, repo: "playnist", title: "Second feedback page", source: "github", reportStatus: "open", labels: [], author: null, contextSections: [], activity: [], notification: { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null },
       }], nextCursor: null });
       return baseFetch(input, init);
@@ -982,12 +980,12 @@ describe("NoxConnect API-backed platform", () => {
     let revision = "a".repeat(64);
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === "/api/v1/spots/sites/site-playnist/resolution-template" && init?.method === "PATCH") {
+      if (url === "/api/v1/feedback/sites/site-playnist/resolution-template" && init?.method === "PATCH") {
         savedTemplate = JSON.parse(String(init.body)).template;
         revision = "b".repeat(64);
         return json({ template: savedTemplate, defaults: resolutionTemplate, usingDefault: true, revision });
       }
-      if (url === "/api/v1/spots/sites/site-playnist/resolution-template") return json({ template: savedTemplate, defaults: resolutionTemplate, usingDefault: true, revision });
+      if (url === "/api/v1/feedback/sites/site-playnist/resolution-template") return json({ template: savedTemplate, defaults: resolutionTemplate, usingDefault: true, revision });
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
@@ -999,7 +997,7 @@ describe("NoxConnect API-backed platform", () => {
     await user.clear(sender);
     await user.type(sender, "Playnist Support");
     await user.click(screen.getByRole("button", { name: "Save template" }));
-    expect(fetch).toHaveBeenCalledWith("/api/v1/spots/sites/site-playnist/resolution-template", expect.objectContaining({
+    expect(fetch).toHaveBeenCalledWith("/api/v1/feedback/sites/site-playnist/resolution-template", expect.objectContaining({
       method: "PATCH",
       headers: expect.objectContaining({ "If-Match": `"${"a".repeat(64)}"`, "X-Project-ID": project.id }),
       body: expect.stringContaining('"senderName":"Playnist Support"'),
@@ -1015,7 +1013,7 @@ describe("NoxConnect API-backed platform", () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/stats/overview");
     expect(await screen.findByRole("button", { name: "Configure actions" })).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
-      `/api/v1/projects/${project.id}/cue/dashboard?range=30d`,
+      `/api/v1/projects/${project.id}/telemetry/dashboard?range=30d`,
       expect.objectContaining({
         headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
       }),
@@ -1026,7 +1024,7 @@ describe("NoxConnect API-backed platform", () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === `/api/v1/projects/${project.id}/cue/actions` && init?.method === "PUT") {
+      if (url === `/api/v1/projects/${project.id}/telemetry/actions` && init?.method === "PUT") {
         const actions = JSON.parse(String(init.body)).actions;
         return json({ projectId: project.id, windowDays: JSON.parse(String(init.body)).windowDays, actions: actions.map((action: { key: string; label: string }, index: number) => ({ ...action, slot: index + 1 })), snippet: "saved" });
       }
@@ -1037,20 +1035,20 @@ describe("NoxConnect API-backed platform", () => {
     await user.click(await screen.findByRole("button", { name: "Configure actions" }));
     const dialog = await screen.findByRole("dialog", { name: "Engagement actions" });
     expect(within(dialog).getByDisplayValue("custom.comments.written")).toBeInTheDocument();
-    expect(within(dialog).getByText(/noxCue\.activity\("custom\.comments\.written"/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/telemetry\.activity\("custom\.comments\.written"/)).toBeInTheDocument();
     await user.selectOptions(within(dialog).getByRole("combobox", { name: "Engagement timeframe" }), "14");
     await user.click(within(dialog).getByRole("button", { name: "Save actions" }));
-    await waitFor(() => expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/${project.id}/cue/actions`, expect.objectContaining({
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/${project.id}/telemetry/actions`, expect.objectContaining({
       method: "PUT",
       body: expect.stringContaining('"custom.reviews.written"'),
     })));
-    expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/${project.id}/cue/actions`, expect.objectContaining({ body: expect.stringContaining('"windowDays":14') }));
+    expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/${project.id}/telemetry/actions`, expect.objectContaining({ body: expect.stringContaining('"windowDays":14') }));
   });
 
   it("explains custom engagement with breadth and depth instead of a rolling average", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).includes("/cue/dashboard?range=30d")) return json({
+      if (String(input).includes("/telemetry/dashboard?range=30d")) return json({
         range: "30d", dateLabel: "2026-10-03", reportStatus: "Reported", stats: [{
           id: "custom.comments.written.per_mau", name: "Comments per active user", value: "5.00",
           context: "Last 7 days", change: "↑ 25.0% vs previous 7 days", direction: "up", points: [4, 5],
@@ -1069,18 +1067,38 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.getByText("↑ 25.0% vs previous 7 days")).toBeInTheDocument();
   });
 
-  it("keeps Stats and Incidents separate while redirecting former NoxCue links", async () => {
+  it("moves repository issues into Issues and Incidents", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/issues?state=open&page_size=100") return json({ data: [{ id: 42, repo: "playnist", number: 42, title: "Move this issue", state: "open", html_url: "https://github.com/No-Box-Dev/playnist/issues/42" }] });
+      return baseFetch(input, init);
+    });
+
+    const moved = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/activity/issues`);
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/incidents/issues`));
+    expect(await screen.findByText("Move this issue")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toHaveClass("active");
+    expect(screen.queryByRole("link", { name: /^Issues$/ })).toBeInTheDocument();
+    moved.unmount();
+
+    renderApp(<App />, `/no-box-dev/${project.id}/activity/current`);
+    expect(await screen.findByRole("navigation", { name: "Service views" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Issues$/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps Stats and Issues and Incidents separate while redirecting former Telemetry links", async () => {
     const stats = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/stats/overview`);
-    expect(await screen.findByRole("navigation", { name: "Stats views" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Incident views" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: /Dashboard/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Incidents$/ })).not.toBeInTheDocument();
     stats.unmount();
 
     const incidents = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/incidents/alerts`);
-    expect(await screen.findByRole("tablist", { name: "Alert views" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /^Incidents$/ })).toHaveClass("active");
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toHaveClass("active");
     expect(screen.queryByRole("navigation", { name: "Stats views" })).not.toBeInTheDocument();
     incidents.unmount();
 
-    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/cue/stats`);
+    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/telemetry/stats`);
     await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/stats/overview`));
   });
 
@@ -1091,7 +1109,7 @@ describe("NoxConnect API-backed platform", () => {
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
   });
 
-  it("uses actual project and collaborator responses in NoxConnect", async () => {
+  it("uses actual project and collaborator responses in NoxHere", async () => {
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connect/overview");
     await user.click(await screen.findByRole("button", { name: "Toggle People and access" }));
@@ -1130,7 +1148,7 @@ describe("NoxConnect API-backed platform", () => {
 
   it("edits the central project repository scope from Project Settings", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/github");
 
     await user.click(await screen.findByRole("checkbox", { name: /^api/ }));
     expect(fetch).toHaveBeenCalledWith("/api/v1/projects/routing", expect.objectContaining({
@@ -1147,10 +1165,10 @@ describe("NoxConnect API-backed platform", () => {
         enabled: true,
         repositories: ["nox-test-sandbox", "api"],
         routes: {
-          noxfeedPosts: { connectionId: "", channelId: "" },
-          noxfeedReleaseNotes: { connectionId: "", channelId: "" },
-          noxCue: { connectionId: "", channelId: "" },
-          noxCueAlerts: { connectionId: "", channelId: "" },
+          activityPosts: { connectionId: "", channelId: "" },
+          activityReleaseNotes: { connectionId: "", channelId: "" },
+          telemetry: { connectionId: "", channelId: "" },
+          telemetryAlerts: { connectionId: "", channelId: "" },
         },
       }),
     }));
@@ -1166,7 +1184,7 @@ describe("NoxConnect API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/github");
 
     expect(await screen.findByText("Repository routing is temporarily unavailable.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
@@ -1191,28 +1209,28 @@ describe("NoxConnect API-backed platform", () => {
   it("keeps guests inside their granted service and removes settings", async () => {
     const memberFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["noxspot"] });
+      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["feedback"] });
       return memberFetch(input, init);
     });
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
     expect(await screen.findByRole("link", { name: "Feedback" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "NoxConnect" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "NoxHere" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "NoxKey" })).not.toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/v1/me", expect.objectContaining({
       headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
     }));
   });
 
-  it("preserves former NoxCue guest access across Stats and Incidents", async () => {
+  it("preserves former Telemetry guest access across Stats and Incidents", async () => {
     const memberFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["noxcue"] });
+      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["telemetry"] });
       return memberFetch(input, init);
     });
     renderApp(<App />, `/no-box-dev/${project.id}/stats/overview`);
     expect(await screen.findByRole("link", { name: "Stats" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Planning" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
   });
@@ -1230,7 +1248,7 @@ describe("NoxConnect API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    const settingsView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    const settingsView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/people");
     expect(await screen.findByText("GitHub members can access every capability.", { exact: false })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Track JasperNoBoxDev" })).toBeChecked();
     const memeTracking = screen.getByRole("switch", { name: "Track memenoboxdev" });
@@ -1244,7 +1262,7 @@ describe("NoxConnect API-backed platform", () => {
     await waitFor(() => expect(savedSettings).toMatchObject({ excludedMembers: [], boardStages }));
     settingsView.unmount();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/people");
     expect(await screen.findByRole("switch", { name: "Track memenoboxdev" })).toBeChecked();
   });
 
@@ -1253,10 +1271,10 @@ describe("NoxConnect API-backed platform", () => {
     let savedChannel: string | null = null;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       if (String(input) === "/api/v1/integrations/slack/routing" && init?.method === "PATCH") {
-        savedChannel = JSON.parse(String(init.body)).routes.noxticket;
-        return json({ routes: { noxticket: savedChannel }, connections: { noxticket: savedChannel ? "conn-1" : null } });
+        savedChannel = JSON.parse(String(init.body)).routes.planning;
+        return json({ routes: { planning: savedChannel }, connections: { planning: savedChannel ? "conn-1" : null } });
       }
-      if (String(input) === "/api/v1/integrations/slack/routing") return json({ routes: { noxticket: savedChannel }, connections: { noxticket: savedChannel ? "conn-1" : null } });
+      if (String(input) === "/api/v1/integrations/slack/routing") return json({ routes: { planning: savedChannel }, connections: { planning: savedChannel ? "conn-1" : null } });
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
@@ -1268,7 +1286,7 @@ describe("NoxConnect API-backed platform", () => {
     expect(fetch).toHaveBeenCalledWith("/api/v1/integrations/slack/routing", expect.objectContaining({
       method: "PATCH",
       headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
-      body: JSON.stringify({ routes: { noxticket: "C-FEATURES" }, connections: { noxticket: "conn-1" } }),
+      body: JSON.stringify({ routes: { planning: "C-FEATURES" }, connections: { planning: "conn-1" } }),
     }));
     expect(await screen.findByText("Feature alerts are on.")).toBeInTheDocument();
     planningSettings.unmount();

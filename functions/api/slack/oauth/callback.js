@@ -71,7 +71,7 @@ export async function onRequestGet(context) {
       redirectUri: resolveSlackOAuthRedirectUri(),
     });
   } catch (err) {
-    console.error("[noxconnect slack oauth] exchange failed:", err?.message ?? err);
+    console.error("[noxhere slack oauth] exchange failed:", err?.message ?? err);
     return redirectHome(url, "exchange-failed");
   }
 
@@ -90,11 +90,11 @@ export async function onRequestGet(context) {
         requeueBlockedForOrg(context.env, orgId),
         requeueBlockedTransportCommands(context.env, { orgId }),
       ]).catch((error) => {
-        console.error("[noxconnect slack oauth] delivery replay failed:", error?.message ?? error);
+        console.error("[noxhere slack oauth] delivery replay failed:", error?.message ?? error);
       });
     }
   } catch (err) {
-    console.error("[noxconnect slack oauth] persist failed:", err?.message ?? err);
+    console.error("[noxhere slack oauth] persist failed:", err?.message ?? err);
     return redirectHome(url, "persist-failed");
   }
 

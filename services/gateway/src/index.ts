@@ -35,7 +35,7 @@ function unavailableResponse(): Response {
       apiVersion: 1,
       error: {
         code: "service_unavailable",
-        message: "The NoxConnect integration service is temporarily unavailable.",
+        message: "The NoxHere integration service is temporarily unavailable.",
         remediation: { action: "retry" },
       },
     },
@@ -253,7 +253,7 @@ async function privateBoundaryHealth(request: Request, services: PlatformService
   const org = await control.db.prepare(
     "SELECT id, github_login FROM orgs WHERE suspended_at IS NULL ORDER BY id LIMIT 1",
   ).first<{ id: number; github_login: string }>();
-  if (!org) return Response.json({ service: "noxhere", status: "degraded", dependency: "noxconnect", code: "no_active_organization" }, { status: 503 });
+  if (!org) return Response.json({ service: "noxhere", status: "degraded", dependency: "noxhere", code: "no_active_organization" }, { status: 503 });
 
   const target = new Request(new URL("/api/v1/me", request.url), {
     headers: { "X-Org": org.github_login },
@@ -279,7 +279,7 @@ async function privateBoundaryHealth(request: Request, services: PlatformService
   return Response.json({
     service: "noxhere",
     status: downstream.ok ? "ok" : "degraded",
-    dependency: "noxconnect",
+    dependency: "noxhere",
     downstreamStatus: downstream.status,
     ...(code ? { code } : {}),
   }, { status: downstream.ok ? 200 : 503, headers: { "Cache-Control": "no-store" } });
@@ -301,15 +301,15 @@ function isPublicConnectorPath(pathname: string): boolean {
     || pathname === "/api/health/ready"
     || pathname === "/api/webhook"
     || pathname === "/api/postmark/webhook"
-    || pathname.startsWith("/api/spots/public/v1/resolution/")
-    || pathname.startsWith("/api/spots/public/v1/resolution-responses/")
+    || pathname.startsWith("/api/feedback/public/v1/resolution/")
+    || pathname.startsWith("/api/feedback/public/v1/resolution-responses/")
     || pathname === "/api/slack/oauth/callback"
     || pathname === "/api/slack/oauth/handoff"
     || pathname === "/api/slack/events"
     || pathname === "/api/slack/interactions"
     || pathname.startsWith("/api/public/")
-    || pathname === "/api/cues/public/v1/events"
-    || pathname === "/api/v1/cues/public/events";
+    || pathname === "/api/telemetry/public/v1/events"
+    || pathname === "/api/v1/telemetry/public/events";
 }
 
 function unavailableAuthentication(): Response {
@@ -326,12 +326,12 @@ type RuntimeEnv = Env & {
 export default {
   async fetch(request, env, execution): Promise<Response> {
     const runtimeEnv: RuntimeEnv = env;
-    const capabilities = env.NOXCONNECT_IDENTITY as typeof env.NOXCONNECT_IDENTITY
+    const capabilities = env.NOXHERE_IDENTITY as typeof env.NOXHERE_IDENTITY
       & import("./control/oauth").IdentityService
       & import("./control/oauth").EmailService;
     return handleRequest(request, {
       assets: env.ASSETS,
-      connector: env.NOXCONNECT,
+      connector: env.NOXHERE,
       control: {
         db: env.CONTROL_DB,
         identity: capabilities,

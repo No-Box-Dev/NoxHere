@@ -7,14 +7,14 @@ import {
 
 describe("API authentication primitives", () => {
   it("allows only resource-safe project token routes", () => {
-    expect(projectScopedApiTokenPathSupported("/api/v1/feed", "GET")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/activity", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/developer-feedback", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/integrations/slack/messages", "POST")).toBe(true);
-    expect(projectScopedApiTokenPathSupported("/api/spots/sites/site-1", "PATCH")).toBe(true);
-    expect(projectScopedApiTokenPathSupported("/api/v1/spots/sites/site-1", "PATCH")).toBe(true);
-    expect(projectScopedApiTokenPathSupported("/api/cues/sources/source-1/keys", "POST")).toBe(true);
-    expect(projectScopedApiTokenPathSupported("/api/v1/cues/sources/source-1/keys", "POST")).toBe(true);
-    expect(projectScopedApiTokenPathSupported("/api/v1/services/noxfeed/config", "GET")).toBe(false);
+    expect(projectScopedApiTokenPathSupported("/api/feedback/sites/site-1", "PATCH")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/feedback/sites/site-1", "PATCH")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/telemetry/sources/source-1/keys", "POST")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/sources/source-1/keys", "POST")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/services/activity/config", "GET")).toBe(false);
     expect(projectScopedApiTokenPathSupported("/api/llm-settings", "GET")).toBe(false);
     expect(projectScopedApiTokenPathSupported("/api/features", "GET")).toBe(false);
     expect(projectScopedApiTokenPathSupported("/api/v1/features", "GET")).toBe(false);

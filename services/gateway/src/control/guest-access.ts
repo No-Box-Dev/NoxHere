@@ -1,4 +1,4 @@
-export const GUEST_SERVICES = ["noxticket", "noxfeed", "noxspot", "noxcue"] as const;
+export const GUEST_SERVICES = ["planning", "activity", "feedback", "telemetry"] as const;
 export type GuestService = typeof GUEST_SERVICES[number];
 export type GuestScopeType = "organization" | "project" | "tool";
 

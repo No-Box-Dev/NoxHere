@@ -87,7 +87,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
   const current = await readSettings(context);
   if ("response" in current) return current.response!;
   const currentConfig = serviceConfig(service, current.settings);
-  const serviceValidation = service === "noxconnect" || !context.data.projectId
+  const serviceValidation = service === "noxhere" || !context.data.projectId
     ? null
     : await validateConfigPatchWithService(context.env, service, currentConfig, value).catch((error) => {
         console.error(JSON.stringify({

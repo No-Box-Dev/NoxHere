@@ -42,9 +42,9 @@ Telemetry is part of the same SDK, with runtime-specific entry points so a
 secret ingest key can never be included in a browser bundle:
 
 ```ts
-import { createNoxCueFromEnv } from "@noxhere/sdk/telemetry/server";
+import { createTelemetryFromEnv } from "@noxhere/sdk/telemetry/server";
 
-const telemetry = createNoxCueFromEnv();
+const telemetry = createTelemetryFromEnv();
 
 await telemetry.user.registered("user-42");
 await telemetry.events.recordParsed("user-42", "record-7");
@@ -60,12 +60,12 @@ Environment bootstrap reads `NOXHERE_INGEST_KEY`,
 `NOXHERE_TELEMETRY_MODE=memory` for a network-free test client and inspect
 `capturedEvents()`. Delivery retries respect `Retry-After`, use a versioned user
 agent, and report failure results without changing application outcomes. The
-optional `createNoxCueSpanProcessor()` bridge accepts only OpenTelemetry spans
+optional `createTelemetrySpanProcessor()` bridge accepts only OpenTelemetry spans
 explicitly marked with `noxhere.event.name` and `noxhere.user.id`; it never
 captures request spans automatically.
 
 Browser applications import `@noxhere/sdk/telemetry/browser` and use a
-`nox_pub_…` key. The compatibility function remains named `createNoxCue`, but
+`nox_pub_…` key. The compatibility function remains named `createTelemetry`, but
 the implementation and wire contract now live only in this package.
 
 Browser tracking accepts only the configured anonymous `website.*` events and

@@ -1,4 +1,4 @@
-// Slack posting for every Nox product via shared NoxConnect installations.
+// Slack posting for every Nox product via shared NoxHere installations.
 //
 // Per-org install: each workspace's bot token + team metadata lives in the
 // `slack_connections` table (tokens encrypted with ENCRYPTION_KEY). The
@@ -10,7 +10,6 @@
 
 import { z } from "zod";
 import { decryptToken, encryptToken } from "./crypto";
-import { normalizeNoxSettings } from "./naming-compat.js";
 
 const SLACK_API = "https://slack.com";
 const TIMEOUT_MS = 5000;
@@ -35,15 +34,15 @@ export function actionableSlackError(error, fallback = "Check the selected Slack
   const normalized = `${code} ${raw}`.toLowerCase();
 
   if (normalized.includes("channel_not_found")) return "Slack could not find this channel in the selected workspace. Choose a channel from that workspace, save the route, then try again.";
-  if (normalized.includes("not_in_channel")) return "NoxConnect is not a member of this channel. In Slack, invite @NoxConnect to the channel, then try again.";
+  if (normalized.includes("not_in_channel")) return "NoxHere is not a member of this channel. In Slack, invite @NoxHere to the channel, then try again.";
   if (normalized.includes("is_archived")) return "This Slack channel is archived. Choose an active channel, save the route, then try again.";
   if (normalized.includes("invalid_auth") || normalized.includes("token_revoked") || normalized.includes("account_inactive") || normalized.includes("credentials could not be decrypted")) {
     return "This Slack workspace authorization is no longer usable. Reconnect the affected workspace, then send a test message.";
   }
-  if (normalized.includes("missing_scope")) return "NoxConnect is missing a required Slack permission. Reconnect the affected workspace to grant the current permissions, then try again.";
-  if (normalized.includes("no_permission")) return "NoxConnect does not have permission to post in this channel. Invite @NoxConnect if the channel is private, or choose another channel, then try again.";
+  if (normalized.includes("missing_scope")) return "NoxHere is missing a required Slack permission. Reconnect the affected workspace to grant the current permissions, then try again.";
+  if (normalized.includes("no_permission")) return "NoxHere does not have permission to post in this channel. Invite @NoxHere if the channel is private, or choose another channel, then try again.";
   if (normalized.includes("workspace_mismatch")) return "The saved Slack authorization belongs to a different workspace. Reconnect the affected workspace, reselect its channel, then send a test message.";
-  if (normalized.includes("app_mismatch")) return "This workspace uses an older Slack connection. Reconnect it with NoxConnect, then send a test message.";
+  if (normalized.includes("app_mismatch")) return "This workspace uses an older Slack connection. Reconnect it with NoxHere, then send a test message.";
   if (normalized.includes("rate_limited") || error?.status === 429 || normalized.includes("http 429")) {
     const retryAfter = Number(error?.retryAfter);
     const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? ` Wait ${retryAfter} seconds` : " Wait a moment";
@@ -52,7 +51,7 @@ export function actionableSlackError(error, fallback = "Check the selected Slack
   if (normalized.includes("abort") || normalized.includes("timeout") || /^http_5\d\d$/.test(code) || /slack http 5\d\d/.test(normalized)) {
     return "Slack is temporarily unavailable or took too long to respond. Wait a moment, then try again.";
   }
-  if (normalized.includes("slack not connected")) return "Slack is not connected for this organization. Connect a workspace in NoxConnect, choose a channel, then try again.";
+  if (normalized.includes("slack not connected")) return "Slack is not connected for this organization. Connect a workspace in NoxHere, choose a channel, then try again.";
   return fallback;
 }
 
@@ -201,44 +200,44 @@ export async function resolveSlackChannels(db, orgId, projectId = null) {
     .catch(() => null);
   if (!row?.data) return emptySlackChannels();
   let settings;
-  try { settings = normalizeNoxSettings(JSON.parse(row.data)); } catch { return emptySlackChannels(); }
+  try { settings = JSON.parse(row.data); } catch { return emptySlackChannels(); }
   const slack = settings?.slack;
   if (!slack || typeof slack !== "object") return emptySlackChannels();
-  // The first central-routing release briefly combined both NoxFeed streams.
+  // The first central-routing release briefly combined both Activity streams.
   // Use that selection for either stream only when its dedicated route is
   // empty, so existing organizations keep receiving messages without a data
   // migration and can split the routes on their next save.
-  const noxFeedChannelId = channelId(slack.noxFeedChannelId);
-  const postsChannelId = channelId(slack.postsChannelId) || noxFeedChannelId;
-  const releaseNotesChannelId = channelId(slack.releaseNotesChannelId) || noxFeedChannelId;
+  const activityChannelId = channelId(slack.activityChannelId);
+  const postsChannelId = channelId(slack.postsChannelId) || activityChannelId;
+  const releaseNotesChannelId = channelId(slack.releaseNotesChannelId) || activityChannelId;
   return {
     fallbackChannelId: channelId(slack.fallbackChannelId),
     fallbackConnectionId: channelId(slack.fallbackConnectionId),
-    noxCueChannelId: channelId(slack.noxCueChannelId),
-    noxCueConnectionId: channelId(slack.noxCueConnectionId),
-    noxTicketChannelId: channelId(slack.noxTicketChannelId),
-    noxTicketConnectionId: channelId(slack.noxTicketConnectionId),
+    telemetryChannelId: channelId(slack.telemetryChannelId),
+    telemetryConnectionId: channelId(slack.telemetryConnectionId),
+    planningChannelId: channelId(slack.planningChannelId),
+    planningConnectionId: channelId(slack.planningConnectionId),
     // Retained for clients released during the combined-route window.
-    noxFeedChannelId: noxFeedChannelId || postsChannelId || releaseNotesChannelId,
+    activityChannelId: activityChannelId || postsChannelId || releaseNotesChannelId,
     postsChannelId,
     postsConnectionId: channelId(slack.postsConnectionId),
     releaseNotesChannelId,
     releaseNotesConnectionId: channelId(slack.releaseNotesConnectionId),
     dailySummaryChannelId: channelId(slack.dailySummaryChannelId),
     dailySummaryConnectionId: channelId(slack.dailySummaryConnectionId),
-    noxFeedProjectId: channelId(slack.noxFeedProjectId),
+    activityProjectId: channelId(slack.activityProjectId),
   };
 }
 
 export function resolveSlackConnectionId(channels, service, siteConnectionId = "") {
   const fallback = channelId(channels?.fallbackConnectionId);
   switch (service) {
-    case "noxcue": return channelId(channels?.noxCueConnectionId) || fallback;
-    case "noxspot": return channelId(siteConnectionId) || fallback;
-    case "noxticket": return channelId(channels?.noxTicketConnectionId) || fallback;
-    case "noxfeed_posts": return channelId(channels?.postsConnectionId) || fallback;
-    case "noxfeed_release_notes": return channelId(channels?.releaseNotesConnectionId) || fallback;
-    case "noxfeed_daily_summary": return channelId(channels?.dailySummaryConnectionId);
+    case "telemetry": return channelId(channels?.telemetryConnectionId) || fallback;
+    case "feedback": return channelId(siteConnectionId) || fallback;
+    case "planning": return channelId(channels?.planningConnectionId) || fallback;
+    case "activity_posts": return channelId(channels?.postsConnectionId) || fallback;
+    case "activity_release_notes": return channelId(channels?.releaseNotesConnectionId) || fallback;
+    case "activity_daily_summary": return channelId(channels?.dailySummaryConnectionId);
     default: return fallback;
   }
 }
@@ -246,24 +245,24 @@ export function resolveSlackConnectionId(channels, service, siteConnectionId = "
 export function resolveSlackRoute(channels, service, siteChannelId = "") {
   const fallback = channelId(channels?.fallbackChannelId);
   switch (service) {
-    case "noxcue":
-      return channelId(channels?.noxCueChannelId) || fallback;
-    case "noxspot":
+    case "telemetry":
+      return channelId(channels?.telemetryChannelId) || fallback;
+    case "feedback":
       return channelId(siteChannelId) || fallback;
-    case "noxticket":
-      return channelId(channels?.noxTicketChannelId) || fallback;
-    case "noxfeed_posts":
+    case "planning":
+      return channelId(channels?.planningChannelId) || fallback;
+    case "activity_posts":
       return channelId(channels?.postsChannelId)
-        || channelId(channels?.noxFeedChannelId)
+        || channelId(channels?.activityChannelId)
         || fallback;
-    case "noxfeed_release_notes":
+    case "activity_release_notes":
       return channelId(channels?.releaseNotesChannelId)
-        || channelId(channels?.noxFeedChannelId)
+        || channelId(channels?.activityChannelId)
         || fallback;
-    case "noxfeed_daily_summary":
+    case "activity_daily_summary":
       return channelId(channels?.dailySummaryChannelId);
-    case "noxfeed":
-      return channelId(channels?.noxFeedChannelId)
+    case "activity":
+      return channelId(channels?.activityChannelId)
         || channelId(channels?.postsChannelId)
         || channelId(channels?.releaseNotesChannelId)
         || fallback;
@@ -276,18 +275,18 @@ function emptySlackChannels() {
   return {
     fallbackChannelId: "",
     fallbackConnectionId: "",
-    noxCueChannelId: "",
-    noxCueConnectionId: "",
-    noxTicketChannelId: "",
-    noxTicketConnectionId: "",
-    noxFeedChannelId: "",
+    telemetryChannelId: "",
+    telemetryConnectionId: "",
+    planningChannelId: "",
+    planningConnectionId: "",
+    activityChannelId: "",
     postsChannelId: "",
     postsConnectionId: "",
     releaseNotesChannelId: "",
     releaseNotesConnectionId: "",
     dailySummaryChannelId: "",
     dailySummaryConnectionId: "",
-    noxFeedProjectId: "",
+    activityProjectId: "",
   };
 }
 
@@ -378,12 +377,10 @@ export async function getSlackChannel(token, channelId) {
   return data.channel ?? null;
 }
 
-// Existing Blindspot installs predate app identity tracking. Keep support
-// explicit and temporary: a missing app ID may be accepted by configuration,
-// while a known install for a different Slack app is always rejected.
+// Every install must identify the current unified Slack application.
 export function slackInstallNeedsReconnect(env, install) {
   if (!install || !env?.SLACK_APP_ID) return false;
-  if (!install.appId) return env.SLACK_ACCEPT_LEGACY_INSTALLS !== "true";
+  if (!install.appId) return true;
   return install.appId !== env.SLACK_APP_ID;
 }
 
@@ -426,7 +423,7 @@ async function writeSlackHealth(db, orgId, connectionId, status, error) {
 // Attach Block Kit unfurls to a Slack message. `unfurls` is a map keyed by
 // the original URL that was shared. Slack accepts an empty `unfurls: {}`
 // as a no-op which we use when nothing in the shared list matches an
-// noxconnect URL.
+// noxhere URL.
 export function unfurlSlackLinks(token, { channel, ts, unfurls }) {
   return slackPost(token, "chat.unfurl", { channel, ts, unfurls });
 }
@@ -513,14 +510,13 @@ export async function listSlackChannels(token) {
 // ---------- OAuth helpers ----------
 
 const REDIRECT_PATH = "/api/slack/oauth/callback";
-// NoxConnect is owned by central Nox. Every product starts OAuth here and the
+// NoxHere is owned by central Nox. Every product starts OAuth here and the
 // code exchange must use this exact allowlisted URI as well; Slack rejects a
 // callback when the authorize and exchange redirect URIs differ.
 export const SLACK_OAUTH_REDIRECT_URI = "https://app.noxhere.com/api/slack/oauth/callback";
 
-// NoxConnect has one OAuth owner and one callback. Ignore the retired
-// SLACK_OAUTH_REDIRECT_URI deployment variable so an old NoxSpot/Blindspot
-// compatibility value can never drift from the versioned Slack manifest.
+// NoxHere has one OAuth owner and one callback. Keep the versioned Slack
+// manifest authoritative so deployment variables cannot drift from it.
 export function resolveSlackOAuthRedirectUri() {
   return SLACK_OAUTH_REDIRECT_URI;
 }
@@ -674,7 +670,7 @@ export async function verifyOAuthState(secret, state, maxAgeMs = null) {
 // them around after a switch would route narration to the wrong place.
 export async function clearSlackChannelsForOrg(db, orgId) {
   if (!db || !orgId) return;
-  // NoxSpot channel selections are workspace-scoped too. Clear them alongside
+  // Feedback channel selections are workspace-scoped too. Clear them alongside
   // the feed defaults so switching/disconnecting Slack cannot retain a channel
   // id from the previous workspace.
   await db.prepare("UPDATE spot_sites SET slack_channel_id = NULL WHERE org_id = ?").bind(orgId).run();
@@ -691,15 +687,15 @@ export async function clearSlackChannelsForOrg(db, orgId) {
     .catch(() => null);
   if (!row?.data) return;
   let settings;
-  try { settings = normalizeNoxSettings(JSON.parse(row.data)); } catch { return; }
+  try { settings = JSON.parse(row.data); } catch { return; }
   if (!settings?.slack) return;
   delete settings.slack.fallbackChannelId;
   delete settings.slack.fallbackConnectionId;
-  delete settings.slack.noxCueChannelId;
-  delete settings.slack.noxCueConnectionId;
-  delete settings.slack.noxTicketChannelId;
-  delete settings.slack.noxTicketConnectionId;
-  delete settings.slack.noxFeedChannelId;
+  delete settings.slack.telemetryChannelId;
+  delete settings.slack.telemetryConnectionId;
+  delete settings.slack.planningChannelId;
+  delete settings.slack.planningConnectionId;
+  delete settings.slack.activityChannelId;
   delete settings.slack.postsChannelId;
   delete settings.slack.postsConnectionId;
   delete settings.slack.releaseNotesChannelId;
@@ -737,12 +733,12 @@ async function clearSlackChannelsForConnection(db, orgId, connectionId, wasDefau
     .bind(orgId).first().catch(() => null);
   if (!row?.data) return;
   let settings;
-  try { settings = normalizeNoxSettings(JSON.parse(row.data)); } catch { return; }
+  try { settings = JSON.parse(row.data); } catch { return; }
   if (!settings?.slack) return;
   const pairs = [
     ["fallbackConnectionId", "fallbackChannelId"],
-    ["noxCueConnectionId", "noxCueChannelId"],
-    ["noxTicketConnectionId", "noxTicketChannelId"],
+    ["telemetryConnectionId", "telemetryChannelId"],
+    ["planningConnectionId", "planningChannelId"],
     ["postsConnectionId", "postsChannelId"],
     ["releaseNotesConnectionId", "releaseNotesChannelId"],
     ["dailySummaryConnectionId", "dailySummaryChannelId"],

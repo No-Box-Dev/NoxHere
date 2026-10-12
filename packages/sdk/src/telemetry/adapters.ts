@@ -1,4 +1,4 @@
-import type { NoxCueAdapterOptions, ServerNoxCueClient } from "./types.js";
+import type { TelemetryAdapterOptions, ServerTelemetryClient } from "./types.js";
 
 type WebHandler<Args extends unknown[]> = (request: Request, ...args: Args) => Response | Promise<Response>;
 
@@ -8,7 +8,7 @@ function responseError(response: Response): Error & { status: number; code: stri
   });
 }
 
-function details(request: Request, options: NoxCueAdapterOptions, status?: number) {
+function details(request: Request, options: TelemetryAdapterOptions, status?: number) {
   const method = request.method.toUpperCase();
   return {
     title: `${method} request failed`,
@@ -20,14 +20,14 @@ function details(request: Request, options: NoxCueAdapterOptions, status?: numbe
   };
 }
 
-export function withNoxCue<Args extends unknown[]>(noxcue: ServerNoxCueClient, handler: WebHandler<Args>, options: NoxCueAdapterOptions = {}): WebHandler<Args> {
+export function withTelemetry<Args extends unknown[]>(telemetry: ServerTelemetryClient, handler: WebHandler<Args>, options: TelemetryAdapterOptions = {}): WebHandler<Args> {
   return async (request, ...args) => {
     try {
       const response = await handler(request, ...args);
-      if (response.status >= 500) noxcue.capture(responseError(response), details(request, options, response.status));
+      if (response.status >= 500) telemetry.capture(responseError(response), details(request, options, response.status));
       return response;
     } catch (error) {
-      noxcue.capture(error, details(request, options));
+      telemetry.capture(error, details(request, options));
       throw error;
     }
   };
@@ -35,13 +35,13 @@ export function withNoxCue<Args extends unknown[]>(noxcue: ServerNoxCueClient, h
 
 interface PagesContext { request: Request; waitUntil(promise: Promise<unknown>): void }
 
-export function withNoxCuePages<Context extends PagesContext>(
-  noxcue: ServerNoxCueClient | ((context: Context) => ServerNoxCueClient),
+export function withTelemetryPages<Context extends PagesContext>(
+  telemetry: ServerTelemetryClient | ((context: Context) => ServerTelemetryClient),
   handler: (context: Context) => Response | Promise<Response>,
-  options: NoxCueAdapterOptions = {},
+  options: TelemetryAdapterOptions = {},
 ): (context: Context) => Promise<Response> {
   return async (context) => {
-    const client = typeof noxcue === "function" ? noxcue(context) : noxcue;
+    const client = typeof telemetry === "function" ? telemetry(context) : telemetry;
     try {
       const response = await handler(context);
       if (response.status >= 500) context.waitUntil(client.error(responseError(response), details(context.request, options, response.status)));
@@ -55,10 +55,10 @@ export function withNoxCuePages<Context extends PagesContext>(
 
 interface ExpressRequest { method?: string; originalUrl?: string; url?: string }
 
-export function noxCueExpressErrorHandler(noxcue: ServerNoxCueClient, options: NoxCueAdapterOptions = {}) {
+export function telemetryExpressErrorHandler(telemetry: ServerTelemetryClient, options: TelemetryAdapterOptions = {}) {
   return (error: unknown, request: ExpressRequest, _response: unknown, next: (error: unknown) => void): void => {
     const method = (request.method ?? "REQUEST").toUpperCase();
-    noxcue.capture(error, {
+    telemetry.capture(error, {
       title: `${method} request failed`,
       component: options.component ?? "express.request",
       fatal: false,
