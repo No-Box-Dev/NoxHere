@@ -64,7 +64,7 @@ class Operation:
     servers: tuple[str, ...]
 
 
-SDK_VERSION = "0.2.1"
+SDK_VERSION = "0.2.2"
 DEFAULT_BASE_URL = "https://app.noxhere.com"
 MAX_RETRY_AFTER_SECONDS = 30.0
 

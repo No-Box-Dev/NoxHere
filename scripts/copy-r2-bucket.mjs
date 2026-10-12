@@ -12,9 +12,18 @@ const api = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/bucke
 const auth = { Authorization: `Bearer ${token}` };
 
 async function cloudflare(url, init = {}) {
-  const response = await fetch(url, { ...init, headers: { ...auth, ...init.headers } });
-  if (!response.ok) throw new Error(`${init.method ?? "GET"} ${url} failed (${response.status}): ${await response.text()}`);
-  return response;
+  let lastError;
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      const response = await fetch(url, { ...init, headers: { ...auth, ...init.headers } });
+      if (!response.ok) throw new Error(`${init.method ?? "GET"} ${url} failed (${response.status}): ${await response.text()}`);
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)));
+    }
+  }
+  throw lastError;
 }
 
 async function listObjects(bucket) {
