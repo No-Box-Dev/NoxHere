@@ -1,13 +1,13 @@
 import { z } from "zod";
 import type { AuthContext } from "./auth";
-import { API_TOKEN_SCOPES, createApiTokenValue } from "./auth";
+import { API_TOKEN_ENVIRONMENTS, API_TOKEN_SCOPES, createApiTokenValue, type ApiTokenEnvironment } from "./auth";
 import { sha256 } from "./crypto";
 import { apiError, apiResponse, boundedJson } from "./http";
 import { freshAdmin } from "./memberships";
 
 const CreateToken = z.object({
   name: z.string().trim().min(1).max(80),
-  environment: z.enum(["live", "test"]).default("live"),
+  environment: z.enum(API_TOKEN_ENVIRONMENTS).default("production"),
   projectId: z.string().trim().min(1).max(240),
   scopes: z.array(z.enum(API_TOKEN_SCOPES)).min(1).max(12),
   expiresInDays: z.number().int().min(1).max(365).default(90),
@@ -15,8 +15,8 @@ const CreateToken = z.object({
 
 function requireAdminSession(auth: AuthContext): Response | null {
   if (!auth.isAdmin) return apiError("admin_required", "Only an organization admin can manage API tokens", 403);
-  if (auth.credentialType !== "session") {
-    return apiError("session_required", "API token management requires an organization-admin browser session", 403);
+  if (auth.credentialType !== "session" && auth.credentialType !== "native_session") {
+    return apiError("session_required", "API token management requires an organization-admin browser or CLI session", 403);
   }
   return null;
 }
@@ -104,7 +104,7 @@ export async function handleApiTokens(
     ).bind(id, auth.orgId, new Date().toISOString()).first<{
       id: string;
       name: string;
-      environment: "live" | "test";
+      environment: ApiTokenEnvironment;
       project_id: string;
       scopes_json: string;
       expires_at: string | null;

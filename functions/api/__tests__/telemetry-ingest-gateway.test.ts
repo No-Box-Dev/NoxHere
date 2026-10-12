@@ -20,6 +20,67 @@ describe("Telemetry stable ingest gateway", () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
+  it("uses private RPC for an authenticated API token without forwarding the secret", async () => {
+    const ingestApiTokenEvent = vi.fn(async (input) => {
+      expect(input).toEqual({
+        auth: {
+          orgId: 7,
+          projectId: "project-1",
+          environment: "production",
+          tokenId: "token-1",
+          sourceId: "source-1",
+        },
+        body: JSON.stringify({ type: "user.active", userId: "h1_key_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }),
+        contentType: "application/json",
+        ip: "203.0.113.2",
+      });
+      expect(JSON.stringify(input)).not.toContain("nox_sk_");
+      return Response.json({ accepted: true }, { status: 202 });
+    });
+    const fetch = vi.fn();
+    const body = JSON.stringify({ type: "user.active", userId: "h1_key_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" });
+    const response = await onRequest({
+      env: { TELEMETRY_RESPONSE: { fetch, ingestApiTokenEvent } as unknown as Fetcher & { ingestApiTokenEvent: typeof ingestApiTokenEvent } },
+      request: new Request("https://app.noxhere.com/api/telemetry/public/v1/events", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer nox_sk_live_never-forward-this",
+          "Content-Type": "application/json",
+          "X-Nox-Source-ID": "source-1",
+          "CF-Connecting-IP": "203.0.113.2",
+        },
+        body,
+      }),
+      data: {
+        orgId: 7,
+        projectId: "project-1",
+        auth: { type: "api_token", id: "token-1", tokenEnvironment: "production" },
+      },
+    });
+    expect(response.status).toBe(202);
+    expect(ingestApiTokenEvent).toHaveBeenCalledOnce();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects API tokens presented from browser origins", async () => {
+    const ingestApiTokenEvent = vi.fn();
+    const response = await onRequest({
+      env: { TELEMETRY_RESPONSE: { fetch: vi.fn(), ingestApiTokenEvent } as never },
+      request: new Request("https://app.noxhere.com/api/telemetry/public/v1/events", {
+        method: "POST",
+        headers: { Origin: "https://example.com", "Content-Type": "application/json" },
+        body: "{}",
+      }),
+      data: {
+        orgId: 7,
+        projectId: "project-1",
+        auth: { type: "api_token", id: "token-1", tokenEnvironment: "production" },
+      },
+    });
+    expect(response.status).toBe(403);
+    expect(ingestApiTokenEvent).not.toHaveBeenCalled();
+  });
+
   it("returns a retriable response when the service binding is unavailable", async () => {
     const response = await onRequest({
       env: {},

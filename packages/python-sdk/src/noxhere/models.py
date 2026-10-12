@@ -45,7 +45,7 @@ class AiSettings(TypedDict, total=False):
 ApiRecord: TypeAlias = dict[str, Any]
 
 class ApiTokenCreate(TypedDict, total=False):
-    environment: NotRequired[Literal['live', 'test']]
+    environment: NotRequired[Literal['production', 'staging', 'test']]
     expiresInDays: NotRequired[int]
     name: Required[str]
     projectId: Required[str]

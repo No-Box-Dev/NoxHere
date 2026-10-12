@@ -12,11 +12,19 @@ export const NATIVE_REFRESH_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const API_TOKEN_SCOPES = [
   "services:read",
   "developer-feedback:write",
-  "slack:write",
+  "slack:send", "slack:write",
   "activity:read", "activity:write",
-  "feedback:read", "feedback:write",
-  "telemetry:read", "telemetry:write",
+  "feedback:submit", "feedback:read", "feedback:write",
+  "telemetry:ingest", "telemetry:read", "telemetry:write",
 ] as const;
+export const API_TOKEN_ENVIRONMENTS = ["production", "staging", "test"] as const;
+export type ApiTokenEnvironment = (typeof API_TOKEN_ENVIRONMENTS)[number];
+
+const API_TOKEN_SCOPE_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  "slack:send": ["slack:write"],
+  "feedback:submit": ["feedback:write"],
+  "telemetry:ingest": ["telemetry:write"],
+};
 
 type CredentialType = "session" | "native_session" | "api_token";
 
@@ -37,6 +45,7 @@ export interface AuthContext {
   role?: "owner" | "admin" | "member" | "viewer" | "guest" | "automation";
   capabilities?: string[];
   membershipVerifiedAt?: string | null;
+  tokenEnvironment?: ApiTokenEnvironment | null;
 }
 
 export interface PrincipalCredentialRow {
@@ -67,6 +76,7 @@ interface ApiTokenRow {
   scopes_json: string;
   org_login: string;
   project_enabled: number;
+  environment: ApiTokenEnvironment;
 }
 
 export type AuthResult =
@@ -303,6 +313,7 @@ export async function authenticate(request: Request, db: D1Database): Promise<Au
       role,
       capabilities: capabilitiesForRole(role),
       membershipVerifiedAt: membership.verified_at,
+      tokenEnvironment: null,
     },
     session: row,
   };
@@ -315,7 +326,7 @@ async function authenticateApiToken(
   presentedOrg: string | null,
 ): Promise<AuthResult> {
   const row = await db.prepare(
-    `SELECT token.id, token.org_id, token.project_id, token.scopes_json,
+    `SELECT token.id, token.org_id, token.project_id, token.environment, token.scopes_json,
             org.github_login AS org_login,
             CASE WHEN project.enabled = 1 AND project.archived = 0 THEN 1 ELSE 0 END AS project_enabled
        FROM api_tokens token
@@ -346,9 +357,13 @@ async function authenticateApiToken(
   const required = requiredScope(new URL(request.url).pathname, request.method);
   if (!required) return { response: apiError("api_token_not_supported", "This endpoint does not accept automation tokens", 403) };
   const writeEquivalent = required.endsWith(":read") ? required.replace(/:read$/, ":write") : null;
-  if (!scopes.includes(required) && !(writeEquivalent && scopes.includes(writeEquivalent))) {
+  const accepted = [required, ...(API_TOKEN_SCOPE_ALIASES[required] ?? []), ...(writeEquivalent ? [writeEquivalent] : [])];
+  if (!accepted.some((scope) => scopes.includes(scope))) {
     return { response: apiError("insufficient_scope", `This operation requires ${required}`, 403, { requiredScope: required }) };
   }
+  await db.prepare(
+    "UPDATE api_tokens SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL",
+  ).bind(new Date().toISOString(), row.id).run();
   return {
     context: {
       credentialType: "api_token",
@@ -367,6 +382,7 @@ async function authenticateApiToken(
       role: "automation",
       capabilities: scopes,
       membershipVerifiedAt: null,
+      tokenEnvironment: row.environment,
     },
   };
 }
@@ -407,7 +423,10 @@ export async function revokeBrowserSession(request: Request, db: D1Database): Pr
 export function requiredScope(pathname: string, method: string): string | null {
   const access = ["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase()) ? "read" : "write";
   if (pathname === "/api/v1/developer-feedback" && access === "write") return "developer-feedback:write";
-  if (pathname === "/api/v1/integrations/slack/messages" && access === "write") return "slack:write";
+  if (pathname === "/api/v1/integrations/slack/messages" && access === "write") return "slack:send";
+  if (pathname === "/api/v1/telemetry/public/events" && access === "write") return "telemetry:ingest";
+  if (pathname === "/api/telemetry/public/v1/events" && access === "write") return "telemetry:ingest";
+  if (pathname === "/api/feedback/public/v1/reports" && access === "write") return "feedback:submit";
   const service = pathname.match(/^\/api\/v1\/services\/([^/]+)/)?.[1];
   if (service && service !== "noxhere") return `${service}:${access}`;
   if (pathname === "/api/v1/services" && access === "read") return "services:read";
@@ -464,8 +483,9 @@ export function validateGuestRequest(request: Request, access: GuestAccess): Res
   return null;
 }
 
-export async function createApiTokenValue(environment: "live" | "test") {
+export async function createApiTokenValue(environment: ApiTokenEnvironment) {
   const id = `noxkey_${crypto.randomUUID().replaceAll("-", "")}`;
-  const token = `nox_sk_${environment}_${id.slice(-12)}_${randomToken()}`;
+  const prefixEnvironment = environment === "production" ? "live" : environment;
+  const token = `nox_sk_${prefixEnvironment}_${id.slice(-12)}_${randomToken()}`;
   return { id, token, prefix: token.slice(0, 24) };
 }

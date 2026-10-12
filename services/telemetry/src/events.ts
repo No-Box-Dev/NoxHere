@@ -109,8 +109,8 @@ type TelemetryActivityEvent = z.infer<typeof telemetryActivityEventSchema>;
 type TelemetryTrackedEvent = z.infer<typeof telemetryTrackedEventSchema>;
 
 interface TelemetrySourceRow {
-  key_id: string;
-  key_kind: "publishable" | "secret";
+  key_id: string | null;
+  key_kind: "publishable" | "secret" | "api_token";
   org_id: number;
   owner_id: string;
   source_id: string;
@@ -125,6 +125,14 @@ interface TelemetrySourceRow {
   aggregate_only_slack: number;
   slack_channel_id: string | null;
   slack_connection_id: string | null;
+}
+
+export interface TrustedTelemetryIngest {
+  orgId: number;
+  projectId: string;
+  environment: "production" | "staging" | "test";
+  tokenId: string;
+  sourceId?: string | null;
 }
 
 interface StoredResult {
@@ -252,6 +260,61 @@ async function findSource(env: Env, providedKey: string): Promise<TelemetrySourc
         AND source.enabled = 1
         AND COALESCE(json_extract(config.data, '$.apps.telemetry'), 1) != 0`,
   ).bind(keyHash).first<TelemetrySourceRow>();
+}
+
+async function findSourcesForApiToken(
+  env: Env,
+  auth: TrustedTelemetryIngest,
+): Promise<TelemetrySourceRow[]> {
+  const sourceFilter = auth.sourceId ? "AND source.id = ?" : "";
+  const statement = env.NOX_DB.prepare(
+    `SELECT NULL AS key_id, 'api_token' AS key_kind, source.org_id, source.owner_id,
+            source.id AS source_id, source.name AS source_name, source.project_id,
+            source.allowed_origins_json, source.allowed_events_json, source.timezone, source.error_cooldown_minutes,
+            source.environment, source.alerts_enabled, source.aggregate_only_slack,
+            CASE WHEN source.alerts_enabled = 1 THEN COALESCE(
+              NULLIF(alert_route.channel_id, ''),
+              NULLIF(legacy_project_route.channel_id, ''),
+              NULLIF(source.slack_channel_id, ''),
+              NULLIF(json_extract(config.data, '$.slack.telemetryChannelId'), ''),
+              NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '')
+            ) END AS slack_channel_id,
+            CASE WHEN source.alerts_enabled = 1 THEN CASE
+              WHEN NULLIF(alert_route.channel_id, '') IS NOT NULL THEN NULLIF(alert_route.connection_id, '')
+              WHEN NULLIF(legacy_project_route.channel_id, '') IS NOT NULL THEN NULLIF(legacy_project_route.connection_id, '')
+              WHEN NULLIF(source.slack_channel_id, '') IS NOT NULL THEN NULLIF(source.slack_connection_id, '')
+              WHEN NULLIF(json_extract(config.data, '$.slack.telemetryChannelId'), '') IS NOT NULL
+                THEN NULLIF(json_extract(config.data, '$.slack.telemetryConnectionId'), '')
+              ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '')
+            END END AS slack_connection_id
+       FROM cue_sources source
+       LEFT JOIN config ON config.org_id = source.org_id AND config.key = 'settings'
+       LEFT JOIN project_routing_settings routing_settings
+         ON routing_settings.org_id = source.org_id
+        AND routing_settings.project_id = source.project_id
+        AND routing_settings.enabled = 1
+       LEFT JOIN project_slack_routes alert_route
+         ON alert_route.org_id = source.org_id
+        AND alert_route.project_id = source.project_id
+        AND alert_route.route_key = 'telemetry_alerts'
+        AND routing_settings.enabled = 1
+       LEFT JOIN project_slack_routes legacy_project_route
+         ON legacy_project_route.org_id = source.org_id
+        AND legacy_project_route.project_id = source.project_id
+        AND legacy_project_route.route_key = 'telemetry'
+        AND routing_settings.enabled = 1
+      WHERE source.org_id = ? AND source.project_id = ? AND source.environment = ?
+        AND source.enabled = 1
+        AND COALESCE(json_extract(config.data, '$.apps.telemetry'), 1) != 0
+        ${sourceFilter}
+      ORDER BY source.id
+      LIMIT 2`,
+  );
+  const query = auth.sourceId
+    ? statement.bind(auth.orgId, auth.projectId, auth.environment, auth.sourceId)
+    : statement.bind(auth.orgId, auth.projectId, auth.environment);
+  const result = await query.all<TelemetrySourceRow>();
+  return result.results ?? [];
 }
 
 function parseAllowedOrigins(raw: string): string[] {
@@ -617,8 +680,15 @@ function inputError(error: unknown): { code: string; status: number } {
   }
 }
 
-export async function handleTelemetryEvent(request: Request, env: Env): Promise<Response> {
+export async function handleTelemetryEvent(
+  request: Request,
+  env: Env,
+  trustedAuth?: TrustedTelemetryIngest,
+): Promise<Response> {
   const origin = request.headers.get("Origin");
+  if (trustedAuth && origin) {
+    return jsonResponse({ error: "api_token_not_allowed_from_browser" }, 403, origin);
+  }
   if (request.method === "OPTIONS") {
     if (!origin) return jsonResponse({ error: "origin_required" }, 400, null);
     const headers = corsHeaders(origin);
@@ -632,9 +702,22 @@ export async function handleTelemetryEvent(request: Request, env: Env): Promise<
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
   const ipLimit = await env.TELEMETRY_IP_RATE_LIMITER.limit({ key: `cue:${ip}` });
   if (!ipLimit.success) return rateLimited(origin);
-  const providedKey = request.headers.get("X-Nox-Ingest-Key")?.trim() ?? "";
-  const source = await findSource(env, providedKey);
-  if (!source) return jsonResponse({ error: "invalid_ingest_key" }, 401, origin);
+  let source: TelemetrySourceRow | null;
+  if (trustedAuth) {
+    const sources = await findSourcesForApiToken(env, trustedAuth);
+    if (sources.length === 0) return jsonResponse({ error: "source_not_found" }, 404, origin);
+    if (sources.length > 1) {
+      return jsonResponse({
+        error: "source_required",
+        message: "Select a telemetry source with X-Nox-Source-ID",
+      }, 422, origin);
+    }
+    source = sources[0] ?? null;
+  } else {
+    const providedKey = request.headers.get("X-Nox-Ingest-Key")?.trim() ?? "";
+    source = await findSource(env, providedKey);
+  }
+  if (!source) return jsonResponse({ error: trustedAuth ? "source_not_found" : "invalid_ingest_key" }, trustedAuth ? 404 : 401, origin);
   if (origin && source.key_kind === "secret") {
     return jsonResponse({ error: "secret_key_not_allowed_from_browser" }, 403, origin);
   }
@@ -660,13 +743,13 @@ export async function handleTelemetryEvent(request: Request, env: Env): Promise<
     const isFeatureEvent = event.type === "feature.result";
     const isActivityEvent = event.type === "activity.occurred";
     const isTrackedEvent = event.type === "activity.tracked";
-    if ((isUserEvent || isActivityEvent) && source.key_kind !== "secret") {
+    if ((isUserEvent || isActivityEvent) && source.key_kind === "publishable") {
       return jsonResponse({ error: "secret_key_required" }, 403, origin);
     }
     if ((isFeatureEvent || isTrackedEvent || event.type === "error.occurred") && source.key_kind === "publishable" && !origin) {
       return jsonResponse({ error: "origin_required" }, 403, null);
     }
-    if (event.type === "error.occurred" && event.data.fingerprint && source.key_kind !== "secret") {
+    if (event.type === "error.occurred" && event.data.fingerprint && source.key_kind === "publishable") {
       return jsonResponse({ error: "explicit_incident_key_requires_secret_key" }, 403, origin);
     }
     if (isTrackedEvent) {
@@ -720,17 +803,19 @@ export async function handleTelemetryEvent(request: Request, env: Env): Promise<
               requestedFeature: event.feature,
             }
         : await storeError(env, source, event, eventId);
-    await env.NOX_DB.prepare(
-      `UPDATE cue_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
-    ).bind(new Date().toISOString(), source.key_id).run();
-    await env.NOX_DB.prepare(
-      `INSERT INTO cue_source_key_daily_usage
-         (org_id, source_id, key_id, period, request_count, first_used_at, last_used_at)
-       VALUES (?, ?, ?, date('now'), 1, ?, ?)
-       ON CONFLICT(key_id, period) DO UPDATE SET
-         request_count = cue_source_key_daily_usage.request_count + 1,
-         last_used_at = excluded.last_used_at`,
-    ).bind(source.org_id, source.source_id, source.key_id, new Date().toISOString(), new Date().toISOString()).run();
+    if (source.key_id) {
+      await env.NOX_DB.prepare(
+        `UPDATE cue_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
+      ).bind(new Date().toISOString(), source.key_id).run();
+      await env.NOX_DB.prepare(
+        `INSERT INTO cue_source_key_daily_usage
+           (org_id, source_id, key_id, period, request_count, first_used_at, last_used_at)
+         VALUES (?, ?, ?, date('now'), 1, ?, ?)
+         ON CONFLICT(key_id, period) DO UPDATE SET
+           request_count = cue_source_key_daily_usage.request_count + 1,
+           last_used_at = excluded.last_used_at`,
+      ).bind(source.org_id, source.source_id, source.key_id, new Date().toISOString(), new Date().toISOString()).run();
+    }
     return jsonResponse({ accepted: true, stored: true, environment: source.environment, ...result }, 202, origin);
   } catch (error) {
     const { code, status } = inputError(error);

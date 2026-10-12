@@ -62,7 +62,8 @@ with create_telemetry() as telemetry:
     telemetry.events.record_parsed("user-42", "record-7")
 ```
 
-`create_telemetry()` reads `NOXHERE_INGEST_KEY`, `NOXHERE_IDENTITY_HASH_KEY`,
+`create_telemetry()` reads `NOXHERE_API_TOKEN` (preferred) or the legacy
+`NOXHERE_INGEST_KEY`, plus `NOXHERE_SOURCE_ID`, `NOXHERE_IDENTITY_HASH_KEY`,
 `NOXHERE_IDENTITY_KEY_ID`, `NOXHERE_ENVIRONMENT`, and `NOXHERE_RELEASE`.
 `track()` queues delivery and returns immediately; process shutdown or leaving
 the context flushes the queue. Delivery failures are returned or retained for

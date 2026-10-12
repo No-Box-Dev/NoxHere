@@ -325,9 +325,9 @@ document.components.schemas.ApiTokenCreate = {
   required: ["name", "projectId", "scopes"],
   properties: {
     name: { type: "string", minLength: 1, maxLength: 80 },
-    environment: { type: "string", enum: ["live", "test"], default: "live" },
+    environment: { type: "string", enum: ["production", "staging", "test"], default: "production" },
     projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxHere project. The token cannot access resources assigned to another project." },
-    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:write|(activity|feedback|telemetry):(read|write))$" } },
+    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:(send|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$" } },
     expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
   },
 };
@@ -483,6 +483,13 @@ document.components.parameters.projectContext = {
   in: "header",
   required: false,
   description: "Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token.",
+  schema: { type: "string", minLength: 1, maxLength: 240 },
+};
+document.components.parameters.telemetrySourceContext = {
+  name: "X-Nox-Source-ID",
+  in: "header",
+  required: false,
+  description: "Selects the destination source for a project-scoped NoxHere API token. It may be omitted when exactly one enabled source matches the token project and environment. Publishable source keys already identify their source.",
   schema: { type: "string", minLength: 1, maxLength: 240 },
 };
 delete document.components.securitySchemes.bearerAuth;
@@ -707,7 +714,9 @@ document.paths["/api/v1/telemetry/github-issues"] = {
 function automationScope(path, method) {
   const access = method === "get" ? "read" : "write";
   if (method === "post" && path === "/api/v1/developer-feedback") return "developer-feedback:write";
-  if (method === "post" && path === "/api/v1/integrations/slack/messages") return "slack:write";
+  if (method === "post" && path === "/api/v1/integrations/slack/messages") return "slack:send";
+  if (method === "post" && path === "/api/v1/telemetry/public/events") return "telemetry:ingest";
+  if (method === "post" && path === "/api/feedback/public/v1/reports") return "feedback:submit";
   if (method === "get" && path === "/api/v1/services") return "services:read";
   const service = path.match(/^\/api\/v1\/services\/(activity|feedback|telemetry)(?:\/(?:setup|health))?$/)?.[1];
   if (method === "get" && service) return `${service}:read`;
@@ -786,8 +795,9 @@ if (oldTelemetryPath) {
 }
 const telemetryIngest = document.paths["/api/v1/telemetry/public/events"].post;
 delete telemetryIngest.servers;
+telemetryIngest.security = [{ telemetryKey: [] }, { noxApiToken: [] }];
 telemetryIngest.summary = "Submit one standardized Telemetry event through the stable NoxHere gateway";
-telemetryIngest.description = "Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.";
+telemetryIngest.description = "Server applications authenticate with a project-scoped NoxHere API token carrying telemetry:ingest. Browser capture continues to use X-Nox-Ingest-Key with a publishable source key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.";
 telemetryIngest.responses["202"].content = { "application/json": { schema: { "$ref": "#/components/schemas/TelemetryIngestResponse" } } };
 telemetryIngest.requestBody.content["application/json"].examples = {
   anonymousWebsiteActivity: {
@@ -983,6 +993,12 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
       }
       operation["x-project-scope"] = "optional";
     }
+    if (path === "/api/v1/telemetry/public/events" && method === "post") {
+      operation.parameters ??= [];
+      if (!operation.parameters.some((entry) => entry?.$ref === "#/components/parameters/telemetrySourceContext")) {
+        operation.parameters.push({ "$ref": "#/components/parameters/telemetrySourceContext" });
+      }
+    }
     if (!isV1 && ["member", "admin"].includes(operation["x-authentication"])) {
       operation.responses["401"] ??= { description: "Authentication required" };
       operation.responses["403"] ??= { description: "Insufficient access" };
@@ -1002,6 +1018,9 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
         { browserSession: [], ...(!["get", "head", "options"].includes(method) ? { csrfProof: [] } : {}) },
         { nativeSession: [] },
       ];
+    } else if (operation["x-authentication"] === "ingest_key"
+        && operation.security?.some((entry) => Object.hasOwn(entry, "noxApiToken"))) {
+      operation["x-automation-scope"] = automationScope(path, method);
     }
     operation["x-change-safety"] = changeSafety(method, operation.operationId);
     for (const [status, response] of Object.entries(operation.responses)) {
@@ -1042,13 +1061,12 @@ function apiTokenOperation(operationId, summary, successStatus) {
   return {
     operationId,
     summary,
-    description: "Requires an authenticated organization-admin browser session. API tokens cannot manage other API tokens.",
-    security: [{ browserSession: [], organization: [] }],
+    description: "Requires an authenticated organization-admin browser or native CLI session. API tokens cannot manage other API tokens.",
+    security: [{ browserSession: [], organization: [] }, { nativeSession: [], organization: [] }],
     responses: {
       [successStatus]: { description: "Success", content: { "application/json": { schema: { "$ref": "#/components/schemas/JsonValue" } } } },
     },
     "x-required-role": "admin",
-    "x-browser-session-only": true,
   };
 }
 

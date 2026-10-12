@@ -10,6 +10,7 @@ describe("API authentication primitives", () => {
     expect(projectScopedApiTokenPathSupported("/api/v1/activity", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/developer-feedback", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/integrations/slack/messages", "POST")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/public/events", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/feedback/sites/site-1", "PATCH")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/feedback/sites/site-1", "PATCH")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/telemetry/sources/source-1/keys", "POST")).toBe(true);

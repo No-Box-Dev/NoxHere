@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS api_tokens (
   org_id INTEGER NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  environment TEXT NOT NULL CHECK (environment IN ('live', 'test')),
+  environment TEXT NOT NULL CHECK (environment IN ('production', 'staging', 'test')),
   token_prefix TEXT NOT NULL,
   token_hash TEXT UNIQUE NOT NULL,
   scopes_json TEXT NOT NULL,

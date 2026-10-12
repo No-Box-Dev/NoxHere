@@ -383,6 +383,7 @@ class TelemetryClient:
         self,
         *,
         key: str,
+        source_id: str | None = None,
         identity_hash_key: str | None = None,
         identity_key_id: str | None = None,
         environment: Environment | None = None,
@@ -397,6 +398,7 @@ class TelemetryClient:
         transport: Transport | None = None,
     ) -> None:
         self.key = key
+        self.source_id = _bounded(source_id, 240)
         self.identity_hash_key = identity_hash_key or os.environ.get(
             "NOXHERE_IDENTITY_HASH_KEY"
         )
@@ -418,8 +420,10 @@ class TelemetryClient:
         self._configured = (
             (enabled and dry_run) or (
             enabled
-            and key.startswith("nox_secret_")
-            and len(key) >= len("nox_secret_") + 30
+            and (
+                (key.startswith("nox_secret_") and len(key) >= len("nox_secret_") + 30)
+                or (key.startswith("nox_sk_") and len(key) >= len("nox_sk_") + 30)
+            )
             and _valid_endpoint(self.endpoint)
             )
         )
@@ -465,6 +469,7 @@ class TelemetryClient:
         """Create a concurrency-safe client view scoped to one opaque user id."""
         return TelemetryClient(
             key=self.key,
+            source_id=self.source_id,
             identity_hash_key=self.identity_hash_key,
             identity_key_id=self.identity_key_id,
             environment=self.environment,
@@ -546,15 +551,21 @@ class TelemetryClient:
             return DeliveryResult(True, cast(str, event_id), status=202)
         total_attempts = self.max_retries + 1
         for attempt in range(total_attempts):
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": f"noxhere-python/{SDK_VERSION}",
+            }
+            if self.key.startswith("nox_sk_"):
+                headers["Authorization"] = f"Bearer {self.key}"
+                if self.source_id:
+                    headers["X-Nox-Source-ID"] = self.source_id
+            else:
+                headers["X-Nox-Ingest-Key"] = self.key
             request = urllib.request.Request(
                 self.endpoint,
                 data=body,
                 method="POST",
-                headers={
-                    "Content-Type": "application/json",
-                    "X-Nox-Ingest-Key": self.key,
-                    "User-Agent": f"noxhere-python/{SDK_VERSION}",
-                },
+                headers=headers,
             )
             try:
                 response = self._transport(request, self.timeout_ms / 1_000)
@@ -845,7 +856,8 @@ class TelemetryClient:
 def create_telemetry(**options: Any) -> TelemetryClient:
     """Create one process client, reading standard environment variables by default."""
     configured = dict(options)
-    configured.setdefault("key", os.environ.get("NOXHERE_INGEST_KEY") or os.environ.get("TELEMETRY_INGEST_KEY") or "")
+    configured.setdefault("key", os.environ.get("NOXHERE_API_TOKEN") or os.environ.get("NOXHERE_INGEST_KEY") or os.environ.get("TELEMETRY_INGEST_KEY") or "")
+    configured.setdefault("source_id", os.environ.get("NOXHERE_SOURCE_ID"))
     configured.setdefault("identity_hash_key", os.environ.get("NOXHERE_IDENTITY_HASH_KEY"))
     configured.setdefault("identity_key_id", os.environ.get("NOXHERE_IDENTITY_KEY_ID"))
     configured.setdefault("environment", os.environ.get("NOXHERE_ENVIRONMENT") or os.environ.get("TELEMETRY_ENVIRONMENT"))

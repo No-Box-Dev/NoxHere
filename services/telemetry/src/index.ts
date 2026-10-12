@@ -1,6 +1,6 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { createChartSnapshot, handleChartImage } from "./chart";
-import { handleTelemetryEvent } from "./events";
+import { handleTelemetryEvent, type TrustedTelemetryIngest } from "./events";
 import { narrateDailyStats } from "./narration";
 import {
   buildDigestResponse,
@@ -44,6 +44,23 @@ export default class TelemetryService extends WorkerEntrypoint<Env> {
       });
     }
     return jsonError("not_found", 404);
+  }
+
+  async ingestApiTokenEvent(input: {
+    auth: TrustedTelemetryIngest;
+    body: string;
+    contentType: string;
+    ip: string | null;
+  }): Promise<Response> {
+    const request = new Request("https://telemetry.internal/v1/events", {
+      method: "POST",
+      headers: {
+        "Content-Type": input.contentType,
+        ...(input.ip ? { "CF-Connecting-IP": input.ip } : {}),
+      },
+      body: input.body,
+    });
+    return handleTelemetryEvent(request, this.env, input.auth);
   }
 
   buildTestResponse(orgLogin: string) {

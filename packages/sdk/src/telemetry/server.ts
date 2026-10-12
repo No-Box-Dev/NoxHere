@@ -23,7 +23,8 @@ export function createTelemetryFromEnv(overrides: Partial<TelemetryOptions> = {}
     ? configuredEnvironment as TelemetryEnvironment
     : undefined;
   return createTelemetry({
-    key: env.NOXHERE_INGEST_KEY ?? env.TELEMETRY_INGEST_KEY ?? "",
+    key: env.NOXHERE_API_TOKEN ?? env.NOXHERE_INGEST_KEY ?? env.TELEMETRY_INGEST_KEY ?? "",
+    sourceId: env.NOXHERE_SOURCE_ID,
     identityHashKey: env.NOXHERE_IDENTITY_HASH_KEY,
     identityKeyId: env.NOXHERE_IDENTITY_KEY_ID,
     environment,
