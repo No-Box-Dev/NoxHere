@@ -14,7 +14,7 @@ export const API_TOKEN_SCOPES = [
   "developer-feedback:write",
   "slack:send", "slack:write",
   "activity:read", "activity:write",
-  "feedback:submit", "feedback:read", "feedback:write",
+  "feedback:read", "feedback:write",
   "telemetry:ingest", "telemetry:read", "telemetry:write",
 ] as const;
 export const API_TOKEN_ENVIRONMENTS = ["production", "staging", "test"] as const;
@@ -22,7 +22,6 @@ export type ApiTokenEnvironment = (typeof API_TOKEN_ENVIRONMENTS)[number];
 
 const API_TOKEN_SCOPE_ALIASES: Readonly<Record<string, readonly string[]>> = {
   "slack:send": ["slack:write"],
-  "feedback:submit": ["feedback:write"],
   "telemetry:ingest": ["telemetry:write"],
 };
 
@@ -426,7 +425,6 @@ export function requiredScope(pathname: string, method: string): string | null {
   if (pathname === "/api/v1/integrations/slack/messages" && access === "write") return "slack:send";
   if (pathname === "/api/v1/telemetry/public/events" && access === "write") return "telemetry:ingest";
   if (pathname === "/api/telemetry/public/v1/events" && access === "write") return "telemetry:ingest";
-  if (pathname === "/api/feedback/public/v1/reports" && access === "write") return "feedback:submit";
   const service = pathname.match(/^\/api\/v1\/services\/([^/]+)/)?.[1];
   if (service && service !== "noxhere") return `${service}:${access}`;
   if (pathname === "/api/v1/services" && access === "read") return "services:read";

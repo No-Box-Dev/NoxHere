@@ -10,8 +10,8 @@ type TokenRecord = {
 type TokenResponse = { tokens?: TokenRecord[] };
 type SecretResponse = { token: string; warning: string };
 const TOKEN_PRESETS = {
-  "Server write": ["telemetry:ingest", "feedback:submit", "slack:send", "developer-feedback:write"],
-  "Ingest only": ["telemetry:ingest", "feedback:submit"],
+  "Server write": ["telemetry:ingest", "slack:send", "developer-feedback:write"],
+  "Ingest only": ["telemetry:ingest"],
   "Read only": ["services:read", "activity:read", "feedback:read", "telemetry:read"],
 } as const;
 

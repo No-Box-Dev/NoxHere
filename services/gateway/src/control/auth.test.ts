@@ -20,11 +20,9 @@ describe("Slack message automation authorization", () => {
 describe("application write authorization", () => {
   it("separates ingestion and submission from management writes", () => {
     expect(API_TOKEN_SCOPES).toContain("telemetry:ingest");
-    expect(API_TOKEN_SCOPES).toContain("feedback:submit");
     expect(requiredScope("/api/v1/telemetry/public/events", "POST")).toBe("telemetry:ingest");
     expect(requiredScope("/api/telemetry/public/v1/events", "POST")).toBe("telemetry:ingest");
     expect(requiredScope("/api/v1/telemetry/sources/source-1", "PUT")).toBe("telemetry:write");
-    expect(requiredScope("/api/feedback/public/v1/reports", "POST")).toBe("feedback:submit");
   });
 
   it("creates visibly environment-bound opaque credentials", async () => {

@@ -716,7 +716,6 @@ function automationScope(path, method) {
   if (method === "post" && path === "/api/v1/developer-feedback") return "developer-feedback:write";
   if (method === "post" && path === "/api/v1/integrations/slack/messages") return "slack:send";
   if (method === "post" && path === "/api/v1/telemetry/public/events") return "telemetry:ingest";
-  if (method === "post" && path === "/api/feedback/public/v1/reports") return "feedback:submit";
   if (method === "get" && path === "/api/v1/services") return "services:read";
   const service = path.match(/^\/api\/v1\/services\/(activity|feedback|telemetry)(?:\/(?:setup|health))?$/)?.[1];
   if (method === "get" && service) return `${service}:read`;
