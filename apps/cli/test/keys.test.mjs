@@ -4,13 +4,13 @@ import { keyEnvironment, requireKeyProject, scopesForKey } from "../lib/keys.mjs
 
 test("write keys receive the bounded cross-service write preset", () => {
   assert.deepEqual(scopesForKey({ preset: "write" }), [
-    "developer-feedback:write", "feedback:submit", "slack:send", "telemetry:ingest",
+    "developer-feedback:write", "slack:send", "telemetry:ingest",
   ]);
 });
 
 test("custom key scopes are validated and deduplicated", () => {
   assert.deepEqual(scopesForKey({ preset: "ingest", scopes: ["telemetry:ingest", "services:read"] }), [
-    "feedback:submit", "services:read", "telemetry:ingest",
+    "services:read", "telemetry:ingest",
   ]);
   assert.throws(() => scopesForKey({ preset: "write", scopes: ["everything:write"] }), /Unknown key scope/);
 });
