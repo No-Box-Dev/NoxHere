@@ -5,7 +5,7 @@ import { onRequestGet as getSetup } from "../v1/services/[service]/setup";
 import { onRequestGet as getHealth } from "../v1/services/[service]/health";
 import { SERVICE_DEFINITIONS } from "../../lib/service-capabilities";
 import { parseServiceManifest } from "../../lib/service-manifests";
-import { NOXSPOT_SERVICE_MANIFEST } from "../../../services/spot/src/service-manifest";
+import { FEEDBACK_SERVICE_MANIFEST } from "../../../services/feedback/src/service-manifest";
 
 interface CapabilityBody {
   apiVersion: number;
@@ -40,7 +40,7 @@ function statementFor(sql: string) {
       if (sql.includes("FROM slack_connections")) return null;
       if (sql.includes("FROM slack_settings")) return null;
       if (sql.includes("FROM config")) {
-        return { data: JSON.stringify({ apps: { noxspot: false } }) };
+        return { data: JSON.stringify({ apps: { feedback: false } }) };
       }
       return null;
     }),
@@ -48,7 +48,7 @@ function statementFor(sql: string) {
   return statement;
 }
 
-function context(service = "noxconnect") {
+function context(service = "noxhere") {
   return {
     request: new Request(`https://app.noxhere.com/api/v1/services/${service}`),
     params: { service },
@@ -65,8 +65,8 @@ function context(service = "noxconnect") {
 }
 
 describe("Nox service capabilities API", () => {
-  it("accepts the service-owned NoxSpot manifest", () => {
-    expect(parseServiceManifest(NOXSPOT_SERVICE_MANIFEST, "noxspot")).toEqual(NOXSPOT_SERVICE_MANIFEST);
+  it("accepts the service-owned Feedback manifest", () => {
+    expect(parseServiceManifest(FEEDBACK_SERVICE_MANIFEST, "feedback")).toEqual(FEEDBACK_SERVICE_MANIFEST);
   });
 
   it("describes the foundation and every product service without credentials", async () => {
@@ -78,28 +78,28 @@ describe("Nox service capabilities API", () => {
     expect(body.apiVersion).toBe(1);
     expect(body.organization).toEqual({ login: "acme" });
     expect(body.services.map((service: { id: string }) => service.id)).toEqual([
-      "noxconnect", "noxticket", "noxfeed", "noxspot", "noxcue",
+      "noxhere", "planning", "activity", "feedback", "telemetry",
     ]);
 
-    const noxconnect = body.services[0];
-    expect(noxconnect).toMatchObject({
+    const noxhere = body.services[0];
+    expect(noxhere).toMatchObject({
       kind: "foundation",
       focus: "Connections and shared workspace control",
       setup: { state: "ready" },
     });
-    expect(noxconnect.capabilities.map((capability: { id: string }) => capability.id)).toContain("connections");
+    expect(noxhere.capabilities.map((capability: { id: string }) => capability.id)).toContain("connections");
 
-    const noxspot = body.services.find((service: { id: string }) => service.id === "noxspot");
-    expect(noxspot).toBeDefined();
-    if (!noxspot) throw new Error("NoxSpot missing from service catalog");
-    expect(noxspot.setup.state).toBe("needs_setup");
-    expect(noxspot.capabilities.every((capability: { state: string }) => capability.state !== "disabled")).toBe(true);
-    expect(noxspot).not.toHaveProperty("enabled");
+    const feedback = body.services.find((service: { id: string }) => service.id === "feedback");
+    expect(feedback).toBeDefined();
+    if (!feedback) throw new Error("Feedback missing from service catalog");
+    expect(feedback.setup.state).toBe("needs_setup");
+    expect(feedback.capabilities.every((capability: { state: string }) => capability.state !== "disabled")).toBe(true);
+    expect(feedback).not.toHaveProperty("enabled");
 
-    const noxcue = body.services.find((service: { id: string }) => service.id === "noxcue");
-    expect(noxcue).toBeDefined();
-    if (!noxcue) throw new Error("NoxCue missing from service catalog");
-    expect(noxcue.setup).toMatchObject({
+    const telemetry = body.services.find((service: { id: string }) => service.id === "telemetry");
+    expect(telemetry).toBeDefined();
+    if (!telemetry) throw new Error("Telemetry missing from service catalog");
+    expect(telemetry.setup).toMatchObject({
       state: "needs_setup",
       blockers: expect.arrayContaining([
         { type: "runtime", state: "unavailable" },
@@ -117,11 +117,11 @@ describe("Nox service capabilities API", () => {
   });
 
   it("returns one service with its focus, setup sections, and capabilities", async () => {
-    const response = await getService(context("noxticket") as never);
+    const response = await getService(context("planning") as never);
     expect(response.status).toBe(200);
     const body = await response.json() as { service: CapabilityBody["services"][number] };
     expect(body.service).toMatchObject({
-      id: "noxticket",
+      id: "planning",
       focus: "Plan and organize delivery work",
       setup: { state: "needs_setup" },
     });
@@ -145,11 +145,11 @@ describe("Nox service capabilities API", () => {
   });
 
   it("returns standardized setup sections with computed state", async () => {
-    const response = await getSetup(context("noxticket") as never);
+    const response = await getSetup(context("planning") as never);
     const body = await response.json() as any;
     expect(response.status).toBe(200);
     expect(body).toMatchObject({
-      service: "noxticket",
+      service: "planning",
       state: "needs_setup",
       blockers: [expect.objectContaining({ type: "runtime", state: "unavailable" })],
     });
@@ -160,7 +160,7 @@ describe("Nox service capabilities API", () => {
   });
 
   it("reports runtime failures separately from optional connection failures", async () => {
-    const response = await getHealth(context("noxticket") as never);
+    const response = await getHealth(context("planning") as never);
     const body = await response.json() as any;
     expect(response.status).toBe(200);
     expect(body.state).toBe("blocked");
@@ -173,8 +173,8 @@ describe("Nox service capabilities API", () => {
 
   it("uses a valid service-owned manifest and exposes binding health", async () => {
     const ctx = context();
-    const definition = SERVICE_DEFINITIONS.find((service) => service.id === "noxfeed")!;
-    (ctx.env as typeof ctx.env & { NOXFEED_RESPONSE: { describe(): Promise<unknown> } }).NOXFEED_RESPONSE = {
+    const definition = SERVICE_DEFINITIONS.find((service) => service.id === "activity")!;
+    (ctx.env as typeof ctx.env & { ACTIVITY_RESPONSE: { describe(): Promise<unknown> } }).ACTIVITY_RESPONSE = {
       describe: vi.fn(async () => ({
         contract: "nox.service-manifest",
         version: 1,
@@ -184,11 +184,11 @@ describe("Nox service capabilities API", () => {
     };
     const response = await listServices(ctx as never);
     const body = await response.json() as CapabilityBody;
-    expect(body.services.find((service) => service.id === "noxfeed")).toMatchObject({
+    expect(body.services.find((service) => service.id === "activity")).toMatchObject({
       focus: "Service-owned feed focus",
       runtime: { state: "ready", source: "binding" },
     });
-    expect(body.services.find((service) => service.id === "noxticket")).toMatchObject({
+    expect(body.services.find((service) => service.id === "planning")).toMatchObject({
       runtime: { state: "unavailable", source: "snapshot" },
     });
   });

@@ -9,7 +9,7 @@ type TokenRecord = {
 };
 type TokenResponse = { tokens?: TokenRecord[] };
 type SecretResponse = { token: string; warning: string };
-const SERVICE_SCOPES = ["noxfeed", "noxspot", "noxcue"] as const;
+const SERVICE_SCOPES = ["activity", "feedback", "telemetry"] as const;
 
 export function ApiTokens({ organizationId, projectId, projectName, isAdmin }: { organizationId: string; projectId: string; projectName: string; isAdmin: boolean }) {
   const { confirm, confirmation } = useConfirmDialog();

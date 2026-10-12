@@ -22,7 +22,7 @@ function context(path, { token = "user-token", orgId = 7, orgLogin = "acme" } = 
   };
 }
 
-describe("NoxConnect GitHub facade", () => {
+describe("NoxHere GitHub facade", () => {
   beforeEach(() => vi.restoreAllMocks());
 
   it("returns a bounded live issue projection using an installation token", async () => {
@@ -73,7 +73,7 @@ describe("NoxConnect GitHub facade", () => {
     expect(globalThis.fetch.mock.calls.every(([, init]) => init.headers.Authorization === "Bearer installation-token")).toBe(true);
   });
 
-  it("returns installation rate-limit state through NoxConnect", async () => {
+  it("returns installation rate-limit state through NoxHere", async () => {
     globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ resources: { core: { limit: 5000, remaining: 4999, reset: 1, used: 1 } } }) }));
     const response = await getRateLimit(context("/api/github/rate-limit"));
     expect(await response.json()).toEqual({ limit: 5000, remaining: 4999, reset: 1, used: 1 });

@@ -98,7 +98,7 @@ export async function deliverSlackOutbox(env, deliveryId) {
     await markOutboxFailed(env.DB, deliveryId, "Unsupported delivery destination", "invalid_delivery");
     return { failed: "invalid_delivery" };
   }
-  // NoxFeed now sends one structured release note per merged PR. Block any
+  // Activity now sends one structured release note per merged PR. Block any
   // legacy queued social-post delivery, including a task that was already in
   // the queue when the single-message release deployed.
   if (delivery.source === "posts") {
@@ -190,7 +190,7 @@ async function markOutboxConsolidated(db, deliveryId) {
   await db.prepare(
     `UPDATE delivery_outbox SET status = 'blocked_service_disabled',
        last_error_code = 'stream_consolidated',
-       last_error = 'NoxFeed sends one structured release note per merged pull request; the separate social post was not delivered.',
+       last_error = 'Activity sends one structured release note per merged pull request; the separate social post was not delivered.',
        next_attempt_at = NULL,
        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
      WHERE id = ? AND status != 'delivered'`,
@@ -214,7 +214,7 @@ export async function requeueBlockedForSite(env, orgId, siteId) {
     `UPDATE delivery_outbox
         SET status = 'pending', last_error_code = NULL, last_error = NULL, next_attempt_at = NULL,
             updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-      WHERE org_id = ? AND site_id = ? AND source = 'noxspot' AND destination = 'slack'
+      WHERE org_id = ? AND site_id = ? AND source = 'feedback' AND destination = 'slack'
         AND status IN ('blocked_configuration', 'failed', 'retrying', 'pending')
       RETURNING id`,
   ).bind(orgId, siteId).all();

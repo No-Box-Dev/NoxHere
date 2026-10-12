@@ -5,8 +5,8 @@ interface __BaseEnv_Env {
 	CONTROL_DB: D1Database;
 	ASSETS: Fetcher;
 	PUBLIC_APP_ORIGIN: "https://noxhere-staging.jasper-414.workers.dev" | "https://app.noxhere.com";
-	NOXCONNECT: Fetcher /* noxconnect-staging */ | Fetcher /* noxconnect-api */;
-	NOXCONNECT_IDENTITY: Fetcher /* noxconnect-capabilities-staging */ | Fetcher /* noxconnect-capabilities */;
+	NOXHERE: Fetcher /* noxhere-staging */ | Fetcher /* noxhere-api */;
+	NOXHERE_IDENTITY: Fetcher /* noxhere-connections-staging */ | Fetcher /* noxhere-connections */;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
@@ -16,8 +16,8 @@ declare namespace Cloudflare {
 		CONTROL_DB: D1Database;
 		ASSETS: Fetcher;
 		PUBLIC_APP_ORIGIN: "https://noxhere-staging.jasper-414.workers.dev";
-		NOXCONNECT: Fetcher /* noxconnect-staging */;
-		NOXCONNECT_IDENTITY: Fetcher /* noxconnect-capabilities-staging */;
+		NOXHERE: Fetcher /* noxhere-staging */;
+		NOXHERE_IDENTITY: Fetcher /* noxhere-connections-staging */;
 	}
 	interface Env extends __BaseEnv_Env {}
 }

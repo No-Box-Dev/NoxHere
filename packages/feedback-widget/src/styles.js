@@ -1,10 +1,10 @@
 /**
- * NoxSpot styles - injected into page
+ * Feedback styles - injected into page
  */
 
 const CSS = `
 /* Overlay */
-.noxspot-overlay {
+.feedback-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -21,7 +21,7 @@ const CSS = `
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.noxspot-overlay-backdrop {
+.feedback-overlay-backdrop {
   position: absolute;
   top: 0;
   left: 0;
@@ -30,7 +30,7 @@ const CSS = `
   background: #201E1D;
 }
 
-.noxspot-overlay-content {
+.feedback-overlay-content {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -40,7 +40,7 @@ const CSS = `
 }
 
 /* Toolbar */
-.noxspot-toolbar {
+.feedback-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -49,13 +49,13 @@ const CSS = `
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-.noxspot-toolbar-tools {
+.feedback-toolbar-tools {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.noxspot-close-btn {
+.feedback-close-btn {
   background: transparent;
   border: none;
   color: white;
@@ -68,25 +68,25 @@ const CSS = `
   transition: background 0.2s;
 }
 
-.noxspot-close-btn:hover {
+.feedback-close-btn:hover {
   background: rgba(255,255,255,0.1);
 }
 
 /* Tool buttons */
-.noxspot-tool-group {
+.feedback-tool-group {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.noxspot-tool-divider {
+.feedback-tool-divider {
   width: 1px;
   height: 24px;
   background: rgba(255,255,255,0.2);
   margin: 0 8px;
 }
 
-.noxspot-tool-btn {
+.feedback-tool-btn {
   background: transparent;
   border: none;
   color: rgba(255,255,255,0.7);
@@ -99,25 +99,25 @@ const CSS = `
   transition: background 0.2s, color 0.2s;
 }
 
-.noxspot-tool-btn:hover {
+.feedback-tool-btn:hover {
   background: rgba(255,255,255,0.1);
   color: white;
 }
 
-.noxspot-tool-btn.active {
+.feedback-tool-btn.active {
   background: #9B78F4;
   color: white;
 }
 
 /* Main content area */
-.noxspot-main {
+.feedback-main {
   display: flex;
   flex: 1;
   overflow: hidden;
   background: transparent;
 }
 
-.noxspot-canvas-area {
+.feedback-canvas-area {
   flex: 1;
   display: flex;
   align-items: center;
@@ -128,7 +128,7 @@ const CSS = `
   min-height: 0;
 }
 
-.noxspot-canvas-wrapper {
+.feedback-canvas-wrapper {
   position: relative;
   max-width: 100%;
   max-height: 100%;
@@ -137,7 +137,7 @@ const CSS = `
   overflow: hidden;
 }
 
-.noxspot-canvas-loading {
+.feedback-canvas-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -148,52 +148,52 @@ const CSS = `
   font-size: 14px;
 }
 
-.noxspot-canvas-loading-text {
+.feedback-canvas-loading-text {
   letter-spacing: 0.2px;
 }
 
-.noxspot-canvas-unavailable {
+.feedback-canvas-unavailable {
   max-width: 260px;
   text-align: center;
   line-height: 1.45;
 }
 
-.noxspot-canvas-unavailable strong,
-.noxspot-canvas-unavailable span {
+.feedback-canvas-unavailable strong,
+.feedback-canvas-unavailable span {
   display: block;
 }
 
-.noxspot-canvas-unavailable strong {
+.feedback-canvas-unavailable strong {
   color: white;
   font-size: 15px;
   margin-bottom: 4px;
 }
 
-.noxspot-spinner {
+.feedback-spinner {
   width: 32px;
   height: 32px;
   border: 3px solid rgba(255, 255, 255, 0.15);
   border-top-color: #FE795D;
   border-radius: 50%;
-  animation: noxspot-spin 0.8s linear infinite;
+  animation: feedback-spin 0.8s linear infinite;
 }
 
-@keyframes noxspot-spin {
+@keyframes feedback-spin {
   to { transform: rotate(360deg); }
 }
 
-.noxspot-toolbar-tools--disabled {
+.feedback-toolbar-tools--disabled {
   opacity: 0.4;
   pointer-events: none;
 }
 
-.noxspot-screenshot {
+.feedback-screenshot {
   display: block;
   max-width: 100%;
   max-height: calc(100vh - 120px);
 }
 
-.noxspot-drawing-canvas {
+.feedback-drawing-canvas {
   position: absolute;
   top: 0;
   left: 0;
@@ -202,7 +202,7 @@ const CSS = `
   cursor: crosshair;
 }
 
-.noxspot-selected-highlights {
+.feedback-selected-highlights {
   position: absolute;
   top: 0;
   left: 0;
@@ -213,7 +213,7 @@ const CSS = `
 }
 
 /* Sidebar */
-.noxspot-sidebar {
+.feedback-sidebar {
   width: 320px;
   background: white;
   border-left: 1px solid rgba(0,0,0,0.1);
@@ -221,15 +221,15 @@ const CSS = `
   flex-shrink: 0;
 }
 
-.noxspot-sidebar-content {
+.feedback-sidebar-content {
   padding: 20px;
 }
 
-.noxspot-sidebar-header {
+.feedback-sidebar-header {
   margin-bottom: 20px;
 }
 
-.noxspot-sidebar-title {
+.feedback-sidebar-title {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
@@ -237,26 +237,26 @@ const CSS = `
 }
 
 /* Form */
-.noxspot-form {
+.feedback-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.noxspot-form-group {
+.feedback-form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.noxspot-label {
+.feedback-label {
   font-size: 13px;
   font-weight: 500;
   color: #201E1D;
 }
 
-.noxspot-input,
-.noxspot-textarea {
+.feedback-input,
+.feedback-textarea {
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -265,58 +265,58 @@ const CSS = `
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.noxspot-input:focus,
-.noxspot-textarea:focus {
+.feedback-input:focus,
+.feedback-textarea:focus {
   outline: none;
   border-color: #FE795D;
   box-shadow: 0 0 0 3px rgba(254, 121, 93, 0.15);
 }
 
-.noxspot-textarea {
+.feedback-textarea {
   resize: vertical;
   min-height: 80px;
 }
 
-.noxspot-input--invalid,
-.noxspot-input--invalid:focus {
+.feedback-input--invalid,
+.feedback-input--invalid:focus {
   border-color: #d93025;
   box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15);
 }
 
-.noxspot-field-error {
+.feedback-field-error {
   font-size: 12px;
   color: #d93025;
   min-height: 0;
 }
 
-.noxspot-field-error:empty {
+.feedback-field-error:empty {
   display: none;
 }
 
 /* Metadata display */
-.noxspot-metadata {
+.feedback-metadata {
   background: #f5f5f5;
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 12px;
 }
 
-.noxspot-metadata-item {
+.feedback-metadata-item {
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
 }
 
-.noxspot-metadata-item:not(:last-child) {
+.feedback-metadata-item:not(:last-child) {
   border-bottom: 1px solid #e5e5e5;
 }
 
-.noxspot-metadata-label {
+.feedback-metadata-label {
   color: #666;
   font-weight: 500;
 }
 
-.noxspot-metadata-value {
+.feedback-metadata-value {
   color: #201E1D;
   text-align: right;
   overflow: hidden;
@@ -325,7 +325,7 @@ const CSS = `
   max-width: 160px;
 }
 
-.noxspot-hint {
+.feedback-hint {
   font-size: 11px;
   color: #888;
   margin: 8px 0 0 0;
@@ -333,7 +333,7 @@ const CSS = `
 }
 
 /* Submit button */
-.noxspot-submit-btn {
+.feedback-submit-btn {
   background: #FE795D;
   color: white;
   border: none;
@@ -346,34 +346,34 @@ const CSS = `
   margin-top: 8px;
 }
 
-.noxspot-submit-btn:hover {
+.feedback-submit-btn:hover {
   background: #e5684d;
 }
 
-.noxspot-submit-btn:disabled {
+.feedback-submit-btn:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
 
-.noxspot-submit-row {
+.feedback-submit-row {
   display: flex;
   gap: 8px;
   margin-top: 8px;
 }
 
-.noxspot-submit-row .noxspot-submit-btn {
+.feedback-submit-row .feedback-submit-btn {
   flex: 1;
   margin-top: 0;
 }
 
 /* Selected elements */
-.noxspot-elements-list {
+.feedback-elements-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.noxspot-element-chip {
+.feedback-element-chip {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -384,13 +384,13 @@ const CSS = `
   font-size: 12px;
 }
 
-.noxspot-element-row {
+.feedback-element-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.noxspot-element-attrs {
+.feedback-element-attrs {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -398,7 +398,7 @@ const CSS = `
   border-top: 1px solid #e5e5e5;
 }
 
-.noxspot-attr-pill {
+.feedback-attr-pill {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -410,12 +410,12 @@ const CSS = `
   font-family: monospace;
 }
 
-.noxspot-attr-key {
+.feedback-attr-key {
   color: #6b5b95;
   font-weight: 600;
 }
 
-.noxspot-element-tag {
+.feedback-element-tag {
   background: #9B78F4;
   color: white;
   padding: 2px 6px;
@@ -425,7 +425,7 @@ const CSS = `
   text-transform: uppercase;
 }
 
-.noxspot-element-detail {
+.feedback-element-detail {
   flex: 1;
   color: #201E1D;
   overflow: hidden;
@@ -434,7 +434,7 @@ const CSS = `
   font-family: monospace;
 }
 
-.noxspot-element-remove {
+.feedback-element-remove {
   background: transparent;
   border: none;
   color: #999;
@@ -447,17 +447,17 @@ const CSS = `
   transition: background 0.2s, color 0.2s;
 }
 
-.noxspot-element-remove:hover {
+.feedback-element-remove:hover {
   background: rgba(0,0,0,0.1);
   color: #666;
 }
 
 /* Custom dropdown */
-.noxspot-dropdown {
+.feedback-dropdown {
   position: relative;
 }
 
-.noxspot-dropdown-trigger {
+.feedback-dropdown-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -473,17 +473,17 @@ const CSS = `
   color: #201E1D;
 }
 
-.noxspot-dropdown-trigger:hover {
+.feedback-dropdown-trigger:hover {
   border-color: #ccc;
 }
 
-.noxspot-dropdown-chevron {
+.feedback-dropdown-chevron {
   flex-shrink: 0;
   color: #888;
   transition: transform 0.2s;
 }
 
-.noxspot-dropdown-menu {
+.feedback-dropdown-menu {
   display: none;
   position: absolute;
   top: calc(100% + 4px);
@@ -499,11 +499,11 @@ const CSS = `
   padding: 4px;
 }
 
-.noxspot-dropdown-menu.open {
+.feedback-dropdown-menu.open {
   display: block;
 }
 
-.noxspot-dropdown-item {
+.feedback-dropdown-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -515,42 +515,42 @@ const CSS = `
   transition: background 0.15s;
 }
 
-.noxspot-dropdown-item:hover {
+.feedback-dropdown-item:hover {
   background: #f5f5f5;
 }
 
-.noxspot-dropdown-item.selected {
+.feedback-dropdown-item.selected {
   background: #f0edf9;
   color: #6b5b95;
   font-weight: 500;
 }
 
-.noxspot-dropdown-check {
+.feedback-dropdown-check {
   visibility: hidden;
   flex-shrink: 0;
   color: #9B78F4;
 }
 
-.noxspot-dropdown-item.selected .noxspot-dropdown-check {
+.feedback-dropdown-item.selected .feedback-dropdown-check {
   visibility: visible;
 }
 
 /* Combobox — text input with filtered suggestion menu */
-.noxspot-combobox {
+.feedback-combobox {
   position: relative;
   width: 100%;
 }
 
-.noxspot-combobox .noxspot-input {
+.feedback-combobox .feedback-input {
   width: 100%;
   box-sizing: border-box;
 }
 
-.noxspot-dropdown-item.highlighted {
+.feedback-dropdown-item.highlighted {
   background: #f5f3fb;
 }
 
-.noxspot-dropdown-empty {
+.feedback-dropdown-empty {
   padding: 8px 10px;
   font-size: 12px;
   color: #888;
@@ -559,17 +559,17 @@ const CSS = `
 /* ── Mobile (<768px) ── */
 @media (max-width: 767px) {
   /* Overlay: stacked column layout */
-  .noxspot-overlay-content {
+  .feedback-overlay-content {
     flex-direction: column;
   }
 
-  .noxspot-main {
+  .feedback-main {
     flex-direction: column;
     position: relative;
   }
 
   /* Toolbar: flex-positioned, sits just below canvas, above Continue */
-  .noxspot-toolbar {
+  .feedback-toolbar {
     order: 2;
     flex-shrink: 0;
     border-top: 1px solid rgba(255,255,255,0.1);
@@ -578,14 +578,14 @@ const CSS = `
   }
 
   /* Main: takes remaining space, contains canvas + sidebar */
-  .noxspot-main {
+  .feedback-main {
     order: 1;
     flex: 1;
     min-height: 0;
   }
 
   /* Canvas area — constrained, no inner scroll */
-  .noxspot-canvas-area {
+  .feedback-canvas-area {
     flex: 1;
     padding: 8px;
     overflow: hidden;
@@ -595,21 +595,21 @@ const CSS = `
   /* Screenshot sized against overlay bounds via CSS custom props that JS
      sets from window.innerWidth/innerHeight. Avoids 100vw which anchors to
      the (potentially zoomed) layout viewport on iOS. */
-  .noxspot-canvas-wrapper {
+  .feedback-canvas-wrapper {
     max-width: 100%;
     max-height: 100%;
   }
 
-  .noxspot-screenshot {
+  .feedback-screenshot {
     display: block;
-    max-width: calc(var(--noxspot-vw, 100vw) - 16px);
-    max-height: calc(var(--noxspot-vh, 100dvh) - 180px);
+    max-width: calc(var(--feedback-vw, 100vw) - 16px);
+    max-height: calc(var(--feedback-vh, 100dvh) - 180px);
     width: auto;
     height: auto;
   }
 
   /* Sidebar: full-screen overlay, hidden by default */
-  .noxspot-sidebar {
+  .feedback-sidebar {
     width: 100%;
     height: 100%;
     position: absolute;
@@ -619,11 +619,11 @@ const CSS = `
     display: none;
     overflow: hidden;
   }
-  .noxspot-sidebar.noxspot-sidebar-visible {
+  .feedback-sidebar.feedback-sidebar-visible {
     display: flex;
     flex-direction: column;
   }
-  .noxspot-sidebar .noxspot-sidebar-content {
+  .feedback-sidebar .feedback-sidebar-content {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -634,30 +634,30 @@ const CSS = `
     padding: calc(16px + env(safe-area-inset-top)) 20px 0 20px;
     scrollbar-width: none;
   }
-  .noxspot-sidebar .noxspot-sidebar-content::-webkit-scrollbar {
+  .feedback-sidebar .feedback-sidebar-content::-webkit-scrollbar {
     display: none;
   }
-  .noxspot-sidebar .noxspot-form {
+  .feedback-sidebar .feedback-form {
     flex: 1;
     min-height: 0;
     gap: 12px;
   }
   /* Compact form-group spacing on mobile */
-  .noxspot-sidebar .noxspot-textarea {
+  .feedback-sidebar .feedback-textarea {
     min-height: 60px;
     resize: none;
   }
   /* Metadata + hint hidden on mobile — server still captures them, user doesn't need to see them */
-  .noxspot-sidebar .noxspot-form-group--metadata {
+  .feedback-sidebar .feedback-form-group--metadata {
     display: none;
   }
   /* Screenshot thumbnail redundant on mobile — the user just annotated it on step 1 */
-  .noxspot-mobile-thumbnail {
+  .feedback-mobile-thumbnail {
     display: none !important;
   }
 
   /* Submit sits at bottom of form — normal button size, safe-area aware */
-  .noxspot-sidebar .noxspot-submit-row {
+  .feedback-sidebar .feedback-submit-row {
     position: sticky;
     bottom: 0;
     flex-shrink: 0;
@@ -667,23 +667,23 @@ const CSS = `
   }
 
   /* Touch-friendly tool buttons */
-  .noxspot-tool-btn {
+  .feedback-tool-btn {
     width: 44px;
     height: 44px;
     min-width: 44px;
   }
 
-  .noxspot-tool-divider {
+  .feedback-tool-divider {
     height: 28px;
   }
 
   /* Hide rectangle tool on mobile */
-  .noxspot-tool-btn[data-tool="rectangle"] {
+  .feedback-tool-btn[data-tool="rectangle"] {
     display: none;
   }
 
   /* Mobile "Continue" button — compact, bottom-right next to toolbar */
-  .noxspot-mobile-next {
+  .feedback-mobile-next {
     order: 3;
     flex-shrink: 0;
     align-self: stretch;
@@ -702,7 +702,7 @@ const CSS = `
   }
 
   /* Mobile floating close (X) — always visible top-right, closes overlay entirely */
-  .noxspot-mobile-close {
+  .feedback-mobile-close {
     position: fixed;
     top: calc(12px + env(safe-area-inset-top));
     right: 12px;
@@ -721,7 +721,7 @@ const CSS = `
   }
 
   /* Mobile "← Back" button — larger tap target */
-  .noxspot-mobile-back {
+  .feedback-mobile-back {
     background: transparent;
     border: none;
     color: #FE795D;
@@ -734,13 +734,13 @@ const CSS = `
   }
 
   /* Mobile screenshot thumbnail in sidebar */
-  .noxspot-mobile-thumbnail {
+  .feedback-mobile-thumbnail {
     margin-bottom: 16px;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid #e5e5e5;
   }
-  .noxspot-mobile-thumbnail img {
+  .feedback-mobile-thumbnail img {
     display: block;
     width: 120px;
     height: auto;
@@ -751,10 +751,10 @@ const CSS = `
 `;
 
 export function injectStyles() {
-  if (document.getElementById('noxspot-styles')) return;
+  if (document.getElementById('feedback-styles')) return;
 
   const style = document.createElement('style');
-  style.id = 'noxspot-styles';
+  style.id = 'feedback-styles';
   style.textContent = CSS;
   document.head.appendChild(style);
 }

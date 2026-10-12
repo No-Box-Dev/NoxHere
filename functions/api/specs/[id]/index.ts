@@ -3,9 +3,9 @@ import { getCtx, jsonResponse, errorResponse } from "../../../lib/db";
 import { validate } from "../../../lib/validate";
 import { sanitizeSpecLinks } from "../../../lib/spec-links";
 import { specRowToDto, type SpecRow } from "../../../lib/spec-dto";
-import { callNoxTicket, type NoxTicketEnvironment } from "../../../lib/noxticket-service";
+import { callPlanning, type PlanningEnvironment } from "../../../lib/planning-service";
 
-interface Env extends NoxTicketEnvironment {
+interface Env extends PlanningEnvironment {
   DB: D1Database;
 }
 
@@ -52,7 +52,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const id = Number.parseInt(context.params.id, 10);
   if (!Number.isFinite(id) || id <= 0) return errorResponse("Invalid spec id", 400);
 
-  const delegated = projectId ? await callNoxTicket(context.env, (service) => service.getSpec(
+  const delegated = projectId ? await callPlanning(context.env, (service) => service.getSpec(
     { orgId, projectId, userLogin: context.data.userLogin },
     id,
   )) : null;
@@ -83,7 +83,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
   } catch {
     return errorResponse("Invalid JSON body", 400);
   }
-  const delegated = projectId ? await callNoxTicket(context.env, (service) => service.updateSpec(
+  const delegated = projectId ? await callPlanning(context.env, (service) => service.updateSpec(
     { orgId, projectId, userLogin: context.data.userLogin },
     id,
     rawBody,

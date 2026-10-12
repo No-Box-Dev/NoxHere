@@ -72,7 +72,7 @@ export async function onRequestPatch(context: Context): Promise<Response> {
     )
       .bind(projectId, orgLogin, orgId)
       .first<{ name: string }>();
-    if (!project) return errorResponse("Enabled NoxConnect project not found", 404);
+    if (!project) return errorResponse("Enabled NoxHere project not found", 404);
     projectName = project.name;
   }
 

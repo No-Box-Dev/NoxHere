@@ -1,6 +1,6 @@
-# Contributing to noxconnect
+# Contributing to noxhere
 
-Thanks for your interest in improving noxconnect. This is source-available software, free for non-commercial use under the [PolyForm Noncommercial License 1.0.0](./LICENSE). Contributions are welcome under that same license.
+Thanks for your interest in improving noxhere. This is source-available software, free for non-commercial use under the [PolyForm Noncommercial License 1.0.0](./LICENSE). Contributions are welcome under that same license.
 
 ## Workflow
 

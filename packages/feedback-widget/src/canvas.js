@@ -55,7 +55,7 @@ export function initCanvas(canvasEl) {
   canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
   canvas.addEventListener('touchend', handleTouchEnd);
 
-  debugLog('[NoxSpot] Canvas initialized', { width: canvas.width, height: canvas.height, disabled: canvasDisabled });
+  debugLog('[Feedback] Canvas initialized', { width: canvas.width, height: canvas.height, disabled: canvasDisabled });
 }
 
 /**
@@ -64,7 +64,7 @@ export function initCanvas(canvasEl) {
  */
 export function setTool(tool) {
   currentTool = tool;
-  debugLog('[NoxSpot] Tool set to:', tool);
+  debugLog('[Feedback] Tool set to:', tool);
 }
 
 /**
@@ -97,7 +97,7 @@ export function clearCanvas() {
   if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   paths = [];
-  debugLog('[NoxSpot] Canvas cleared');
+  debugLog('[Feedback] Canvas cleared');
 }
 
 /**
@@ -107,7 +107,7 @@ export function undoLast() {
   if (paths.length === 0) return;
   paths.pop();
   redrawAll();
-  debugLog('[NoxSpot] Undo - paths remaining:', paths.length);
+  debugLog('[Feedback] Undo - paths remaining:', paths.length);
 }
 
 /**
@@ -221,7 +221,7 @@ function showTextInput(screenX, screenY, canvasX, canvasY) {
   }
 
   const container = document.createElement('div');
-  container.id = 'noxspot-text-container';
+  container.id = 'feedback-text-container';
   container.style.cssText = `
     position: fixed;
     left: ${screenX}px;
@@ -280,11 +280,11 @@ function showTextInput(screenX, screenY, canvasX, canvasY) {
     if (textInput) textInput.focus();
   }, 10);
 
-  debugLog('[NoxSpot] Text input shown at', screenX, screenY);
+  debugLog('[Feedback] Text input shown at', screenX, screenY);
 }
 
 function hideTextInput() {
-  const container = document.getElementById('noxspot-text-container');
+  const container = document.getElementById('feedback-text-container');
   if (container) {
     container.remove();
   }
@@ -297,7 +297,7 @@ function addText(x, y, text) {
     x, y, text,
   });
   redrawAll();
-  debugLog('[NoxSpot] Text added:', text);
+  debugLog('[Feedback] Text added:', text);
 }
 
 // Touch event handlers

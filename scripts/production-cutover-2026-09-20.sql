@@ -1,17 +1,17 @@
 UPDATE projects
    SET name = 'Nox', slug = 'nox', description = 'Nox platform and product services', updated_at = CURRENT_TIMESTAMP
- WHERE id = 'proj_no-box-dev_noxconnect' AND org_id = 2;
+ WHERE id = 'proj_no-box-dev_noxhere' AND org_id = 2;
 
 INSERT INTO project_routing_settings (org_id, project_id, enabled, updated_at)
-VALUES (2, 'proj_no-box-dev_noxconnect', 1, CURRENT_TIMESTAMP)
+VALUES (2, 'proj_no-box-dev_noxhere', 1, CURRENT_TIMESTAMP)
 ON CONFLICT(org_id, project_id) DO UPDATE SET enabled = 1, updated_at = CURRENT_TIMESTAMP;
 
 UPDATE project_routing_settings
    SET enabled = 0, updated_at = CURRENT_TIMESTAMP
- WHERE org_id = 2 AND project_id NOT IN ('proj_no-box-dev_noxconnect', 'proj_no-box-dev_playnist');
+ WHERE org_id = 2 AND project_id NOT IN ('proj_no-box-dev_noxhere', 'proj_no-box-dev_playnist');
 
 INSERT INTO project_repositories (org_id, repo, project_id, updated_at)
-SELECT 2, repo, 'proj_no-box-dev_noxconnect', CURRENT_TIMESTAMP
+SELECT 2, repo, 'proj_no-box-dev_noxhere', CURRENT_TIMESTAMP
   FROM projects
  WHERE org_id = 2 AND archived = 0 AND repo IS NOT NULL
    AND id NOT IN ('proj_no-box-dev_playnist', 'proj_no-box-dev_playnist-ui')

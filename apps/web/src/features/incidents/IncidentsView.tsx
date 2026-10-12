@@ -29,8 +29,8 @@ export function IncidentsView({ organizationId, projectId }: IncidentsViewProps)
 
 function AlertLog({ organizationId, projectId }: IncidentsViewProps) {
   const alerts = useQuery({
-    queryKey: ["cue", organizationId, projectId, "alerts"],
-    queryFn: ({ signal }) => platformApi.cueAlerts(organizationId, projectId, signal),
+    queryKey: ["telemetry", organizationId, projectId, "alerts"],
+    queryFn: ({ signal }) => platformApi.telemetryAlerts(organizationId, projectId, signal),
   });
   const activeCount = alerts.data?.filter((alert) => alert.status === "active").length ?? 0;
 
@@ -48,8 +48,8 @@ function AlertLog({ organizationId, projectId }: IncidentsViewProps) {
 
 function AlertRules({ organizationId, projectId }: IncidentsViewProps) {
   const rules = useQuery({
-    queryKey: ["cue", organizationId, projectId, "alert-rules"],
-    queryFn: ({ signal }) => platformApi.cueAlertRules(organizationId, projectId, signal),
+    queryKey: ["telemetry", organizationId, projectId, "alert-rules"],
+    queryFn: ({ signal }) => platformApi.telemetryAlertRules(organizationId, projectId, signal),
   });
   const enabledCount = rules.data?.filter((rule) => rule.enabled).length ?? 0;
   const stagingEnabled = rules.data?.some((rule) => rule.enabled && rule.environment.toLowerCase() === "staging") ?? false;

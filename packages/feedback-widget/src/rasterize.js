@@ -202,7 +202,7 @@ export async function captureViewport(options = {}) {
   }
   const dataUrl = await rasterizeSvg(svgString, width, height, background);
 
-  debugLog('[NoxSpot] Rasterize captured', {
+  debugLog('[Feedback] Rasterize captured', {
     width,
     height,
     nodes: pairs.length,
@@ -217,7 +217,7 @@ function resolveBackground() {
   if (bodyBg && bodyBg !== 'rgba(0, 0, 0, 0)') return bodyBg;
   const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
   if (htmlBg && htmlBg !== 'rgba(0, 0, 0, 0)') return htmlBg;
-  debugLog('[NoxSpot] No background on html/body, falling back to #ffffff');
+  debugLog('[Feedback] No background on html/body, falling back to #ffffff');
   return '#ffffff';
 }
 
@@ -268,7 +268,7 @@ function cloneChildren(source, clone, filter, pairs, budget) {
     const row = source.ownerDocument.createElement('tr');
     const cell = source.ownerDocument.createElement('td');
     row.setAttribute('aria-hidden', 'true');
-    row.setAttribute('data-noxspot-spacer', 'true');
+    row.setAttribute('data-feedback-spacer', 'true');
     cell.colSpan = skippedColumnCount;
     cell.style.cssText = `height:${skippedRowHeight}px;padding:0;border:0;visibility:hidden;`;
     row.appendChild(cell);
@@ -587,7 +587,7 @@ async function inlineExternalResources(pairs) {
     }
   }
 
-  debugLog('[NoxSpot] External resources resolved', { inlined, dropped, unique: urls.size });
+  debugLog('[Feedback] External resources resolved', { inlined, dropped, unique: urls.size });
 }
 
 // Block-comment regex tolerant of nested url(...) parens; spans the whole
@@ -665,7 +665,7 @@ async function collectInlinedFontCss() {
     },
   ));
 
-  debugLog('[NoxSpot] Font-face inlined', {
+  debugLog('[Feedback] Font-face inlined', {
     rules: blocks.length,
     fonts: resolved.size,
     succeeded: [...urlMap.values()].filter(Boolean).length,
@@ -732,7 +732,7 @@ function auditRemainingExternalUrls(root) {
     // left something behind, and we only surface the attribute/property and
     // a truncated URL (not page content).
     console.warn(
-      '[NoxSpot] Rasterizer: external URLs still present pre-rasterize (likely to taint canvas)',
+      '[Feedback] Rasterizer: external URLs still present pre-rasterize (likely to taint canvas)',
       remaining,
     );
   }
@@ -776,7 +776,7 @@ async function fetchAsDataUrl(url) {
     });
     clearTimeout(timer);
     if (!response.ok) {
-      debugLog('[NoxSpot] Resource fetch non-OK, stripping reference to avoid canvas taint', {
+      debugLog('[Feedback] Resource fetch non-OK, stripping reference to avoid canvas taint', {
         url,
         status: response.status,
       });
@@ -785,7 +785,7 @@ async function fetchAsDataUrl(url) {
     const blob = await response.blob();
     return await blobToDataUrl(blob);
   } catch (error) {
-    debugLog('[NoxSpot] Resource fetch threw, stripping reference to avoid canvas taint', {
+    debugLog('[Feedback] Resource fetch threw, stripping reference to avoid canvas taint', {
       url,
       error: String(error),
     });
@@ -881,13 +881,13 @@ function dumpSerializedSvgUrls(svgString) {
 
   if (urls.size) {
     console.warn(
-      '[NoxSpot] Rasterizer: cross-origin URLs found in serialized SVG (these tainted the canvas)',
+      '[Feedback] Rasterizer: cross-origin URLs found in serialized SVG (these tainted the canvas)',
       [...urls],
       counts,
     );
   } else {
     console.warn(
-      '[NoxSpot] Rasterizer: canvas tainted but no cross-origin URLs visible in serialized SVG — taint may come from shadow DOM, web components, fonts, or UA-resolved refs',
+      '[Feedback] Rasterizer: canvas tainted but no cross-origin URLs visible in serialized SVG — taint may come from shadow DOM, web components, fonts, or UA-resolved refs',
       counts,
     );
   }

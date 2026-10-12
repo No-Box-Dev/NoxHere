@@ -1,4 +1,4 @@
-# NoxConnect API standardization
+# NoxHere API standardization
 
 > **Compatibility record.** Capitalized legacy product names in this document
 > describe implementation modules and stable API identifiers, not separate
@@ -6,7 +6,7 @@
 > Feedback, and Incidents.
 
 This document tracks the eight local standardization gates for the API served by
-`app.noxhere.com`. NoxConnect remains the shared foundation; the product services
+`app.noxhere.com`. NoxHere remains the shared foundation; the product services
 remain bounded by capability and storage ownership.
 
 Last integrated verification: **2026-09-09**, based on `origin/main` at
@@ -29,11 +29,11 @@ Last integrated verification: **2026-09-09**, based on `origin/main` at
 
 | Service | Focus | Service-level config | Resource-owned config |
 |---|---|---|---|
-| NoxConnect | Connections and shared workspace control | new-repository policy | GitHub/Slack connections, people, projects, Slack routing |
-| NoxTicket | Planning and delivery workflow | feature repository, board stages | features, specifications, attachments |
-| NoxFeed | Current work and communication | project scope, release-notes prompt | feed data and organization AI settings |
-| NoxSpot | Website feedback capture | none | sites, widget environments/fields, per-site delivery |
-| NoxCue | Customer-health monitoring | none | sources, ingest keys, metrics, GitHub incident policy, digest schedule/delivery |
+| NoxHere | Connections and shared workspace control | new-repository policy | GitHub/Slack connections, people, projects, Slack routing |
+| Planning | Planning and delivery workflow | feature repository, board stages | features, specifications, attachments |
+| Activity | Current work and communication | project scope, release-notes prompt | feed data and organization AI settings |
+| Feedback | Website feedback capture | none | sites, widget environments/fields, per-site delivery |
+| Telemetry | Customer-health monitoring | none | sources, ingest keys, metrics, GitHub incident policy, digest schedule/delivery |
 
 ## Compatibility rules
 
@@ -46,7 +46,7 @@ Last integrated verification: **2026-09-09**, based on `origin/main` at
   advertised operations.
 - Provider credentials remain server-side and are never returned by discovery,
   setup, config, or health endpoints.
-- NoxSpot and NoxCue do not receive artificial organization-wide config documents;
+- Feedback and Telemetry do not receive artificial organization-wide config documents;
   their site/source resources remain authoritative.
 - Service config writes are partial, admin-only, and compare-and-swap protected.
 - The shared settings row remains the backing store until a separate data migration
@@ -58,7 +58,7 @@ Last integrated verification: **2026-09-09**, based on `origin/main` at
 
 The API surface was classified into the five services above. Shared provider
 connections, identity, projects, delivery routing, and organization policy stay
-with NoxConnect. Product data remains with the product that owns it. Existing UI
+with NoxHere. Product data remains with the product that owns it. Existing UI
 routes were first preserved as compatibility contracts, then given physical v1
 adapters before the web and native clients moved to canonical paths.
 
@@ -84,20 +84,20 @@ with individual required/optional checks.
 
 ### 4. Configuration ownership
 
-Every service has `GET /api/v1/services/{service}/config`. NoxConnect,
-NoxTicket, and NoxFeed accept strict partial PATCH documents for only their owned
-fields. The response names writable fields. NoxSpot and NoxCue report
+Every service has `GET /api/v1/services/{service}/config`. NoxHere,
+Planning, and Activity accept strict partial PATCH documents for only their owned
+fields. The response names writable fields. Feedback and Telemetry report
 `mode: resource`; their sites and sources remain authoritative and a service-level
 PATCH returns a coded response with the correct child-resource links.
 
 ### 5. Access and tenant isolation
 
 Browser GitHub OAuth and email magic links now end in a random, hashed-at-rest
-NoxHere session cookie; provider tokens remain encrypted in NoxConnect. Browser mutations use a
+NoxHere session cookie; provider tokens remain encrypted in NoxHere. Browser mutations use a
 separate CSRF cookie/header proof. Native GitHub device approval is brokered by
 NoxHere: the native app stores only a 15-minute `nox_at_…` access token and a
 rotating 30-day `nox_rt_…` refresh token, while provider credentials stay encrypted
-server-side. Updated NoxFeed clients exchange an existing install's legacy provider credential
+server-side. Updated Activity clients exchange an existing install's legacy provider credential
 once and replace it in Keychain. Automation tokens are organization- and one-project-bound,
 expire within 365 days, are shown once, and store only a SHA-256 hash. Service
 read/write scopes and the token's fixed project are enforced before handlers run. Browser and
@@ -108,15 +108,15 @@ bootstrap requires a verified active GitHub organization owner.
 
 Raw GitHub access tokens are not accepted as NoxHere API bearer credentials.
 The narrowly scoped native migration exchange remains only for already-installed
-NoxFeed clients and is not a general authentication mode. Unknown bearer formats
+Activity clients and is not a general authentication mode. Unknown bearer formats
 fail with `unsupported_credential` before any provider request is made.
 
 Each automation token belongs to exactly one active project. Collection reads
 are filtered to that project, direct references outside it return
 `resource_not_found`. Every product capability is available in every project;
-connection or runtime readiness is reported separately. Automation currently covers project-owned NoxFeed, NoxSpot,
-and NoxCue operations. Organization-wide NoxConnect configuration and the
-organization-owned NoxTicket feature repository require a human session rather
+connection or runtime readiness is reported separately. Automation currently covers project-owned Activity, Feedback,
+and Telemetry operations. Organization-wide NoxHere configuration and the
+organization-owned Planning feature repository require a human session rather
 than pretending they can be safely project-scoped.
 
 Delivery history distinguishes actionable configuration failures from terminal
@@ -138,9 +138,9 @@ responses retain their native content type and body.
 
 ### 7. Contract and guidance
 
-OpenAPI now covers service discovery/control, NoxConnect resources, NoxTicket
-features/specs/attachments, NoxFeed work/activity/AI settings, NoxSpot sites and
-public capture, and NoxCue sources/keys/events/metrics. The capability catalog and
+OpenAPI now covers service discovery/control, NoxHere resources, Planning
+features/specs/attachments, Activity work/activity/AI settings, Feedback sites and
+public capture, and Telemetry sources/keys/events/metrics. The capability catalog and
 OpenAPI are mechanically checked for alignment. Every operation classifies its
 authentication and change/retry safety, and every non-empty response has a
 machine-readable body. The developer page renders all 121 operations directly
@@ -149,14 +149,14 @@ boundary, safe human OAuth handoffs, config concurrency, resource ownership,
 routing, retry behavior, and errors.
 
 All 118 first-party operations are published under `/api/v1`. The only
-three OpenAPI paths outside that namespace are NoxSpot's anonymous browser
-capture endpoints, which already use their own `/api/spots/public/v1/*`
+three OpenAPI paths outside that namespace are Feedback's anonymous browser
+capture endpoints, which already use their own `/api/feedback/public/v1/*`
 contract and separate origin. Explicit compatibility route modules keep the
 unversioned application handlers available without advertising them to new
 clients.
 
-NoxCue ingestion now has a stable same-origin public gateway at
-`/api/v1/cues/public/events`. It forwards through the private service binding,
+Telemetry ingestion now has a stable same-origin public gateway at
+`/api/v1/telemetry/public/events`. It forwards through the private service binding,
 so client snippets no longer depend on a temporary Worker hostname.
 
 The cron control plane also turns recent background-operation and delivery
@@ -189,14 +189,14 @@ The exact setup is documented in [LOCAL_E2E.md](./LOCAL_E2E.md).
 - Dependency audit: production and complete dependency trees both report zero
   known vulnerabilities after refreshing the lockfile within existing semver
   ranges (React Router 7.18.3, Vite 7.3.6, and Vitest 4.1.11).
-- Local end-to-end runtime: Wrangler 4.129.0 started NoxConnect, NoxSpot,
-  NoxFeed, NoxCue, the cron Worker, and a disposable RPC caller against one fresh
+- Local end-to-end runtime: Wrangler 4.129.0 started NoxHere, Feedback,
+  Activity, Telemetry, the cron Worker, and a disposable RPC caller against one fresh
   local D1 database. All 102 readiness and functional checks passed, including
   live GitHub identity plus opaque browser- and native-session authentication,
   native access/refresh rotation, CSRF rejection,
   project-scoped API-token create/list/rotate/revoke and adversarial isolation,
-  canonical/legacy compatibility parity, private RPC, service-bound NoxCue ingest,
-  persisted metrics, NoxSpot Queue submission, config compare-and-swap, and
+  canonical/legacy compatibility parity, private RPC, service-bound Telemetry ingest,
+  persisted metrics, Feedback Queue submission, config compare-and-swap, and
   webhook HMAC verification. No production provider credential was loaded.
 - API-token lifecycle: actual local HTTP calls created a one-time
   `nox_sk_test_…` secret, listed only redacted metadata, enforced service

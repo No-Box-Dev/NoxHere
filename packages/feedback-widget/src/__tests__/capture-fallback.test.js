@@ -13,7 +13,7 @@ import { captureScreenshot } from '../capture.js';
 describe('capture fallback', () => {
   it('returns a submittable result when rasterization exceeds its budget', async () => {
     const trigger = document.createElement('button');
-    trigger.className = 'noxspot-trigger';
+    trigger.className = 'feedback-trigger';
     document.body.appendChild(trigger);
 
     const result = await captureScreenshot({ includeElementMap: false });

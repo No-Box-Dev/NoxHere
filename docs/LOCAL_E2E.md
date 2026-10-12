@@ -9,25 +9,25 @@ provider secrets.
 
 | Local service | Port | Role |
 |---|---:|---|
-| NoxConnect Pages | 8788 | capability API behind a simulated private gateway boundary |
+| NoxHere Pages | 8788 | capability API behind a simulated private gateway boundary |
 | Feedback compatibility Worker | 8790 | public feedback capture and response RPC |
 | Activity compatibility Worker | 8791 | activity response RPC |
 | Incidents compatibility Worker | 8792 | event ingestion, metrics, and response RPC |
 | RPC smoke Worker | 8793 | disposable private-binding contract caller |
-| NoxConnect cron Worker | 8794 | Queue consumer and scheduled background work |
+| NoxHere cron Worker | 8794 | Queue consumer and scheduled background work |
 
-All services use one newly created local persistence directory. NoxConnect's
+All services use one newly created local persistence directory. NoxHere's
 migrations are the sole schema authority and are applied before any Worker is
 started. The runner seeds a disposable organization, installation, repository,
 project, and opaque connector identity. It does not create a browser/native
 session or API token inside the capability runtime; those credentials belong to
-the NoxConnect gateway.
+the NoxHere gateway.
 
 ## Prerequisites
 
 - Node.js and dependencies installed in this repository.
-- Dependencies installed in `services/cue`, `services/feed`, `services/spot`,
-  and `services/ticket`.
+- Dependencies installed in `services/telemetry`, `services/activity`, `services/feedback`,
+  and `services/planning`.
 - GitHub CLI authenticated as a member of the test organization. This performs
   a real identity and organization-membership check, but makes no provider
   writes.
@@ -36,10 +36,10 @@ Override service locations or the fixture scope when testing an external
 checkout:
 
 ```bash
-NOXCUE_DIR=/absolute/path/to/cue-service \
-NOXFEED_SERVICE_DIR=/absolute/path/to/noxfeed/service \
-NOXCONNECT_E2E_ORG=My-GitHub-Org \
-NOXCONNECT_E2E_REPO=my-repository \
+TELEMETRY_DIR=/absolute/path/to/cue-service \
+ACTIVITY_SERVICE_DIR=/absolute/path/to/activity/service \
+NOXHERE_E2E_ORG=My-GitHub-Org \
+NOXHERE_E2E_REPO=my-repository \
 npm run e2e:local
 ```
 
@@ -47,7 +47,7 @@ If another local Worker already uses the default ports, shift the entire test
 topology by one offset without changing any checked-in Worker configuration:
 
 ```bash
-NOXCONNECT_E2E_PORT_OFFSET=100 npm run e2e:local
+NOXHERE_E2E_PORT_OFFSET=100 npm run e2e:local
 ```
 
 Every Worker also receives a random per-run development name. This keeps local
@@ -75,7 +75,7 @@ Worker, and checks:
 - ETag/`If-Match` config writes, missing preconditions, and stale revisions;
 - project discovery from an installation record;
 - Incidents source creation, one-time key creation, event ingestion through the
-  NoxConnect service binding, idempotency, metrics, revocation, and rejection of
+  NoxHere service binding, idempotency, metrics, revocation, and rejection of
   the revoked key;
 - Feedback site creation, shared-D1 public config, and Queue submission;
 - invalid and valid HMAC-signed GitHub webhooks.
@@ -83,7 +83,7 @@ Worker, and checks:
 ### Authorization-boundary assertions
 
 The key checks use real HTTP requests and fresh D1 rows, not handler mocks. The
-runner signs the same method-and-path-bound assertion that the NoxConnect gateway sends over
+runner signs the same method-and-path-bound assertion that the NoxHere gateway sends over
 the private binding, verifies connector-side HMAC validation, resolves a real
 encrypted connector identity, and exercises organization, project, capability,
 cross-project, and filtered-feed enforcement. The gateway owns

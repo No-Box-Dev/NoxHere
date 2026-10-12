@@ -1,12 +1,11 @@
 # NoxHere feedback widget
 
 This package owns the independently built browser capture client for NoxHere's
-Feedback capability. The public browser API remains named `NoxSpot` for embed
-compatibility. The production service loads `noxspot.min.js` and
-`noxspot-core.min.js` from the `noxspot-assets` R2 bucket. The
-`blindspot.min.js` build is retained only for legacy embed compatibility.
+Feedback capability. The public browser API remains named `Feedback` for embed
+compatibility. The production service loads `feedback.min.js` and
+`feedback-core.min.js` from the `noxhere-feedback-assets` R2 bucket.
 
-Run `npm test` and `npm run build` before publishing the three generated files.
+Run `npm test` and `npm run build` before publishing the two generated files.
 
 Applications using the TypeScript SDK can install the site-specific script
 through `installNoxHereWidget` from `@noxhere/sdk/widget`. The widget remains a

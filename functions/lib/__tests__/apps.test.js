@@ -10,40 +10,39 @@ import {
 
 describe("server capability routing", () => {
   it("keeps product capabilities available regardless of legacy settings", async () => {
-    expect(parseAppSettings(null)).toEqual({ noxticket: true, noxfeed: true, noxspot: true, noxcue: true });
-    expect(parseAppSettings('{"apps":{"noxspot":false}}')).toEqual({
-      noxticket: true,
-      noxfeed: true,
-      noxspot: true,
-      noxcue: true,
+    expect(parseAppSettings(null)).toEqual({ planning: true, activity: true, feedback: true, telemetry: true });
+    expect(parseAppSettings('{"apps":{"feedback":false}}')).toEqual({
+      planning: true,
+      activity: true,
+      feedback: true,
+      telemetry: true,
     });
-    await expect(getEnabledApps()).resolves.toEqual({ noxticket: true, noxfeed: true, noxspot: true, noxcue: true });
-    await expect(isAppEnabled({}, 7, "noxfeed", "project-a")).resolves.toBe(true);
+    await expect(getEnabledApps()).resolves.toEqual({ planning: true, activity: true, feedback: true, telemetry: true });
+    await expect(isAppEnabled({}, 7, "activity", "project-a")).resolves.toBe(true);
   });
 
   it("maps only service-owned entry points and delivery work", () => {
-    expect(appForApiPath("/api/features/12")).toBe("noxticket");
-    expect(appForApiPath("/api/v1/features/12")).toBe("noxticket");
-    expect(appForApiPath("/api/v1/feed")).toBe("noxfeed");
-    expect(appForApiPath("/api/v1/feed/current-summary")).toBe("noxfeed");
-    expect(appForApiPath("/api/issues")).toBe("noxfeed");
-    expect(appForApiPath("/api/v1/issues")).toBe("noxfeed");
-    expect(appForApiPath("/api/v1/prs/close")).toBe("noxfeed");
-    expect(appForApiPath("/api/v1/engineer-activity")).toBe("noxfeed");
-    expect(appForApiPath("/api/v1/llm-settings")).toBe("noxfeed");
-    expect(appForApiPath("/api/spots/sites")).toBe("noxspot");
-    expect(appForApiPath("/api/v1/spots/sites")).toBe("noxspot");
-    expect(appForApiPath("/api/cues/sources")).toBe("noxcue");
-    expect(appForApiPath("/api/v1/cues/sources")).toBe("noxcue");
-    expect(appForApiPath("/api/v1/projects/project-1/cue/alerts")).toBe("noxcue");
+    expect(appForApiPath("/api/features/12")).toBe("planning");
+    expect(appForApiPath("/api/v1/features/12")).toBe("planning");
+    expect(appForApiPath("/api/v1/activity")).toBe("activity");
+    expect(appForApiPath("/api/v1/activity/current-summary")).toBe("activity");
+    expect(appForApiPath("/api/issues")).toBe("activity");
+    expect(appForApiPath("/api/v1/issues")).toBe("activity");
+    expect(appForApiPath("/api/v1/prs/close")).toBe("activity");
+    expect(appForApiPath("/api/v1/engineer-activity")).toBe("activity");
+    expect(appForApiPath("/api/v1/llm-settings")).toBe("activity");
+    expect(appForApiPath("/api/feedback/sites")).toBe("feedback");
+    expect(appForApiPath("/api/v1/feedback/sites")).toBe("feedback");
+    expect(appForApiPath("/api/telemetry/sources")).toBe("telemetry");
+    expect(appForApiPath("/api/v1/telemetry/sources")).toBe("telemetry");
+    expect(appForApiPath("/api/v1/projects/project-1/telemetry/alerts")).toBe("telemetry");
     expect(appForApiPath("/api/repos")).toBeNull();
-    expect(appForDeliverySource("release_notes")).toBe("noxfeed");
-    expect(appForDeliverySource("noxfeed_daily_summary")).toBe("noxfeed");
-    expect(appForDeliverySource("noxticket")).toBe("noxticket");
-    expect(appForDeliverySource(["un", "ticket"].join(""))).toBe("noxticket");
-    expect(appForSlackKind("noxticket")).toBe("noxticket");
-    expect(appForSlackKind("noxspot")).toBe("noxspot");
-    expect(appForSlackKind("noxfeed_daily_summary")).toBe("noxfeed");
+    expect(appForDeliverySource("release_notes")).toBe("activity");
+    expect(appForDeliverySource("activity_daily_summary")).toBe("activity");
+    expect(appForDeliverySource("planning")).toBe("planning");
+    expect(appForSlackKind("planning")).toBe("planning");
+    expect(appForSlackKind("feedback")).toBe("feedback");
+    expect(appForSlackKind("activity_daily_summary")).toBe("activity");
   });
 
 });

@@ -8,17 +8,17 @@ async function ready() {
   const body = await response.json();
   return response.ok
     && body?.checks?.database === true
-    && body?.checks?.noxspot === true
-    && body?.checks?.noxcue === true
+    && body?.checks?.feedback === true
+    && body?.checks?.telemetry === true
     && body?.versions?.noxhere === expectedSha
-    && body?.versions?.noxspot === expectedSha
-    && body?.versions?.noxcue === expectedSha;
+    && body?.versions?.feedback === expectedSha
+    && body?.versions?.telemetry === expectedSha;
 }
 
 async function spotReady() {
   const response = await fetch(new URL("/health", spotOrigin), { headers: { "Cache-Control": "no-cache" } });
   const body = await response.json();
-  return response.ok && body?.owner === "noxconnect" && body?.buildSha === expectedSha;
+  return response.ok && body?.owner === "noxhere" && body?.buildSha === expectedSha;
 }
 
 for (let attempt = 1; attempt <= 12; attempt += 1) {

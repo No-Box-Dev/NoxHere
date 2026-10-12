@@ -45,19 +45,19 @@ describe('showOverlay — optimistic flow', () => {
 
     showOverlay(promise, { onClose: () => {}, onSubmit: () => {} });
 
-    const overlay = document.querySelector('.noxspot-overlay');
+    const overlay = document.querySelector('.feedback-overlay');
     expect(overlay).not.toBeNull();
 
-    const loading = overlay.querySelector('.noxspot-canvas-loading');
+    const loading = overlay.querySelector('.feedback-canvas-loading');
     expect(loading).not.toBeNull();
 
-    const wrapper = overlay.querySelector('.noxspot-canvas-wrapper');
+    const wrapper = overlay.querySelector('.feedback-canvas-wrapper');
     expect(wrapper.style.display).toBe('none');
 
-    const toolbarTools = overlay.querySelector('.noxspot-toolbar-tools');
-    expect(toolbarTools.classList.contains('noxspot-toolbar-tools--disabled')).toBe(true);
+    const toolbarTools = overlay.querySelector('.feedback-toolbar-tools');
+    expect(toolbarTools.classList.contains('feedback-toolbar-tools--disabled')).toBe(true);
 
-    const img = overlay.querySelector('.noxspot-screenshot');
+    const img = overlay.querySelector('.feedback-screenshot');
     expect(img.getAttribute('src')).toBeFalsy();
 
     // Resolve so the promise doesn't leak between tests
@@ -75,8 +75,8 @@ describe('showOverlay — optimistic flow', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    const overlay = document.querySelector('.noxspot-overlay');
-    const img = overlay.querySelector('.noxspot-screenshot');
+    const overlay = document.querySelector('.feedback-overlay');
+    const img = overlay.querySelector('.feedback-screenshot');
     expect(img.getAttribute('src')).toBe(dataUrl);
 
     // jsdom won't fire 'load' automatically for a data URL — dispatch it manually
@@ -85,13 +85,13 @@ describe('showOverlay — optimistic flow', () => {
     Object.defineProperty(img, 'naturalHeight', { value: 100, configurable: true });
     img.dispatchEvent(new Event('load'));
 
-    const loading = overlay.querySelector('.noxspot-canvas-loading');
-    const wrapper = overlay.querySelector('.noxspot-canvas-wrapper');
-    const toolbarTools = overlay.querySelector('.noxspot-toolbar-tools');
+    const loading = overlay.querySelector('.feedback-canvas-loading');
+    const wrapper = overlay.querySelector('.feedback-canvas-wrapper');
+    const toolbarTools = overlay.querySelector('.feedback-toolbar-tools');
 
     expect(loading.style.display).toBe('none');
     expect(wrapper.style.display).toBe('');
-    expect(toolbarTools.classList.contains('noxspot-toolbar-tools--disabled')).toBe(false);
+    expect(toolbarTools.classList.contains('feedback-toolbar-tools--disabled')).toBe(false);
   });
 
   it('reveals the form even if the screenshot image fails to load', async () => {
@@ -103,19 +103,19 @@ describe('showOverlay — optimistic flow', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    const overlay = document.querySelector('.noxspot-overlay');
-    const img = overlay.querySelector('.noxspot-screenshot');
+    const overlay = document.querySelector('.feedback-overlay');
+    const img = overlay.querySelector('.feedback-screenshot');
 
     // Simulate a load failure (CSP block, invalid data URL, etc.)
     img.dispatchEvent(new Event('error'));
 
-    const loading = overlay.querySelector('.noxspot-canvas-loading');
-    const wrapper = overlay.querySelector('.noxspot-canvas-wrapper');
-    const toolbarTools = overlay.querySelector('.noxspot-toolbar-tools');
+    const loading = overlay.querySelector('.feedback-canvas-loading');
+    const wrapper = overlay.querySelector('.feedback-canvas-wrapper');
+    const toolbarTools = overlay.querySelector('.feedback-toolbar-tools');
 
     expect(loading.style.display).toBe('none');
     expect(wrapper.style.display).toBe('');
-    expect(toolbarTools.classList.contains('noxspot-toolbar-tools--disabled')).toBe(false);
+    expect(toolbarTools.classList.contains('feedback-toolbar-tools--disabled')).toBe(false);
   });
 
   it('keeps the feedback form open when capture degrades without a screenshot', async () => {
@@ -136,10 +136,10 @@ describe('showOverlay — optimistic flow', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    const overlay = document.querySelector('.noxspot-overlay');
+    const overlay = document.querySelector('.feedback-overlay');
     expect(overlay).not.toBeNull();
-    expect(overlay.querySelector('.noxspot-canvas-loading').textContent).toContain('You can still send your feedback');
-    expect(overlay.querySelector('.noxspot-toolbar-tools').style.display).toBe('none');
+    expect(overlay.querySelector('.feedback-canvas-loading').textContent).toContain('You can still send your feedback');
+    expect(overlay.querySelector('.feedback-toolbar-tools').style.display).toBe('none');
     expect(onCaptureError).toHaveBeenCalledOnce();
   });
 
@@ -158,7 +158,7 @@ describe('showOverlay — optimistic flow', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(document.querySelector('.noxspot-overlay')).toBeNull();
+    expect(document.querySelector('.feedback-overlay')).toBeNull();
     expect(onCaptureError).toHaveBeenCalledWith(failure);
   });
 });

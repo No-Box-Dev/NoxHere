@@ -103,7 +103,7 @@ async function executeGitHub(
   const staged = await publishGitHubTransport(env, {
     orgId: command.organizationId,
     projectId: project.id,
-    route: command.service === "noxspot" ? "feedback" : "incidents",
+    route: command.service === "feedback" ? "feedback" : "incidents",
     idempotencyKey: command.idempotencyKey,
     operation,
     input,
@@ -118,16 +118,16 @@ async function executeSlack(
 ): Promise<ConnectionCapabilityReceipt> {
   const route = command.input.route;
   const neutralRoute = ({
-    noxfeed_posts: "activity",
-    noxfeed_release_notes: "activity_release",
-    noxfeed_daily_summary: "activity_summary",
-    noxspot: "feedback",
-    noxcue: "engagement",
-    noxcue_alerts: "incidents",
-    noxticket: "feature_delivery",
+    activity_posts: "activity",
+    activity_release_notes: "activity_release",
+    activity_daily_summary: "activity_summary",
+    feedback: "feedback",
+    telemetry: "engagement",
+    telemetry_alerts: "incidents",
+    planning: "feature_delivery",
     operations: "operations",
     fallback: "operations",
-  } as const)[route as "noxfeed_posts" | "noxfeed_release_notes" | "noxfeed_daily_summary" | "noxspot" | "noxcue" | "noxcue_alerts" | "noxticket" | "operations" | "fallback"];
+  } as const)[route as "activity_posts" | "activity_release_notes" | "activity_daily_summary" | "feedback" | "telemetry" | "telemetry_alerts" | "planning" | "operations" | "fallback"];
   if (!neutralRoute) throw new Error(`No neutral Slack route exists for ${route}`);
   const message = { text: command.input.message.text, blocks: command.input.message.blocks };
   const staged = await publishSlackTransport(env, {
@@ -163,7 +163,7 @@ function receipt(
   status: "completed" | "queued",
 ): ConnectionCapabilityReceipt {
   return parseConnectionCapabilityReceipt({
-    contract: "noxconnect.connection-receipt",
+    contract: "noxhere.connection-receipt",
     version: 1,
     commandId: command.commandId,
     idempotencyKey: command.idempotencyKey,

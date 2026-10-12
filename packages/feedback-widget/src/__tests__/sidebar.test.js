@@ -65,22 +65,22 @@ describe('validateFormData', () => {
 
   it('flags missing title', () => {
     const errors = validateFormData({ ...ok, title: '' });
-    expect(errors['noxspot-title']).toMatch(/required/i);
+    expect(errors['feedback-title']).toMatch(/required/i);
   });
 
   it('flags missing reporter', () => {
     const errors = validateFormData({ ...ok, reporter: '' });
-    expect(errors['noxspot-reporter']).toBeTruthy();
+    expect(errors['feedback-reporter']).toBeTruthy();
   });
 
   it('flags title over 256 chars', () => {
     const errors = validateFormData({ ...ok, title: 'a'.repeat(257) });
-    expect(errors['noxspot-title']).toMatch(/too long/i);
+    expect(errors['feedback-title']).toMatch(/too long/i);
   });
 
   it('flags description over 10000 chars', () => {
     const errors = validateFormData({ ...ok, description: 'a'.repeat(10001) });
-    expect(errors['noxspot-description']).toMatch(/too long/i);
+    expect(errors['feedback-description']).toMatch(/too long/i);
   });
 
   it('allows empty description', () => {
@@ -90,13 +90,13 @@ describe('validateFormData', () => {
 
   it('flags reporter over 100 chars', () => {
     const errors = validateFormData({ ...ok, reporter: 'a'.repeat(101) });
-    expect(errors['noxspot-reporter']).toMatch(/too long/i);
+    expect(errors['feedback-reporter']).toMatch(/too long/i);
   });
 
   it('validates a configured contact email field', () => {
     const blocks = [{ type: 'description' }, { type: 'contact_email', required: true }];
-    expect(validateFormData({ description: 'Steps', reporterEmail: '' }, blocks)['noxspot-contact-email']).toMatch(/required/i);
-    expect(validateFormData({ description: 'Steps', reporterEmail: 'not-an-email' }, blocks)['noxspot-contact-email']).toMatch(/valid email/i);
+    expect(validateFormData({ description: 'Steps', reporterEmail: '' }, blocks)['feedback-contact-email']).toMatch(/required/i);
+    expect(validateFormData({ description: 'Steps', reporterEmail: 'not-an-email' }, blocks)['feedback-contact-email']).toMatch(/valid email/i);
     expect(validateFormData({ description: 'Steps', reporterEmail: 'ada@example.com' }, blocks)).toEqual({});
   });
 
@@ -116,7 +116,7 @@ describe('validateFormData', () => {
       { id: 'q1', type: 'custom_text', required: true, label: 'Why?' },
     ];
     const errors = validateFormData({ title: 'Bug', blockValues: {} }, blocks);
-    expect(errors['noxspot-block-q1']).toMatch(/required/i);
+    expect(errors['feedback-block-q1']).toMatch(/required/i);
   });
 
   it('does not flag empty optional custom_text', () => {
@@ -137,7 +137,7 @@ describe('validateFormData', () => {
       { title: 'Bug', blockValues: { q1: 'a'.repeat(10001) } },
       blocks
     );
-    expect(errors['noxspot-block-q1']).toMatch(/too long/i);
+    expect(errors['feedback-block-q1']).toMatch(/too long/i);
   });
 
   it('skips title validation when title block is absent', () => {
@@ -146,7 +146,7 @@ describe('validateFormData', () => {
       { type: 'reporter', required: false },
     ];
     const errors = validateFormData({ title: '', description: '', reporter: '' }, blocks);
-    expect(errors['noxspot-title']).toBeUndefined();
+    expect(errors['feedback-title']).toBeUndefined();
   });
 });
 
@@ -158,11 +158,11 @@ describe('createSidebarHTML', () => {
       ...ctx,
       blocks: [{ type: 'title' }, { type: 'description' }],
     });
-    expect(html).toContain('id="noxspot-title"');
-    expect(html).toContain('id="noxspot-description"');
-    expect(html).not.toContain('id="noxspot-reporter"');
-    expect(html).not.toContain('noxspot-elements-section');
-    expect(html).not.toContain('noxspot-form-group--metadata');
+    expect(html).toContain('id="feedback-title"');
+    expect(html).toContain('id="feedback-description"');
+    expect(html).not.toContain('id="feedback-reporter"');
+    expect(html).not.toContain('feedback-elements-section');
+    expect(html).not.toContain('feedback-form-group--metadata');
   });
 
   it('renders custom_text input with the block id and label', () => {
@@ -173,7 +173,7 @@ describe('createSidebarHTML', () => {
         { id: 'why', type: 'custom_text', label: 'What were you trying to do?', required: true },
       ],
     });
-    expect(html).toContain('id="noxspot-block-why"');
+    expect(html).toContain('id="feedback-block-why"');
     expect(html).toContain('What were you trying to do?');
     expect(html).toContain('data-block-id="why"');
     expect(html).toContain('data-block-type="custom_text"');
@@ -185,7 +185,7 @@ describe('createSidebarHTML', () => {
       ...ctx,
       blocks: [{ type: 'description' }, { type: 'contact_email', label: 'Email me', required: false }],
     });
-    expect(html).toContain('id="noxspot-contact-email"');
+    expect(html).toContain('id="feedback-contact-email"');
     expect(html).toContain('type="email"');
     expect(html).toContain('Email me');
   });
@@ -195,7 +195,7 @@ describe('createSidebarHTML', () => {
       ...ctx,
       blocks: [{ id: 'notes', type: 'custom_textarea', label: 'Notes' }],
     });
-    expect(html).toContain('id="noxspot-block-notes"');
+    expect(html).toContain('id="feedback-block-notes"');
     expect(html).toContain('<textarea');
     expect(html).toContain('rows="3"');
   });
@@ -205,7 +205,7 @@ describe('createSidebarHTML', () => {
       ...ctx,
       blocks: [{ id: 'sev', type: 'custom_select', label: 'Severity', options: ['Low', 'High'] }],
     });
-    expect(html).toContain('id="noxspot-block-sev"');
+    expect(html).toContain('id="feedback-block-sev"');
     expect(html).toContain('<option value="Low">Low</option>');
     expect(html).toContain('<option value="High">High</option>');
   });
@@ -224,7 +224,7 @@ describe('createSidebarHTML', () => {
       ...ctx,
       blocks: [{ type: 'title' }],
     });
-    expect(html).not.toContain('noxspot-elements-section');
+    expect(html).not.toContain('feedback-elements-section');
     expect(html).not.toContain('Selected Elements');
   });
 
@@ -233,7 +233,7 @@ describe('createSidebarHTML', () => {
       ...ctx,
       blocks: [{ type: 'title' }, { type: 'element_picker' }],
     });
-    expect(html).toContain('noxspot-elements-section');
+    expect(html).toContain('feedback-elements-section');
   });
 
   it('omits Captured Info section when metadata block is present but metadata is null', () => {
@@ -268,7 +268,7 @@ describe('createSidebarHTML', () => {
       categories: [{ label: 'Bug' }, { label: 'Feedback' }],
       blocks: [{ type: 'title' }, { type: 'category' }],
     });
-    expect(html).toContain('id="noxspot-category"');
+    expect(html).toContain('id="feedback-category"');
     expect(html).toContain('Bug');
     expect(html).toContain('Feedback');
   });
@@ -279,7 +279,7 @@ describe('createSidebarHTML', () => {
       categories: [{ label: 'Bug' }],
       blocks: [{ type: 'title' }, { type: 'category' }],
     });
-    expect(html).not.toContain('id="noxspot-category"');
+    expect(html).not.toContain('id="feedback-category"');
   });
 
   it('falls back to a default block list when blocks is missing or empty', () => {
@@ -287,12 +287,12 @@ describe('createSidebarHTML', () => {
     // the NEW core's overlay — without a fallback, the user would see an
     // empty form.
     const fromUndefined = createSidebarHTML({ ...ctx, blocks: undefined });
-    expect(fromUndefined).toContain('id="noxspot-title"');
-    expect(fromUndefined).toContain('id="noxspot-description"');
-    expect(fromUndefined).toContain('id="noxspot-reporter"');
+    expect(fromUndefined).toContain('id="feedback-title"');
+    expect(fromUndefined).toContain('id="feedback-description"');
+    expect(fromUndefined).toContain('id="feedback-reporter"');
 
     const fromEmpty = createSidebarHTML({ ...ctx, blocks: [] });
-    expect(fromEmpty).toContain('id="noxspot-title"');
+    expect(fromEmpty).toContain('id="feedback-title"');
   });
 
   it('strips non-safe characters from custom block ids before using them in HTML', () => {
@@ -306,12 +306,12 @@ describe('createSidebarHTML', () => {
     });
     const container = document.createElement('div');
     container.innerHTML = html;
-    const input = container.querySelector('input.noxspot-input');
+    const input = container.querySelector('input.feedback-input');
     expect(input).not.toBeNull();
     // The dangerous chars must be stripped from the raw DOM id, not just
     // HTML-escaped — otherwise the value still ends up live on the element.
     // Sanitized form: lowercased, only [a-z0-9-] retained — quotes/spaces gone.
-    expect(input.id).toBe('noxspot-block-xonmouseoveralert1');
+    expect(input.id).toBe('feedback-block-xonmouseoveralert1');
     expect(input.hasAttribute('onmouseover')).toBe(false);
   });
 
@@ -320,6 +320,6 @@ describe('createSidebarHTML', () => {
       ...ctx,
       blocks: [null, { type: 'title' }, { /* no type */ }, { type: 'unknown_type' }],
     });
-    expect(html).toContain('id="noxspot-title"');
+    expect(html).toContain('id="feedback-title"');
   });
 });

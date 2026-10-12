@@ -26,7 +26,7 @@ test("every service request shares the login and selected context", async () => 
     captured = { url: String(url), init };
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   };
-  await apiRequest(active, "/api/v1/cues/events", { fetchImpl });
+  await apiRequest(active, "/api/v1/telemetry/events", { fetchImpl });
   assert.equal(captured.init.headers.get("Authorization"), "Bearer nox_at_test");
   assert.equal(captured.init.headers.get("X-Org"), "Acme");
   assert.equal(captured.init.headers.get("X-Project-ID"), "project-1");

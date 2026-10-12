@@ -83,7 +83,7 @@ async function main() {
       orgId: 7, projectId: "project-1", route: "feedback", idempotencyKey: "report-1:github",
       operation: "github.issue.create",
       input: { issue: { title: "Checkout feedback", body: "Checkout cannot submit", labels: [] } },
-      callback: { kind: "noxspot_issue", payload: { captureId: "report-1" } },
+      callback: { kind: "feedback_issue", payload: { captureId: "report-1" } },
       requestedAt: new Date("2026-10-04T10:01:00Z"),
     });
     const receipt = await transport.executeTransportCommand(env, staged.outboxId, {
@@ -93,8 +93,8 @@ async function main() {
     assert.equal(receipt.status, "delivered");
     let finalized = false;
     await transport.executeTransportCallback(db, staged.outboxId, {
-      noxspot_issue: async ({ payload }) => { assert.equal(payload.captureId, "report-1"); finalized = true; },
-      noxcue_incident: async () => { throw new Error("unexpected callback"); },
+      feedback_issue: async ({ payload }) => { assert.equal(payload.captureId, "report-1"); finalized = true; },
+      telemetry_incident: async () => { throw new Error("unexpected callback"); },
     }, new Date("2026-10-04T10:01:02Z"));
     assert.equal(finalized, true);
 

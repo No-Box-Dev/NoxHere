@@ -2,13 +2,13 @@
 
 _Last updated: 2026-09-08_
 
-These terms govern your use of the hosted **Nox** workspace at [app.noxhere.com](https://app.noxhere.com), operated by No-Box-Dev ("we", "us"). NoxConnect is the workspace's connection layer. If you self-host NoxConnect, these terms do not apply — your use is governed solely by the [PolyForm Noncommercial License](./LICENSE).
+These terms govern your use of the hosted **Nox** workspace at [app.noxhere.com](https://app.noxhere.com), operated by No-Box-Dev ("we", "us"). NoxHere is the workspace's connection layer. If you self-host NoxHere, these terms do not apply — your use is governed solely by the [PolyForm Noncommercial License](./LICENSE).
 
 > This document is provided for transparency and is **not legal advice**. Have a lawyer review it before relying on it for your own service.
 
 ## 1. The service
 
-Nox is a workspace that syncs and displays your GitHub organisation's data through NoxConnect. The hosted service is provided **free of charge** and is currently in **beta** — features may change, break, or be discontinued at any time without notice.
+Nox is a workspace that syncs and displays your GitHub organisation's data through NoxHere. The hosted service is provided **free of charge** and is currently in **beta** — features may change, break, or be discontinued at any time without notice.
 
 ## 2. "As is", no warranty
 

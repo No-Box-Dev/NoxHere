@@ -28,10 +28,10 @@ function now() {
  * @returns {Promise<{ dataUrl: string|null, elementMap: Array, viewport: { width: number, height: number }, captureError?: { code: string, message: string } }>}
  */
 export async function captureScreenshot(options = {}) {
-  debugLog('[NoxSpot] Capturing screenshot...');
+  debugLog('[Feedback] Capturing screenshot...');
 
   // Hide the trigger button during capture so it doesn't appear in the image.
-  const trigger = document.querySelector('.noxspot-trigger');
+  const trigger = document.querySelector('.feedback-trigger');
   if (trigger) trigger.style.visibility = 'hidden';
 
   try {
@@ -50,12 +50,12 @@ export async function captureScreenshot(options = {}) {
     observer?.disconnect();
 
     if (hostChanged) {
-      debugLog('[NoxSpot] Host DOM changed during capture; retrying once');
+      debugLog('[Feedback] Host DOM changed during capture; retrying once');
       await waitForHostDomStable({ minWaitMs: 0, quietMs: 200, maxWaitMs: 750 });
       result = await captureOnce(options);
     }
 
-    debugLog('[NoxSpot] Screenshot captured', {
+    debugLog('[Feedback] Screenshot captured', {
       size: Math.round(result.dataUrl.length / 1024) + 'kb',
       elements: result.elementMap.length,
       retried: hostChanged,
@@ -67,7 +67,7 @@ export async function captureScreenshot(options = {}) {
     // Returning a bounded fallback keeps the feedback form usable on pages
     // whose DOM is too large or contains browser-specific rasterization traps.
     const message = error instanceof Error ? error.message : String(error);
-    debugLog('[NoxSpot] Screenshot unavailable; continuing without it', { message });
+    debugLog('[Feedback] Screenshot unavailable; continuing without it', { message });
     return {
       dataUrl: null,
       elementMap: [],
@@ -84,7 +84,7 @@ export async function captureScreenshot(options = {}) {
 
 function isWidgetNode(node) {
   if (!(node instanceof Element)) return false;
-  return Boolean(node.closest('.noxspot-overlay, .noxspot-trigger, .noxspot-toast'));
+  return Boolean(node.closest('.feedback-overlay, .feedback-trigger, .feedback-toast'));
 }
 
 function isHostMutation(record) {
@@ -101,9 +101,9 @@ async function captureOnce(options) {
     filter: (node) => {
       if (!node.classList) return true;
       return !(
-        node.classList.contains('noxspot-overlay') ||
-        node.classList.contains('noxspot-trigger') ||
-        node.classList.contains('noxspot-toast')
+        node.classList.contains('feedback-overlay') ||
+        node.classList.contains('feedback-trigger') ||
+        node.classList.contains('feedback-toast')
       );
     },
   });
@@ -131,7 +131,7 @@ export function captureElementMap() {
   // Sort by area (smallest first) so smaller elements are checked first during hover
   elements.sort((a, b) => (a.rect.width * a.rect.height) - (b.rect.width * b.rect.height));
 
-  debugLog('[NoxSpot] Element map captured:', elements.length, 'elements', {
+  debugLog('[Feedback] Element map captured:', elements.length, 'elements', {
     visited: state.visited,
     truncated: state.exhausted,
   });
@@ -172,8 +172,8 @@ function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportW
           return NodeFilter.FILTER_REJECT;
         }
 
-        // Skip noxspot elements
-        if (node.classList?.contains('noxspot-trigger')) return NodeFilter.FILTER_REJECT;
+        // Skip feedback elements
+        if (node.classList?.contains('feedback-trigger')) return NodeFilter.FILTER_REJECT;
 
         // Reject off-screen table rows as a subtree. A large table can contain
         // tens of thousands of cells, none of which can be selected when its
@@ -229,7 +229,7 @@ function walkDocument(doc, win, offsetX, offsetY, framePath, elements, viewportW
     const tagName = node.tagName.toLowerCase();
     const id = node.id || null;
     const classes = node.className && typeof node.className === 'string'
-      ? node.className.split(' ').filter(c => c && !c.startsWith('noxspot-'))
+      ? node.className.split(' ').filter(c => c && !c.startsWith('feedback-'))
       : [];
 
     // Get computed styles for visual context
@@ -386,7 +386,7 @@ function openingTagSnapshot(node) {
       if (/^(value|srcdoc)$/i.test(attr.name)) continue;
       const piece = ` ${attr.name}="${escapeAttribute(attr.value)}"`;
       if (length + piece.length > 1_000) {
-        parts.push(' data-noxspot-truncated="true"');
+        parts.push(' data-feedback-truncated="true"');
         break;
       }
       parts.push(piece);
@@ -419,7 +419,7 @@ function getFullSelector(el) {
 
     // Add classes (first 2 for brevity)
     const classes = Array.from(current.classList)
-      .filter(c => !c.startsWith('noxspot-'))
+      .filter(c => !c.startsWith('feedback-'))
       .slice(0, 2);
     if (classes.length) {
       part += '.' + classes.join('.');
@@ -601,7 +601,7 @@ const SKIP_DATA_ATTRS = new Set([
 // Prefix patterns to skip (browser extensions, framework internals)
 const SKIP_DATA_PREFIXES = [
   'data-radix-', 'data-dashlane-', 'data-1p-', 'data-lp',
-  'data-sentry-', 'data-noxspot',
+  'data-sentry-', 'data-feedback',
 ];
 
 /**
@@ -644,7 +644,7 @@ export function collectNearbyDataAttributes(element, maxDepth = 6) {
         let visited = 0;
         while ((descendant = walker.nextNode()) && visited < NEARBY_DESCENDANT_LIMIT) {
           visited += 1;
-          if (descendant.className && typeof descendant.className === 'string' && descendant.className.includes('noxspot')) continue;
+          if (descendant.className && typeof descendant.className === 'string' && descendant.className.includes('feedback')) continue;
           collectDataAttrsFrom(descendant, nearby);
         }
         nearbyDataCache.set(current, nearby);

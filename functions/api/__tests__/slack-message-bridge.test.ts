@@ -74,7 +74,7 @@ describe("Slack message bridge", () => {
     vi.mocked(getSlackChannel).mockResolvedValueOnce({ id: "G123", is_archived: false, is_private: true, is_member: false } as never);
     const response = await onRequestPost(context({ connectionId: "conn-1", channelId: "G123", message: { text: "Hello" } }));
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ error: { code: "slack_channel_membership_required", message: expect.stringContaining("Invite @NoxConnect") } });
+    expect(await response.json()).toMatchObject({ error: { code: "slack_channel_membership_required", message: expect.stringContaining("Invite @NoxHere") } });
   });
 
   it("requires an administrator and an active Slack installation", async () => {

@@ -22,26 +22,26 @@ function context(body) {
     }),
     data: { orgId: 7, orgLogin: "acme", isAdmin: true },
     env: {
-      NOXCUE_RESPONSE: {
-        buildTestResponse: vi.fn(async (org) => ({ contract: "noxcue.response", version: 1, message: { text: `NoxCue delivery test for ${org}`, blocks: [{ type: "section" }] } })),
+      TELEMETRY_RESPONSE: {
+        buildTestResponse: vi.fn(async (org) => ({ contract: "telemetry.response", version: 1, message: { text: `Telemetry delivery test for ${org}`, blocks: [{ type: "section" }] } })),
       },
-      NOXSPOT_RESPONSE: {
+      FEEDBACK_RESPONSE: {
         buildIssueResponse: vi.fn(),
         buildSlackResponse: vi.fn(),
-        buildTestResponse: vi.fn(async (org) => ({ contract: "noxspot.response", version: 1, message: { text: `NoxSpot delivery test for ${org}`, blocks: [{ type: "section" }] } })),
+        buildTestResponse: vi.fn(async (org) => ({ contract: "feedback.response", version: 1, message: { text: `Feedback delivery test for ${org}`, blocks: [{ type: "section" }] } })),
         buildDailyDigestResponse: vi.fn(async (name, period, filed, solved, totals) => ({
-          contract: "noxspot.response", version: 1,
+          contract: "feedback.response", version: 1,
           message: { text: `${name} ${period}: ${totals.filed} filed, ${totals.solved} solved`, blocks: [{ type: "section" }] },
         })),
       },
-      NOXFEED_RESPONSE: {
+      ACTIVITY_RESPONSE: {
         buildPrompt: vi.fn(),
         buildSlackResponse: vi.fn(),
         buildTestResponse: vi.fn(async (org, stream) => ({
-          contract: "noxfeed.response",
+          contract: "activity.response",
           version: 1,
           message: {
-            text: `NoxFeed ${stream === "posts" ? "posts" : stream === "release_notes" ? "release notes" : "delivery"} delivery test for ${org}`.replace("delivery delivery", "delivery"),
+            text: `Activity ${stream === "posts" ? "posts" : stream === "release_notes" ? "release notes" : "delivery"} delivery test for ${org}`.replace("delivery delivery", "delivery"),
             blocks: [{ type: "section" }],
           },
         })),
@@ -70,8 +70,8 @@ function context(body) {
 describe("Slack route tests", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("sends the NoxCue-specific payload to the selected channel", async () => {
-    const response = await onRequestPost(context({ kind: "noxcue", channelId: "C-ALERT" }));
+  it("sends the Telemetry-specific payload to the selected channel", async () => {
+    const response = await onRequestPost(context({ kind: "telemetry", channelId: "C-ALERT" }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       ok: true,
@@ -82,23 +82,23 @@ describe("Slack route tests", () => {
     expect(postSlackMessage).toHaveBeenCalledWith(
       "xoxb-test",
       "C-ALERT",
-      expect.objectContaining({ text: "NoxCue delivery test for acme" }),
+      expect.objectContaining({ text: "Telemetry delivery test for acme" }),
     );
   });
 
-  it("sends a dedicated NoxCue alert-route test", async () => {
-    const response = await onRequestPost(context({ kind: "noxcue_alerts", channelId: "C-ALERT" }));
+  it("sends a dedicated Telemetry alert-route test", async () => {
+    const response = await onRequestPost(context({ kind: "telemetry_alerts", channelId: "C-ALERT" }));
     expect(response.status).toBe(200);
     expect(postSlackMessage).toHaveBeenCalledWith(
       "xoxb-test",
       "C-ALERT",
-      expect.objectContaining({ text: "NoxCue alert delivery test for acme" }),
+      expect.objectContaining({ text: "Telemetry alert delivery test for acme" }),
     );
   });
 
-  it("sends the real NoxSpot daily-summary format for a selected site", async () => {
+  it("sends the real Feedback daily-summary format for a selected site", async () => {
     const response = await onRequestPost(context({
-      kind: "noxspot", sourceId: "site-playnist", connectionId: "conn-2", channelId: "C-ALERT",
+      kind: "feedback", sourceId: "site-playnist", connectionId: "conn-2", channelId: "C-ALERT",
     }));
     expect(response.status).toBe(200);
     expect(postSlackMessage).toHaveBeenCalledWith(
@@ -113,12 +113,12 @@ describe("Slack route tests", () => {
       .mockResolvedValueOnce({ ok: true, channel: "C-WRONG", ts: "1.1" })
       .mockResolvedValueOnce({ ok: true, channel: "C-ALERT", ts: "1.2" });
 
-    const failed = context({ kind: "noxcue", channelId: "C-ALERT" });
+    const failed = context({ kind: "telemetry", channelId: "C-ALERT" });
     expect((await onRequestPost(failed)).status).toBe(502);
     expect(failed.calls.some((call) => call.sql.includes("INSERT INTO slack_channel_status")
       && call.sql.includes("'issue'"))).toBe(true);
 
-    const recovered = context({ kind: "noxcue", channelId: "C-ALERT" });
+    const recovered = context({ kind: "telemetry", channelId: "C-ALERT" });
     expect((await onRequestPost(recovered)).status).toBe(200);
     expect(recovered.calls.some((call) => call.sql.includes("INSERT INTO slack_channel_status")
       && call.sql.includes("'verified'"))).toBe(true);
@@ -127,7 +127,7 @@ describe("Slack route tests", () => {
   it("turns Slack's ambiguous channel-not-found response into invite guidance when the channel is visible", async () => {
     vi.mocked(postSlackMessage).mockRejectedValueOnce(Object.assign(new Error("channel_not_found"), { code: "channel_not_found" }));
     vi.mocked(getSlackChannel).mockResolvedValueOnce({ id: "C-ALERT", is_member: false });
-    const response = await onRequestPost(context({ kind: "noxticket", connectionId: "conn-2", channelId: "C-ALERT" }));
+    const response = await onRequestPost(context({ kind: "planning", connectionId: "conn-2", channelId: "C-ALERT" }));
     expect(response.status).toBe(502);
     expect(actionableSlackError).toHaveBeenCalledWith(
       expect.objectContaining({ code: "not_in_channel" }),
@@ -135,7 +135,7 @@ describe("Slack route tests", () => {
     );
   });
 
-  it("does not silently reinterpret an unknown test as NoxFeed", async () => {
+  it("does not silently reinterpret an unknown test as Activity", async () => {
     const response = await onRequestPost(context({ kind: "wrong", channelId: "C-OTHER" }));
     expect(response.status).toBe(400);
     expect(postSlackMessage).not.toHaveBeenCalled();
@@ -149,15 +149,15 @@ describe("Slack route tests", () => {
     expect(postSlackMessage).toHaveBeenCalledWith(
       "xoxb-test",
       "C-ALERT",
-      expect.objectContaining({ text: "NoxConnect workspace test for acme" }),
+      expect.objectContaining({ text: "NoxHere workspace test for acme" }),
     );
     expect(ctx.calls.some((call) => call.sql.includes("INSERT INTO slack_channel_status")
       && call.binds.includes("C-ALERT"))).toBe(true);
   });
 
   it.each([
-    ["noxfeed_posts", "NoxFeed posts delivery test for acme"],
-    ["noxfeed_release_notes", "NoxFeed release notes delivery test for acme"],
+    ["activity_posts", "Activity posts delivery test for acme"],
+    ["activity_release_notes", "Activity release notes delivery test for acme"],
   ])("sends a distinct %s test payload", async (kind, text) => {
     vi.mocked(postSlackMessage).mockResolvedValueOnce({ ok: true, channel: "C-FEED", ts: "1.2" });
     const response = await onRequestPost(context({ kind, channelId: "C-FEED" }));
@@ -171,12 +171,12 @@ describe("Slack route tests", () => {
 
   it("sends a dedicated daily-summary test payload", async () => {
     vi.mocked(postSlackMessage).mockResolvedValueOnce({ ok: true, channel: "C-SUMMARY", ts: "1.3" });
-    const response = await onRequestPost(context({ kind: "noxfeed_daily_summary", channelId: "C-SUMMARY" }));
+    const response = await onRequestPost(context({ kind: "activity_daily_summary", channelId: "C-SUMMARY" }));
     expect(response.status).toBe(200);
     expect(postSlackMessage).toHaveBeenCalledWith(
       "xoxb-test",
       "C-SUMMARY",
-      expect.objectContaining({ text: "NoxFeed daily summary delivery test for acme" }),
+      expect.objectContaining({ text: "Activity daily summary delivery test for acme" }),
     );
   });
 });

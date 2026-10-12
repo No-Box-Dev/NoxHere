@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createNoxCue } from "./browser.js";
+import { createTelemetry } from "./browser.js";
 
 const key = `nox_pub_${"a".repeat(32)}`;
 
@@ -9,7 +9,7 @@ describe("anonymous browser activity", () => {
     vi.stubGlobal("localStorage", storage);
     vi.stubGlobal("sessionStorage", storage);
     const request = vi.fn<typeof fetch>(async () => new Response('{"eventId":"stored"}', { status: 202 }));
-    const client = createNoxCue({ key, fetch: request });
+    const client = createTelemetry({ key, fetch: request });
 
     await client.track("website.page_visited");
 

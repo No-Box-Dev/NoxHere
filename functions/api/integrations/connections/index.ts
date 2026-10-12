@@ -9,7 +9,7 @@ interface Ctx {
   data: { orgId: number; orgLogin: string; isAdmin: boolean };
 }
 
-// Central NoxConnect contract. It preserves the detailed status payload used
+// Central NoxHere contract. It preserves the detailed status payload used
 // by the current UI and adds a provider registry that other Nox clients can
 // render generically. Credentials and provider tokens never enter this shape.
 export async function onRequestGet(context: Ctx): Promise<Response> {

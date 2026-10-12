@@ -1,10 +1,10 @@
 import { z } from "zod";
 import {
-  DEFAULT_NOXSPOT_RESOLUTION_TEMPLATE,
-  NoxSpotResolutionTemplateSchema,
+  DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE,
+  FeedbackResolutionTemplateSchema,
   renderResolutionTemplate,
   resolutionEmailFontStacks,
-} from "./noxspot-resolution-template.js";
+} from "./feedback-resolution-template.js";
 
 const Email = z.string().trim().email().max(254);
 const HttpUrl = z.string().url().max(3_000).refine((value) => {
@@ -13,7 +13,7 @@ const HttpUrl = z.string().url().max(3_000).refine((value) => {
 }, "Expected an HTTP(S) URL");
 
 const BaseCommand = z.object({
-  contract: z.literal("noxconnect.transactional-email"),
+  contract: z.literal("noxhere.transactional-email"),
   version: z.literal(1),
   requestId: z.string().trim().min(1).max(200),
   recipient: Email,
@@ -29,8 +29,8 @@ const PlatformCommand = BaseCommand.extend({
   }).strict(),
 }).strict();
 
-const NoxSpotResolutionCommand = BaseCommand.extend({
-  template: z.literal("noxspot.resolution"),
+const FeedbackResolutionCommand = BaseCommand.extend({
+  template: z.literal("feedback.resolution"),
   model: z.object({
     siteName: z.string().trim().min(1).max(200),
     reportTitle: z.string().trim().min(1).max(300),
@@ -38,13 +38,13 @@ const NoxSpotResolutionCommand = BaseCommand.extend({
     reporterName: z.string().trim().min(1).max(100).optional(),
     responseUrl: HttpUrl.optional(),
     // Optional for backward compatibility with already-running internal callers.
-    presentation: NoxSpotResolutionTemplateSchema.optional(),
+    presentation: FeedbackResolutionTemplateSchema.optional(),
   }).strict(),
 }).strict();
 
 const TransactionalEmailCommand = z.discriminatedUnion("template", [
   PlatformCommand,
-  NoxSpotResolutionCommand,
+  FeedbackResolutionCommand,
 ]);
 
 export type TransactionalEmailCommand = z.infer<typeof TransactionalEmailCommand>;
@@ -52,7 +52,7 @@ export type TransactionalEmailCommand = z.infer<typeof TransactionalEmailCommand
 interface EmailEnvironment {
   POSTMARK_SERVER_TOKEN?: string;
   PLATFORM_EMAIL_FROM?: string;
-  NOXSPOT_EMAIL_FROM?: string;
+  FEEDBACK_EMAIL_FROM?: string;
 }
 
 interface PostmarkResponse {
@@ -63,7 +63,7 @@ interface PostmarkResponse {
 }
 
 export interface TransactionalEmailReceipt {
-  contract: "noxconnect.transactional-email-receipt";
+  contract: "noxhere.transactional-email-receipt";
   version: 1;
   requestId: string;
   template: TransactionalEmailCommand["template"];
@@ -111,7 +111,7 @@ export async function sendTransactionalEmail(
     throw new Error(`Postmark email request failed (${response.status}:${result?.ErrorCode ?? "invalid"})`);
   }
   return {
-    contract: "noxconnect.transactional-email-receipt",
+    contract: "noxhere.transactional-email-receipt",
     version: 1,
     requestId: command.requestId,
     template: command.template,
@@ -133,12 +133,12 @@ async function postmarkMetadataValue(value: string): Promise<string> {
 }
 
 function render(command: TransactionalEmailCommand, env: EmailEnvironment) {
-  if (command.template === "noxspot.resolution") {
-    const from = env.NOXSPOT_EMAIL_FROM;
-    if (!from) throw new Error("NoxSpot email sender is not configured");
+  if (command.template === "feedback.resolution") {
+    const from = env.FEEDBACK_EMAIL_FROM;
+    if (!from) throw new Error("Feedback email sender is not configured");
     const summary = resolutionSummary(command.model.summary);
     const presentation = renderResolutionTemplate(
-      command.model.presentation ?? DEFAULT_NOXSPOT_RESOLUTION_TEMPLATE,
+      command.model.presentation ?? DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE,
       {
       report_title: command.model.reportTitle,
       site_name: command.model.siteName,
@@ -168,8 +168,8 @@ function render(command: TransactionalEmailCommand, env: EmailEnvironment) {
         appearance,
         fonts,
       ),
-      stream: "noxspot-resolutions",
-      tag: "noxspot-resolution",
+      stream: "feedback-resolutions",
+      tag: "feedback-resolution",
     };
   }
 
@@ -222,7 +222,7 @@ function resolutionLayout(
   const support = replyTo
     ? ` Reply to this email at <a href="mailto:${escapeHtml(replyTo)}" style="color:${appearance.mutedColor};text-decoration:underline">${escapeHtml(replyTo)}</a> if you need help.`
     : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${escapeHtml(heading)}</title><style>@media only screen and (max-width:620px){.email-frame{padding:20px 12px!important}.email-card{padding:28px 24px!important}.email-heading{font-size:25px!important}}</style></head><body style="margin:0;padding:0;background-color:${appearance.backgroundColor};color:${appearance.textColor};font-family:${fonts.body};-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">An update about the issue you reported to ${escapedSiteName}.</div><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="${appearance.backgroundColor}" style="border-collapse:collapse;width:100%;background-color:${appearance.backgroundColor}"><tr><td class="email-frame" align="center" style="padding:32px 16px"><table class="email-shell" role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="border-collapse:separate;width:100%;max-width:600px"><tr><td style="padding:0 4px 16px;color:${appearance.accentColor};font-family:${fonts.heading};font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.3px">${escapedSiteName} <span style="color:${appearance.mutedColor};font-family:${fonts.body};font-size:13px;font-weight:500;letter-spacing:0">via NoxSpot</span></td></tr><tr><td class="email-card" bgcolor="${appearance.surfaceColor}" style="background-color:${appearance.surfaceColor};border:1px solid ${appearance.accentColor};border-top:4px solid ${appearance.accentColor};border-radius:12px;padding:36px 38px;font-family:${fonts.body}"><div style="color:${appearance.accentColor};font-size:12px;font-weight:700;line-height:1.4;letter-spacing:.08em;text-transform:uppercase">Issue update</div><h1 class="email-heading" style="margin:10px 0 26px;color:${appearance.textColor};font-family:${fonts.heading};font-size:28px;line-height:1.25;letter-spacing:-.5px">${escapeHtml(heading)}</h1><div style="color:${appearance.textColor};font-family:${fonts.body};font-size:16px;line-height:1.62">${body}</div></td></tr><tr><td style="padding:18px 8px 0;color:${appearance.mutedColor};font-family:${fonts.body};font-size:12px;line-height:1.55">You received this transactional email because you asked to be notified when your ${escapedSiteName} report was resolved.${support}<br>Sent by NoxSpot for ${escapedSiteName}.</td></tr></table></td></tr></table></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${escapeHtml(heading)}</title><style>@media only screen and (max-width:620px){.email-frame{padding:20px 12px!important}.email-card{padding:28px 24px!important}.email-heading{font-size:25px!important}}</style></head><body style="margin:0;padding:0;background-color:${appearance.backgroundColor};color:${appearance.textColor};font-family:${fonts.body};-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">An update about the issue you reported to ${escapedSiteName}.</div><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="${appearance.backgroundColor}" style="border-collapse:collapse;width:100%;background-color:${appearance.backgroundColor}"><tr><td class="email-frame" align="center" style="padding:32px 16px"><table class="email-shell" role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="border-collapse:separate;width:100%;max-width:600px"><tr><td style="padding:0 4px 16px;color:${appearance.accentColor};font-family:${fonts.heading};font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.3px">${escapedSiteName} <span style="color:${appearance.mutedColor};font-family:${fonts.body};font-size:13px;font-weight:500;letter-spacing:0">via Feedback</span></td></tr><tr><td class="email-card" bgcolor="${appearance.surfaceColor}" style="background-color:${appearance.surfaceColor};border:1px solid ${appearance.accentColor};border-top:4px solid ${appearance.accentColor};border-radius:12px;padding:36px 38px;font-family:${fonts.body}"><div style="color:${appearance.accentColor};font-size:12px;font-weight:700;line-height:1.4;letter-spacing:.08em;text-transform:uppercase">Issue update</div><h1 class="email-heading" style="margin:10px 0 26px;color:${appearance.textColor};font-family:${fonts.heading};font-size:28px;line-height:1.25;letter-spacing:-.5px">${escapeHtml(heading)}</h1><div style="color:${appearance.textColor};font-family:${fonts.body};font-size:16px;line-height:1.62">${body}</div></td></tr><tr><td style="padding:18px 8px 0;color:${appearance.mutedColor};font-family:${fonts.body};font-size:12px;line-height:1.55">You received this transactional email because you asked to be notified when your ${escapedSiteName} report was resolved.${support}<br>Sent by Feedback for ${escapedSiteName}.</td></tr></table></td></tr></table></body></html>`;
 }
 
 function contrastingTextColor(hex: string): "#000000" | "#FFFFFF" {

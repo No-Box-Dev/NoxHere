@@ -41,8 +41,8 @@ describe("GET /api/integrations/status", () => {
     };
     expect(body.setup).toEqual({ ready: true, needsOnboarding: false, requiredConnection: "github" });
     expect(body.features.feed).toMatchObject({ state: "ready", requirements: ["github"] });
-    expect(body.features.noxSpot).toMatchObject({ state: "ready", optionalConnections: ["slack"] });
-    expect(body.features.noxCue).toMatchObject({ state: "blocked", prerequisitesReady: false });
+    expect(body.features.feedback).toMatchObject({ state: "ready", optionalConnections: ["slack"] });
+    expect(body.features.telemetry).toMatchObject({ state: "blocked", prerequisitesReady: false });
     expect(body.github).toMatchObject({ connected: true, accountLogin: "acme", installationId: 42 });
     expect(body.slack).toMatchObject({ connected: false, configured: true });
     expect(JSON.stringify(body)).not.toContain("private");

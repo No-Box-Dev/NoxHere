@@ -41,19 +41,19 @@ vi.mock("../../lib/repo-tracking.js", () => ({
 vi.mock("../../lib/narrator.js", () => ({
   narrateEvent: vi.fn(() => Promise.resolve()),
 }));
-vi.mock("../../lib/noxticket-slack.js", () => ({
-  stageNoxTicketActivity: vi.fn(async () => ({ queued: true })),
+vi.mock("../../lib/planning-slack.js", () => ({
+  stagePlanningActivity: vi.fn(async () => ({ queued: true })),
 }));
-vi.mock("../../lib/noxspot-resolution.js", () => ({
-  resolveNoxSpotReportFromIssue: vi.fn(async () => ({ status: "resolved" })),
-  reopenNoxSpotReportFromIssue: vi.fn(async () => ({ status: "open" })),
+vi.mock("../../lib/feedback-resolution.js", () => ({
+  resolveFeedbackReportFromIssue: vi.fn(async () => ({ status: "resolved" })),
+  reopenFeedbackReportFromIssue: vi.fn(async () => ({ status: "open" })),
 }));
 
 import { onRequestPost } from "../webhook.js";
 import { upsertIssue, upsertPR, upsertMember, removeMember, touchRepoPushed } from "../../lib/github-sync.js";
 import { storeEvent } from "../../lib/events.js";
-import { stageNoxTicketActivity } from "../../lib/noxticket-slack.js";
-import { reopenNoxSpotReportFromIssue, resolveNoxSpotReportFromIssue } from "../../lib/noxspot-resolution.js";
+import { stagePlanningActivity } from "../../lib/planning-slack.js";
+import { reopenFeedbackReportFromIssue, resolveFeedbackReportFromIssue } from "../../lib/feedback-resolution.js";
 
 const SECRET = "shh";
 
@@ -213,15 +213,15 @@ describe("POST /api/webhook — event routing", () => {
     });
     await onRequestPost(makeCtx({ db, request: req }));
     expect(upsertIssue).toHaveBeenCalledWith(expect.any(Object), 7, "api", expect.any(Object), "bob");
-    expect(stageNoxTicketActivity).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+    expect(stagePlanningActivity).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       orgId: 7, ownerId: "acme", repo: "api", action: "closed", actor: "bob",
     }));
-    expect(resolveNoxSpotReportFromIssue).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+    expect(resolveFeedbackReportFromIssue).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       orgId: 7, ownerId: "acme", repo: "api", issueNumber: 1, actor: "bob",
     }));
   });
 
-  it("issues.reopened restores the linked NoxSpot report", async () => {
+  it("issues.reopened restores the linked Feedback report", async () => {
     const db = makeDb({ firstByFragment: { "SELECT id FROM orgs": { id: 7 } } });
     const req = await makeRequest({
       event: "issues",
@@ -234,19 +234,19 @@ describe("POST /api/webhook — event routing", () => {
       },
     });
     expect((await onRequestPost(makeCtx({ db, request: req }))).status).toBe(200);
-    expect(reopenNoxSpotReportFromIssue).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+    expect(reopenFeedbackReportFromIssue).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       orgId: 7, ownerId: "acme", repo: "api", issueNumber: 1, actor: "bob",
     }));
   });
 
-  it("issues.deleted on noxconnect repo also drops the features row", async () => {
+  it("issues.deleted on noxhere repo also drops the features row", async () => {
     const db = makeDb({ firstByFragment: { "SELECT id FROM orgs": { id: 7 } } });
     const req = await makeRequest({
       event: "issues",
       payload: {
         action: "deleted",
         organization: { login: "acme" },
-        repository: { name: "noxconnect" },
+        repository: { name: "noxhere" },
         issue: { number: 42 },
       },
     });

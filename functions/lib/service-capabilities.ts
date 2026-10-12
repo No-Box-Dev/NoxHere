@@ -1,4 +1,4 @@
-export const SERVICE_IDS = ["noxconnect", "noxticket", "noxfeed", "noxspot", "noxcue"] as const;
+export const SERVICE_IDS = ["noxhere", "planning", "activity", "feedback", "telemetry"] as const;
 
 export type ServiceId = (typeof SERVICE_IDS)[number];
 type ProviderId = "github" | "slack";
@@ -63,8 +63,8 @@ export interface ServiceDefinition {
 
 export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
   {
-    id: "noxconnect",
-    name: "NoxConnect",
+    id: "noxhere",
+    name: "NoxHere",
     kind: "foundation",
     focus: "Connections and shared workspace control",
     description: "Connects the organization to GitHub and Slack and provides identity, repositories, people, routing, and delivery infrastructure to every Nox service.",
@@ -77,7 +77,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "disconnect_connection", method: "POST", path: "/api/v1/integrations/connections/{provider}/disconnect", authentication: "admin", description: "Disconnect a provider or return its provider-managed action." },
       ] },
       { id: "people", name: "People", description: "Manage the people and identities used throughout the workspace.", access: "admin", operations: [
-        { id: "get_current_member", method: "GET", path: "/api/v1/me", authentication: "member", description: "Read the current organization membership and NoxConnect role." },
+        { id: "get_current_member", method: "GET", path: "/api/v1/me", authentication: "member", description: "Read the current organization membership and NoxHere role." },
         { id: "list_members", method: "GET", path: "/api/v1/members", authentication: "member", description: "List connected GitHub organization members." },
         { id: "list_teams", method: "GET", path: "/api/v1/teams", authentication: "member", description: "List connected GitHub organization teams." },
         { id: "list_people", method: "GET", path: "/api/v1/actors", authentication: "member", description: "List organization identities and voice overlays." },
@@ -108,8 +108,8 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
     ],
   },
   {
-    id: "noxticket",
-    name: "NoxTicket",
+    id: "planning",
+    name: "Planning",
     kind: "product",
     focus: "Plan and organize delivery work",
     description: "Keeps a feature backlog, workflow board, and connected specification system.",
@@ -133,8 +133,8 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "delete_task", method: "DELETE", path: "/api/v1/tasks/{id}", authentication: "member", description: "Delete a task." },
       ] },
       { id: "workflow", name: "Workflow", description: "Configure the stages used by the feature board.", access: "admin", operations: [
-        { id: "get_ticket_config", method: "GET", path: "/api/v1/services/noxticket/config", authentication: "member", description: "Read the feature repository and workflow stages." },
-        { id: "patch_ticket_config", method: "PATCH", path: "/api/v1/services/noxticket/config", authentication: "admin", description: "Update the feature repository or workflow stages with If-Match." },
+        { id: "get_ticket_config", method: "GET", path: "/api/v1/services/planning/config", authentication: "member", description: "Read the feature repository and workflow stages." },
+        { id: "patch_ticket_config", method: "PATCH", path: "/api/v1/services/planning/config", authentication: "admin", description: "Update the feature repository or workflow stages with If-Match." },
       ] },
       { id: "specs", name: "Specifications", description: "Create specifications, link them to features, and attach supporting files.", access: "member", operations: [
         { id: "list_specs", method: "GET", path: "/api/v1/specs", authentication: "member", description: "List specifications." },
@@ -149,8 +149,8 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "delete_spec_attachment", method: "DELETE", path: "/api/v1/specs/{specId}/attachments/{attachmentId}", authentication: "member", description: "Delete a specification attachment." },
       ] },
       { id: "ticket_delivery", name: "Slack delivery", description: "Send feature and backlog activity to a chosen Slack destination.", access: "admin", requires: ["slack"], operations: [
-        { id: "patch_ticket_route", method: "PATCH", path: "/api/v1/integrations/slack/routing", authentication: "admin", description: "Set the noxticket Slack route." },
-        { id: "test_ticket_route", method: "POST", path: "/api/v1/integrations/slack/test", authentication: "admin", description: "Test the noxticket Slack route." },
+        { id: "patch_ticket_route", method: "PATCH", path: "/api/v1/integrations/slack/routing", authentication: "admin", description: "Set the planning Slack route." },
+        { id: "test_ticket_route", method: "POST", path: "/api/v1/integrations/slack/test", authentication: "admin", description: "Test the planning Slack route." },
       ] },
     ],
     setupSections: [
@@ -160,8 +160,8 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
     ],
   },
   {
-    id: "noxfeed",
-    name: "NoxFeed",
+    id: "activity",
+    name: "Activity",
     kind: "product",
     focus: "Understand and communicate current work",
     description: "Combines GitHub issues, pull requests, engineering activity, narratives, and release notes into one team feed.",
@@ -169,8 +169,8 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
     optionalConnections: ["slack"],
     capabilities: [
       { id: "current_work", name: "Current work", description: "See active pull requests, reviews, and issues across tracked repositories.", access: "member", requires: ["github"], operations: [
-        { id: "get_feed", method: "GET", path: "/api/v1/feed", authentication: "member", description: "Read the normalized current-work feed." },
-        { id: "get_current_work_summary", method: "GET", path: "/api/v1/feed/current-summary", authentication: "member", description: "Read per-person pull-request and issue counts for the selected project." },
+        { id: "get_feed", method: "GET", path: "/api/v1/activity", authentication: "member", description: "Read the normalized current-work feed." },
+        { id: "get_current_work_summary", method: "GET", path: "/api/v1/activity/current-summary", authentication: "member", description: "Read per-person pull-request and issue counts for the selected project." },
         { id: "list_issues", method: "GET", path: "/api/v1/issues", authentication: "member", description: "List tracked GitHub issues." },
         { id: "get_issue", method: "GET", path: "/api/v1/issues/{repo}/{number}", authentication: "member", description: "Read one tracked issue." },
         { id: "list_pull_requests", method: "GET", path: "/api/v1/prs", authentication: "member", description: "List tracked pull requests." },
@@ -186,69 +186,69 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "get_engineer_activity", method: "GET", path: "/api/v1/engineer-activity", authentication: "member", description: "Read one engineer's normalized monthly activity." },
       ] },
       { id: "narratives", name: "Posts and release notes", description: "Create readable engineering updates and release narratives from GitHub events.", access: "admin", requires: ["github"], operations: [
-        { id: "get_feed_narratives", method: "GET", path: "/api/v1/feed", authentication: "member", description: "Read generated posts and release notes." },
-        { id: "get_default_release_prompt", method: "GET", path: "/api/v1/noxfeed/release-notes-prompt", authentication: "admin", description: "Read the server-owned default release-notes prompt." },
-        { id: "patch_feed_config", method: "PATCH", path: "/api/v1/services/noxfeed/config", authentication: "admin", description: "Update the release-notes prompt with If-Match." },
+        { id: "get_feed_narratives", method: "GET", path: "/api/v1/activity", authentication: "member", description: "Read generated posts and release notes." },
+        { id: "get_default_release_prompt", method: "GET", path: "/api/v1/activity/release-notes-prompt", authentication: "admin", description: "Read the server-owned default release-notes prompt." },
+        { id: "patch_feed_config", method: "PATCH", path: "/api/v1/services/activity/config", authentication: "admin", description: "Update the release-notes prompt with If-Match." },
         { id: "put_ai_settings", method: "PUT", path: "/api/v1/llm-settings", authentication: "admin", description: "Choose the organization AI execution mode." },
       ] },
       { id: "feed_delivery", name: "Slack delivery", description: "Route posts and release notes to separate Slack destinations.", access: "admin", requires: ["github", "slack"], operations: [
         { id: "patch_feed_routes", method: "PATCH", path: "/api/v1/integrations/slack/routing", authentication: "admin", description: "Set separate posts and release-notes routes." },
-        { id: "test_feed_route", method: "POST", path: "/api/v1/integrations/slack/test", authentication: "admin", description: "Test a NoxFeed Slack route." },
+        { id: "test_feed_route", method: "POST", path: "/api/v1/integrations/slack/test", authentication: "admin", description: "Test a Activity Slack route." },
       ] },
       { id: "feed_maintenance", name: "History maintenance", description: "Recover or regenerate bounded project history.", access: "admin", requires: ["github"], operations: [
         { id: "backfill_project_pull_requests", method: "POST", path: "/api/v1/projects/{projectId}/backfill-prs", authentication: "admin", description: "Queue bounded pull-request history for one project." },
       ] },
     ],
     setupSections: [
-      { id: "feed", name: "Feed", capabilityIds: ["current_work", "activity", "feed_maintenance"] },
+      { id: "activity", name: "Feed", capabilityIds: ["current_work", "activity", "feed_maintenance"] },
       { id: "narration", name: "Narration", capabilityIds: ["narratives"] },
       { id: "delivery", name: "Delivery", capabilityIds: ["feed_delivery"] },
     ],
   },
   {
-    id: "noxspot",
-    name: "NoxSpot",
+    id: "feedback",
+    name: "Feedback",
     kind: "product",
     focus: "Capture actionable website feedback",
     description: "Adds a website feedback widget that captures reports, screenshots, page context, and delivery details for the team.",
     requiredConnections: ["github"],
     optionalConnections: ["slack"],
     capabilities: [
-      { id: "sites", name: "Sites", description: "Register websites and manage their NoxSpot installation.", access: "admin", requires: ["github"], operations: [
-        { id: "list_sites", method: "GET", path: "/api/v1/spots/sites", authentication: "member", description: "List NoxSpot sites." },
-        { id: "create_site", method: "POST", path: "/api/v1/spots/sites", authentication: "admin", description: "Register a NoxSpot site." },
-        { id: "update_site", method: "PATCH", path: "/api/v1/spots/sites/{siteId}", authentication: "admin", description: "Update a site and its installation settings." },
-        { id: "delete_site", method: "DELETE", path: "/api/v1/spots/sites/{siteId}", authentication: "admin", description: "Delete a site and its screenshots." },
+      { id: "sites", name: "Sites", description: "Register websites and manage their Feedback installation.", access: "admin", requires: ["github"], operations: [
+        { id: "list_sites", method: "GET", path: "/api/v1/feedback/sites", authentication: "member", description: "List Feedback sites." },
+        { id: "create_site", method: "POST", path: "/api/v1/feedback/sites", authentication: "admin", description: "Register a Feedback site." },
+        { id: "update_site", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}", authentication: "admin", description: "Update a site and its installation settings." },
+        { id: "delete_site", method: "DELETE", path: "/api/v1/feedback/sites/{siteId}", authentication: "admin", description: "Delete a site and its screenshots." },
       ] },
       { id: "widget", name: "Feedback widget", description: "Configure how feedback is captured and which environments enable it.", access: "admin", requires: ["github"], operations: [
-        { id: "get_widget_config", method: "GET", path: "https://api.noxspot.dev/api/spots/public/v1/sites/{siteId}/config", authentication: "public", description: "Resolve origin-bound public widget configuration." },
-        { id: "update_widget_config", method: "PATCH", path: "/api/v1/spots/sites/{siteId}", authentication: "admin", description: "Update environments, fields, and widget behavior." },
+        { id: "get_widget_config", method: "GET", path: "https://app.noxhere.com/api/feedback/public/v1/sites/{siteId}/config", authentication: "public", description: "Resolve origin-bound public widget configuration." },
+        { id: "update_widget_config", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}", authentication: "admin", description: "Update environments, fields, and widget behavior." },
       ] },
       { id: "reports", name: "Reports and screenshots", description: "Turn captured feedback and browser context into actionable reports.", access: "member", requires: ["github"], operations: [
-        { id: "submit_report", method: "POST", path: "https://api.noxspot.dev/api/spots/public/v1/reports", authentication: "public", description: "Submit bounded website feedback from an allowed origin." },
-        { id: "submit_browser_errors", method: "POST", path: "https://api.noxspot.dev/api/spots/public/v1/errors", authentication: "public", description: "Submit a bounded batch of automatic browser errors." },
-        { id: "reopen_resolved_report", method: "POST", path: "https://api.noxspot.dev/api/spots/public/v1/resolution-responses/{token}", authentication: "reporter_token", description: "Add an optional note or screenshot and reopen the original issue through a single-use resolution link." },
-        { id: "get_resolution_template", method: "GET", path: "/api/v1/spots/sites/{siteId}/resolution-template", authentication: "admin", description: "Read the site's resolved-ticket email presentation." },
-        { id: "update_resolution_template", method: "PATCH", path: "/api/v1/spots/sites/{siteId}/resolution-template", authentication: "admin", description: "Update or reset the site's resolved-ticket email presentation with If-Match." },
-        { id: "preview_resolution_template", method: "POST", path: "/api/v1/spots/sites/{siteId}/resolution-template/preview", authentication: "admin", description: "Render a safe sample without sending email." },
-        { id: "test_resolution_template", method: "POST", path: "/api/v1/spots/sites/{siteId}/resolution-template/test", authentication: "admin", description: "Send a rendered template test through NoxConnect and Postmark." },
-        { id: "get_spot_project_overview", method: "GET", path: "/api/v1/spots/project-overview", authentication: "member", description: "Read the selected project's guest-safe feedback overview." },
-        { id: "update_spot_report", method: "PATCH", path: "/api/v1/spots/reports/{reportId}", authentication: "admin", description: "Investigate, resolve, reopen, or retry notification for a report." },
+        { id: "submit_report", method: "POST", path: "https://app.noxhere.com/api/feedback/public/v1/reports", authentication: "public", description: "Submit bounded website feedback from an allowed origin." },
+        { id: "submit_browser_errors", method: "POST", path: "https://app.noxhere.com/api/feedback/public/v1/errors", authentication: "public", description: "Submit a bounded batch of automatic browser errors." },
+        { id: "reopen_resolved_report", method: "POST", path: "https://app.noxhere.com/api/feedback/public/v1/resolution-responses/{token}", authentication: "reporter_token", description: "Add an optional note or screenshot and reopen the original issue through a single-use resolution link." },
+        { id: "get_resolution_template", method: "GET", path: "/api/v1/feedback/sites/{siteId}/resolution-template", authentication: "admin", description: "Read the site's resolved-ticket email presentation." },
+        { id: "update_resolution_template", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}/resolution-template", authentication: "admin", description: "Update or reset the site's resolved-ticket email presentation with If-Match." },
+        { id: "preview_resolution_template", method: "POST", path: "/api/v1/feedback/sites/{siteId}/resolution-template/preview", authentication: "admin", description: "Render a safe sample without sending email." },
+        { id: "test_resolution_template", method: "POST", path: "/api/v1/feedback/sites/{siteId}/resolution-template/test", authentication: "admin", description: "Send a rendered template test through NoxHere and Postmark." },
+        { id: "get_feedback_project_overview", method: "GET", path: "/api/v1/feedback/project-overview", authentication: "member", description: "Read the selected project's guest-safe feedback overview." },
+        { id: "update_feedback_report", method: "PATCH", path: "/api/v1/feedback/reports/{reportId}", authentication: "admin", description: "Investigate, resolve, reopen, or retry notification for a report." },
       ] },
-      { id: "spot_delivery", name: "Slack delivery", description: "Route each site's feedback to its own Slack destination or the shared fallback.", access: "admin", requires: ["github", "slack"], operations: [
-        { id: "update_site_delivery", method: "PATCH", path: "/api/v1/spots/sites/{siteId}", authentication: "admin", description: "Set a site's Slack workspace and channel override." },
-        { id: "retry_site_deliveries", method: "POST", path: "/api/v1/spots/sites/{siteId}/retry-deliveries", authentication: "admin", description: "Retry blocked delivery for a site." },
+      { id: "feedback_delivery", name: "Slack delivery", description: "Route each site's feedback to its own Slack destination or the shared fallback.", access: "admin", requires: ["github", "slack"], operations: [
+        { id: "update_site_delivery", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}", authentication: "admin", description: "Set a site's Slack workspace and channel override." },
+        { id: "retry_site_deliveries", method: "POST", path: "/api/v1/feedback/sites/{siteId}/retry-deliveries", authentication: "admin", description: "Retry blocked delivery for a site." },
       ] },
     ],
     setupSections: [
       { id: "sites", name: "Sites", capabilityIds: ["sites"] },
       { id: "capture", name: "Capture", capabilityIds: ["widget", "reports"] },
-      { id: "delivery", name: "Delivery", capabilityIds: ["spot_delivery"] },
+      { id: "delivery", name: "Delivery", capabilityIds: ["feedback_delivery"] },
     ],
   },
   {
-    id: "noxcue",
-    name: "NoxCue",
+    id: "telemetry",
+    name: "Telemetry",
     kind: "product",
     focus: "Monitor daily customer health",
     description: "Accepts bounded customer lifecycle and error events, derives daily health metrics, delivers scheduled summaries to Slack, and can route incidents into project GitHub issues.",
@@ -256,41 +256,41 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
     optionalConnections: ["github"],
     capabilities: [
       { id: "sources", name: "Event sources", description: "Create sources for customer lifecycle and application error events.", access: "admin", requires: ["slack"], operations: [
-        { id: "list_sources", method: "GET", path: "/api/v1/cues/sources", authentication: "admin", description: "List NoxCue sources." },
-        { id: "create_source", method: "POST", path: "/api/v1/cues/sources", authentication: "admin", description: "Create a NoxCue source." },
-        { id: "update_source", method: "PUT", path: "/api/v1/cues/sources/{sourceId}", authentication: "admin", description: "Replace one source's configuration." },
-        { id: "delete_source", method: "DELETE", path: "/api/v1/cues/sources/{sourceId}", authentication: "admin", description: "Delete a source." },
-        { id: "test_source_health", method: "POST", path: "/api/v1/cues/sources/{sourceId}/health/test", authentication: "admin", description: "Test the source's configured health destination." },
+        { id: "list_sources", method: "GET", path: "/api/v1/telemetry/sources", authentication: "admin", description: "List Telemetry sources." },
+        { id: "create_source", method: "POST", path: "/api/v1/telemetry/sources", authentication: "admin", description: "Create a Telemetry source." },
+        { id: "update_source", method: "PUT", path: "/api/v1/telemetry/sources/{sourceId}", authentication: "admin", description: "Replace one source's configuration." },
+        { id: "delete_source", method: "DELETE", path: "/api/v1/telemetry/sources/{sourceId}", authentication: "admin", description: "Delete a source." },
+        { id: "test_source_health", method: "POST", path: "/api/v1/telemetry/sources/{sourceId}/health/test", authentication: "admin", description: "Test the source's configured health destination." },
       ] },
       { id: "ingest_keys", name: "Ingest keys", description: "Create and revoke scoped keys used by applications to submit events.", access: "admin", requires: ["slack"], operations: [
-        { id: "create_ingest_key", method: "POST", path: "/api/v1/cues/sources/{sourceId}/keys", authentication: "admin", description: "Create a one-time source ingest key." },
-        { id: "revoke_ingest_key", method: "DELETE", path: "/api/v1/cues/sources/{sourceId}/keys/{keyId}", authentication: "admin", description: "Revoke an ingest key." },
-        { id: "ingest_event", method: "POST", path: "/api/v1/cues/public/events", authentication: "ingest_key", description: "Submit a bounded, idempotency-aware source event through the stable NoxConnect gateway." },
+        { id: "create_ingest_key", method: "POST", path: "/api/v1/telemetry/sources/{sourceId}/keys", authentication: "admin", description: "Create a one-time source ingest key." },
+        { id: "revoke_ingest_key", method: "DELETE", path: "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}", authentication: "admin", description: "Revoke an ingest key." },
+        { id: "ingest_event", method: "POST", path: "/api/v1/telemetry/public/events", authentication: "ingest_key", description: "Submit a bounded, idempotency-aware source event through the stable NoxHere gateway." },
       ] },
       { id: "health_metrics", name: "Health metrics", description: "View registrations, active users, errors, and derived daily health history.", access: "admin", requires: ["slack"], operations: [
-        { id: "list_cue_events", method: "GET", path: "/api/v1/cues/events", authentication: "admin", description: "List recent normalized events and delivery state." },
-        { id: "get_cue_metrics", method: "GET", path: "/api/v1/cues/metrics", authentication: "admin", description: "Read daily customer-health metrics." },
-        { id: "get_cue_project_overview", method: "GET", path: "/api/v1/cues/project-overview", authentication: "member", description: "Read the selected project's guest-safe customer-health overview." },
-        { id: "get_cue_project_dashboard", method: "GET", path: "/api/v1/projects/{projectId}/cue/dashboard", authentication: "member", description: "Read the selected project's customer-health dashboard." },
-        { id: "list_cue_project_stat_events", method: "GET", path: "/api/v1/projects/{projectId}/cue/stat-events", authentication: "member", description: "List recent accepted customer-health events for the selected project." },
-        { id: "list_cue_project_alerts", method: "GET", path: "/api/v1/projects/{projectId}/cue/alerts", authentication: "member", description: "List error incidents for the selected project." },
-        { id: "list_cue_project_alert_rules", method: "GET", path: "/api/v1/projects/{projectId}/cue/alert-rules", authentication: "member", description: "List effective alert rules for the selected project." },
-        { id: "update_cue_error_status", method: "PUT", path: "/api/v1/cues/errors/{sourceId}/{fingerprint}", authentication: "admin", description: "Acknowledge, resolve, or reopen an error incident." },
+        { id: "list_cue_events", method: "GET", path: "/api/v1/telemetry/events", authentication: "admin", description: "List recent normalized events and delivery state." },
+        { id: "get_cue_metrics", method: "GET", path: "/api/v1/telemetry/metrics", authentication: "admin", description: "Read daily customer-health metrics." },
+        { id: "get_cue_project_overview", method: "GET", path: "/api/v1/telemetry/project-overview", authentication: "member", description: "Read the selected project's guest-safe customer-health overview." },
+        { id: "get_cue_project_dashboard", method: "GET", path: "/api/v1/projects/{projectId}/telemetry/dashboard", authentication: "member", description: "Read the selected project's customer-health dashboard." },
+        { id: "list_cue_project_stat_events", method: "GET", path: "/api/v1/projects/{projectId}/telemetry/stat-events", authentication: "member", description: "List recent accepted customer-health events for the selected project." },
+        { id: "list_cue_project_alerts", method: "GET", path: "/api/v1/projects/{projectId}/telemetry/alerts", authentication: "member", description: "List error incidents for the selected project." },
+        { id: "list_cue_project_alert_rules", method: "GET", path: "/api/v1/projects/{projectId}/telemetry/alert-rules", authentication: "member", description: "List effective alert rules for the selected project." },
+        { id: "update_cue_error_status", method: "PUT", path: "/api/v1/telemetry/errors/{sourceId}/{fingerprint}", authentication: "admin", description: "Acknowledge, resolve, or reopen an error incident." },
       ] },
-      { id: "github_incidents", name: "GitHub incidents", description: "Route qualifying NoxCue incidents into the GitHub repository linked to each project.", access: "admin", requires: ["github"], operations: [
-        { id: "get_cue_github_incident_settings", method: "GET", path: "/api/v1/cues/github-issues", authentication: "admin", description: "List project repository mappings, incident policy, and open incident counts." },
-        { id: "put_cue_github_incident_settings", method: "PUT", path: "/api/v1/cues/github-issues", authentication: "admin", description: "Set the environments, repeat policy, and enabled state for one project's GitHub incidents." },
+      { id: "github_incidents", name: "GitHub incidents", description: "Route qualifying Telemetry incidents into the GitHub repository linked to each project.", access: "admin", requires: ["github"], operations: [
+        { id: "get_cue_github_incident_settings", method: "GET", path: "/api/v1/telemetry/github-issues", authentication: "admin", description: "List project repository mappings, incident policy, and open incident counts." },
+        { id: "put_cue_github_incident_settings", method: "PUT", path: "/api/v1/telemetry/github-issues", authentication: "admin", description: "Set the environments, repeat policy, and enabled state for one project's GitHub incidents." },
       ] },
-      { id: "cue_delivery", name: "Scheduled Slack delivery", description: "Choose the destination, timezone, and local delivery time for each source.", access: "admin", requires: ["slack"], operations: [
-        { id: "configure_cue_delivery", method: "PUT", path: "/api/v1/cues/sources/{sourceId}", authentication: "admin", description: "Set timezone, local digest time, workspace, and channel." },
-        { id: "test_cue_route", method: "POST", path: "/api/v1/integrations/slack/test", authentication: "admin", description: "Test the noxcue Slack route." },
+      { id: "telemetry_delivery", name: "Scheduled Slack delivery", description: "Choose the destination, timezone, and local delivery time for each source.", access: "admin", requires: ["slack"], operations: [
+        { id: "configure_telemetry_delivery", method: "PUT", path: "/api/v1/telemetry/sources/{sourceId}", authentication: "admin", description: "Set timezone, local digest time, workspace, and channel." },
+        { id: "test_cue_route", method: "POST", path: "/api/v1/integrations/slack/test", authentication: "admin", description: "Test the telemetry Slack route." },
       ] },
     ],
     setupSections: [
       { id: "sources", name: "Sources", capabilityIds: ["sources", "ingest_keys"] },
       { id: "health", name: "Health", capabilityIds: ["health_metrics"] },
       { id: "incidents", name: "GitHub incidents", capabilityIds: ["github_incidents"] },
-      { id: "delivery", name: "Delivery", capabilityIds: ["cue_delivery"] },
+      { id: "delivery", name: "Delivery", capabilityIds: ["telemetry_delivery"] },
     ],
   },
 ];
@@ -310,8 +310,8 @@ export function buildServiceCatalog({
 
   return definitions.map((definition) => {
     const runtime = runtimeStates[definition.id] ?? {
-      state: definition.id === "noxconnect" ? "ready" as const : "unavailable" as const,
-      source: definition.id === "noxconnect" ? "binding" as const : "snapshot" as const,
+      state: definition.id === "noxhere" ? "ready" as const : "unavailable" as const,
+      source: definition.id === "noxhere" ? "binding" as const : "snapshot" as const,
     };
     const runtimeReady = runtime.state === "ready";
     const requiredBlockers = definition.requiredConnections.filter((provider) => connections[provider] !== "ready");

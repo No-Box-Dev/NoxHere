@@ -6,7 +6,7 @@ function service(ok = true, buildSha = "service-sha"): Fetcher {
   return { fetch: vi.fn(async () => Response.json({ buildSha }, { status: ok ? 200 : 503 })) } as unknown as Fetcher;
 }
 
-function cueService(options: { ok?: boolean; buildSha?: string; rpc?: boolean | "hang" } = {}) {
+function telemetryService(options: { ok?: boolean; buildSha?: string; rpc?: boolean | "hang" } = {}) {
   return {
     fetch: vi.fn(async () => Response.json(
       { buildSha: options.buildSha ?? "connect-sha" },
@@ -16,9 +16,9 @@ function cueService(options: { ok?: boolean; buildSha?: string; rpc?: boolean | 
       buildGitHubIncident: options.rpc === "hang"
         ? vi.fn(() => new Promise(() => undefined))
         : vi.fn(async () => ({
-            contract: "noxcue.response",
+            contract: "telemetry.response",
             kind: "github_incident",
-            marker: "<!-- noxcue-key: production/readiness/synthetic -->",
+            marker: "<!-- telemetry-key: production/readiness/synthetic -->",
             body: "Synthetic readiness probe",
           })),
     }),
@@ -30,8 +30,8 @@ function context(options: {
   stale?: number;
   dbError?: boolean;
   serviceOk?: boolean;
-  cueBuildSha?: string;
-  cueRpc?: boolean | "hang";
+  telemetryBuildSha?: string;
+  telemetryRpc?: boolean | "hang";
 } = {}) {
   const heartbeat = options.heartbeat === undefined
     ? { status: "healthy", last_succeeded_at: new Date().toISOString() }
@@ -46,10 +46,10 @@ function context(options: {
     env: {
       DB: { prepare },
       BUILD_SHA: "connect-sha",
-      NOXTICKET_SERVICE: service(options.serviceOk ?? true),
-      NOXSPOT_RESPONSE: service(options.serviceOk ?? true),
-      NOXCUE_RESPONSE: cueService({ ok: options.serviceOk ?? true, buildSha: options.cueBuildSha, rpc: options.cueRpc }),
-      NOXFEED_RESPONSE: service(options.serviceOk ?? true),
+      PLANNING_SERVICE: service(options.serviceOk ?? true),
+      FEEDBACK_RESPONSE: service(options.serviceOk ?? true),
+      TELEMETRY_RESPONSE: telemetryService({ ok: options.serviceOk ?? true, buildSha: options.telemetryBuildSha, rpc: options.telemetryRpc }),
+      ACTIVITY_RESPONSE: service(options.serviceOk ?? true),
     },
   } as never;
 }
@@ -66,9 +66,9 @@ describe("NoxHere health", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       status: "ok",
-      checks: { database: true, scheduledWorker: true, deliveryQueue: true, noxticket: true, noxspot: true, noxcue: true, noxfeed: true },
+      checks: { database: true, scheduledWorker: true, deliveryQueue: true, planning: true, feedback: true, telemetry: true, activity: true },
       service: "noxhere",
-      versions: { noxhere: "connect-sha", noxticket: "service-sha", noxspot: "service-sha", noxcue: "connect-sha", noxfeed: "service-sha" },
+      versions: { noxhere: "connect-sha", planning: "service-sha", feedback: "service-sha", telemetry: "connect-sha", activity: "service-sha" },
     });
   });
 
@@ -97,29 +97,29 @@ describe("NoxHere health", () => {
   it("is not ready when a required product service is unavailable", async () => {
     const response = await ready(context({ serviceOk: false }));
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ checks: { noxticket: false, noxspot: false, noxcue: false, noxfeed: false } });
+    expect(await response.json()).toMatchObject({ checks: { planning: false, feedback: false, telemetry: false, activity: false } });
   });
 
-  it("is not ready when NoxCue lacks the required incident RPC", async () => {
-    const response = await ready(context({ cueRpc: false }));
+  it("is not ready when Telemetry lacks the required incident RPC", async () => {
+    const response = await ready(context({ telemetryRpc: false }));
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ checks: { noxcue: false } });
+    expect(await response.json()).toMatchObject({ checks: { telemetry: false } });
   });
 
-  it("is not ready when NoxCue is from a different release", async () => {
-    const response = await ready(context({ cueBuildSha: "older-sha" }));
+  it("is not ready when Telemetry is from a different release", async () => {
+    const response = await ready(context({ telemetryBuildSha: "older-sha" }));
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ checks: { noxcue: false }, versions: { noxcue: "older-sha" } });
+    expect(await response.json()).toMatchObject({ checks: { telemetry: false }, versions: { telemetry: "older-sha" } });
   });
 
-  it("fails readiness promptly when the NoxCue incident RPC hangs", async () => {
+  it("fails readiness promptly when the Telemetry incident RPC hangs", async () => {
     vi.useFakeTimers();
     try {
-      const pending = ready(context({ cueRpc: "hang" }));
+      const pending = ready(context({ telemetryRpc: "hang" }));
       await vi.advanceTimersByTimeAsync(2_000);
       const response = await pending;
       expect(response.status).toBe(503);
-      expect(await response.json()).toMatchObject({ checks: { noxcue: false } });
+      expect(await response.json()).toMatchObject({ checks: { telemetry: false } });
     } finally {
       vi.useRealTimers();
     }

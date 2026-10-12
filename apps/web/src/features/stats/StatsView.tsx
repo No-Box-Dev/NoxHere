@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import type { CueStat } from "../../api/contracts";
+import type { TelemetryStat } from "../../api/contracts";
 import { platformApi } from "../../api/platform";
 import { AsyncState } from "../../components/AsyncState";
 import { ListRow } from "../../components/ListRow";
@@ -64,8 +64,8 @@ function StatsDashboard({ organizationId, projectId }: StatsViewProps) {
   const [configuring, setConfiguring] = useState(false);
   const [range, setRange] = useState("30d");
   const dashboard = useQuery({
-    queryKey: ["cue", organizationId, projectId, "dashboard", range],
-    queryFn: ({ signal }) => platformApi.cueDashboard(organizationId, projectId, range, signal),
+    queryKey: ["telemetry", organizationId, projectId, "dashboard", range],
+    queryFn: ({ signal }) => platformApi.telemetryDashboard(organizationId, projectId, range, signal),
   });
 
   const exportCsv = () => {
@@ -110,8 +110,8 @@ function actionKey(label: string) {
 
 function EngagementActionsDialog({ organizationId, projectId, onClose }: StatsViewProps & { onClose: () => void }) {
   const configured = useQuery({
-    queryKey: ["cue", organizationId, projectId, "actions"],
-    queryFn: ({ signal }) => platformApi.cueActions(organizationId, projectId, signal),
+    queryKey: ["telemetry", organizationId, projectId, "actions"],
+    queryFn: ({ signal }) => platformApi.telemetryActions(organizationId, projectId, signal),
   });
   if (configured.data) return <EngagementActionsEditor organizationId={organizationId} projectId={projectId} onClose={onClose} initialActions={configured.data.actions} initialWindowDays={configured.data.windowDays} />;
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="cue-actions-dialog" role="dialog" aria-modal="true" aria-labelledby="cue-actions-title"><header><div><span className="eyebrow">STANDARD TEMPLATE</span><h2 id="cue-actions-title">Engagement actions</h2><p>Choose the three actions that show how actively people use your product.</p></div><button type="button" className="dialog-close" aria-label="Close action setup" onClick={onClose}>×</button></header><main><div className="cue-actions-loading">{configured.error instanceof Error ? configured.error.message : "Loading actions…"}</div></main><footer><button type="button" className="button" onClick={onClose}>Close</button></footer></div></div>;
@@ -125,18 +125,18 @@ function EngagementActionsEditor({ organizationId, projectId, onClose, initialAc
   const [copied, setCopied] = useState(false);
   const [windowDays, setWindowDays] = useState<7 | 14 | 30>(initialWindowDays);
   const save = useMutation({
-    mutationFn: () => platformApi.setCueActions(organizationId, projectId, actions, windowDays),
+    mutationFn: () => platformApi.setTelemetryActions(organizationId, projectId, actions, windowDays),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["cue", organizationId, projectId, "actions"] }),
-        queryClient.invalidateQueries({ queryKey: ["cue", organizationId, projectId, "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["telemetry", organizationId, projectId, "actions"] }),
+        queryClient.invalidateQueries({ queryKey: ["telemetry", organizationId, projectId, "dashboard"] }),
       ]);
       onClose();
     },
   });
   const valid = actions.length >= 1 && actions.every((action) => action.label.trim() && /^custom\.[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){0,4}$/.test(action.key.trim()))
     && new Set(actions.map((action) => action.key.trim())).size === actions.length;
-  const snippet = actions.filter((action) => action.key).map((action) => `await noxCue.activity("${action.key}", user.id);`).join("\n");
+  const snippet = actions.filter((action) => action.key).map((action) => `await telemetry.activity("${action.key}", user.id);`).join("\n");
 
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <div className="cue-actions-dialog" role="dialog" aria-modal="true" aria-labelledby="cue-actions-title">
@@ -166,7 +166,7 @@ function EngagementActionsEditor({ organizationId, projectId, onClose, initialAc
   </div>;
 }
 
-function StatCard({ stat }: { stat: CueStat }) {
+function StatCard({ stat }: { stat: TelemetryStat }) {
   const breakdown = stat.breakdown;
   if (!breakdown) return <article className="stat-card">
     <span className="stat-card-head"><b>{stat.name}</b><small>{stat.context}</small></span>
@@ -193,8 +193,8 @@ function StatEvents({ organizationId, projectId }: StatsViewProps) {
   const [type, setType] = useState("all");
   const [environment, setEnvironment] = useState("all");
   const events = useQuery({
-    queryKey: ["cue", organizationId, projectId, "stat-events"],
-    queryFn: ({ signal }) => platformApi.cueStatEvents(organizationId, projectId, signal),
+    queryKey: ["telemetry", organizationId, projectId, "stat-events"],
+    queryFn: ({ signal }) => platformApi.telemetryStatEvents(organizationId, projectId, signal),
   });
 
   const filtered = (events.data ?? []).filter((event) => (type === "all" || event.type === type) && (environment === "all" || event.environment.toLowerCase() === environment));

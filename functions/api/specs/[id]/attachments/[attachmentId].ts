@@ -1,8 +1,8 @@
 import { getCtx, jsonResponse, errorResponse } from "../../../../lib/db";
 import type { SpecAttachmentRow } from "../../../../lib/spec-attachments";
-import { callNoxTicket, type NoxTicketEnvironment } from "../../../../lib/noxticket-service";
+import { callPlanning, type PlanningEnvironment } from "../../../../lib/planning-service";
 
-interface Env extends NoxTicketEnvironment {
+interface Env extends PlanningEnvironment {
   DB: D1Database;
   SPEC_ATTACHMENTS?: R2Bucket;
 }
@@ -37,9 +37,9 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const ids = parseIds(context);
   if (!ids) return errorResponse("Invalid ids", 400);
 
-  if (context.env.NOXTICKET_SERVICE && projectId) {
+  if (context.env.PLANNING_SERVICE && projectId) {
     try {
-      const response = await context.env.NOXTICKET_SERVICE.getAttachment(
+      const response = await context.env.PLANNING_SERVICE.getAttachment(
         { orgId, projectId, userLogin: context.data.userLogin },
         ids.specId,
         ids.attachmentId,
@@ -51,8 +51,8 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       headers.set("Content-Disposition", current.replace(/^inline/, "attachment"));
       return new Response(response.body, { status: response.status, headers });
     } catch (error) {
-      console.error(JSON.stringify({ event: "noxticket_service_unavailable", error: error instanceof Error ? error.message : String(error) }));
-      return Response.json({ error: "NoxTicket is temporarily unavailable", code: "service_unavailable", service: "noxticket" }, { status: 503 });
+      console.error(JSON.stringify({ event: "planning_service_unavailable", error: error instanceof Error ? error.message : String(error) }));
+      return Response.json({ error: "Planning is temporarily unavailable", code: "service_unavailable", service: "planning" }, { status: 503 });
     }
   }
 
@@ -102,7 +102,7 @@ export async function onRequestDelete(context: Ctx): Promise<Response> {
   const ids = parseIds(context);
   if (!ids) return errorResponse("Invalid ids", 400);
 
-  const delegated = projectId ? await callNoxTicket(context.env, (service) => service.deleteAttachment(
+  const delegated = projectId ? await callPlanning(context.env, (service) => service.deleteAttachment(
     { orgId, projectId, userLogin: context.data.userLogin },
     ids.specId,
     ids.attachmentId,

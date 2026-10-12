@@ -1,4 +1,4 @@
-export const GITHUB_INSTALL_URL = "https://github.com/apps/noxconnect/installations/new";
+export const GITHUB_INSTALL_URL = "https://github.com/apps/noxhere/installations/new";
 export const GITHUB_MANAGE_URL = "https://github.com/settings/installations";
 
 const PROVIDERS = [

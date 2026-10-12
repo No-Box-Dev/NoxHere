@@ -6,11 +6,10 @@
 //   - has repos.archived_at IS NOT NULL (GitHub-side archive, captured by
 //     the `repository.archived` webhook)
 //   - has repos.retired_at IS NOT NULL (deleted, transferred, or App access removed)
-//   - is the configured "noxconnect" repo (settings.noxTicketRepo, default
-//     "noxconnect") — that repo holds features/todos/plans, not product work
+//   - is the configured "noxhere" repo (settings.planningRepo, default
+//     "noxhere") — that repo holds features/todos/plans, not product work
 //
 // Returns a Set<string> of repo names to exclude.
-import { normalizeNoxSettings } from "./naming-compat.js";
 
 export async function getInactiveRepoSet(db, orgId, orgLogin, projectId = null) {
   const [settingsRow, archivedRows, ghArchivedRows] = await db.batch([
@@ -42,24 +41,24 @@ export async function getInactiveRepoSet(db, orgId, orgLogin, projectId = null) 
   ]);
 
   const exclude = new Set();
-  let noxTicketRepo = "noxconnect";
+  let planningRepo = "noxhere";
   const settingsData = settingsRow.results?.[0]?.data;
   if (settingsData) {
     let parsed;
     try {
-      parsed = normalizeNoxSettings(JSON.parse(settingsData));
+      parsed = JSON.parse(settingsData);
     } catch (e) {
-      // Fail loud rather than silently reverting noxTicketRepo to "noxconnect":
+      // Fail loud rather than silently reverting planningRepo to "noxhere":
       // that would re-expose the features-tracking repo in every issue/PR
       // surface the moment a corrupt row landed in D1.
-      console.error(`[noxconnect] Corrupt settings JSON for org ${orgId}:`, e?.message ?? e);
+      console.error(`[noxhere] Corrupt settings JSON for org ${orgId}:`, e?.message ?? e);
       throw new Error(`Corrupt settings JSON for org ${orgId} — fix the row in the config table before proceeding`);
     }
-    if (typeof parsed.noxTicketRepo === "string" && parsed.noxTicketRepo.trim()) {
-      noxTicketRepo = parsed.noxTicketRepo.trim();
+    if (typeof parsed.planningRepo === "string" && parsed.planningRepo.trim()) {
+      planningRepo = parsed.planningRepo.trim();
     }
   }
-  exclude.add(noxTicketRepo);
+  exclude.add(planningRepo);
 
   for (const row of archivedRows.results ?? []) {
     if (row.repo) exclude.add(row.repo);
@@ -72,10 +71,10 @@ export async function getInactiveRepoSet(db, orgId, orgLogin, projectId = null) 
   return exclude;
 }
 
-// Resolve the configured noxconnect repo name (settings.noxTicketRepo, default
-// "noxconnect"). The noxconnect repo holds features/todos/plans, not product work,
+// Resolve the configured noxhere repo name (settings.planningRepo, default
+// "noxhere"). The noxhere repo holds features/todos/plans, not product work,
 // and is read separately from the product-repo sync.
-export async function getNoxTicketRepoName(db, orgId, projectId = null) {
+export async function getPlanningRepoName(db, orgId, projectId = null) {
   const settingsRow = await db
     .prepare(projectId
       ? "SELECT data FROM project_config WHERE org_id = ? AND project_id = ? AND key = 'settings'"
@@ -85,16 +84,16 @@ export async function getNoxTicketRepoName(db, orgId, projectId = null) {
   if (settingsRow?.data) {
     let parsed;
     try {
-      parsed = normalizeNoxSettings(JSON.parse(settingsRow.data));
+      parsed = JSON.parse(settingsRow.data);
     } catch (e) {
-      console.error(`[noxconnect] Corrupt settings JSON for org ${orgId}:`, e?.message ?? e);
+      console.error(`[noxhere] Corrupt settings JSON for org ${orgId}:`, e?.message ?? e);
       throw new Error(`Corrupt settings JSON for org ${orgId} — fix the row in the config table before proceeding`);
     }
-    if (typeof parsed.noxTicketRepo === "string" && parsed.noxTicketRepo.trim()) {
-      return parsed.noxTicketRepo.trim();
+    if (typeof parsed.planningRepo === "string" && parsed.planningRepo.trim()) {
+      return parsed.planningRepo.trim();
     }
   }
-  return "noxconnect";
+  return "noxhere";
 }
 
 export async function filterInactive(db, orgId, orgLogin, repoNames) {

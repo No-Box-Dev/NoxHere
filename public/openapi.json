@@ -26,14 +26,14 @@
     }
   ],
   "paths": {
-    "/api/spots/public/v1/sites/{siteId}/config": {
+    "/api/feedback/public/v1/sites/{siteId}/config": {
       "get": {
-        "operationId": "getPublicNoxSpotConfig",
+        "operationId": "getPublicFeedbackConfig",
         "summary": "Get effective public widget configuration for the request origin",
         "security": [],
         "servers": [
           {
-            "url": "https://api.noxspot.dev"
+            "url": "https://app.noxhere.com"
           }
         ],
         "parameters": [
@@ -81,15 +81,15 @@
         "description": "Get effective public widget configuration for the request origin. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below."
       }
     },
-    "/api/spots/public/v1/reports": {
+    "/api/feedback/public/v1/reports": {
       "post": {
-        "operationId": "submitPublicNoxSpotReport",
-        "summary": "Submit a public NoxSpot capture",
-        "description": "Submit feedback from an origin-bound widget. NoxSpot cannot inspect a host website's login session: the host must explicitly pass its signed-in user through NoxSpot.identify(...) or NoxSpot.init({ getReporter }). reporterEmail is retained for resolution mail only when notifyOnResolution is true. An optional HTTPS reporterAvatarUrl is retained as private report metadata and is never copied into GitHub.",
+        "operationId": "submitPublicFeedbackReport",
+        "summary": "Submit a public Feedback capture",
+        "description": "Submit feedback from an origin-bound widget. Feedback cannot inspect a host website's login session: the host must explicitly pass its signed-in user through Feedback.identify(...) or Feedback.init({ getReporter }). reporterEmail is retained for resolution mail only when notifyOnResolution is true. An optional HTTPS reporterAvatarUrl is retained as private report metadata and is never copied into GitHub.",
         "security": [],
         "servers": [
           {
-            "url": "https://api.noxspot.dev"
+            "url": "https://app.noxhere.com"
           }
         ],
         "requestBody": {
@@ -97,7 +97,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxSpotReport"
+                "$ref": "#/components/schemas/FeedbackReport"
               }
             }
           }
@@ -171,14 +171,14 @@
         "x-change-safety": "write_not_safe_to_retry"
       }
     },
-    "/api/spots/public/v1/errors": {
+    "/api/feedback/public/v1/errors": {
       "post": {
-        "operationId": "submitPublicNoxSpotErrors",
+        "operationId": "submitPublicFeedbackErrors",
         "summary": "Submit a bounded batch of automatic browser errors",
         "security": [],
         "servers": [
           {
-            "url": "https://api.noxspot.dev"
+            "url": "https://app.noxhere.com"
           }
         ],
         "responses": {
@@ -238,7 +238,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxSpotErrorBatch"
+                "$ref": "#/components/schemas/FeedbackErrorBatch"
               }
             }
           }
@@ -251,15 +251,15 @@
         "description": "Submit a bounded batch of automatic browser errors. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below."
       }
     },
-    "/api/spots/public/v1/resolution-responses/{token}": {
+    "/api/feedback/public/v1/resolution-responses/{token}": {
       "post": {
-        "operationId": "reopenResolvedNoxSpotReport",
+        "operationId": "reopenResolvedFeedbackReport",
         "summary": "Reopen a resolved report with optional reporter context",
-        "description": "Consumes the single-use token from a NoxSpot resolution email, adds an optional response and screenshot to the original GitHub issue, and reopens the issue.",
+        "description": "Consumes the single-use token from a Feedback resolution email, adds an optional response and screenshot to the original GitHub issue, and reopens the issue.",
         "security": [],
         "servers": [
           {
-            "url": "https://api.noxspot.dev"
+            "url": "https://app.noxhere.com"
           }
         ],
         "parameters": [
@@ -730,17 +730,17 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/feed": {
+    "/api/v1/activity": {
       "get": {
-        "operationId": "getNoxFeed",
+        "operationId": "getActivity",
         "summary": "Get normalized current work, posts, and release notes",
         "responses": {
           "200": {
-            "description": "NoxFeed response",
+            "description": "Activity response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FeedPage"
+                  "$ref": "#/components/schemas/ActivityPage"
                 }
               }
             }
@@ -843,7 +843,7 @@
         ],
         "description": "Get normalized current work, posts, and release notes. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxfeed:read"
+        "x-automation-scope": "activity:read"
       }
     },
     "/api/v1/api-tokens": {
@@ -1774,7 +1774,7 @@
     "/api/v1/projects/routing": {
       "get": {
         "operationId": "getProjectRouting",
-        "summary": "List NoxConnect projects, repository assignments, and product destinations",
+        "summary": "List NoxHere projects, repository assignments, and product destinations",
         "responses": {
           "200": {
             "description": "Project routing model",
@@ -1822,7 +1822,7 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
-        "description": "List NoxConnect projects, repository assignments, and product destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List NoxHere projects, repository assignments, and product destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       }
     },
@@ -1901,10 +1901,10 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/spots/sites": {
+    "/api/v1/feedback/sites": {
       "get": {
-        "operationId": "listNoxSpotSites",
-        "summary": "List NoxSpot sites",
+        "operationId": "listFeedbackSites",
+        "summary": "List Feedback sites",
         "responses": {
           "200": {
             "description": "Sites",
@@ -1955,19 +1955,19 @@
             "noxApiToken": []
           }
         ],
-        "description": "List NoxSpot sites. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List Feedback sites. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxspot:read"
+        "x-automation-scope": "feedback:read"
       },
       "post": {
-        "operationId": "createNoxSpotSite",
-        "summary": "Create a NoxSpot site",
+        "operationId": "createFeedbackSite",
+        "summary": "Create a Feedback site",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxSpotSiteCreate"
+                "$ref": "#/components/schemas/FeedbackSiteCreate"
               }
             }
           }
@@ -2023,15 +2023,15 @@
             "noxApiToken": []
           }
         ],
-        "description": "Create a NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Create a Feedback site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxspot:write"
+        "x-automation-scope": "feedback:write"
       }
     },
-    "/api/v1/spots/sites/{siteId}": {
+    "/api/v1/feedback/sites/{siteId}": {
       "patch": {
-        "operationId": "updateNoxSpotSite",
-        "summary": "Update a NoxSpot site including its channel override",
+        "operationId": "updateFeedbackSite",
+        "summary": "Update a Feedback site including its channel override",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2045,7 +2045,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxSpotSitePatch"
+                "$ref": "#/components/schemas/FeedbackSitePatch"
               }
             }
           }
@@ -2096,13 +2096,13 @@
             "noxApiToken": []
           }
         ],
-        "description": "Update a NoxSpot site including its channel override. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Update a Feedback site including its channel override. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxspot:write"
+        "x-automation-scope": "feedback:write"
       },
       "delete": {
-        "operationId": "deleteNoxSpotSite",
-        "summary": "Delete a NoxSpot site and its screenshots",
+        "operationId": "deleteFeedbackSite",
+        "summary": "Delete a Feedback site and its screenshots",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2157,15 +2157,15 @@
             "noxApiToken": []
           }
         ],
-        "description": "Delete a NoxSpot site and its screenshots. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Delete a Feedback site and its screenshots. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxspot:write"
+        "x-automation-scope": "feedback:write"
       }
     },
-    "/api/v1/cues/sources": {
+    "/api/v1/telemetry/sources": {
       "get": {
-        "operationId": "listNoxCueSources",
-        "summary": "List NoxCue sources, linked projects, and ingest keys",
+        "operationId": "listTelemetrySources",
+        "summary": "List Telemetry sources, linked projects, and ingest keys",
         "responses": {
           "200": {
             "description": "Sources",
@@ -2216,19 +2216,19 @@
             "noxApiToken": []
           }
         ],
-        "description": "List NoxCue sources, linked projects, and ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List Telemetry sources, linked projects, and ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       },
       "post": {
-        "operationId": "createNoxCueSource",
-        "summary": "Create a NoxCue event source",
+        "operationId": "createTelemetrySource",
+        "summary": "Create a Telemetry event source",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueSourceInput"
+                "$ref": "#/components/schemas/TelemetrySourceInput"
               }
             }
           }
@@ -2284,15 +2284,15 @@
             "noxApiToken": []
           }
         ],
-        "description": "Create a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Create a Telemetry event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}": {
+    "/api/v1/telemetry/sources/{sourceId}": {
       "put": {
-        "operationId": "updateNoxCueSource",
-        "summary": "Update a NoxCue event source",
+        "operationId": "updateTelemetrySource",
+        "summary": "Update a Telemetry event source",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2306,7 +2306,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueSourceInput"
+                "$ref": "#/components/schemas/TelemetrySourceInput"
               }
             }
           }
@@ -2357,13 +2357,13 @@
             "noxApiToken": []
           }
         ],
-        "description": "Update a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Update a Telemetry event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       },
       "delete": {
-        "operationId": "deleteNoxCueSource",
-        "summary": "Delete a NoxCue source and revoke its keys",
+        "operationId": "deleteTelemetrySource",
+        "summary": "Delete a Telemetry source and revoke its keys",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2418,15 +2418,15 @@
             "noxApiToken": []
           }
         ],
-        "description": "Delete a NoxCue source and revoke its keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Delete a Telemetry source and revoke its keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/keys": {
+    "/api/v1/telemetry/sources/{sourceId}/keys": {
       "get": {
-        "operationId": "listNoxCueKeys",
-        "summary": "List NoxCue key metadata, usage, and audit history",
+        "operationId": "listTelemetryKeys",
+        "summary": "List Telemetry key metadata, usage, and audit history",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2480,13 +2480,13 @@
             "noxApiToken": []
           }
         ],
-        "description": "List NoxCue key metadata, usage, and audit history. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List Telemetry key metadata, usage, and audit history. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       },
       "post": {
-        "operationId": "createNoxCueKey",
-        "summary": "Create a one-time NoxCue browser or server ingest key",
+        "operationId": "createTelemetryKey",
+        "summary": "Create a one-time Telemetry browser or server ingest key",
         "description": "The key value is returned once. Do not log it.",
         "parameters": [
           {
@@ -2572,13 +2572,13 @@
           }
         ],
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/keys/{keyId}": {
+    "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}": {
       "delete": {
-        "operationId": "revokeNoxCueKey",
-        "summary": "Revoke a NoxCue ingest key",
+        "operationId": "revokeTelemetryKey",
+        "summary": "Revoke a Telemetry ingest key",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2636,15 +2636,15 @@
             "noxApiToken": []
           }
         ],
-        "description": "Revoke a NoxCue ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Revoke a Telemetry ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate": {
+    "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}/rotate": {
       "post": {
-        "operationId": "rotateNoxCueKey",
-        "summary": "Rotate a NoxCue ingest key with a 24-hour overlap",
+        "operationId": "rotateTelemetryKey",
+        "summary": "Rotate a Telemetry ingest key with a 24-hour overlap",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2705,15 +2705,15 @@
             "noxApiToken": []
           }
         ],
-        "description": "Rotate a NoxCue ingest key with a 24-hour overlap. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Rotate a Telemetry ingest key with a 24-hour overlap. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/cards": {
+    "/api/v1/telemetry/sources/{sourceId}/cards": {
       "get": {
-        "operationId": "listNoxCueCards",
-        "summary": "List source-scoped NoxCue report card configuration",
+        "operationId": "listTelemetryCards",
+        "summary": "List source-scoped Telemetry report card configuration",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2770,13 +2770,13 @@
             "noxApiToken": []
           }
         ],
-        "description": "List source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List source-scoped Telemetry report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       },
       "put": {
-        "operationId": "updateNoxCueCards",
-        "summary": "Replace source-scoped NoxCue report card configuration",
+        "operationId": "updateTelemetryCards",
+        "summary": "Replace source-scoped Telemetry report card configuration",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2790,7 +2790,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueCardSelection"
+                "$ref": "#/components/schemas/TelemetryCardSelection"
               }
             }
           }
@@ -2844,14 +2844,14 @@
             "noxApiToken": []
           }
         ],
-        "description": "Replace source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Replace source-scoped Telemetry report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/features": {
+    "/api/v1/telemetry/sources/{sourceId}/features": {
       "get": {
-        "operationId": "listNoxCueFeatures",
+        "operationId": "listTelemetryFeatures",
         "summary": "List standard and registered custom features with health",
         "description": "Linked sources share their project's custom catalog. Unlinked sources have an isolated source catalog.",
         "parameters": [
@@ -2908,11 +2908,11 @@
           }
         ],
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       },
       "post": {
-        "operationId": "createNoxCueCustomFeature",
-        "summary": "Register a custom NoxCue feature before ingest",
+        "operationId": "createTelemetryCustomFeature",
+        "summary": "Register a custom Telemetry feature before ingest",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -2926,7 +2926,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueCustomFeatureInput"
+                "$ref": "#/components/schemas/TelemetryCustomFeatureInput"
               }
             }
           }
@@ -2977,14 +2977,14 @@
             "noxApiToken": []
           }
         ],
-        "description": "Register a custom NoxCue feature before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Register a custom Telemetry feature before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/features/{featureKey}": {
+    "/api/v1/telemetry/sources/{sourceId}/features/{featureKey}": {
       "put": {
-        "operationId": "updateNoxCueCustomFeature",
+        "operationId": "updateTelemetryCustomFeature",
         "summary": "Update or pause a registered custom feature",
         "parameters": [
           {
@@ -3002,7 +3002,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueCustomFeatureUpdate"
+                "$ref": "#/components/schemas/TelemetryCustomFeatureUpdate"
               }
             }
           }
@@ -3058,10 +3058,10 @@
         ],
         "description": "Update or pause a registered custom feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       },
       "delete": {
-        "operationId": "deleteNoxCueCustomFeature",
+        "operationId": "deleteTelemetryCustomFeature",
         "summary": "Delete a custom feature definition while retaining historical results",
         "parameters": [
           {
@@ -3125,12 +3125,12 @@
         ],
         "description": "Delete a custom feature definition while retaining historical results. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/custom-metrics": {
+    "/api/v1/telemetry/sources/{sourceId}/custom-metrics": {
       "get": {
-        "operationId": "listNoxCueCustomMetrics",
+        "operationId": "listTelemetryCustomMetrics",
         "summary": "List registered custom activity metrics and event status",
         "parameters": [
           {
@@ -3187,10 +3187,10 @@
         ],
         "description": "List registered custom activity metrics and event status. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       },
       "post": {
-        "operationId": "createNoxCueCustomMetric",
+        "operationId": "createTelemetryCustomMetric",
         "summary": "Register a custom activity metric before ingest",
         "parameters": [
           {
@@ -3205,7 +3205,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueCustomMetricInput"
+                "$ref": "#/components/schemas/TelemetryCustomMetricInput"
               }
             }
           }
@@ -3258,12 +3258,12 @@
         ],
         "description": "Register a custom activity metric before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}": {
+    "/api/v1/telemetry/sources/{sourceId}/custom-metrics/{metricKey}": {
       "put": {
-        "operationId": "updateNoxCueCustomMetric",
+        "operationId": "updateTelemetryCustomMetric",
         "summary": "Rename or pause a registered custom activity metric",
         "parameters": [
           {
@@ -3281,7 +3281,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueCustomMetricUpdate"
+                "$ref": "#/components/schemas/TelemetryCustomMetricUpdate"
               }
             }
           }
@@ -3337,10 +3337,10 @@
         ],
         "description": "Rename or pause a registered custom activity metric. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       },
       "delete": {
-        "operationId": "deleteNoxCueCustomMetric",
+        "operationId": "deleteTelemetryCustomMetric",
         "summary": "Delete a custom metric definition while retaining historical events",
         "parameters": [
           {
@@ -3404,12 +3404,12 @@
         ],
         "description": "Delete a custom metric definition while retaining historical events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/projects/{projectId}/metrics": {
+    "/api/v1/telemetry/projects/{projectId}/metrics": {
       "get": {
-        "operationId": "getNoxCueProjectMetrics",
+        "operationId": "getTelemetryProjectMetrics",
         "summary": "List selectable metrics and their active event status for one project",
         "parameters": [
           {
@@ -3466,10 +3466,10 @@
         ],
         "description": "List selectable metrics and their active event status for one project. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       },
       "put": {
-        "operationId": "updateNoxCueProjectMetrics",
+        "operationId": "updateTelemetryProjectMetrics",
         "summary": "Choose metrics included in one project's daily report",
         "parameters": [
           {
@@ -3484,7 +3484,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueProjectMetricSelection"
+                "$ref": "#/components/schemas/TelemetryProjectMetricSelection"
               }
             }
           }
@@ -3537,13 +3537,13 @@
         ],
         "description": "Choose metrics included in one project's daily report. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
-    "/api/v1/cues/metrics": {
+    "/api/v1/telemetry/metrics": {
       "get": {
-        "operationId": "getNoxCueDailyHealth",
-        "summary": "Get stored NoxCue-derived user metrics and digest state",
+        "operationId": "getTelemetryDailyHealth",
+        "summary": "Get stored Telemetry-derived user metrics and digest state",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -3603,9 +3603,9 @@
             "noxApiToken": []
           }
         ],
-        "description": "Get stored NoxCue-derived user metrics and digest state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Get stored Telemetry-derived user metrics and digest state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       }
     },
     "/api/v1/slack/connections/{connectionId}": {
@@ -4524,7 +4524,7 @@
     "/api/v1/features": {
       "get": {
         "operationId": "listFeatures",
-        "summary": "List NoxTicket features",
+        "summary": "List Planning features",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -4583,7 +4583,7 @@
             "organization": []
           }
         ],
-        "description": "List NoxTicket features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List Planning features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -4804,7 +4804,7 @@
     "/api/v1/specs": {
       "get": {
         "operationId": "listSpecs",
-        "summary": "List NoxTicket specifications",
+        "summary": "List Planning specifications",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -4870,7 +4870,7 @@
             "organization": []
           }
         ],
-        "description": "List NoxTicket specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List Planning specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional"
       },
       "post": {
@@ -5580,7 +5580,7 @@
         ],
         "description": "List tracked GitHub issues. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxfeed:read"
+        "x-automation-scope": "activity:read"
       }
     },
     "/api/v1/issues/{repo}/{number}": {
@@ -5648,7 +5648,7 @@
         ],
         "description": "Get one tracked GitHub issue. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxfeed:read"
+        "x-automation-scope": "activity:read"
       }
     },
     "/api/v1/prs": {
@@ -5757,7 +5757,7 @@
         ],
         "description": "List tracked pull requests. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxfeed:read"
+        "x-automation-scope": "activity:read"
       }
     },
     "/api/v1/prs/{repo}/{number}": {
@@ -5825,7 +5825,7 @@
         ],
         "description": "Get one tracked pull request. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxfeed:read"
+        "x-automation-scope": "activity:read"
       }
     },
     "/api/v1/prs/close": {
@@ -6117,10 +6117,10 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/spots/sites/{siteId}/retry-deliveries": {
+    "/api/v1/feedback/sites/{siteId}/retry-deliveries": {
       "post": {
-        "operationId": "retryNoxSpotDeliveries",
-        "summary": "Retry blocked deliveries for one NoxSpot site",
+        "operationId": "retryFeedbackDeliveries",
+        "summary": "Retry blocked deliveries for one Feedback site",
         "x-required-role": "admin",
         "parameters": [
           {
@@ -6179,15 +6179,15 @@
             "noxApiToken": []
           }
         ],
-        "description": "Retry blocked deliveries for one NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Retry blocked deliveries for one Feedback site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxspot:write"
+        "x-automation-scope": "feedback:write"
       }
     },
-    "/api/v1/cues/events": {
+    "/api/v1/telemetry/events": {
       "get": {
-        "operationId": "listNoxCueEvents",
-        "summary": "List recent NoxCue events and Slack delivery state",
+        "operationId": "listTelemetryEvents",
+        "summary": "List recent Telemetry events and Slack delivery state",
         "responses": {
           "200": {
             "description": "Recent events",
@@ -6260,18 +6260,18 @@
             "noxApiToken": []
           }
         ],
-        "description": "List recent NoxCue events and Slack delivery state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "List recent Telemetry events and Slack delivery state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:read"
+        "x-automation-scope": "telemetry:read"
       }
     },
-    "/api/v1/cues/public/events": {
+    "/api/v1/telemetry/public/events": {
       "post": {
-        "operationId": "ingestNoxCueEvent",
-        "summary": "Submit one standardized NoxCue event through the stable NoxConnect gateway",
+        "operationId": "ingestTelemetryEvent",
+        "summary": "Submit one standardized Telemetry event through the stable NoxHere gateway",
         "security": [
           {
-            "noxCueKey": []
+            "telemetryKey": []
           }
         ],
         "requestBody": {
@@ -6281,19 +6281,19 @@
               "schema": {
                 "oneOf": [
                   {
-                    "$ref": "#/components/schemas/NoxCueUserEvent"
+                    "$ref": "#/components/schemas/TelemetryUserEvent"
                   },
                   {
-                    "$ref": "#/components/schemas/NoxCueError"
+                    "$ref": "#/components/schemas/TelemetryError"
                   },
                   {
-                    "$ref": "#/components/schemas/NoxCueFeatureResult"
+                    "$ref": "#/components/schemas/TelemetryFeatureResult"
                   },
                   {
-                    "$ref": "#/components/schemas/NoxCueActivityEvent"
+                    "$ref": "#/components/schemas/TelemetryActivityEvent"
                   },
                   {
-                    "$ref": "#/components/schemas/NoxCueTrackedEvent"
+                    "$ref": "#/components/schemas/TelemetryTrackedEvent"
                   }
                 ]
               },
@@ -6333,7 +6333,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NoxCueIngestResponse"
+                  "$ref": "#/components/schemas/TelemetryIngestResponse"
                 }
               }
             }
@@ -6377,7 +6377,7 @@
       "post": {
         "operationId": "startNativeDeviceAuthorization",
         "summary": "Start native GitHub authorization",
-        "description": "Returns an opaque NoxConnect device handle plus the GitHub verification URI and user code.",
+        "description": "Returns an opaque NoxHere device handle plus the GitHub verification URI and user code.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -6391,7 +6391,7 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "noxfeed-mac"
+                    "const": "activity-mac"
                   }
                 }
               }
@@ -6449,7 +6449,7 @@
       "post": {
         "operationId": "pollNativeDeviceAuthorization",
         "summary": "Poll native GitHub authorization",
-        "description": "NoxConnect completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials.",
+        "description": "NoxHere completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -6464,7 +6464,7 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "noxfeed-mac"
+                    "const": "activity-mac"
                   },
                   "device_code": {
                     "type": "string",
@@ -6600,7 +6600,7 @@
       "post": {
         "operationId": "exchangeLegacyNativeCredential",
         "summary": "Upgrade a legacy native session",
-        "description": "Temporary one-time migration route for older NoxFeed releases. Normal sign-in uses the brokered device flow.",
+        "description": "Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -6615,7 +6615,7 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "noxfeed-mac"
+                    "const": "activity-mac"
                   },
                   "access_token": {
                     "type": "string",
@@ -6739,11 +6739,11 @@
         "x-change-safety": "destructive"
       }
     },
-    "/api/v1/cues/github-issues": {
+    "/api/v1/telemetry/github-issues": {
       "get": {
-        "operationId": "getNoxCueGitHubIssueSettings",
+        "operationId": "getTelemetryGitHubIssueSettings",
         "summary": "List project GitHub-incident settings",
-        "description": "Returns each active project's repository mapping, routing policy, and open NoxCue incident count.",
+        "description": "Returns each active project's repository mapping, routing policy, and open Telemetry incident count.",
         "x-required-role": "admin",
         "responses": {
           "200": {
@@ -6795,16 +6795,16 @@
         "x-change-safety": "safe_read"
       },
       "put": {
-        "operationId": "putNoxCueGitHubIssueSettings",
+        "operationId": "putTelemetryGitHubIssueSettings",
         "summary": "Update project GitHub-incident settings",
-        "description": "Controls whether NoxCue opens or updates a GitHub issue for incidents in the selected project and environments.",
+        "description": "Controls whether Telemetry opens or updates a GitHub issue for incidents in the selected project and environments.",
         "x-required-role": "admin",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoxCueGitHubIssueSettingsUpdate"
+                "$ref": "#/components/schemas/TelemetryGitHubIssueSettingsUpdate"
               }
             }
           }
@@ -7245,7 +7245,7 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/cues/sources/{sourceId}/health/test": {
+    "/api/v1/telemetry/sources/{sourceId}/health/test": {
       "parameters": [
         {
           "name": "sourceId",
@@ -7258,8 +7258,8 @@
         }
       ],
       "post": {
-        "operationId": "testNoxCueSource",
-        "summary": "Test a NoxCue source destination",
+        "operationId": "testTelemetrySource",
+        "summary": "Test a Telemetry source destination",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "requestBody": {
           "required": false,
@@ -7326,7 +7326,7 @@
           }
         ],
         "x-project-scope": "optional",
-        "x-automation-scope": "noxcue:write"
+        "x-automation-scope": "telemetry:write"
       }
     },
     "/api/v1/engineer-stats": {
@@ -7390,7 +7390,7 @@
     "/api/v1/events": {
       "get": {
         "operationId": "listFeedEvents",
-        "summary": "List detailed NoxFeed events",
+        "summary": "List detailed Activity events",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -7459,7 +7459,7 @@
       ],
       "get": {
         "operationId": "getFeedEvent",
-        "summary": "Read one detailed NoxFeed event",
+        "summary": "Read one detailed Activity event",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -7818,7 +7818,7 @@
     "/api/v1/me": {
       "get": {
         "operationId": "getCurrentMember",
-        "summary": "Read membership and NoxConnect role for the current organization",
+        "summary": "Read membership and NoxHere role for the current organization",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -7931,10 +7931,10 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/noxfeed/release-notes-prompt": {
+    "/api/v1/activity/release-notes-prompt": {
       "get": {
-        "operationId": "getNoxFeedDefaultPrompt",
-        "summary": "Read the server-owned NoxFeed release-notes prompt",
+        "operationId": "getActivityDefaultPrompt",
+        "summary": "Read the server-owned Activity release-notes prompt",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -8111,7 +8111,7 @@
       ],
       "post": {
         "operationId": "backfillProjectPullRequests",
-        "summary": "Queue bounded NoxFeed pull-request history",
+        "summary": "Queue bounded Activity pull-request history",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "requestBody": {
           "required": false,
@@ -8849,10 +8849,10 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/cues/project-overview": {
+    "/api/v1/telemetry/project-overview": {
       "get": {
-        "operationId": "getNoxCueProjectOverview",
-        "summary": "Read a guest-safe NoxCue project overview",
+        "operationId": "getTelemetryProjectOverview",
+        "summary": "Read a guest-safe Telemetry project overview",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -8908,10 +8908,10 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/spots/reports/{reportId}": {
+    "/api/v1/feedback/reports/{reportId}": {
       "patch": {
-        "operationId": "updateNoxSpotReport",
-        "summary": "Update a NoxSpot report status",
+        "operationId": "updateFeedbackReport",
+        "summary": "Update a Feedback report status",
         "description": "Mark a report open, investigating, or resolved and optionally send or retry the reporter's consented resolution email.",
         "parameters": [
           {
@@ -9013,10 +9013,10 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/spots/project-overview": {
+    "/api/v1/feedback/project-overview": {
       "get": {
-        "operationId": "getNoxSpotProjectOverview",
-        "summary": "Read a guest-safe NoxSpot project overview",
+        "operationId": "getFeedbackProjectOverview",
+        "summary": "Read a guest-safe Feedback project overview",
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
         "responses": {
           "200": {
@@ -9072,11 +9072,11 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/cues/errors/{sourceId}/{fingerprint}": {
+    "/api/v1/telemetry/errors/{sourceId}/{fingerprint}": {
       "put": {
-        "operationId": "updateNoxCueErrorStatus",
+        "operationId": "updateTelemetryErrorStatus",
         "summary": "Update an error incident status",
-        "description": "Acknowledge, resolve, or reopen one NoxCue error group in the optional project context.",
+        "description": "Acknowledge, resolve, or reopen one Telemetry error group in the optional project context.",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9172,11 +9172,11 @@
         "x-change-safety": "write_not_safe_to_retry"
       }
     },
-    "/api/v1/spots/sites/{siteId}/resolution-template": {
+    "/api/v1/feedback/sites/{siteId}/resolution-template": {
       "get": {
-        "operationId": "getNoxSpotResolutionTemplate",
-        "summary": "Read the effective NoxSpot resolution email template",
-        "description": "Returns the site's custom content and appearance or the NoxConnect default plus a revision for conditional updates. Organization admins and project-scoped API tokens can use the same endpoint.",
+        "operationId": "getFeedbackResolutionTemplate",
+        "summary": "Read the effective Feedback resolution email template",
+        "description": "Returns the site's custom content and appearance or the NoxHere default plus a revision for conditional updates. Organization admins and project-scoped API tokens can use the same endpoint.",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9197,7 +9197,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NoxSpotResolutionTemplateDocument"
+                  "$ref": "#/components/schemas/FeedbackResolutionTemplateDocument"
                 }
               }
             }
@@ -9237,13 +9237,13 @@
             "noxApiToken": []
           }
         ],
-        "x-automation-scope": "noxspot:read",
+        "x-automation-scope": "feedback:read",
         "x-change-safety": "safe_read"
       },
       "patch": {
-        "operationId": "updateNoxSpotResolutionTemplate",
-        "summary": "Update or reset a NoxSpot resolution email template",
-        "description": "Send the revision returned by GET as If-Match. Set template to null to restore the default. This is the self-service configuration used by the NoxConnect UI and is also available to project-scoped API tokens. Postmark is transport-only; NoxConnect validates, renders, and snapshots the template used for each resolution.",
+        "operationId": "updateFeedbackResolutionTemplate",
+        "summary": "Update or reset a Feedback resolution email template",
+        "description": "Send the revision returned by GET as If-Match. Set template to null to restore the default. This is the self-service configuration used by the NoxHere UI and is also available to project-scoped API tokens. Postmark is transport-only; NoxHere validates, renders, and snapshots the template used for each resolution.",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9280,7 +9280,7 @@
                   "template": {
                     "oneOf": [
                       {
-                        "$ref": "#/components/schemas/NoxSpotResolutionTemplate"
+                        "$ref": "#/components/schemas/FeedbackResolutionTemplate"
                       },
                       {
                         "type": "null"
@@ -9298,7 +9298,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NoxSpotResolutionTemplateDocument"
+                  "$ref": "#/components/schemas/FeedbackResolutionTemplateDocument"
                 }
               }
             }
@@ -9345,13 +9345,13 @@
             "noxApiToken": []
           }
         ],
-        "x-automation-scope": "noxspot:write",
+        "x-automation-scope": "feedback:write",
         "x-change-safety": "conditional_write"
       }
     },
-    "/api/v1/spots/sites/{siteId}/resolution-template/preview": {
+    "/api/v1/feedback/sites/{siteId}/resolution-template/preview": {
       "post": {
-        "operationId": "previewNoxSpotResolutionTemplate",
+        "operationId": "previewFeedbackResolutionTemplate",
         "summary": "Render a safe preview of a draft resolution email template",
         "parameters": [
           {
@@ -9379,7 +9379,7 @@
                 ],
                 "properties": {
                   "template": {
-                    "$ref": "#/components/schemas/NoxSpotResolutionTemplate"
+                    "$ref": "#/components/schemas/FeedbackResolutionTemplate"
                   }
                 }
               }
@@ -9434,15 +9434,15 @@
             "noxApiToken": []
           }
         ],
-        "x-automation-scope": "noxspot:write",
+        "x-automation-scope": "feedback:write",
         "x-change-safety": "write_not_safe_to_retry"
       }
     },
-    "/api/v1/spots/sites/{siteId}/resolution-template/test": {
+    "/api/v1/feedback/sites/{siteId}/resolution-template/test": {
       "post": {
-        "operationId": "testNoxSpotResolutionTemplate",
-        "summary": "Send a draft resolution email through NoxConnect and Postmark",
-        "description": "The draft does not need to be saved. NoxConnect renders the safe email and sends it through its private Postmark-backed email capability.",
+        "operationId": "testFeedbackResolutionTemplate",
+        "summary": "Send a draft resolution email through NoxHere and Postmark",
+        "description": "The draft does not need to be saved. NoxHere renders the safe email and sends it through its private Postmark-backed email capability.",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9475,7 +9475,7 @@
                     "maxLength": 254
                   },
                   "template": {
-                    "$ref": "#/components/schemas/NoxSpotResolutionTemplate"
+                    "$ref": "#/components/schemas/FeedbackResolutionTemplate"
                   }
                 }
               }
@@ -9532,7 +9532,7 @@
             "noxApiToken": []
           }
         ],
-        "x-automation-scope": "noxspot:write",
+        "x-automation-scope": "feedback:write",
         "x-change-safety": "write_not_safe_to_retry"
       }
     },
@@ -9605,10 +9605,10 @@
         "x-project-scope": "optional"
       }
     },
-    "/api/v1/projects/{projectId}/cue/dashboard": {
+    "/api/v1/projects/{projectId}/telemetry/dashboard": {
       "get": {
-        "operationId": "getCueProjectDashboard",
-        "summary": "Read the project Cue dashboard",
+        "operationId": "getTelemetryProjectDashboard",
+        "summary": "Read the project Telemetry dashboard",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9650,7 +9650,7 @@
         "tags": [
           "Stats"
         ],
-        "description": "Read the project Cue dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Read the project Telemetry dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9666,10 +9666,10 @@
         "x-change-safety": "safe_read"
       }
     },
-    "/api/v1/projects/{projectId}/cue/stat-events": {
+    "/api/v1/projects/{projectId}/telemetry/stat-events": {
       "get": {
-        "operationId": "getCueProjectStatEvents",
-        "summary": "Read project Cue statistic events",
+        "operationId": "getTelemetryProjectStatEvents",
+        "summary": "Read project Telemetry statistic events",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9711,7 +9711,7 @@
         "tags": [
           "Stats"
         ],
-        "description": "Read project Cue statistic events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Read project Telemetry statistic events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9727,10 +9727,10 @@
         "x-change-safety": "safe_read"
       }
     },
-    "/api/v1/projects/{projectId}/cue/alerts": {
+    "/api/v1/projects/{projectId}/telemetry/alerts": {
       "get": {
-        "operationId": "getCueProjectAlerts",
-        "summary": "Read project Cue alerts",
+        "operationId": "getTelemetryProjectAlerts",
+        "summary": "Read project Telemetry alerts",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9772,7 +9772,7 @@
         "tags": [
           "Incidents"
         ],
-        "description": "Read project Cue alerts. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Read project Telemetry alerts. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9788,10 +9788,10 @@
         "x-change-safety": "safe_read"
       }
     },
-    "/api/v1/projects/{projectId}/cue/alert-rules": {
+    "/api/v1/projects/{projectId}/telemetry/alert-rules": {
       "get": {
-        "operationId": "getCueProjectAlertRules",
-        "summary": "Read project Cue alert rules",
+        "operationId": "getTelemetryProjectAlertRules",
+        "summary": "Read project Telemetry alert rules",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -9833,7 +9833,7 @@
         "tags": [
           "Incidents"
         ],
-        "description": "Read project Cue alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Read project Telemetry alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -9849,7 +9849,7 @@
         "x-change-safety": "safe_read"
       }
     },
-    "/api/v1/feed/current-summary": {
+    "/api/v1/activity/current-summary": {
       "get": {
         "operationId": "getCurrentWorkSummary",
         "summary": "Read per-person current-work counts for the selected project",
@@ -10627,10 +10627,10 @@
         "x-change-safety": "write_not_safe_to_retry"
       }
     },
-    "/api/v1/projects/{projectId}/cue/actions": {
+    "/api/v1/projects/{projectId}/telemetry/actions": {
       "get": {
-        "operationId": "getCueProjectActions",
-        "summary": "Read project Cue actions",
+        "operationId": "getTelemetryProjectActions",
+        "summary": "Read project Telemetry actions",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -10645,7 +10645,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CueActions"
+                  "$ref": "#/components/schemas/TelemetryActions"
                 }
               }
             }
@@ -10672,7 +10672,7 @@
         "tags": [
           "Stats"
         ],
-        "description": "Read project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Read project Telemetry actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -10688,8 +10688,8 @@
         "x-change-safety": "safe_read"
       },
       "put": {
-        "operationId": "updateCueProjectActions",
-        "summary": "Update project Cue actions",
+        "operationId": "updateTelemetryProjectActions",
+        "summary": "Update project Telemetry actions",
         "parameters": [
           {
             "$ref": "#/components/parameters/projectContext"
@@ -10714,7 +10714,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CueActions"
+                  "$ref": "#/components/schemas/TelemetryActions"
                 }
               }
             }
@@ -10741,7 +10741,7 @@
         "tags": [
           "Stats"
         ],
-        "description": "Update project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "description": "Update project Telemetry actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-authentication": "member",
         "x-project-scope": "optional",
         "security": [
@@ -11107,15 +11107,15 @@
         "x-change-safety": "idempotent_with_key"
       }
     },
-    "/api/spots/public/v1/sites/{siteId}/members": {
+    "/api/feedback/public/v1/sites/{siteId}/members": {
       "get": {
-        "operationId": "getPublicNoxSpotMembers",
-        "summary": "List public NoxSpot reporter choices for the request origin",
+        "operationId": "getPublicFeedbackMembers",
+        "summary": "List public Feedback reporter choices for the request origin",
         "description": "Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.",
         "security": [],
         "servers": [
           {
-            "url": "https://api.noxspot.dev"
+            "url": "https://app.noxhere.com"
           }
         ],
         "parameters": [
@@ -11199,7 +11199,7 @@
         "in": "header",
         "name": "X-Org"
       },
-      "noxCueKey": {
+      "telemetryKey": {
         "type": "apiKey",
         "in": "header",
         "name": "X-Nox-Ingest-Key"
@@ -11220,7 +11220,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "nox_at_…",
-        "description": "Short-lived first-party native application session issued by NoxHere. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in NoxConnect."
+        "description": "Short-lived first-party native application session issued by NoxHere. Refresh with a rotating nox_rt_ credential; provider credentials remain encrypted in NoxHere."
       },
       "csrfProof": {
         "type": "apiKey",
@@ -11351,11 +11351,11 @@
         "schema": {
           "type": "string",
           "enum": [
-            "noxconnect",
-            "noxticket",
-            "noxfeed",
-            "noxspot",
-            "noxcue"
+            "noxhere",
+            "planning",
+            "activity",
+            "feedback",
+            "telemetry"
           ]
         }
       },
@@ -11505,25 +11505,25 @@
                   "null"
                 ]
               },
-              "noxcue": {
+              "telemetry": {
                 "type": [
                   "string",
                   "null"
                 ]
               },
-              "noxticket": {
+              "planning": {
                 "type": [
                   "string",
                   "null"
                 ]
               },
-              "noxfeed_posts": {
+              "activity_posts": {
                 "type": [
                   "string",
                   "null"
                 ]
               },
-              "noxfeed_release_notes": {
+              "activity_release_notes": {
                 "type": [
                   "string",
                   "null"
@@ -11543,10 +11543,10 @@
             "type": "string",
             "enum": [
               "fallback",
-              "noxcue",
-              "noxticket",
-              "noxfeed_posts",
-              "noxfeed_release_notes"
+              "telemetry",
+              "planning",
+              "activity_posts",
+              "activity_release_notes"
             ]
           },
           "channelId": {
@@ -11715,7 +11715,7 @@
           }
         }
       },
-      "NoxSpotSiteCreate": {
+      "FeedbackSiteCreate": {
         "type": "object",
         "required": [
           "name",
@@ -11749,7 +11749,7 @@
           }
         }
       },
-      "NoxSpotSitePatch": {
+      "FeedbackSitePatch": {
         "type": "object",
         "minProperties": 1,
         "properties": {
@@ -11789,19 +11789,19 @@
             "type": "array",
             "maxItems": 50,
             "items": {
-              "$ref": "#/components/schemas/NoxSpotEnvironment"
+              "$ref": "#/components/schemas/FeedbackEnvironment"
             }
           },
           "blocks": {
             "type": "array",
             "maxItems": 30,
             "items": {
-              "$ref": "#/components/schemas/NoxSpotBlock"
+              "$ref": "#/components/schemas/FeedbackBlock"
             }
           }
         }
       },
-      "NoxSpotEnvironment": {
+      "FeedbackEnvironment": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -11858,7 +11858,7 @@
           }
         }
       },
-      "NoxSpotBlock": {
+      "FeedbackBlock": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -11914,7 +11914,7 @@
           }
         }
       },
-      "NoxSpotReport": {
+      "FeedbackReport": {
         "type": "object",
         "required": [
           "siteId",
@@ -12030,7 +12030,7 @@
           }
         }
       },
-      "NoxCueSourceInput": {
+      "TelemetrySourceInput": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -12152,7 +12152,7 @@
           }
         }
       },
-      "NoxCueCardSelection": {
+      "TelemetryCardSelection": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -12202,7 +12202,7 @@
           }
         }
       },
-      "NoxCueCustomFeatureInput": {
+      "TelemetryCustomFeatureInput": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -12230,7 +12230,7 @@
           }
         }
       },
-      "NoxCueCustomFeatureUpdate": {
+      "TelemetryCustomFeatureUpdate": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -12254,7 +12254,7 @@
           }
         }
       },
-      "NoxCueCustomMetricInput": {
+      "TelemetryCustomMetricInput": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -12275,7 +12275,7 @@
           }
         }
       },
-      "NoxCueCustomMetricUpdate": {
+      "TelemetryCustomMetricUpdate": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -12323,7 +12323,7 @@
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Whether this repository-mirror row is explicitly enabled as a NoxConnect routing project"
+            "description": "Whether this repository-mirror row is explicitly enabled as a NoxHere routing project"
           },
           "repositories": {
             "type": "array",
@@ -12338,29 +12338,29 @@
             "type": "object",
             "additionalProperties": false,
             "required": [
-              "noxfeedPosts",
-              "noxfeedReleaseNotes",
-              "noxCue",
-              "noxCueAlerts"
+              "activityPosts",
+              "activityReleaseNotes",
+              "telemetry",
+              "telemetryAlerts"
             ],
             "properties": {
-              "noxfeedPosts": {
+              "activityPosts": {
                 "$ref": "#/components/schemas/ProjectDestination"
               },
-              "noxfeedReleaseNotes": {
+              "activityReleaseNotes": {
                 "$ref": "#/components/schemas/ProjectDestination"
               },
-              "noxCue": {
+              "telemetry": {
                 "$ref": "#/components/schemas/ProjectDestination"
               },
-              "noxCueAlerts": {
+              "telemetryAlerts": {
                 "$ref": "#/components/schemas/ProjectDestination"
               }
             }
           }
         }
       },
-      "NoxCueProjectMetricSelection": {
+      "TelemetryProjectMetricSelection": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -13084,7 +13084,7 @@
           },
           "config": {
             "type": "object",
-            "description": "Shape depends on service. NoxSpot and NoxCue configuration is resource-scoped and linked from links.resources."
+            "description": "Shape depends on service. Feedback and Telemetry configuration is resource-scoped and linked from links.resources."
           },
           "links": {
             "$ref": "#/components/schemas/ServiceLinks"
@@ -13094,22 +13094,22 @@
       "ServiceConfigPatch": {
         "anyOf": [
           {
-            "$ref": "#/components/schemas/NoxConnectConfigPatch"
+            "$ref": "#/components/schemas/NoxHereConfigPatch"
           },
           {
-            "$ref": "#/components/schemas/NoxTicketConfigPatch"
+            "$ref": "#/components/schemas/PlanningConfigPatch"
           },
           {
-            "$ref": "#/components/schemas/NoxFeedConfigPatch"
+            "$ref": "#/components/schemas/ActivityConfigPatch"
           },
           {
             "type": "object",
             "additionalProperties": false,
-            "description": "NoxSpot and NoxCue have resource-scoped configuration; use links.resources."
+            "description": "Feedback and Telemetry have resource-scoped configuration; use links.resources."
           }
         ]
       },
-      "NoxConnectConfigPatch": {
+      "NoxHereConfigPatch": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -13117,16 +13117,16 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "noxticket": {
+              "planning": {
                 "type": "boolean"
               },
-              "noxfeed": {
+              "activity": {
                 "type": "boolean"
               },
-              "noxspot": {
+              "feedback": {
                 "type": "boolean"
               },
-              "noxcue": {
+              "telemetry": {
                 "type": "boolean"
               }
             }
@@ -13140,7 +13140,7 @@
           }
         }
       },
-      "NoxTicketConfigPatch": {
+      "PlanningConfigPatch": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -13186,7 +13186,7 @@
           }
         }
       },
-      "NoxFeedConfigPatch": {
+      "ActivityConfigPatch": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -13271,11 +13271,11 @@
       "ServiceId": {
         "type": "string",
         "enum": [
-          "noxconnect",
-          "noxticket",
-          "noxfeed",
-          "noxspot",
-          "noxcue"
+          "noxhere",
+          "planning",
+          "activity",
+          "feedback",
+          "telemetry"
         ]
       },
       "ServiceLinks": {
@@ -13332,11 +13332,11 @@
           "id": {
             "type": "string",
             "enum": [
-              "noxconnect",
-              "noxticket",
-              "noxfeed",
-              "noxspot",
-              "noxcue"
+              "noxhere",
+              "planning",
+              "activity",
+              "feedback",
+              "telemetry"
             ]
           },
           "name": {
@@ -13634,7 +13634,7 @@
           }
         }
       },
-      "NoxCueActivityEvent": {
+      "TelemetryActivityEvent": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -13680,7 +13680,7 @@
           }
         }
       },
-      "NoxCueTrackedEvent": {
+      "TelemetryTrackedEvent": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -13742,7 +13742,7 @@
           }
         }
       },
-      "NoxCueFeatureResult": {
+      "TelemetryFeatureResult": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -13814,7 +13814,7 @@
           }
         }
       },
-      "NoxCueError": {
+      "TelemetryError": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -13886,7 +13886,7 @@
           }
         }
       },
-      "NoxCueUserEvent": {
+      "TelemetryUserEvent": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -13958,14 +13958,14 @@
                 "type": "object",
                 "additionalProperties": false,
                 "required": [
-                  "noxfeed",
-                  "noxconnect"
+                  "activity",
+                  "noxhere"
                 ],
                 "properties": {
-                  "noxfeed": {
+                  "activity": {
                     "$ref": "#/components/schemas/ManagedAiServiceStatus"
                   },
-                  "noxconnect": {
+                  "noxhere": {
                     "$ref": "#/components/schemas/ManagedAiServiceStatus"
                   }
                 }
@@ -14027,7 +14027,7 @@
           }
         ]
       },
-      "NoxSpotErrorBatch": {
+      "FeedbackErrorBatch": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -14069,7 +14069,7 @@
           }
         }
       },
-      "NoxCueIngestResponse": {
+      "TelemetryIngestResponse": {
         "type": "object",
         "required": [
           "accepted",
@@ -14127,7 +14127,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 240,
-            "description": "One enabled NoxConnect project. The token cannot access resources assigned to another project."
+            "description": "One enabled NoxHere project. The token cannot access resources assigned to another project."
           },
           "scopes": {
             "type": "array",
@@ -14136,7 +14136,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(services:read|developer-feedback:write|slack:write|(noxfeed|noxspot|noxcue):(read|write))$"
+              "pattern": "^(services:read|developer-feedback:write|slack:write|(activity|feedback|telemetry):(read|write))$"
             }
           },
           "expiresInDays": {
@@ -14147,7 +14147,7 @@
           }
         }
       },
-      "NoxCueGitHubIssueSettingsUpdate": {
+      "TelemetryGitHubIssueSettingsUpdate": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -14388,7 +14388,7 @@
             "$ref": "#/components/schemas/ApiRecord"
           }
         ],
-        "description": "NoxTicket feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project."
+        "description": "Planning feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project."
       },
       "FeatureList": {
         "type": "array",
@@ -14402,7 +14402,7 @@
             "$ref": "#/components/schemas/ApiRecord"
           }
         ],
-        "description": "NoxTicket specification with its project, workflow state, content, and archive metadata."
+        "description": "Planning specification with its project, workflow state, content, and archive metadata."
       },
       "SpecList": {
         "type": "object",
@@ -14442,7 +14442,7 @@
           }
         }
       },
-      "NoxSpotResolutionTemplate": {
+      "FeedbackResolutionTemplate": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -14551,9 +14551,9 @@
             }
           }
         },
-        "description": "Site-level content and brand presentation for NoxSpot resolution emails. Every site can configure this in NoxConnect or with a project-scoped API token. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxConnect owns the evidence rules, AI safety prompt, safe HTML rendering, verified sender address, and reopen behavior."
+        "description": "Site-level content and brand presentation for Feedback resolution emails. Every site can configure this in NoxHere or with a project-scoped API token. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxHere owns the evidence rules, AI safety prompt, safe HTML rendering, verified sender address, and reopen behavior."
       },
-      "NoxSpotResolutionTemplateDocument": {
+      "FeedbackResolutionTemplateDocument": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -14564,10 +14564,10 @@
         ],
         "properties": {
           "template": {
-            "$ref": "#/components/schemas/NoxSpotResolutionTemplate"
+            "$ref": "#/components/schemas/FeedbackResolutionTemplate"
           },
           "defaults": {
-            "$ref": "#/components/schemas/NoxSpotResolutionTemplate"
+            "$ref": "#/components/schemas/FeedbackResolutionTemplate"
           },
           "usingDefault": {
             "type": "boolean"
@@ -14834,7 +14834,7 @@
           }
         }
       },
-      "CueAction": {
+      "TelemetryAction": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -14859,7 +14859,7 @@
           }
         }
       },
-      "CueActions": {
+      "TelemetryActions": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -14884,7 +14884,7 @@
             "type": "array",
             "maxItems": 3,
             "items": {
-              "$ref": "#/components/schemas/CueAction"
+              "$ref": "#/components/schemas/TelemetryAction"
             }
           },
           "snippet": {
@@ -15332,6 +15332,129 @@
             }
           }
         }
+      },
+      "ActivityActor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "login",
+          "name",
+          "avatarUrl"
+        ],
+        "properties": {
+          "login": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          }
+        }
+      },
+      "ActivityPullRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "number",
+          "title",
+          "url"
+        ],
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ActivityEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "createdAt",
+          "actor",
+          "repo",
+          "summary",
+          "technicalSummary",
+          "pr"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "opened",
+              "merged",
+              "release-notes"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/ActivityActor"
+          },
+          "repo": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "technicalSummary": {
+            "type": "string"
+          },
+          "pr": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ActivityPullRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ActivityPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "events",
+          "nextCursor"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityEvent"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     "responses": {
@@ -15397,7 +15520,7 @@
     }
   },
   "externalDocs": {
-    "description": "NoxConnect developer documentation",
+    "description": "NoxHere developer documentation",
     "url": "/developers"
   },
   "tags": [

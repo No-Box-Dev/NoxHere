@@ -37,7 +37,7 @@ describe("developer documentation", () => {
 
   it("documents the supported NoxHere auth boundary and stable Incidents gateway", () => {
     expect(guide).toContain("does not issue third-party OAuth client credentials");
-    expect(guide).toContain("POST /api/v1/cues/public/events");
+    expect(guide).toContain("POST /api/v1/telemetry/public/events");
     expect(guide).toContain("honor `Retry-After`");
     expect(guide).toContain("Raw GitHub bearer tokens are rejected");
     expect(guide).toContain("opaque HttpOnly NoxHere session cookie");
@@ -45,8 +45,8 @@ describe("developer documentation", () => {
 
   it("gives agents an explicit supervised and headless connection flow", () => {
     expect(html).toContain('id="cli"');
-    expect(html).toContain("npm install --global noxconnect");
-    expect(html).toContain("noxconnect use YOUR_ORGANIZATION/YOUR_PROJECT");
+    expect(html).toContain("npm install --global noxhere");
+    expect(html).toContain("noxhere use YOUR_ORGANIZATION/YOUR_PROJECT");
     expect(html).toContain("Do not automate the human login");
     expect(guide).toContain("Supervised local agent");
     expect(guide).toContain("Headless agent or CI");
@@ -66,22 +66,22 @@ describe("developer documentation", () => {
   it("uses NoxHere and capability names as the public vocabulary", () => {
     expect(html).toContain("NoxHere API — Developer documentation");
     expect(html).toContain("NoxHere is one product");
-    expect(html).not.toContain("NoxConnect is the public product");
+    expect(html).not.toContain("NoxHere is the public product");
     expect(guide).toContain("opaque HttpOnly NoxHere session cookie");
-    expect(discovery).toContain("NoxHere is the public product");
+    expect(discovery).toContain("NoxHere provides the identity, CLI, API");
   });
 
   it("documents the minimal, environment-scoped Incidents SDK compatibility flow", () => {
-    expect(html).toContain('id="noxcue-sdk"');
+    expect(html).toContain('id="telemetry-sdk"');
     expect(html).toContain("npm install @noxhere/sdk");
     expect(html).toContain('from <span class="token-string">"@noxhere/sdk/telemetry/browser"</span>');
     expect(html).toContain('from <span class="token-string">"@noxhere/sdk/telemetry/server"</span>');
-    expect(html).toContain("await noxcue.auth.signup");
-    expect(html).toContain("await userCue.user.registered");
-    expect(html).not.toContain("noxcue.identify({ id: user.id");
+    expect(html).toContain("await telemetry.auth.signup");
+    expect(html).toContain("await userTelemetry.user.registered");
+    expect(html).not.toContain("telemetry.identify({ id: user.id");
     expect(html).toContain("identityHashKey: process.env.NOXHERE_IDENTITY_HASH_KEY!");
     expect(html).toContain("Browser activity is count-only");
-    expect(html).toContain("noxcue.forUser(user.id)");
+    expect(html).toContain("telemetry.forUser(user.id)");
     expect(html).toContain("Never ship a <code>nox_secret_…</code> key to a browser");
   });
 
@@ -101,11 +101,11 @@ describe("developer documentation", () => {
     expect(script).toContain("source X-Nox-Ingest-Key");
   });
 
-  it("makes the NoxSpot signed-in identity integration explicit", () => {
-    expect(html).toContain('id="noxspot-identity"');
+  it("makes the Feedback signed-in identity integration explicit", () => {
+    expect(html).toContain('id="feedback-identity"');
     expect(html).toContain("cannot read a host website's login session");
-    expect(html).toContain("NoxSpot.identify({");
-    expect(html).toContain("NoxSpot.identify(null)");
+    expect(html).toContain("Feedback.identify({");
+    expect(html).toContain("Feedback.identify(null)");
     expect(html).toContain("getUser");
     expect(html).toContain("avatarUrl");
     expect(html).toContain("profile-picture URL");

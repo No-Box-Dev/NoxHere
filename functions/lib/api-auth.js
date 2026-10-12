@@ -9,7 +9,7 @@ export function canReadProjectResource(data) {
 
 export async function apiTokenProjectResource(db, pathname, orgId, searchParams = new URLSearchParams(), selectedProjectId = /** @type {string | null} */ (null)) {
   pathname = compatibilityApiPath(pathname);
-  if (pathname === "/api/cues/metrics" && searchParams.get("sourceId")) {
+  if (pathname === "/api/telemetry/metrics" && searchParams.get("sourceId")) {
     const row = await db.prepare(
       "SELECT project_id FROM cue_sources WHERE org_id = ? AND id = ?",
     ).bind(orgId, searchParams.get("sourceId")).first();
@@ -22,7 +22,7 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
   // whose ID is "routing", causing valid scoped requests to be concealed as
   // cross-project access.
   match = pathname.match(
-    /^\/api\/projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|cue)(?:\/|$)/,
+    /^\/api\/projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|telemetry)(?:\/|$)/,
   );
   if (match) return { kind: "project", projectId: decodeURIComponent(match[1]) };
 
@@ -38,7 +38,7 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
   if (match) {
     const number = Number.parseInt(decodeURIComponent(match[1]), 10);
     if (!Number.isInteger(number)) return { kind: "resource", projectId: null };
-    // Project-scoped Planning records live in the split NoxTicket service.
+    // Project-scoped Planning records live in the split Planning service.
     // The local features table is only a compatibility projection and can be
     // absent or stale, so it cannot authorize or reject the service record.
     if (selectedProjectId) return { kind: "resource", projectId: selectedProjectId };
@@ -65,7 +65,7 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
     return { kind: "resource", projectId: row?.project_id ?? null };
   }
 
-  match = pathname.match(/^\/api\/spots\/sites\/([^/]+)/);
+  match = pathname.match(/^\/api\/feedback\/sites\/([^/]+)/);
   if (match) {
     const row = await db.prepare(
       "SELECT project_id FROM spot_sites WHERE org_id = ? AND id = ?",
@@ -73,7 +73,7 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
     return { kind: "resource", projectId: row?.project_id ?? null };
   }
 
-  match = pathname.match(/^\/api\/spots\/reports\/([^/]+)/);
+  match = pathname.match(/^\/api\/feedback\/reports\/([^/]+)/);
   if (match) {
     const row = await db.prepare(
       "SELECT project_id FROM spot_reports WHERE org_id = ? AND id = ?",
@@ -81,10 +81,10 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
     return { kind: "resource", projectId: row?.project_id ?? null };
   }
 
-  match = pathname.match(/^\/api\/cues\/projects\/([^/]+)/);
+  match = pathname.match(/^\/api\/telemetry\/projects\/([^/]+)/);
   if (match) return { kind: "project", projectId: decodeURIComponent(match[1]) };
 
-  match = pathname.match(/^\/api\/cues\/sources\/([^/]+)/);
+  match = pathname.match(/^\/api\/telemetry\/sources\/([^/]+)/);
   if (match) {
     const row = await db.prepare(
       "SELECT project_id FROM cue_sources WHERE org_id = ? AND id = ?",
@@ -103,13 +103,13 @@ export function projectScopedApiTokenPathSupported(pathname, method) {
   pathname = compatibilityApiPath(pathname);
   if (verb === "GET" && /^\/api\/projects\/[^/]+\/(?:activity|incidents|issues|feedback)$/.test(pathname)) return true;
   if (verb === "PATCH" && /^\/api\/projects\/[^/]+\/incidents\/inc_[a-f0-9]{32}$/.test(pathname)) return true;
-  if (verb === "GET" && pathname === "/api/v1/feed") return true;
+  if (verb === "GET" && pathname === "/api/v1/activity") return true;
   if (verb === "GET" && /^\/api\/(?:issues|prs)(?:\/|$)/.test(pathname)) return true;
   if (verb === "POST" && /^\/api\/projects\/[^/]+\/backfill-prs$/.test(pathname)) return true;
-  if (/^\/api\/spots\/sites(?:\/|$)/.test(pathname)) return true;
-  if (verb === "PATCH" && /^\/api\/spots\/reports\/[^/]+$/.test(pathname)) return true;
-  if (/^\/api\/cues\/sources(?:\/|$)/.test(pathname)) return true;
-  if (verb === "GET" && (pathname === "/api/cues/events" || pathname === "/api/cues/metrics")) return true;
-  if (/^\/api\/cues\/projects\/[^/]+\/metrics$/.test(pathname)) return true;
+  if (/^\/api\/feedback\/sites(?:\/|$)/.test(pathname)) return true;
+  if (verb === "PATCH" && /^\/api\/feedback\/reports\/[^/]+$/.test(pathname)) return true;
+  if (/^\/api\/telemetry\/sources(?:\/|$)/.test(pathname)) return true;
+  if (verb === "GET" && (pathname === "/api/telemetry/events" || pathname === "/api/telemetry/metrics")) return true;
+  if (/^\/api\/telemetry\/projects\/[^/]+\/metrics$/.test(pathname)) return true;
   return false;
 }

@@ -45,7 +45,7 @@ function context({ provider, isAdmin = true } = {}) {
   };
 }
 
-describe("NoxConnect provider API", () => {
+describe("NoxHere provider API", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns a versioned credential-free provider registry", async () => {
@@ -71,7 +71,7 @@ describe("NoxConnect provider API", () => {
       provider: "github",
       mode: "redirect",
       status: "requires_user_action",
-      url: "https://github.com/apps/noxconnect/installations/new",
+      url: "https://github.com/apps/noxhere/installations/new",
       userAction: expect.objectContaining({ type: "open_url" }),
       resume: expect.objectContaining({ href: "/api/v1/integrations/setup" }),
     }));

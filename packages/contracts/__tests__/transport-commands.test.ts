@@ -72,7 +72,7 @@ describe("unified transport contracts", () => {
     expect(() => parseTransportCommand({ ...BASE, operation: "email.send", input: {} })).toThrow();
     expect(() => parseTransportCommand({
       ...BASE,
-      route: "noxspot",
+      route: "retired-product",
       operation: "slack.message.send",
       input: { message: { text: "Message", blocks: [] } },
     })).toThrow();

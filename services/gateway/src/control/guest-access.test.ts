@@ -16,33 +16,33 @@ function dbWithGrants(results: unknown[]): D1Database {
 
 describe("guest access", () => {
   const servicePaths = {
-    noxticket: "/api/v1/features",
-    noxfeed: "/api/v1/feed",
-    noxspot: "/api/v1/spots/sites",
-    noxcue: "/api/v1/cues/sources",
+    planning: "/api/v1/features",
+    activity: "/api/v1/activity",
+    feedback: "/api/v1/feedback/sites",
+    telemetry: "/api/v1/telemetry/sources",
   } as const;
 
   it("combines tool grants and lets a project grant override them", async () => {
     const loaded = await loadGuestAccess(dbWithGrants([
-      { id: "one", scope_type: "tool", project_id: "p1", service: "noxspot" },
-      { id: "two", scope_type: "tool", project_id: "p1", service: "noxcue" },
+      { id: "one", scope_type: "tool", project_id: "p1", service: "feedback" },
+      { id: "two", scope_type: "tool", project_id: "p1", service: "telemetry" },
       { id: "three", scope_type: "project", project_id: "p2", service: null },
     ]), "principal", 7);
 
     expect(loaded?.access).toEqual({
       organizationWide: false,
-      projects: { p1: ["noxspot", "noxcue"], p2: null },
+      projects: { p1: ["feedback", "telemetry"], p2: null },
     });
-    expect(guestCanAccess(loaded!.access, "p1", "noxspot")).toBe(true);
-    expect(guestCanAccess(loaded!.access, "p1", "noxfeed")).toBe(false);
-    expect(guestCanAccess(loaded!.access, "p2", "noxticket")).toBe(true);
+    expect(guestCanAccess(loaded!.access, "p1", "feedback")).toBe(true);
+    expect(guestCanAccess(loaded!.access, "p1", "activity")).toBe(false);
+    expect(guestCanAccess(loaded!.access, "p2", "planning")).toBe(true);
   });
 
   it("makes an organization invite valid for every project and tool", async () => {
     const loaded = await loadGuestAccess(dbWithGrants([
       { id: "org", scope_type: "organization", project_id: null, service: null },
     ]), "principal", 7);
-    expect(guestCanAccess(loaded!.access, "any-project", "noxfeed")).toBe(true);
+    expect(guestCanAccess(loaded!.access, "any-project", "activity")).toBe(true);
   });
 
   it("returns null when the identity has no active invitation grants", async () => {
@@ -77,17 +77,17 @@ describe("guest access", () => {
   });
 
   it("requires a selector for a project-restricted guest", async () => {
-    const request = new Request("https://app.noxhere.com/api/v1/feed", { headers: { "X-Org": "acme" } });
+    const request = new Request("https://app.noxhere.com/api/v1/activity", { headers: { "X-Org": "acme" } });
     const response = validateGuestRequest(request, { organizationWide: false, projects: { p1: null } });
     expect(response?.status).toBe(400);
     await expect(response?.json()).resolves.toMatchObject({ error: { code: "project_required" } });
   });
 
   it("accepts header, query, and path project selectors", () => {
-    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/feed?project_id=p1"))).toBe("p1");
-    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/cues/projects/p2/metrics"))).toBe("p2");
+    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/activity?project_id=p1"))).toBe("p1");
+    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/telemetry/projects/p2/metrics"))).toBe("p2");
     expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/projects/p4/routing"))).toBe("p4");
-    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/feed", { headers: { "X-Project-ID": "p3" } }))).toBe("p3");
+    expect(requestProjectId(new Request("https://app.noxhere.com/api/v1/activity", { headers: { "X-Project-ID": "p3" } }))).toBe("p3");
   });
 
   it("does not interpret project collection routes as project IDs", () => {

@@ -1,7 +1,7 @@
 import { getCtx, jsonResponse, errorResponse } from "../../../lib/db";
-import { callNoxTicket, type NoxTicketEnvironment } from "../../../lib/noxticket-service";
+import { callPlanning, type PlanningEnvironment } from "../../../lib/planning-service";
 
-interface Env extends NoxTicketEnvironment {
+interface Env extends PlanningEnvironment {
   DB: D1Database;
 }
 
@@ -32,7 +32,7 @@ async function setArchived(context: Ctx, archive: boolean): Promise<Response> {
   const id = Number.parseInt(context.params.id, 10);
   if (!Number.isFinite(id) || id <= 0) return errorResponse("Invalid spec id", 400);
 
-  const delegated = projectId ? await callNoxTicket(context.env, (service) => service.setSpecArchived(
+  const delegated = projectId ? await callPlanning(context.env, (service) => service.setSpecArchived(
     { orgId, projectId, userLogin: context.data.userLogin, isAdmin },
     id,
     archive,

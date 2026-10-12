@@ -16,9 +16,9 @@ if (!configPath || !expectedService) {
       {
         configPath,
         bindingOverrides: {
-          NOXCONNECT_CAPABILITIES: "fake-connection-capability",
-          NOXCONNECT: "fake-connection-capability",
-          NOXCUE_INGEST: "fake-connection-capability",
+          NOXHERE_CAPABILITIES: "fake-connection-capability",
+          NOXHERE: "fake-connection-capability",
+          TELEMETRY_INGEST: "fake-connection-capability",
         },
       },
       { configPath: "scripts/fake-connection-capability/wrangler.jsonc" },

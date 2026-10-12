@@ -1,10 +1,10 @@
 import { createClient, safeErrorDetails } from "./core.js";
-import type { BrowserNoxCueClient, BrowserNoxCueOptions } from "./types.js";
+import type { BrowserTelemetryClient, BrowserTelemetryOptions } from "./types.js";
 
 export type * from "./types.js";
 export { safeErrorDetails };
 
-export function createNoxCue(options: BrowserNoxCueOptions): BrowserNoxCueClient {
+export function createTelemetry(options: BrowserTelemetryOptions): BrowserTelemetryClient {
   const client = createClient(options, "publishable", {
     kind: "browser",
     currentUrl: () => typeof location === "undefined" ? undefined : location.href,

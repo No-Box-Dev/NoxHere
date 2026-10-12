@@ -1,13 +1,13 @@
 interface Env {
   DB: D1Database;
   BUILD_SHA?: string;
-  NOXTICKET_SERVICE?: Fetcher;
-  NOXSPOT_RESPONSE?: Fetcher;
-  NOXCUE_RESPONSE?: NoxCueService;
-  NOXFEED_RESPONSE?: Fetcher;
+  PLANNING_SERVICE?: Fetcher;
+  FEEDBACK_RESPONSE?: Fetcher;
+  TELEMETRY_RESPONSE?: TelemetryService;
+  ACTIVITY_RESPONSE?: Fetcher;
 }
 
-interface NoxCueService extends Fetcher {
+interface TelemetryService extends Fetcher {
   buildGitHubIncident(input: {
     environment: string;
     incidentKey: string;
@@ -57,8 +57,8 @@ async function withServiceTimeout<T>(operation: Promise<T>): Promise<T> {
   }
 }
 
-async function probeNoxCue(service: NoxCueService | undefined, expectedBuildSha: string): Promise<ServiceProbe> {
-  const health = await probeService(service, "https://noxcue.internal/health");
+async function probeTelemetry(service: TelemetryService | undefined, expectedBuildSha: string): Promise<ServiceProbe> {
+  const health = await probeService(service, "https://telemetry.internal/health");
   if (!health.ok || !health.buildSha || health.buildSha !== expectedBuildSha || !service) return { ...health, ok: false };
   try {
     const occurredAt = "2026-01-01T00:00:00.000Z";
@@ -76,7 +76,7 @@ async function probeNoxCue(service: NoxCueService | undefined, expectedBuildSha:
       occurrenceCount: 1,
     }));
     const presentation = result as { contract?: unknown; kind?: unknown; marker?: unknown; body?: unknown } | null;
-    const capable = presentation?.contract === "noxcue.response"
+    const capable = presentation?.contract === "telemetry.response"
       && presentation.kind === "github_incident"
       && typeof presentation.marker === "string"
       && typeof presentation.body === "string";
@@ -92,10 +92,10 @@ export async function onRequestGet(context: Context): Promise<Response> {
     database: false,
     scheduledWorker: false,
     deliveryQueue: false,
-    noxticket: false,
-    noxspot: false,
-    noxcue: false,
-    noxfeed: false,
+    planning: false,
+    feedback: false,
+    telemetry: false,
+    activity: false,
   };
 
   try {
@@ -119,21 +119,21 @@ export async function onRequestGet(context: Context): Promise<Response> {
   }
 
   const [ticket, spot, cue, feed] = await Promise.all([
-    probeService(context.env.NOXTICKET_SERVICE, "https://noxticket.internal/health"),
-    probeService(context.env.NOXSPOT_RESPONSE, "https://noxspot.internal/health"),
-    probeNoxCue(context.env.NOXCUE_RESPONSE, expectedBuildSha),
-    probeService(context.env.NOXFEED_RESPONSE, "https://noxfeed.internal/health"),
+    probeService(context.env.PLANNING_SERVICE, "https://planning.internal/health"),
+    probeService(context.env.FEEDBACK_RESPONSE, "https://feedback.internal/health"),
+    probeTelemetry(context.env.TELEMETRY_RESPONSE, expectedBuildSha),
+    probeService(context.env.ACTIVITY_RESPONSE, "https://activity.internal/health"),
   ]);
-  checks.noxticket = ticket.ok;
-  checks.noxspot = spot.ok;
-  checks.noxcue = cue.ok;
-  checks.noxfeed = feed.ok;
+  checks.planning = ticket.ok;
+  checks.feedback = spot.ok;
+  checks.telemetry = cue.ok;
+  checks.activity = feed.ok;
   const versions = {
     noxhere: expectedBuildSha,
-    ...(ticket.buildSha ? { noxticket: ticket.buildSha } : {}),
-    ...(spot.buildSha ? { noxspot: spot.buildSha } : {}),
-    ...(cue.buildSha ? { noxcue: cue.buildSha } : {}),
-    ...(feed.buildSha ? { noxfeed: feed.buildSha } : {}),
+    ...(ticket.buildSha ? { planning: ticket.buildSha } : {}),
+    ...(spot.buildSha ? { feedback: spot.buildSha } : {}),
+    ...(cue.buildSha ? { telemetry: cue.buildSha } : {}),
+    ...(feed.buildSha ? { activity: feed.buildSha } : {}),
   };
 
   const ready = Object.values(checks).every(Boolean);

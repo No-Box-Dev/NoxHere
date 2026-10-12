@@ -7,30 +7,30 @@ test("opens the main Playnist view", async ({ page }) => {
   await expect(page.getByText("No-Box-Dev/playnist · repository data, issues and pull requests")).toBeVisible({ timeout: 30_000 });
 });
 
-test("keeps administration in Settings and NoxConnect last", async ({ page }) => {
+test("keeps administration in Settings and NoxHere last", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/connect/overview");
   await expect(page.getByText("API access", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Maintenance", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("Projects belong to NoxConnect", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Projects belong to NoxHere", { exact: true })).toHaveCount(0);
   const productLinks = page.locator(".service-nav a");
-  await expect(productLinks.last()).toHaveText("NoxConnect");
+  await expect(productLinks.last()).toHaveText("NoxHere");
   await page.getByRole("link", { name: /settings/i }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByText("API access", { exact: true })).toBeVisible();
   await expect(page.getByText("Maintenance", { exact: true })).toBeVisible();
-  await expect(page.getByText("Projects belong to NoxConnect", { exact: true })).toBeVisible();
+  await expect(page.getByText("Projects belong to NoxHere", { exact: true })).toBeVisible();
 });
 
 test("collapses the capability sidebar and remembers the preference", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/feed/current");
   const nav = page.locator(".service-nav");
-  await expect(nav.locator("a").last()).toHaveAccessibleName("NoxConnect");
+  await expect(nav.locator("a").last()).toHaveAccessibleName("NoxHere");
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
   await expect(page.locator(".platform")).toHaveClass(/sidebar-collapsed/);
   await expect(nav.locator(".service-icon").first()).toBeVisible();
   await page.reload();
   await expect(page.locator(".platform")).toHaveClass(/sidebar-collapsed/);
-  await expect(page.locator(".service-nav a").last()).toHaveAccessibleName("NoxConnect");
+  await expect(page.locator(".service-nav a").last()).toHaveAccessibleName("NoxHere");
 });
 
 test("shows the real project catalog without Test Project", async ({ page }) => {
@@ -38,7 +38,7 @@ test("shows the real project catalog without Test Project", async ({ page }) => 
   await page.getByRole("button", { name: "Open project switcher" }).click({ timeout: 30_000 });
   await expect(page.locator(".project-option")).toHaveCount(30);
   await expect(page.getByRole("button", { name: "NoxHere", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "NoxTicket", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Planning", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "+ New project", exact: true })).toBeVisible();
   await expect(page.getByText("Test Project", { exact: true })).toHaveCount(0);
 });
@@ -51,13 +51,13 @@ test("switches between actual projects", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Open project switcher" })).toContainText("NoxHere");
 });
 
-test("keeps the empty NoxTicket board usable", async ({ page }) => {
+test("keeps the empty Planning board usable", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/ticket/board");
   await expect(page.getByRole("link", { name: "Features", exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("To do", { exact: true })).toBeVisible();
   await expect(page.getByText("On production", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "New feature", exact: true })).toBeEnabled();
-  await expect(page.getByText("Verify the NoxTicket board workflow", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Verify the Planning board workflow", { exact: true })).toHaveCount(0);
 });
 
 const serviceRoutes = [
@@ -73,8 +73,8 @@ const serviceRoutes = [
   ["/no-box-dev/proj_no-box-dev_playnist/spot/resolved", "Resolved"],
   ["/no-box-dev/proj_no-box-dev_playnist/spot/widgets", "Widgets"],
   ["/no-box-dev/proj_no-box-dev_playnist/spot/messaging", "Messaging"],
-  ["/no-box-dev/proj_no-box-dev_playnist/cue/stats", "Stats"],
-  ["/no-box-dev/proj_no-box-dev_playnist/cue/alerts", "Alerts"],
+  ["/no-box-dev/proj_no-box-dev_playnist/telemetry/stats", "Stats"],
+  ["/no-box-dev/proj_no-box-dev_playnist/telemetry/alerts", "Alerts"],
 ] as const;
 
 test("opens every service tab without a page failure", async ({ page }) => {
@@ -95,7 +95,7 @@ test("opens NoxKey and its real download action", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Download NoxKey", exact: true })).toHaveAttribute("href", /apps\.apple\.com/);
 });
 
-test("opens each NoxConnect section and project settings controls", async ({ page }) => {
+test("opens each NoxHere section and project settings controls", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/connect/overview");
   for (const section of ["Connections", "People and access", "Project repositories", "Capabilities"]) {
     const toggle = page.getByRole("button", { name: `Toggle ${section}` });
@@ -132,7 +132,7 @@ test("shows Playnist merged work with its real release notes", async ({ page }) 
 test("expands a real Feedback report and opens its linked issue", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/spot/issues");
   await expect(page.getByText("Live", { exact: true })).toBeVisible({ timeout: 30_000 });
-  const refreshed = page.waitForResponse((response) => response.url().includes("/api/v1/spots/project-overview") && response.ok());
+  const refreshed = page.waitForResponse((response) => response.url().includes("/api/v1/feedback/project-overview") && response.ok());
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await refreshed;
   await expect(page.getByText("Updated just now", { exact: true })).toBeVisible();
@@ -149,7 +149,7 @@ test("expands a real Feedback report and opens its linked issue", async ({ page 
 });
 
 test("shows the mirrored Playnist stats dashboard", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/cue/stats");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/telemetry/stats");
   await expect(page.getByText("Total users", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Daily active users", { exact: true })).toBeVisible();
   await expect(page.getByText("Reported", { exact: true })).toBeVisible();

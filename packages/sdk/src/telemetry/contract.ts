@@ -2,11 +2,11 @@
 
 export const CONTRACT_VERSION = 1 as const;
 export const SDK_VERSION = "0.2.1" as const;
-export const DEFAULT_ENDPOINT = "https://app.noxhere.com/api/v1/cues/public/events" as const;
-export const NOXCUE_AUTH_FEATURES = ["auth.signup","auth.login","auth.password_reset","auth.email_verification","auth.oauth","auth.mfa","auth.session_refresh","auth.logout"] as const;
-export const NOXCUE_ENVIRONMENTS = ["production","staging","development","preview","test","local"] as const;
-export const NOXCUE_OUTCOMES = ["success","rejected","failure"] as const;
-export const NOXCUE_REASONS = ["invalid_input","invalid_credentials","account_exists","account_unverified","account_locked","verification_expired","mfa_required","rate_limited","policy_rejected","dependency_unavailable","database_unavailable","email_delivery_failed","oauth_failed","session_failed","configuration_error","timeout","network_error","internal_error","unknown"] as const;
+export const DEFAULT_ENDPOINT = "https://app.noxhere.com/api/v1/telemetry/public/events" as const;
+export const TELEMETRY_AUTH_FEATURES = ["auth.signup","auth.login","auth.password_reset","auth.email_verification","auth.oauth","auth.mfa","auth.session_refresh","auth.logout"] as const;
+export const TELEMETRY_ENVIRONMENTS = ["production","staging","development","preview","test","local"] as const;
+export const TELEMETRY_OUTCOMES = ["success","rejected","failure"] as const;
+export const TELEMETRY_REASONS = ["invalid_input","invalid_credentials","account_exists","account_unverified","account_locked","verification_expired","mfa_required","rate_limited","policy_rejected","dependency_unavailable","database_unavailable","email_delivery_failed","oauth_failed","session_failed","configuration_error","timeout","network_error","internal_error","unknown"] as const;
 export const DELIVERY_ERRORS = ["invalid_configuration","payload_too_large","timeout","network_error","rejected"] as const;
 export const DEFAULT_TIMEOUT_MS = 3000 as const;
 export const MAX_TIMEOUT_MS = 10000 as const;

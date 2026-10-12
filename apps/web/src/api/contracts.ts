@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const serviceIdSchema = z.enum(["connect", "ticket", "feed", "spot", "stats", "incidents", "mail", "key"]);
+const serviceIdSchema = z.enum(["connections", "planning", "activity", "feedback", "stats", "incidents", "mail", "key"]);
 
 const projectConnectionSchema = z.object({
   id: z.string(),
@@ -31,8 +31,8 @@ export const projectSettingsSchema = z.object({
 }).loose().nullable();
 
 export const slackRoutingSchema = z.object({
-  routes: z.object({ noxticket: z.string().nullable() }).loose(),
-  connections: z.object({ noxticket: z.string().nullable() }).loose().optional(),
+  routes: z.object({ planning: z.string().nullable() }).loose(),
+  connections: z.object({ planning: z.string().nullable() }).loose().optional(),
   integrity: z.object({
     valid: z.boolean(),
     issues: z.array(z.object({
@@ -113,7 +113,7 @@ const guestInviteSchema = z.object({
   scopeType: z.enum(["organization", "project", "tool"]),
   projectId: z.string().nullable(),
   projectName: z.string().nullable().optional(),
-  service: z.enum(["noxticket", "noxfeed", "noxspot", "noxcue"]).nullable(),
+  service: z.enum(["planning", "activity", "feedback", "telemetry"]).nullable(),
   expiresAt: z.string().optional(),
   createdAt: z.string().optional(),
 });
@@ -142,10 +142,10 @@ const projectRoutingSchema = z.object({
   enabled: z.boolean(),
   repositories: z.array(z.string()),
   routes: z.object({
-    noxfeedPosts: projectDestinationSchema,
-    noxfeedReleaseNotes: projectDestinationSchema,
-    noxCue: projectDestinationSchema,
-    noxCueAlerts: projectDestinationSchema,
+    activityPosts: projectDestinationSchema,
+    activityReleaseNotes: projectDestinationSchema,
+    telemetry: projectDestinationSchema,
+    telemetryAlerts: projectDestinationSchema,
   }),
 });
 export const projectRoutingResponseSchema = z.object({
@@ -159,7 +159,7 @@ export const bootstrapSchema = z.object({
   projects: z.array(projectSchema),
 });
 
-const cueStatSchema = z.object({
+const telemetryStatSchema = z.object({
   id: z.string(),
   name: z.string(),
   value: z.string(),
@@ -178,27 +178,27 @@ const cueStatSchema = z.object({
   }).optional(),
 });
 
-export const cueDashboardSchema = z.object({
+export const telemetryDashboardSchema = z.object({
   range: z.string(),
   dateLabel: z.string(),
   reportStatus: z.string(),
-  stats: z.array(cueStatSchema),
+  stats: z.array(telemetryStatSchema),
 });
 
-const cueActionSchema = z.object({
+const telemetryActionSchema = z.object({
   slot: z.number().int().min(1).max(3),
   key: z.string(),
   label: z.string(),
 });
 
-export const cueActionsSchema = z.object({
+export const telemetryActionsSchema = z.object({
   projectId: z.string(),
   windowDays: z.union([z.literal(7), z.literal(14), z.literal(30)]),
-  actions: z.array(cueActionSchema).max(3),
+  actions: z.array(telemetryActionSchema).max(3),
   snippet: z.string(),
 });
 
-export const cueStatEventSchema = z.object({
+export const telemetryStatEventSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.string(),
@@ -226,7 +226,7 @@ export const engineerStatsSchema = z.object({
   }),
 }).loose();
 
-export const cueAlertSchema = z.object({
+export const telemetryAlertSchema = z.object({
   id: z.string(),
   title: z.string(),
   environment: z.string(),
@@ -236,7 +236,7 @@ export const cueAlertSchema = z.object({
   happenedAt: z.string(),
 });
 
-export const cueAlertRuleSchema = z.object({
+export const telemetryAlertRuleSchema = z.object({
   id: z.string(),
   name: z.string(),
   kind: z.enum(["feature", "error", "health"]),
@@ -261,7 +261,7 @@ const featureLinkSchema = z.object({
   primary: z.boolean().optional(),
 });
 
-export const ticketFeatureSchema = z.object({
+export const planningFeatureSchema = z.object({
   id: z.union([z.number(), z.string()]).optional(),
   number: z.number(),
   title: z.string(),
@@ -284,7 +284,7 @@ export const ticketFeatureSchema = z.object({
   updated_at: z.string().nullish(),
 }).passthrough();
 
-export const ticketFeatureAttachmentSchema = z.object({
+export const planningFeatureAttachmentSchema = z.object({
   id: z.number(),
   filename: z.string(),
   contentType: z.string(),
@@ -324,14 +324,14 @@ export type SlackStatus = z.infer<typeof slackStatusSchema>;
 export type SlackChannels = z.infer<typeof slackChannelsSchema>;
 export type SlackMessageDelivery = z.infer<typeof slackMessageDeliverySchema>;
 export type ServiceId = z.infer<typeof serviceIdSchema>;
-export type CueDashboard = z.infer<typeof cueDashboardSchema>;
-export type CueAction = z.infer<typeof cueActionSchema>;
-export type CueActions = z.infer<typeof cueActionsSchema>;
-export type CueStat = z.infer<typeof cueStatSchema>;
-export type CueStatEvent = z.infer<typeof cueStatEventSchema>;
-export type CueAlert = z.infer<typeof cueAlertSchema>;
-export type CueAlertRule = z.infer<typeof cueAlertRuleSchema>;
+export type TelemetryDashboard = z.infer<typeof telemetryDashboardSchema>;
+export type TelemetryAction = z.infer<typeof telemetryActionSchema>;
+export type TelemetryActions = z.infer<typeof telemetryActionsSchema>;
+export type TelemetryStat = z.infer<typeof telemetryStatSchema>;
+export type TelemetryStatEvent = z.infer<typeof telemetryStatEventSchema>;
+export type TelemetryAlert = z.infer<typeof telemetryAlertSchema>;
+export type TelemetryAlertRule = z.infer<typeof telemetryAlertRuleSchema>;
 export type RetrievalResult = z.infer<typeof retrievalResultSchema>;
-export type TicketFeatureRecord = z.infer<typeof ticketFeatureSchema>;
+export type PlanningFeatureRecord = z.infer<typeof planningFeatureSchema>;
 export type PlanningTask = z.infer<typeof planningTaskSchema>;
-export type TicketFeatureAttachment = z.infer<typeof ticketFeatureAttachmentSchema>;
+export type PlanningFeatureAttachment = z.infer<typeof planningFeatureAttachmentSchema>;

@@ -18,7 +18,7 @@ function makeCtx({ service = makeService(), url = "http://x/api/features", metho
     : new Request(url, { method });
   return {
     request,
-    env: service ? { NOXTICKET_SERVICE: service } : {},
+    env: service ? { PLANNING_SERVICE: service } : {},
     data: { orgId: 1, projectId, userLogin: "jasper", isAdmin: false },
     params,
   };
@@ -27,22 +27,22 @@ function makeCtx({ service = makeService(), url = "http://x/api/features", metho
 const scope = { orgId: 1, projectId: "project-1", userLogin: "jasper", isAdmin: false };
 
 describe("/api/features", () => {
-  it("lists the project's features from NoxTicket with the requested state", async () => {
+  it("lists the project's features from Planning with the requested state", async () => {
     const ctx = makeCtx({ url: "http://x/api/features?state=closed" });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([feature]);
-    expect(ctx.env.NOXTICKET_SERVICE.listFeatures).toHaveBeenCalledWith(scope, "closed");
+    expect(ctx.env.PLANNING_SERVICE.listFeatures).toHaveBeenCalledWith(scope, "closed");
   });
 
-  it("creates a feature through NoxTicket", async () => {
+  it("creates a feature through Planning", async () => {
     const ctx = makeCtx({ method: "POST", body: { title: "Dark mode" } });
     const response = await onRequestPost(ctx);
     expect(response.status).toBe(201);
-    expect(ctx.env.NOXTICKET_SERVICE.createFeature).toHaveBeenCalledWith(scope, { title: "Dark mode" });
+    expect(ctx.env.PLANNING_SERVICE.createFeature).toHaveBeenCalledWith(scope, { title: "Dark mode" });
   });
 
-  it("passes NoxTicket validation errors through", async () => {
+  it("passes Planning validation errors through", async () => {
     const service = makeService();
     service.createFeature.mockResolvedValueOnce({ ok: false, status: 422, error: "Invalid status: nope" });
     const response = await onRequestPost(makeCtx({ service, method: "POST", body: { title: "x", status: "nope" } }));
@@ -58,15 +58,15 @@ describe("/api/features", () => {
   it("requires a project", async () => {
     const ctx = makeCtx({ projectId: null });
     expect((await onRequestGet(ctx)).status).toBe(400);
-    expect(ctx.env.NOXTICKET_SERVICE.listFeatures).not.toHaveBeenCalled();
+    expect(ctx.env.PLANNING_SERVICE.listFeatures).not.toHaveBeenCalled();
   });
 
-  it("503s when the NoxTicket binding is missing", async () => {
+  it("503s when the Planning binding is missing", async () => {
     const response = await onRequestGet(makeCtx({ service: null }));
     expect(response.status).toBe(503);
   });
 
-  it("503s when NoxTicket throws", async () => {
+  it("503s when Planning throws", async () => {
     const service = makeService();
     service.listFeatures.mockRejectedValueOnce(new Error("boom"));
     expect((await onRequestGet(makeCtx({ service }))).status).toBe(503);
@@ -74,17 +74,17 @@ describe("/api/features", () => {
 });
 
 describe("/api/features/:number", () => {
-  it("updates a feature through NoxTicket", async () => {
+  it("updates a feature through Planning", async () => {
     const ctx = makeCtx({ method: "PATCH", params: { number: "3" }, body: { status: "staging" } });
     const response = await onRequestPatch(ctx);
     expect(response.status).toBe(200);
-    expect(ctx.env.NOXTICKET_SERVICE.updateFeature).toHaveBeenCalledWith(scope, 3, { status: "staging" });
+    expect(ctx.env.PLANNING_SERVICE.updateFeature).toHaveBeenCalledWith(scope, 3, { status: "staging" });
   });
 
   it("closes a feature on DELETE", async () => {
     const ctx = makeCtx({ method: "DELETE", params: { number: "3" } });
     expect((await onRequestDelete(ctx)).status).toBe(200);
-    expect(ctx.env.NOXTICKET_SERVICE.updateFeature).toHaveBeenCalledWith(scope, 3, { state: "closed" });
+    expect(ctx.env.PLANNING_SERVICE.updateFeature).toHaveBeenCalledWith(scope, 3, { state: "closed" });
   });
 
   it("400s on a bad feature number", async () => {

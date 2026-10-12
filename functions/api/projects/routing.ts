@@ -66,10 +66,10 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       enabled: project.routing_enabled === 1,
       repositories: repositoriesByProject.get(project.id) ?? [],
       routes: {
-        noxfeedPosts: routes?.get("noxfeed_posts") ?? empty(),
-        noxfeedReleaseNotes: routes?.get("noxfeed_release_notes") ?? empty(),
-        noxCue: routes?.get("noxcue") ?? empty(),
-        noxCueAlerts: routes?.get("noxcue_alerts") ?? empty(),
+        activityPosts: routes?.get("activity_posts") ?? empty(),
+        activityReleaseNotes: routes?.get("activity_release_notes") ?? empty(),
+        telemetry: routes?.get("telemetry") ?? empty(),
+        telemetryAlerts: routes?.get("telemetry_alerts") ?? empty(),
       },
     };
   });

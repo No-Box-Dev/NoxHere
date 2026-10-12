@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const widgetCore = "../../packages/feedback-widget/dist/noxspot-core.min.js";
+const widgetCore = "../../packages/feedback-widget/dist/feedback-core.min.js";
 
 test("stays responsive and submits feedback on a long data table", async ({ page }) => {
   test.setTimeout(30_000);
@@ -24,12 +24,12 @@ test("stays responsive and submits feedback on a long data table", async ({ page
 
   await page.evaluate(() => {
     const state = window as typeof window & {
-      __NoxSpotCore: { open(input: unknown): void };
+      __FeedbackCore: { open(input: unknown): void };
       __captureErrors?: number;
       __submittedFeedback?: unknown;
     };
     state.__captureErrors = 0;
-    state.__NoxSpotCore.open({
+    state.__FeedbackCore.open({
       mode: "click",
       callbacks: {
         blocks: [
@@ -44,14 +44,14 @@ test("stays responsive and submits feedback on a long data table", async ({ page
     });
   });
 
-  const overlay = page.locator(".noxspot-overlay");
+  const overlay = page.locator(".feedback-overlay");
   await expect(overlay).toBeVisible();
   await expect.poll(async () => {
-    const screenshot = await overlay.locator(".noxspot-screenshot").getAttribute("src");
+    const screenshot = await overlay.locator(".feedback-screenshot").getAttribute("src");
     const fallback = await overlay.getByText("Screenshot unavailable", { exact: true }).count();
     return Boolean(screenshot?.startsWith("data:image/") || fallback);
   }, { timeout: 10_000 }).toBe(true);
-  await overlay.locator("#noxspot-title").fill("Long table feedback");
+  await overlay.locator("#feedback-title").fill("Long table feedback");
   await overlay.getByRole("button", { name: "Submit" }).click();
 
   await expect.poll(() => page.evaluate(() => Boolean((window as typeof window & { __submittedFeedback?: unknown }).__submittedFeedback))).toBe(true);

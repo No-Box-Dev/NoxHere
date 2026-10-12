@@ -11,17 +11,17 @@ vi.mock("../../../../functions/lib/github-app.js", () => ({
   getInstallationToken: vi.fn().mockResolvedValue("install-token"),
 }));
 vi.mock("../../../../functions/lib/op-failures.js", () => ({ recordFailure: vi.fn() }));
-vi.mock("../../../../functions/lib/noxspot.js", () => ({
-  createNoxSpotGitHubIssue: vi.fn(),
+vi.mock("../../../../functions/lib/feedback.js", () => ({
+  createFeedbackGitHubIssue: vi.fn(),
 }));
-vi.mock("../../../../functions/lib/noxspot-resolution.js", () => ({
-  deliverNoxSpotResolutionEmail: vi.fn(),
-  prepareNoxSpotResolutionEmail: vi.fn(),
-  recoverNoxSpotResolutionPreparations: vi.fn(),
-  recoverNoxSpotResolutionEmails: vi.fn(),
+vi.mock("../../../../functions/lib/feedback-resolution.js", () => ({
+  deliverFeedbackResolutionEmail: vi.fn(),
+  prepareFeedbackResolutionEmail: vi.fn(),
+  recoverFeedbackResolutionPreparations: vi.fn(),
+  recoverFeedbackResolutionEmails: vi.fn(),
 }));
-vi.mock("../../../../functions/lib/noxcue-github.js", () => ({
-  createOrUpdateNoxCueGitHubIssue: vi.fn(), recoverNoxCueGithubIncidents: vi.fn(),
+vi.mock("../../../../functions/lib/telemetry-github.js", () => ({
+  createOrUpdateTelemetryGitHubIssue: vi.fn(), recoverTelemetryGithubIncidents: vi.fn(),
 }));
 vi.mock("../../../../functions/lib/delivery-outbox.js", () => ({
   deliverSlackOutbox: vi.fn(), markOutboxFailed: vi.fn(), recoverOutboxDeliveries: vi.fn(), requeueBlockedForOrg: vi.fn(),
@@ -33,9 +33,9 @@ import { narrateEvent } from "../../../../functions/lib/narrator.js";
 import { syncRepo } from "../../../../functions/lib/github-sync.js";
 import { getInstallationToken } from "../../../../functions/lib/github-app.js";
 import { recordFailure } from "../../../../functions/lib/op-failures.js";
-import { createNoxSpotGitHubIssue } from "../../../../functions/lib/noxspot.js";
-import { prepareNoxSpotResolutionEmail } from "../../../../functions/lib/noxspot-resolution.js";
-import { createOrUpdateNoxCueGitHubIssue } from "../../../../functions/lib/noxcue-github.js";
+import { createFeedbackGitHubIssue } from "../../../../functions/lib/feedback.js";
+import { prepareFeedbackResolutionEmail } from "../../../../functions/lib/feedback-resolution.js";
+import { createOrUpdateTelemetryGitHubIssue } from "../../../../functions/lib/telemetry-github.js";
 import { deliverSlackOutbox, markOutboxFailed } from "../../../../functions/lib/delivery-outbox.js";
 
 const env = { DB: {} };
@@ -63,27 +63,27 @@ describe("cron queue consumer", () => {
     expect(m.ack).toHaveBeenCalledOnce();
   });
 
-  it("routes NoxSpot captures through NoxConnect's GitHub worker", async () => {
+  it("routes Feedback captures through NoxHere's GitHub worker", async () => {
     const capture = { type: "spot_create_github_issue", captureId: "spot-1" };
     const m = msg(capture);
     await worker.queue({ messages: [m] }, env);
-    expect(createNoxSpotGitHubIssue).toHaveBeenCalledWith(env, capture);
+    expect(createFeedbackGitHubIssue).toHaveBeenCalledWith(env, capture);
     expect(m.ack).toHaveBeenCalledOnce();
   });
 
-  it("routes NoxSpot resolution preparation through the durable worker", async () => {
+  it("routes Feedback resolution preparation through the durable worker", async () => {
     const task = { type: "spot_prepare_resolution_email", reportId: "spot-1" };
     const m = msg(task);
     await worker.queue({ messages: [m] }, env);
-    expect(prepareNoxSpotResolutionEmail).toHaveBeenCalledWith(env, "spot-1");
+    expect(prepareFeedbackResolutionEmail).toHaveBeenCalledWith(env, "spot-1");
     expect(m.ack).toHaveBeenCalledOnce();
   });
 
-  it("routes a durable NoxCue incident through the GitHub worker", async () => {
-    const task = { type: "noxcue_github_issue", incidentId: "incident-1" };
+  it("routes a durable Telemetry incident through the GitHub worker", async () => {
+    const task = { type: "telemetry_github_issue", incidentId: "incident-1" };
     const m = msg(task);
     await worker.queue({ messages: [m] }, env);
-    expect(createOrUpdateNoxCueGitHubIssue).toHaveBeenCalledWith(env, task);
+    expect(createOrUpdateTelemetryGitHubIssue).toHaveBeenCalledWith(env, task);
     expect(m.ack).toHaveBeenCalledOnce();
   });
 

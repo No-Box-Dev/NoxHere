@@ -14,7 +14,7 @@ function service() {
 function context({ binding = service(), url = "https://app.noxhere.com/api/v1/tasks", method = "GET", body, id }: { binding?: ReturnType<typeof service>; url?: string; method?: string; body?: unknown; id?: string } = {}) {
   return {
     binding,
-    env: { NOXTICKET_SERVICE: binding as never },
+    env: { PLANNING_SERVICE: binding as never },
     data: { orgId: 1, projectId: "project-1", userLogin: "jasper", isAdmin: false },
     request: new Request(url, { method, ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } }) }),
     params: { id },
@@ -23,7 +23,7 @@ function context({ binding = service(), url = "https://app.noxhere.com/api/v1/ta
 const scope = { orgId: 1, projectId: "project-1", userLogin: "jasper", isAdmin: false };
 
 describe("Planning task API", () => {
-  it("passes list filters to NoxTicket", async () => {
+  it("passes list filters to Planning", async () => {
     const ctx = context({ url: "https://app.noxhere.com/api/v1/tasks?owner=alex&status=open&featureNumber=12" });
     expect((await onRequestGet(ctx)).status).toBe(200);
     expect(ctx.binding.listTasks).toHaveBeenCalledWith(scope, { owner: "alex", status: "open", featureNumber: 12 });

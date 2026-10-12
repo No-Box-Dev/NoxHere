@@ -12,7 +12,7 @@ from typing import Mapping
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "src"))
 
-from noxhere.telemetry import NoxCueClient  # noqa: E402
+from noxhere.telemetry import TelemetryClient  # noqa: E402
 
 SERVER_KEY = "nox_secret_" + "b" * 32
 IDENTITY_KEY = "identity-secret-key-that-is-at-least-32-bytes"
@@ -37,7 +37,7 @@ class TrackTests(unittest.TestCase):
             requests.append(request)
             return Response()
 
-        with NoxCueClient(
+        with TelemetryClient(
             key=SERVER_KEY,
             identity_hash_key=IDENTITY_KEY,
             environment="production",
@@ -54,7 +54,7 @@ class TrackTests(unittest.TestCase):
         )
 
     def test_missing_hash_key_fails_without_transport(self) -> None:
-        with NoxCueClient(
+        with TelemetryClient(
             key=SERVER_KEY,
             transport=lambda *_: self.fail("network called"),
         ) as client:

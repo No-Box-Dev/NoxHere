@@ -1,0 +1,110 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "noxhere-feedback",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "PUBLIC_API_BASE_URL": "https://app.noxhere.com",
+    "PUBLIC_ASSET_BASE_URL": "https://app.noxhere.com/api/feedback/public/v1/assets",
+    "BUILD_SHA": "development"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.05
+    }
+  },
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "noxhere",
+      "database_id": "c94084e6-d0be-423c-8de6-249e7cf8bf25",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "TASK_QUEUE",
+        "queue": "noxhere-tasks"
+      }
+    ]
+  },
+  "r2_buckets": [
+    {
+      "binding": "ASSETS",
+      "bucket_name": "noxhere-feedback-assets"
+    }
+  ],
+  "services": [
+    {
+      "binding": "NOXHERE",
+      "service": "noxhere-connections"
+    },
+    {
+      "binding": "TELEMETRY_INGEST",
+      "service": "noxhere-telemetry"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "class_name": "RateLimiter"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["RateLimiter"]
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "noxhere-feedback-staging",
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "PUBLIC_API_BASE_URL": "https://noxhere-feedback-staging.jasper-414.workers.dev",
+        "PUBLIC_ASSET_BASE_URL": "https://noxhere-feedback-staging.jasper-414.workers.dev/api/feedback/public/v1/assets",
+        "BUILD_SHA": "development"
+      },
+      "triggers": { "crons": [] },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "noxhere-staging",
+          "database_id": "3a9d9857-c26d-4421-9fbd-b81f474864d3",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "queues": {
+        "producers": [
+          { "binding": "TASK_QUEUE", "queue": "noxhere-tasks-staging" }
+        ]
+      },
+      "r2_buckets": [
+        { "binding": "ASSETS", "bucket_name": "noxhere-feedback-assets-staging" }
+      ],
+      "services": [
+        { "binding": "NOXHERE", "service": "noxhere-connections-staging" },
+        { "binding": "TELEMETRY_INGEST", "service": "telemetry-staging" }
+      ],
+      "durable_objects": {
+        "bindings": [
+          { "name": "RATE_LIMITER", "class_name": "RateLimiter" }
+        ]
+      }
+    }
+  }
+}

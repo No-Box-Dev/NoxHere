@@ -56,19 +56,6 @@ describe("GET /api/config/:key", () => {
     expect(await res.json()).toEqual([{ title: "X" }]);
   });
 
-  it("returns canonical NoxTicket settings for pre-rename stored fields", async () => {
-    const prefix = ["un", "ticket"].join("");
-    const db = makeDb({ firstResult: { data: JSON.stringify({
-      [`${prefix}Repo`]: "legacy-config",
-      slack: { [`${prefix}ChannelId`]: "C1", [`${prefix}ConnectionId`]: "conn-1" },
-    }) } });
-    const res = await onRequestGet(makeCtx({ db, params: { key: "settings" } }));
-    expect(await res.json()).toEqual({
-      noxTicketRepo: "legacy-config",
-      slack: { noxTicketChannelId: "C1", noxTicketConnectionId: "conn-1" },
-    });
-  });
-
   it("500s loudly on corrupt JSON", async () => {
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const db = makeDb({ firstResult: { data: "{not json" } });
@@ -134,17 +121,17 @@ describe("PUT /api/config/:key", () => {
   });
 });
 
-describe("PUT /api/config/settings — NoxFeed daily summary", () => {
+describe("PUT /api/config/settings — Activity daily summary", () => {
   it("saves a valid local time and IANA timezone", async () => {
     const db = makeDb();
     const res = await onRequestPut(makeCtx({
       db,
       params: { key: "settings" },
       method: "PUT",
-      body: { noxfeedDailySummary: { enabled: true, timeLocal: "17:30", timezone: "Asia/Kuala_Lumpur" } },
+      body: { activityDailySummary: { enabled: true, timeLocal: "17:30", timezone: "Asia/Kuala_Lumpur" } },
     }));
     expect(res.status).toBe(200);
-    expect(JSON.parse(db._calls.run[0].binds[3]).noxfeedDailySummary).toEqual({
+    expect(JSON.parse(db._calls.run[0].binds[3]).activityDailySummary).toEqual({
       enabled: true,
       timeLocal: "17:30",
       timezone: "Asia/Kuala_Lumpur",
@@ -155,12 +142,12 @@ describe("PUT /api/config/settings — NoxFeed daily summary", () => {
     [{ enabled: "yes", timeLocal: "17:00", timezone: "UTC" }, "on or off"],
     [{ enabled: true, timeLocal: "29:00", timezone: "UTC" }, "valid daily summary time"],
     [{ enabled: true, timeLocal: "17:00", timezone: "Not/AZone" }, "valid daily summary timezone"],
-  ])("rejects invalid daily summary settings", async (noxfeedDailySummary, message) => {
+  ])("rejects invalid daily summary settings", async (activityDailySummary, message) => {
     const res = await onRequestPut(makeCtx({
       db: makeDb(),
       params: { key: "settings" },
       method: "PUT",
-      body: { noxfeedDailySummary },
+      body: { activityDailySummary },
     }));
     expect(res.status).toBe(422);
     expect((await res.json()).error).toContain(message);
@@ -279,33 +266,10 @@ describe("PUT /api/config/settings — boardStages validation", () => {
 });
 
 describe("PUT /api/config/settings — app toggles", () => {
-  it("migrates a retired alert toggle before validating and saving settings", async () => {
-    const db = makeDb();
-    const res = await onRequestPut(makeCtx({
-      db,
-      params: { key: "settings" },
-      method: "PUT",
-      body: {
-        apps: { noxalert: false, noxfeed: true },
-        slack: {
-          noxalertChannelId: "",
-          releaseNotesChannelId: "",
-        },
-        savedSiteName: "Keep unrelated settings",
-      },
-    }));
-
-    expect(res.status).toBe(200);
-    const saved = JSON.parse(db._calls.batch[0]._binds[3]);
-    expect(saved.apps).toEqual({ noxfeed: true, noxcue: false });
-    expect(saved.slack).toEqual({ noxCueChannelId: "", releaseNotesChannelId: "" });
-    expect(saved.savedSiteName).toBe("Keep unrelated settings");
-  });
-
   it("persists optional app booleans", async () => {
     const db = makeDb();
     const body = {
-      apps: { noxfeed: false, noxticket: true, noxspot: false, noxcue: true },
+      apps: { activity: false, planning: true, feedback: false, telemetry: true },
       slack: undefined,
       savedSiteName: "Keep this setup",
     };
@@ -315,17 +279,17 @@ describe("PUT /api/config/settings — app toggles", () => {
     expect(db._calls.batch[0]._binds[3]).toBe(JSON.stringify(body));
     expect(db._calls.batch.slice(1)).toHaveLength(4);
     expect(db._calls.batch[1]._sql).toContain("blocked_service_disabled");
-    expect(db._calls.batch[1]._binds).toContain("noxticket");
+    expect(db._calls.batch[1]._binds).toContain("planning");
     expect(db._calls.batch[2]._sql).toContain("blocked_service_disabled");
     expect(db._calls.batch[2]._binds).toEqual(expect.arrayContaining(["posts", "release_notes"]));
     expect(db._calls.batch[3]._sql).toContain("blocked_service_disabled");
-    expect(db._calls.batch[3]._binds).toContain("noxspot");
+    expect(db._calls.batch[3]._binds).toContain("feedback");
     expect(db._calls.batch[4]._sql).toContain("status = 'pending'");
-    expect(db._calls.batch[4]._binds).toContain("noxcue");
+    expect(db._calls.batch[4]._binds).toContain("telemetry");
   });
 
-  it("rejects NoxConnect and non-boolean app values", async () => {
-    for (const apps of [{ noxconnect: false }, { noxfeed: "yes" }]) {
+  it("rejects NoxHere and non-boolean app values", async () => {
+    for (const apps of [{ noxhere: false }, { activity: "yes" }]) {
       const res = await onRequestPut(makeCtx({
         db: makeDb(), params: { key: "settings" }, method: "PUT", body: { apps },
       }));

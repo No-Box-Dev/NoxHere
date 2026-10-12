@@ -4,8 +4,8 @@ Use this workflow to configure NoxHere without relying on the Settings UI. The c
 
 ## Connect the agent
 
-- **Supervised local agent:** a human runs `noxconnect login`, completes browser
-  approval, and selects context with `noxconnect use <organization>/<project>`.
+- **Supervised local agent:** a human runs `noxhere login`, completes browser
+  approval, and selects context with `noxhere use <organization>/<project>`.
 - **Headless agent or CI:** inject a project-bound `nox_sk_…` automation token
   through the approved runtime secret manager. Do not automate human login.
 
@@ -14,10 +14,10 @@ credential into chat. Provider consent remains a human browser action.
 
 ## Discover services and capabilities
 
-Start with `GET /api/v1/services`. It explains the private role of NoxConnect
+Start with `GET /api/v1/services`. It explains the private role of NoxHere
 and exposes NoxHere's Planning, Activity, Feedback, Stats, and Incidents
-capabilities. Compatibility service IDs remain `noxticket`, `noxfeed`,
-`noxspot`, and `noxcue`. Each service includes:
+capabilities. Compatibility service IDs remain `planning`, `activity`,
+`feedback`, and `telemetry`. Each service includes:
 
 - its focus and description;
 - the capabilities it provides;
@@ -45,20 +45,20 @@ config again, reapply the intended field changes, and retry. A missing
 `If-Match` returns `428`.
 
 ```http
-GET /api/v1/services/noxticket/config
+GET /api/v1/services/planning/config
 
-PATCH /api/v1/services/noxticket/config
+PATCH /api/v1/services/planning/config
 If-Match: "<revision-from-get>"
 Content-Type: application/json
 
 { "featureRepository": "product" }
 ```
 
-NoxConnect owns service toggles and repository-discovery policy. NoxTicket owns
-its feature repository and workflow stages. NoxFeed owns its release-notes
-prompt. NoxSpot site settings and NoxCue source settings stay on
+NoxHere owns service toggles and repository-discovery policy. Planning owns
+its feature repository and workflow stages. Activity owns its release-notes
+prompt. Feedback site settings and Telemetry source settings stay on
 their dedicated resource APIs, linked from each service config response. Slack
-workspace connections and delivery routes remain shared NoxConnect resources.
+workspace connections and delivery routes remain shared NoxHere resources.
 
 The config response includes a `configuration` descriptor. `mode: service`
 means the document can be patched using its advertised `writableFields`.
@@ -103,7 +103,7 @@ Use the credential class that matches the client:
   with explicit service scopes. The token supplies its own organization and
   project context; an optional `X-Org` or `X-Project-ID` may only repeat, never
   override, those bounds.
-- Public NoxCue ingestion uses `X-Nox-Ingest-Key`. It never accepts a browser,
+- Public Telemetry ingestion uses `X-Nox-Ingest-Key`. It never accepts a browser,
   native, automation, GitHub, or Slack credential.
 
 A native or automation request uses:
@@ -168,23 +168,23 @@ Content-Type: application/json
 {
   "routes": {
     "fallback": "C0123456789",
-    "noxcue": "C0123456789",
-    "noxticket": "C0234567890",
-    "noxfeed_posts": "C0345678901",
-    "noxfeed_release_notes": "C0456789012"
+    "telemetry": "C0123456789",
+    "planning": "C0234567890",
+    "activity_posts": "C0345678901",
+    "activity_release_notes": "C0456789012"
   }
 }
 ```
 
-Use `null` to clear a route. Service routes fall back to `fallback`; NoxSpot first uses its per-site channel and then the organization fallback. For private Slack channels, invite the Nox bot before assigning the channel.
+Use `null` to clear a route. Service routes fall back to `fallback`; Feedback first uses its per-site channel and then the organization fallback. For private Slack channels, invite the Nox bot before assigning the channel.
 
-Project routing is owned by NoxConnect. Discover project candidates, their explicit enabled state, installed repositories, and current named destinations with:
+Project routing is owned by NoxHere. Discover project candidates, their explicit enabled state, installed repositories, and current named destinations with:
 
 ```http
 GET /api/v1/projects/routing
 ```
 
-Update one project atomically with `PUT /api/v1/projects/{projectId}/routing`. The body sets `enabled`, assigns its `repositories`, and supplies the `noxfeedPosts`, `noxfeedReleaseNotes`, and `noxCue` workspace/channel pairs. Repository mirror rows never participate until explicitly enabled. A repository belongs to one enabled project; assigning it here moves future traffic from its previous project. Empty destination pairs use the corresponding organization route. A project-assigned Slack workspace cannot be used by another project.
+Update one project atomically with `PUT /api/v1/projects/{projectId}/routing`. The body sets `enabled`, assigns its `repositories`, and supplies the `activityPosts`, `activityReleaseNotes`, and `telemetry` workspace/channel pairs. Repository mirror rows never participate until explicitly enabled. A repository belongs to one enabled project; assigning it here moves future traffic from its previous project. Empty destination pairs use the corresponding organization route. A project-assigned Slack workspace cannot be used by another project.
 
 Verify a saved route:
 
@@ -192,7 +192,7 @@ Verify a saved route:
 POST /api/v1/integrations/slack/test
 Content-Type: application/json
 
-{ "route": "noxfeed_release_notes" }
+{ "route": "activity_release_notes" }
 ```
 
 An optional `channelId` tests a candidate channel before saving it.
@@ -201,11 +201,11 @@ An optional `channelId` tests a candidate channel before saving it.
 
 After connections and organization routes are ready, feature-specific resources remain API-first:
 
-- NoxSpot sites: `GET`/`POST /api/v1/spots/sites` and `PATCH /api/v1/spots/sites/{siteId}`. Creating a site returns an anonymous-by-default install snippet; it does not grant NoxSpot access to the host website's login session or signup database. To prefill the signed-in reporter, the website owner must call `NoxSpot.identify({ name, email, avatarUrl })` after the widget loads and whenever the account changes, then call `NoxSpot.identify(null)` on sign-out. `avatarUrl` is optional and must be a bounded HTTPS URL. A manually initialized widget may instead use `NoxSpot.init({ siteId, getReporter: () => ({ name, email, avatarUrl }) })`. Set `notifyOnResolution: true` only when the host has already obtained consent; otherwise omit it so the reporter controls the widget checkbox. Reporter email and avatar are excluded from GitHub; the email is retained encrypted only with that consent, while the avatar is available only to authenticated NoxSpot views.
-- Stats sources: `GET/POST /api/v1/cues/sources`, project metrics: `GET/PUT /api/v1/cues/projects/{projectId}/metrics`, keys: `POST /api/v1/cues/sources/{sourceId}/keys`, cards, and custom activity statistics under `/custom-metrics`. Incidents owns custom feature health under `/features`, error status, alerts, and GitHub incident policy at `GET/PUT /api/v1/cues/github-issues`. The `/cues` path and `noxcue` scope remain compatibility transport names. Register every `custom.*` name before ingest; linked staging and production sources share the project catalog, while an unlinked source stays isolated. Feature failures retain their actual technical error. Each custom activity event is idempotent and Stats derives total plus total per registered user. Unknown or paused names become bounded unregistered errors instead of creating definitions. GitHub incident routing additionally requires NoxConnect's GitHub connection and a repository linked to the selected project. A source destination overrides its linked project's `noxCue` route; otherwise the organization route is used. A newly created ingest key is returned only once; transfer it securely and never log it.
-- Public NoxCue clients submit events to the stable same-origin gateway `POST /api/v1/cues/public/events`; it forwards to NoxCue through a private service binding. Put the source key in `X-Nox-Ingest-Key`, not the Nox bearer-token headers. Configure each source's workspace, channel, IANA timezone, and local delivery time through its source API. Reusing the same event identity is idempotent.
-- NoxFeed resolves each GitHub repository through NoxConnect project routing before using the organization `noxfeed_posts` or `noxfeed_release_notes` route.
-- NoxTicket uses the `noxticket` route.
+- Feedback sites: `GET`/`POST /api/v1/feedback/sites` and `PATCH /api/v1/feedback/sites/{siteId}`. Creating a site returns an anonymous-by-default install snippet; it does not grant Feedback access to the host website's login session or signup database. To prefill the signed-in reporter, the website owner must call `Feedback.identify({ name, email, avatarUrl })` after the widget loads and whenever the account changes, then call `Feedback.identify(null)` on sign-out. `avatarUrl` is optional and must be a bounded HTTPS URL. A manually initialized widget may instead use `Feedback.init({ siteId, getReporter: () => ({ name, email, avatarUrl }) })`. Set `notifyOnResolution: true` only when the host has already obtained consent; otherwise omit it so the reporter controls the widget checkbox. Reporter email and avatar are excluded from GitHub; the email is retained encrypted only with that consent, while the avatar is available only to authenticated Feedback views.
+- Stats sources: `GET/POST /api/v1/telemetry/sources`, project metrics: `GET/PUT /api/v1/telemetry/projects/{projectId}/metrics`, keys: `POST /api/v1/telemetry/sources/{sourceId}/keys`, cards, and custom activity statistics under `/custom-metrics`. Incidents owns custom feature health under `/features`, error status, alerts, and GitHub incident policy at `GET/PUT /api/v1/telemetry/github-issues`. Register every `custom.*` name before ingest; linked staging and production sources share the project catalog, while an unlinked source stays isolated. Feature failures retain their actual technical error. Each custom activity event is idempotent and Stats derives total plus total per registered user. Unknown or paused names become bounded unregistered errors instead of creating definitions. GitHub incident routing additionally requires NoxHere's GitHub connection and a repository linked to the selected project. A source destination overrides its linked project's `telemetry` route; otherwise the organization route is used. A newly created ingest key is returned only once; transfer it securely and never log it.
+- Public Telemetry clients submit events to the stable same-origin gateway `POST /api/v1/telemetry/public/events`; it forwards to Telemetry through a private service binding. Put the source key in `X-Nox-Ingest-Key`, not the Nox bearer-token headers. Configure each source's workspace, channel, IANA timezone, and local delivery time through its source API. Reusing the same event identity is idempotent.
+- Activity resolves each GitHub repository through NoxHere project routing before using the organization `activity_posts` or `activity_release_notes` route.
+- Planning uses the `planning` route.
 
 Read the live endpoint response before acting; action links and state in `/api/v1/integrations/setup` take precedence over this narrative guide.
 
@@ -216,7 +216,7 @@ Do not automatically retry operations marked `write_not_safe_to_retry` or
 `destructive`; read the resulting state first and require explicit user
 confirmation for deletes, disconnects, revocations, archives, and restores.
 Revision-protected config updates are safe only after refetching and reapplying
-the intended patch. NoxCue event ingestion is the exception: duplicate event
+the intended patch. Telemetry event ingestion is the exception: duplicate event
 identities are handled idempotently.
 
 On `429`, honor `Retry-After` and stop sending until that delay has elapsed. On
@@ -241,7 +241,7 @@ When real API work exposes a concrete bug, friction point, missing capability,
 or documentation gap, an agent with `developer-feedback:write` may submit one
 concise observation to `POST /api/v1/developer-feedback`. This is for feedback
 about NoxHere itself; it is separate from customer feedback captured by
-NoxSpot.
+Feedback.
 
 ```http
 POST /api/v1/developer-feedback

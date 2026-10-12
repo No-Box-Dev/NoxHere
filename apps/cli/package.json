@@ -1,13 +1,13 @@
 {
-  "name": "noxconnect",
+  "name": "noxhere",
   "version": "0.1.0",
-  "description": "One NoxConnect login for every organization, project, and service",
+  "description": "One NoxHere login for every organization, project, and service",
   "type": "module",
   "bin": {
-    "noxconnect": "noxconnect.mjs"
+    "noxhere": "noxhere.mjs"
   },
   "files": [
-    "noxconnect.mjs",
+    "noxhere.mjs",
     "lib"
   ],
   "engines": {

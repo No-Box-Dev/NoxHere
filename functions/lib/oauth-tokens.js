@@ -1,6 +1,6 @@
 const GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
 
-// Provider refresh remains a NoxConnect capability. Application session and
+// Provider refresh remains a NoxHere capability. Application session and
 // API-token persistence lives in NoxHere.
 export async function refreshWithGitHub({ clientId, clientSecret, refreshToken }) {
   const res = await fetch(GITHUB_TOKEN_URL, {

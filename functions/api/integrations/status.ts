@@ -11,7 +11,6 @@ interface Ctx {
     SLACK_CLIENT_SECRET?: string;
     SLACK_SIGNING_SECRET?: string;
     SLACK_APP_ID?: string;
-    SLACK_ACCEPT_LEGACY_INSTALLS?: string;
   };
   data: { orgId: number; orgLogin: string; projectId?: string | null; isAdmin: boolean };
 }
@@ -93,12 +92,12 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
         requirements: ["github"],
         optionalConnections: ["slack"],
       },
-      noxSpot: {
+      feedback: {
         state: githubReady ? "ready" : "blocked",
         requirements: ["github"],
         optionalConnections: ["slack"],
       },
-      noxCue: {
+      telemetry: {
         state: slackReady ? "ready" : "blocked",
         requirements: ["slack"],
         prerequisitesReady: slackReady,
@@ -126,12 +125,12 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       defaultChannelId: slackChannels.fallbackChannelId || null,
       channels: {
         fallback: slackChannels.fallbackChannelId || null,
-        noxCue: slackChannels.noxCueChannelId || null,
-        noxticket: slackChannels.noxTicketChannelId || null,
-        noxFeed: slackChannels.noxFeedChannelId || null,
-        noxFeedPosts: slackChannels.postsChannelId || null,
-        noxFeedReleaseNotes: slackChannels.releaseNotesChannelId || null,
-        noxFeedDailySummary: slackChannels.dailySummaryChannelId || null,
+        telemetry: slackChannels.telemetryChannelId || null,
+        planning: slackChannels.planningChannelId || null,
+        activity: slackChannels.activityChannelId || null,
+        activityPosts: slackChannels.postsChannelId || null,
+        activityReleaseNotes: slackChannels.releaseNotesChannelId || null,
+        activityDailySummary: slackChannels.dailySummaryChannelId || null,
       },
       health: !slackMetadata ? "disconnected" : !slackInstall ? "degraded" : slackMetadata.health_status ?? "unknown",
       lastCheckedAt: slackMetadata?.last_checked_at ?? null,

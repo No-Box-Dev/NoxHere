@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { sendTransactionalEmail } from "../transactional-email";
-import { DEFAULT_NOXSPOT_RESOLUTION_TEMPLATE } from "../noxspot-resolution-template.js";
+import { DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE } from "../feedback-resolution-template.js";
 
 const env = {
   POSTMARK_SERVER_TOKEN: "test-server-token",
   PLATFORM_EMAIL_FROM: "invites@noxhere.com",
-  NOXSPOT_EMAIL_FROM: "updates@noxhere.com",
+  FEEDBACK_EMAIL_FROM: "updates@noxhere.com",
 };
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("NoxConnect transactional email", () => {
+describe("NoxHere transactional email", () => {
   it("owns platform email rendering and Postmark delivery", async () => {
     const request = vi.fn<typeof fetch>(async () => Response.json({
       ErrorCode: 0,
@@ -20,7 +20,7 @@ describe("NoxConnect transactional email", () => {
     vi.stubGlobal("fetch", request);
 
     const receipt = await sendTransactionalEmail(env, {
-      contract: "noxconnect.transactional-email",
+      contract: "noxhere.transactional-email",
       version: 1,
       requestId: "invite:one",
       recipient: "guest@example.com",
@@ -51,33 +51,33 @@ describe("NoxConnect transactional email", () => {
     expect(JSON.stringify(receipt)).not.toContain("guest@example.com");
   });
 
-  it("routes NoxSpot resolution mail through its dedicated stream", async () => {
+  it("routes Feedback resolution mail through its dedicated stream", async () => {
     const request = vi.fn<typeof fetch>(async () => Response.json({ ErrorCode: 0, MessageID: "resolution-id" }));
     vi.stubGlobal("fetch", request);
     await sendTransactionalEmail(env, {
-      contract: "noxconnect.transactional-email",
+      contract: "noxhere.transactional-email",
       version: 1,
       requestId: "resolution:report-1:v1",
       recipient: "reporter@example.com",
-      template: "noxspot.resolution",
+      template: "feedback.resolution",
       model: {
         siteName: "Storefront",
         reportTitle: "Checkout failed",
         summary: "Thank you for reporting this issue. We fixed the checkout flow, which now completes normally.",
         reporterName: "Ada",
-        responseUrl: "https://api.noxspot.dev/resolution/token-one",
-        presentation: DEFAULT_NOXSPOT_RESOLUTION_TEMPLATE,
+        responseUrl: "https://app.noxhere.com/resolution/token-one",
+        presentation: DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE,
       },
     });
     const body = JSON.parse(String(request.mock.calls[0][1]?.body));
     expect(body).toMatchObject({
-      From: "NoxSpot <updates@noxhere.com>",
-      MessageStream: "noxspot-resolutions",
-      Tag: "noxspot-resolution",
+      From: "Feedback <updates@noxhere.com>",
+      MessageStream: "feedback-resolutions",
+      Tag: "feedback-resolution",
     });
     expect(body.HtmlBody).toContain("Reopen the ticket");
     expect(body.HtmlBody).toContain("Storefront <span");
-    expect(body.HtmlBody).toContain("via NoxSpot");
+    expect(body.HtmlBody).toContain("via Feedback");
     expect(body.HtmlBody).toContain("You received this transactional email because you asked to be notified");
     expect(body.HtmlBody).toContain("background-color:#F5F3FF");
     expect(body.HtmlBody).toContain("add more details or a screenshot if helpful");
@@ -92,14 +92,14 @@ describe("NoxConnect transactional email", () => {
   it("bounds long request IDs for Postmark metadata without losing uniqueness", async () => {
     const request = vi.fn<typeof fetch>(async () => Response.json({ ErrorCode: 0, MessageID: "bounded-id" }));
     vi.stubGlobal("fetch", request);
-    const requestId = `noxspot-resolution:${"report-with-a-long-id-".repeat(4)}:2026-09-20T13:04:21.273Z`;
+    const requestId = `feedback-resolution:${"report-with-a-long-id-".repeat(4)}:2026-09-20T13:04:21.273Z`;
 
     await sendTransactionalEmail(env, {
-      contract: "noxconnect.transactional-email",
+      contract: "noxhere.transactional-email",
       version: 1,
       requestId,
       recipient: "reporter@example.com",
-      template: "noxspot.resolution",
+      template: "feedback.resolution",
       model: {
         siteName: "Storefront",
         reportTitle: "Checkout failed",
@@ -109,21 +109,21 @@ describe("NoxConnect transactional email", () => {
 
     const body = JSON.parse(String(request.mock.calls[0][1]?.body));
     expect(body.Metadata.request_id).toHaveLength(80);
-    expect(body.Metadata.request_id).toMatch(/^noxspot-resolution:report-with-a-long-id-.*:[0-9a-f]{16}$/);
+    expect(body.Metadata.request_id).toMatch(/^feedback-resolution:report-with-a-long-id-.*:[0-9a-f]{16}$/);
     expect(body.Metadata.request_id).not.toBe(requestId.slice(0, 80));
   });
 
-  it("renders a safe custom NoxSpot presentation and Postmark reply-to", async () => {
+  it("renders a safe custom Feedback presentation and Postmark reply-to", async () => {
     const request = vi.fn<typeof fetch>(async () => Response.json({ ErrorCode: 0, MessageID: "custom-id" }));
     vi.stubGlobal("fetch", request);
     await sendTransactionalEmail(env, {
-      contract: "noxconnect.transactional-email", version: 1, requestId: "custom:one",
-      recipient: "reporter@example.com", template: "noxspot.resolution",
+      contract: "noxhere.transactional-email", version: 1, requestId: "custom:one",
+      recipient: "reporter@example.com", template: "feedback.resolution",
       model: {
         siteName: "Storefront", reportTitle: "Checkout failed", summary: "The checkout now works.",
-        responseUrl: "https://api.noxspot.dev/resolution/token-one",
+        responseUrl: "https://app.noxhere.com/resolution/token-one",
         presentation: {
-          ...DEFAULT_NOXSPOT_RESOLUTION_TEMPLATE,
+          ...DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE,
           subject: "Update from {{site_name}}: {{report_title}}",
           buttonLabel: "Open this ticket again",
           replyTo: "support@example.com",
@@ -141,13 +141,13 @@ describe("NoxConnect transactional email", () => {
     const request = vi.fn<typeof fetch>(async () => Response.json({ ErrorCode: 0, MessageID: "playnist-id" }));
     vi.stubGlobal("fetch", request);
     await sendTransactionalEmail(env, {
-      contract: "noxconnect.transactional-email", version: 1, requestId: "playnist:one",
-      recipient: "reporter@example.com", template: "noxspot.resolution",
+      contract: "noxhere.transactional-email", version: 1, requestId: "playnist:one",
+      recipient: "reporter@example.com", template: "feedback.resolution",
       model: {
         siteName: "Playnist", reportTitle: "Collections on mobile", summary: "The controls now work.",
-        responseUrl: "https://api.noxspot.dev/resolution/token-one",
+        responseUrl: "https://app.noxhere.com/resolution/token-one",
         presentation: {
-          ...DEFAULT_NOXSPOT_RESOLUTION_TEMPLATE,
+          ...DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE,
           senderName: "Playnist",
           appearance: {
             accentColor: "#C62E07", backgroundColor: "#FFFDEB", surfaceColor: "#FFFFFF",
@@ -172,7 +172,7 @@ describe("NoxConnect transactional email", () => {
     const request = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", request);
     await expect(sendTransactionalEmail(env, {
-      contract: "noxconnect.transactional-email",
+      contract: "noxhere.transactional-email",
       version: 1,
       requestId: "one",
       recipient: "guest@example.com",
@@ -185,7 +185,7 @@ describe("NoxConnect transactional email", () => {
   it("fails closed when Postmark rejects the message", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({ ErrorCode: 10 }, { status: 422 })));
     await expect(sendTransactionalEmail(env, {
-      contract: "noxconnect.transactional-email",
+      contract: "noxhere.transactional-email",
       version: 1,
       requestId: "login:one",
       recipient: "guest@example.com",

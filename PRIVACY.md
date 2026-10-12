@@ -2,13 +2,13 @@
 
 _Last updated: 2026-09-08_
 
-This describes how the hosted **Nox** workspace at [app.noxhere.com](https://app.noxhere.com), operated by No-Box-Dev, handles data. NoxConnect is the connection layer used by the workspace. Self-hosted instances store everything in your own Cloudflare account and are not covered here.
+This describes how the hosted **Nox** workspace at [app.noxhere.com](https://app.noxhere.com), operated by No-Box-Dev, handles data. NoxHere is the connection layer used by the workspace. Self-hosted instances store everything in your own Cloudflare account and are not covered here.
 
 > This document is provided for transparency and is **not legal advice**. Have a lawyer review it before relying on it.
 
 ## What we store
 
-When you connect a GitHub organisation, NoxConnect syncs and stores GitHub data in a Cloudflare D1 database, scoped per organisation:
+When you connect a GitHub organisation, NoxHere syncs and stores GitHub data in a Cloudflare D1 database, scoped per organisation:
 
 - **Pull requests, issues, and their metadata** (titles, authors, reviewers, labels, timestamps, assignees)
 - **Organisation members and teams**
@@ -27,7 +27,7 @@ We do not store your source code.
 
 ## AI narration
 
-NoxConnect can narrate certain activity (currently pull-request merges) using Anthropic through NoxConnect's managed service. For those events, **event metadata** (such as PR title, author, and repository) is sent to Anthropic. Customers do not provide API credentials. Narration can be disabled for the organization and per project. We do not send your source code to the LLM provider.
+NoxHere can narrate certain activity (currently pull-request merges) using Anthropic through NoxHere's managed service. For those events, **event metadata** (such as PR title, author, and repository) is sent to Anthropic. Customers do not provide API credentials. Narration can be disabled for the organization and per project. We do not send your source code to the LLM provider.
 
 ## Data retention
 
@@ -47,7 +47,7 @@ prompts, feed content, access tokens, or secrets.
 ## Sub-processors
 
 - **Cloudflare** — hosting, database (D1), queues, and object storage (R2)
-- **Anthropic** — through NoxConnect's managed service, for event narration only
+- **Anthropic** — through NoxHere's managed service, for event narration only
 - **GitHub** — the source of the data you connect
 
 ## Deleting your data

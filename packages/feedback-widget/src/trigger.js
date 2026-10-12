@@ -24,19 +24,19 @@ export function createTrigger(onTrigger, options = {}) {
   const shortcut = options.shortcut || '';
 
   triggerButton = document.createElement('button');
-  triggerButton.className = 'noxspot-trigger';
+  triggerButton.className = 'feedback-trigger';
   triggerButton.innerHTML = `
     ${CLIP_ICON}
-    <span class="noxspot-trigger-text"></span>
-    <span class="noxspot-trigger-shortcut"></span>
-    <span class="noxspot-trigger-dots">
+    <span class="feedback-trigger-text"></span>
+    <span class="feedback-trigger-shortcut"></span>
+    <span class="feedback-trigger-dots">
       <span></span>
       <span></span>
       <span></span>
     </span>
   `;
-  triggerButton.querySelector('.noxspot-trigger-text').textContent = text;
-  const shortcutEl = triggerButton.querySelector('.noxspot-trigger-shortcut');
+  triggerButton.querySelector('.feedback-trigger-text').textContent = text;
+  const shortcutEl = triggerButton.querySelector('.feedback-trigger-shortcut');
   shortcutEl.textContent = shortcut;
   shortcutEl.style.display = shortcut ? '' : 'none';
   triggerButton.setAttribute('aria-label', shortcut ? `${text} (${shortcut})` : text);
@@ -71,7 +71,7 @@ export function darkenColor(hex, percent) {
 }
 
 function handleClick() {
-  debugLog('[NoxSpot] Trigger clicked');
+  debugLog('[Feedback] Trigger clicked');
   if (onTriggerCallback) {
     onTriggerCallback();
   }
@@ -84,9 +84,9 @@ export function updateTrigger(options = {}) {
     triggerButton.dataset.color = options.color;
   }
   if (options.text) {
-    const textEl = triggerButton.querySelector('.noxspot-trigger-text');
+    const textEl = triggerButton.querySelector('.feedback-trigger-text');
     if (textEl) textEl.textContent = options.text;
-    const shortcut = triggerButton.querySelector('.noxspot-trigger-shortcut')?.textContent || '';
+    const shortcut = triggerButton.querySelector('.feedback-trigger-shortcut')?.textContent || '';
     triggerButton.setAttribute('aria-label', shortcut ? `${options.text} (${shortcut})` : options.text);
     if (shortcut) triggerButton.title = `${options.text} (${shortcut})`;
   }

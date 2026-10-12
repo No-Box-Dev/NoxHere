@@ -28,7 +28,7 @@ function context(db: ReturnType<typeof makeDb>, q = "login") {
 }
 
 describe("GET /api/search", () => {
-  it("returns ranked, typed results across every NoxFeed source", async () => {
+  it("returns ranked, typed results across every Activity source", async () => {
     const db = makeDb([
       [{ id: "1", login: "login", avatar_url: "https://img/person" }],
       [{ id: "2", repo: "mac", number: 17, title: "Login flow", state: "open", author: "jasper", author_avatar: null, html_url: "https://github/pr/17", updated_at: "2026-09-03T00:00:00Z" }],

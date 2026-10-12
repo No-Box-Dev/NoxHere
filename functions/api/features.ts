@@ -1,12 +1,12 @@
-// /api/features — list and create a project's features. NoxTicket owns the data.
+// /api/features — list and create a project's features. Planning owns the data.
 // PATCH and DELETE for a single feature live in features/[number].ts.
 
 import { getCtx, errorResponse } from "../lib/db";
-import { callFeatureService, delegateFeatureMutation } from "../lib/noxticket-features";
-import type { NoxTicketEnvironment } from "../lib/noxticket-service";
+import { callFeatureService, delegateFeatureMutation } from "../lib/planning-features";
+import type { PlanningEnvironment } from "../lib/planning-service";
 
 interface Ctx {
-  env: NoxTicketEnvironment & { DB: D1Database; TASK_QUEUE: Queue };
+  env: PlanningEnvironment & { DB: D1Database; TASK_QUEUE: Queue };
   data: { orgId: number; projectId?: string | null; orgLogin: string; userLogin: string; isAdmin?: boolean };
   request: Request;
 }

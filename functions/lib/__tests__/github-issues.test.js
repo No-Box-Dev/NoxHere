@@ -8,7 +8,7 @@ import {
   updateRepositoryIssue,
 } from "../github-issues.js";
 
-describe("NoxConnect GitHub issue transport", () => {
+describe("NoxHere GitHub issue transport", () => {
   beforeEach(() => vi.restoreAllMocks());
 
   it("finds a product issue by an opaque body marker", async () => {
@@ -32,10 +32,10 @@ describe("NoxConnect GitHub issue transport", () => {
     await createRepositoryIssue("installation-token", "acme", "web", {
       title: "Broken button",
       body: "Details",
-      labels: ["noxspot", "bug"],
+      labels: ["feedback", "bug"],
     });
     const [, init] = globalThis.fetch.mock.calls[0];
-    expect(JSON.parse(init.body)).toEqual({ title: "Broken button", body: "Details", labels: ["noxspot", "bug"] });
+    expect(JSON.parse(init.body)).toEqual({ title: "Broken button", body: "Details", labels: ["feedback", "bug"] });
   });
 
   it("reads, updates, and comments on an existing issue", async () => {
@@ -57,7 +57,7 @@ describe("NoxConnect GitHub issue transport", () => {
       .mockResolvedValueOnce({ ok: false, status: 422, json: async () => ({ message: "already_exists" }) })
       .mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({}) });
     await expect(ensureRepositoryLabels("installation-token", "acme", "web", [
-      { name: "noxspot", color: "FE795D" },
+      { name: "feedback", color: "FE795D" },
       { name: "bug", color: "D73A4A" },
     ])).resolves.toBeUndefined();
   });

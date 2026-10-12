@@ -4,7 +4,7 @@ import type { AuthContext } from "./auth";
 
 const env: GuestEnv = {
   email: { sendEmail: vi.fn(async (input: unknown) => ({
-    contract: "noxconnect.transactional-email-receipt" as const,
+    contract: "noxhere.transactional-email-receipt" as const,
     version: 1 as const,
     requestId: String((input as { requestId: string }).requestId),
     status: "accepted" as const,

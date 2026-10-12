@@ -1,4 +1,4 @@
-from .client import NoxCueClient, create_noxcue, safe_error_details
+from .client import TelemetryClient, create_telemetry, safe_error_details
 from ._contract import __version__
 from .types import (
     DeliveryError,
@@ -14,10 +14,10 @@ __all__ = [
     "DeliveryResult",
     "Environment",
     "ErrorDetails",
-    "NoxCueClient",
+    "TelemetryClient",
     "Outcome",
     "Reason",
     "__version__",
-    "create_noxcue",
+    "create_telemetry",
     "safe_error_details",
 ]

@@ -6,7 +6,7 @@ describe("v1 middleware errors", () => {
     const secret = "test-internal-secret";
     const now = Math.floor(Date.now() / 1000);
     const assertion = {
-      version: 1, issuer: "noxhere", audience: "noxconnect",
+      version: 1, issuer: "noxhere", audience: "noxhere",
       issuedAt: now, expiresAt: now + 30, method, path: pathname,
       auth: {
         credentialType: "session", credentialId: "session-hash", principalId: "github:42",
@@ -30,10 +30,10 @@ describe("v1 middleware errors", () => {
     };
   }
 
-  function noxCueEnv(requests) {
+  function telemetryEnv(requests) {
     return {
-      NOXCUE_INGEST_KEY: `nox_secret_${"a".repeat(40)}`,
-      NOXCUE_INGEST: {
+      TELEMETRY_INGEST_KEY: `nox_secret_${"a".repeat(40)}`,
+      TELEMETRY_INGEST: {
         async fetch(request) {
           requests.push(request);
           return new Response(JSON.stringify({ accepted: true }), { status: 202 });
@@ -55,14 +55,14 @@ describe("v1 middleware errors", () => {
       apiVersion: 1,
       error: {
         code: "missing_internal_assertion",
-        message: "NoxConnect accepts authenticated requests only from NoxHere",
+        message: "NoxHere accepts authenticated requests only from NoxHere",
       },
     });
   });
 
   it("rejects provider bearer tokens before calling GitHub or a handler", async () => {
     const request = new Request("https://app.noxhere.com/api/v1/services", {
-      headers: { Authorization: "Bearer github_pat_not-a-noxconnect-credential" },
+      headers: { Authorization: "Bearer github_pat_not-a-noxhere-credential" },
     });
     const response = await onRequest({
       request,
@@ -75,7 +75,7 @@ describe("v1 middleware errors", () => {
       apiVersion: 1,
       error: {
         code: "missing_internal_assertion",
-        message: "NoxConnect accepts authenticated requests only from NoxHere",
+        message: "NoxHere accepts authenticated requests only from NoxHere",
       },
     });
   });
@@ -88,16 +88,16 @@ describe("v1 middleware errors", () => {
       next() { throw new Error("handler should not run"); },
     });
     expect(await response.json()).toEqual({
-      error: "NoxConnect accepts authenticated requests only from NoxHere",
+      error: "NoxHere accepts authenticated requests only from NoxHere",
     });
   });
 
   it("rejects a cross-project selector on a project-scoped token", async () => {
-    const signed = await signedRequest("/api/v1/feed", {
+    const signed = await signedRequest("/api/v1/activity", {
       credentialType: "api_token",
       credentialId: "project-token",
       projectId: "project-a",
-      scopes: ["noxfeed:read"],
+      scopes: ["activity:read"],
     }, { "X-Project-ID": "project-b" });
     const response = await onRequest({
       request: signed.request,
@@ -197,7 +197,7 @@ describe("v1 middleware errors", () => {
     expect(handlerProjectId).toBe("project-1");
   });
 
-  it("lets NoxTicket resolve project-owned feature numbers in its own database", async () => {
+  it("lets Planning resolve project-owned feature numbers in its own database", async () => {
     const signed = await signedRequest(
       "/api/v1/features/3",
       {},
@@ -238,15 +238,15 @@ describe("v1 middleware errors", () => {
   for (const pathname of [
     "/api/v1/events",
     "/api/v1/features",
-    "/api/v1/services/noxfeed/config",
-    "/api/v1/services/noxticket/config",
-    "/api/v1/services/noxconnect/config",
-    "/api/v1/services/noxspot/config",
-    "/api/v1/services/noxcue/config",
+    "/api/v1/services/activity/config",
+    "/api/v1/services/planning/config",
+    "/api/v1/services/noxhere/config",
+    "/api/v1/services/feedback/config",
+    "/api/v1/services/telemetry/config",
     "/api/v1/integrations/slack/routing",
     "/api/v1/integrations/setup",
-    "/api/v1/spots/sites",
-    "/api/v1/cues/sources",
+    "/api/v1/feedback/sites",
+    "/api/v1/telemetry/sources",
   ]) {
     it(`allows organization-wide ${pathname} requests`, async () => {
       const signed = await signedRequest(pathname);
@@ -270,7 +270,7 @@ describe("v1 middleware errors", () => {
   }
 
   it("uses a project identifier in the URL without requiring a duplicate header", async () => {
-    const signed = await signedRequest("/api/v1/cues/projects/project-1/metrics");
+    const signed = await signedRequest("/api/v1/telemetry/projects/project-1/metrics");
     let handlerProjectId = "not-called";
     const middlewareContext = {
       request: signed.request,
@@ -313,7 +313,7 @@ describe("v1 middleware errors", () => {
     expect(response.status).toBe(404);
   });
 
-  it("validates NoxFeed's legacy project_id selection as project scope", async () => {
+  it("validates Activity's legacy project_id selection as project scope", async () => {
     const signed = await signedRequest("/api/v1/events?project_id=project-1");
     let handlerProjectId = "not-called";
     const middlewareContext = {
@@ -340,9 +340,9 @@ describe("v1 middleware errors", () => {
   });
 
   it("blocks guest writes before a handler runs", async () => {
-    const signed = await signedRequest("/api/v1/spots/project-overview", {
+    const signed = await signedRequest("/api/v1/feedback/project-overview", {
       accessLevel: "guest",
-      guestAccess: { organizationWide: false, projects: { "project-1": ["noxspot"] } },
+      guestAccess: { organizationWide: false, projects: { "project-1": ["feedback"] } },
     }, { "X-Project-ID": "project-1" }, "POST");
     const response = await onRequest({
       request: signed.request,
@@ -355,9 +355,9 @@ describe("v1 middleware errors", () => {
   });
 
   it("hides a project tool that was not granted to the guest", async () => {
-    const signed = await signedRequest("/api/v1/cues/project-overview", {
+    const signed = await signedRequest("/api/v1/telemetry/project-overview", {
       accessLevel: "guest",
-      guestAccess: { organizationWide: false, projects: { "project-1": ["noxspot"] } },
+      guestAccess: { organizationWide: false, projects: { "project-1": ["feedback"] } },
     }, { "X-Project-ID": "project-1" });
     const response = await onRequest({
       request: signed.request,
@@ -385,7 +385,7 @@ describe("v1 middleware errors", () => {
   });
 
   it("does not gate a NoxHere capability with a legacy product toggle", async () => {
-    const signed = await signedRequest("/api/v1/spots/sites", {}, { "X-Project-ID": "project-1" });
+    const signed = await signedRequest("/api/v1/feedback/sites", {}, { "X-Project-ID": "project-1" });
     let continued = false;
     const response = await onRequest({
       request: signed.request,
@@ -396,7 +396,7 @@ describe("v1 middleware errors", () => {
             return { bind: () => ({ first: async () => {
               if (sql.includes("FROM orgs")) return { id: 7, github_login: "acme", suspended_at: null };
               if (sql.includes("FROM projects project")) return { id: "project-1", archived: 0, enabled: 1 };
-              return { data: JSON.stringify({ apps: { noxspot: false } }) };
+              return { data: JSON.stringify({ apps: { feedback: false } }) };
             } }) };
           },
         },
@@ -408,10 +408,10 @@ describe("v1 middleware errors", () => {
     expect(continued).toBe(true);
   });
 
-  it("lets the source-key-authenticated NoxCue gateway bypass GitHub auth", async () => {
+  it("lets the source-key-authenticated Telemetry gateway bypass GitHub auth", async () => {
     let continued = false;
     const response = await onRequest({
-      request: new Request("https://app.noxhere.com/api/cues/public/v1/events", { method: "POST" }),
+      request: new Request("https://app.noxhere.com/api/telemetry/public/v1/events", { method: "POST" }),
       env: {},
       data: {},
       next() { continued = true; return new Response(null, { status: 204 }); },
@@ -422,7 +422,7 @@ describe("v1 middleware errors", () => {
 
   it("applies the v1 response contract after a canonical public handler runs", async () => {
     const response = await onRequest({
-      request: new Request("https://app.noxhere.com/api/v1/cues/public/events", { method: "POST" }),
+      request: new Request("https://app.noxhere.com/api/v1/telemetry/public/events", { method: "POST" }),
       env: {},
       data: {},
       next() {
@@ -443,7 +443,7 @@ describe("v1 middleware errors", () => {
 
   it("marks supported unversioned product routes as deprecated without setting a sunset", async () => {
     const response = await onRequest({
-      request: new Request("https://app.noxhere.com/api/cues/public/v1/events", { method: "POST" }),
+      request: new Request("https://app.noxhere.com/api/telemetry/public/v1/events", { method: "POST" }),
       env: {}, data: {}, next: () => Response.json({ accepted: true }, { status: 202 }),
     });
     expect(response.status).toBe(202);
@@ -456,7 +456,7 @@ describe("v1 middleware errors", () => {
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const response = await onRequest({
-        request: new Request("https://app.noxhere.com/api/v1/cues/public/events", { method: "POST" }),
+        request: new Request("https://app.noxhere.com/api/v1/telemetry/public/events", { method: "POST" }),
         env: {},
         data: {},
         next() { throw new Error("database password was secret"); },
@@ -478,7 +478,7 @@ describe("v1 middleware errors", () => {
     const response = await onRequest({
       request: signed.request,
       env: {
-        ...noxCueEnv(requests),
+        ...telemetryEnv(requests),
         NOXHERE_INTERNAL_SECRET: signed.secret,
         DB: { prepare: (sql) => ({ bind: () => ({ first: async () => sql.includes("FROM orgs")
           ? { id: 7, github_login: "acme", suspended_at: null }
@@ -499,17 +499,17 @@ describe("v1 middleware errors", () => {
       message: "A NoxHere API request returned an unexpected server error.",
       error: { name: "HTTPResponseError", code: "HTTP_500", status: 500 },
       data: {
-        component: "noxconnect.pages-api",
-        fingerprint: "noxconnect.http|GET|/api/v1/events|500",
+        component: "noxhere.pages-api",
+        fingerprint: "noxhere.http|GET|/api/v1/events|500",
       },
     });
   });
 
-  it("does not recursively report a NoxCue ingest failure", async () => {
+  it("does not recursively report a Telemetry ingest failure", async () => {
     const requests = [];
     const response = await onRequest({
-      request: new Request("https://app.noxhere.com/api/v1/cues/public/events", { method: "POST" }),
-      env: noxCueEnv(requests),
+      request: new Request("https://app.noxhere.com/api/v1/telemetry/public/events", { method: "POST" }),
+      env: telemetryEnv(requests),
       data: {},
       next() { return new Response("failed", { status: 500 }); },
     });

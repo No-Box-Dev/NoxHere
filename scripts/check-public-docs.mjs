@@ -9,9 +9,6 @@ const publicDocs = [
 for (const path of publicDocs) {
   const content = await readFile(new URL(`../${path}`, import.meta.url), "utf8");
   if (!content.includes("NoxHere")) fail(`${path} does not identify NoxHere as the product`);
-  if (/NoxConnect is the (?:public|customer-facing) product/.test(content)) {
-    fail(`${path} still presents Connect as a separate product`);
-  }
 }
 
 const developerReference = await readFile(new URL("../public/developers.html", import.meta.url), "utf8");
@@ -39,9 +36,9 @@ for (const tag of ["Stats", "Incidents"]) {
 const operations = Object.values(openapi.paths).flatMap((pathItem) => Object.values(pathItem))
   .filter((operation) => operation && typeof operation === "object" && operation.operationId);
 const operation = (id) => operations.find((entry) => entry.operationId === id);
-if (operation("getCueProjectDashboard")?.tags?.[0] !== "Stats") fail("Stats dashboard is not tagged Stats");
+if (operation("getTelemetryProjectDashboard")?.tags?.[0] !== "Stats") fail("Stats dashboard is not tagged Stats");
 if (operation("getProjectIncidents")?.tags?.[0] !== "Incidents") fail("Project incidents are not tagged Incidents");
-if (operation("ingestNoxCueEvent")?.responses?.["429"]?.$ref !== "#/components/responses/RateLimited") fail("Telemetry 429 does not document Retry-After");
+if (operation("ingestTelemetryEvent")?.responses?.["429"]?.$ref !== "#/components/responses/RateLimited") fail("Telemetry 429 does not document Retry-After");
 if (!typeScriptReadme.includes("nox.workspace.listNoxServices()")) fail("TypeScript README does not use a real generated operation");
 if (!pythonReadme.includes("nox.workspace.list_nox_services()")) fail("Python README does not use a real generated operation");
 if (typeScriptReadme.includes("nox.incidents.getProjectIncidents") || pythonReadme.includes("nox.incidents.get_project_incidents")) {
@@ -56,10 +53,7 @@ function visitOpenApiProse(value, location = "openapi") {
   for (const [key, child] of Object.entries(value)) {
     const childLocation = `${location}.${key}`;
     if ((key === "summary" || key === "description") && typeof child === "string") {
-      const prose = child.replaceAll(/NoxSpot\.(?:identify|init)/g, "compatibility-widget-method");
-      if (/NoxConnect is the (?:public|customer-facing) product/.test(prose)) {
-        fail(`${childLocation} presents Connect as a separate product`);
-      }
+      const prose = child.replaceAll(/Feedback\.(?:identify|init)/g, "compatibility-widget-method");
       continue;
     }
     visitOpenApiProse(child, childLocation);

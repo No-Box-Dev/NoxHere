@@ -82,7 +82,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const submitter = sourceId(data);
   const rate = await context.env.DB.prepare(
     `SELECT COUNT(*) AS count FROM platform_events
-      WHERE org_id = ? AND project_id = ? AND source_component = 'noxconnect.developer_feedback'
+      WHERE org_id = ? AND project_id = ? AND source_component = 'noxhere.developer_feedback'
         AND source_id = ? AND received_at >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-1 hour')`,
   ).bind(data.orgId, data.projectId, submitter).first<{ count: number }>();
   if (Number(rate?.count ?? 0) >= HOURLY_LIMIT) {
@@ -101,7 +101,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
       type: "feedback.developer.submitted",
       orgId: data.orgId,
       projectId: data.projectId,
-      source: { component: "noxconnect.developer_feedback", sourceId: submitter },
+      source: { component: "noxhere.developer_feedback", sourceId: submitter },
       subject: { type: "feedback.developer", id: eventId },
       actor: data.auth?.type === "api_token"
         ? { type: "system" }

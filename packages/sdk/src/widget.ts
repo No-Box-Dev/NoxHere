@@ -22,7 +22,7 @@ export interface InstallNoxHereWidgetOptions {
 
 declare global {
   interface Window {
-    NoxSpot?: NoxHereWidgetApi;
+    Feedback?: NoxHereWidgetApi;
     __NoxHereWidgetSiteId?: string;
   }
 }
@@ -39,15 +39,15 @@ export async function installNoxHereWidget(options: InstallNoxHereWidgetOptions)
     if (options.reporter !== undefined) widget.identify(options.reporter);
     return widget;
   }
-  if (window.NoxSpot) {
+  if (window.Feedback) {
     if (window.__NoxHereWidgetSiteId !== siteId) {
       throw new Error("The NoxHere widget is already installed for a different or unknown site");
     }
-    if (options.reporter !== undefined) window.NoxSpot.identify(options.reporter);
-    return window.NoxSpot;
+    if (options.reporter !== undefined) window.Feedback.identify(options.reporter);
+    return window.Feedback;
   }
 
-  const baseUrl = new URL(options.baseUrl ?? "https://api.noxspot.dev");
+  const baseUrl = new URL(options.baseUrl ?? "https://app.noxhere.com");
   if (baseUrl.protocol !== "https:" && !(baseUrl.protocol === "http:" && ["localhost", "127.0.0.1", "::1"].includes(baseUrl.hostname))) {
     throw new Error("Widget baseUrl must use HTTPS (or HTTP on localhost)");
   }
@@ -70,7 +70,7 @@ export async function installNoxHereWidget(options: InstallNoxHereWidgetOptions)
     script.onload = () => {
       clearTimeout(timeout);
       options.signal?.removeEventListener("abort", abort);
-      const widget = Reflect.get(window, "NoxSpot") as NoxHereWidgetApi | undefined;
+      const widget = Reflect.get(window, "Feedback") as NoxHereWidgetApi | undefined;
       if (!widget) return fail(new Error("NoxHere widget loaded without registering its API"));
       window.__NoxHereWidgetSiteId = siteId;
       resolve(widget);

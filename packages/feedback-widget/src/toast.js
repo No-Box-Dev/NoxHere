@@ -9,22 +9,22 @@ export function showToast({ message, variant = 'success', durationMs = 1800, act
   dismissToast();
 
   const toast = document.createElement('div');
-  toast.className = `noxspot-toast noxspot-toast--${variant}`;
+  toast.className = `feedback-toast feedback-toast--${variant}`;
   toast.setAttribute('role', variant === 'error' ? 'alert' : 'status');
 
   const dot = document.createElement('span');
-  dot.className = 'noxspot-toast-dot';
+  dot.className = 'feedback-toast-dot';
   toast.appendChild(dot);
 
   const text = document.createElement('span');
-  text.className = 'noxspot-toast-text';
+  text.className = 'feedback-toast-text';
   text.textContent = message;
   toast.appendChild(text);
 
   if (action && typeof action.onClick === 'function') {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'noxspot-toast-action';
+    btn.className = 'feedback-toast-action';
     btn.textContent = action.label || 'Retry';
     btn.addEventListener('click', () => {
       dismissToast();
@@ -37,7 +37,7 @@ export function showToast({ message, variant = 'success', durationMs = 1800, act
   activeToast = toast;
 
   requestAnimationFrame(() => {
-    if (toast.isConnected) toast.classList.add('noxspot-toast--visible');
+    if (toast.isConnected) toast.classList.add('feedback-toast--visible');
   });
 
   if (durationMs > 0) {
@@ -53,6 +53,6 @@ export function dismissToast() {
   if (!activeToast) return;
   const t = activeToast;
   activeToast = null;
-  t.classList.remove('noxspot-toast--visible');
+  t.classList.remove('feedback-toast--visible');
   setTimeout(() => t.remove(), 200);
 }

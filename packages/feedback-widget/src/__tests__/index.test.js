@@ -116,15 +116,15 @@ describe('init', () => {
   it('renders the trigger synchronously, without awaiting config', () => {
     init({ siteId: 'test-site' });
     // The trigger must exist right after init() returns — fetchConfig is still pending.
-    const btn = document.querySelector('.noxspot-trigger');
+    const btn = document.querySelector('.feedback-trigger');
     expect(btn).toBeTruthy();
     expect(btn.style.background).toBeTruthy();
     expect(fetch).toHaveBeenCalledWith(
-      'https://api.noxspot.dev/api/spots/public/v1/sites/test-site/members',
+      'https://app.noxhere.com/api/feedback/public/v1/sites/test-site/members',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     expect(fetch).toHaveBeenCalledWith(
-      'https://api.noxspot.dev/api/spots/public/v1/sites/test-site/config',
+      'https://app.noxhere.com/api/feedback/public/v1/sites/test-site/config',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });
@@ -132,16 +132,16 @@ describe('init', () => {
   it('no-ops when siteId is missing', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     init({});
-    expect(document.querySelector('.noxspot-trigger')).toBeNull();
+    expect(document.querySelector('.feedback-trigger')).toBeNull();
     expect(errorSpy).toHaveBeenCalled();
   });
 
   it('exposes identify and updates an open reporter field', () => {
-    document.body.innerHTML = '<input id="noxspot-reporter">';
+    document.body.innerHTML = '<input id="feedback-reporter">';
     identify({ id: 'opaque-id', name: 'Ada', email: 'ada@example.com' });
-    expect(document.getElementById('noxspot-reporter').value).toBe('Ada');
+    expect(document.getElementById('feedback-reporter').value).toBe('Ada');
     identify(null);
-    expect(document.getElementById('noxspot-reporter').value).toBe('');
+    expect(document.getElementById('feedback-reporter').value).toBe('');
   });
 
   it('passes an explicitly initialized reporter into the capture form', async () => {
@@ -150,12 +150,12 @@ describe('init', () => {
       json: () => Promise.resolve(url.includes('/members') ? { members: [] } : { environments: [], blocks: [] }),
     }));
     const open = vi.fn();
-    window.__NoxSpotCore = { open, cleanup: vi.fn() };
+    window.__FeedbackCore = { open, cleanup: vi.fn() };
     init({ siteId: 'test-site', reporter: { name: 'Ada', email: 'ada@example.com', notifyOnResolution: true } });
-    document.querySelector('.noxspot-trigger').click();
+    document.querySelector('.feedback-trigger').click();
     await vi.waitFor(() => expect(open).toHaveBeenCalled());
     expect(open.mock.calls[0][0].callbacks.reporter).toEqual({ name: 'Ada', email: 'ada@example.com', avatarUrl: '', notifyOnResolution: true });
-    delete window.__NoxSpotCore;
+    delete window.__FeedbackCore;
   });
 
   it('waits for config and members before opening a fast-clicked widget', async () => {
@@ -164,10 +164,10 @@ describe('init', () => {
       pending[url.includes('/members') ? 'members' : 'config'] = resolve;
     }));
     const open = vi.fn();
-    window.__NoxSpotCore = { open, cleanup: vi.fn() };
+    window.__FeedbackCore = { open, cleanup: vi.fn() };
 
     init({ siteId: 'test-site' });
-    document.querySelector('.noxspot-trigger').click();
+    document.querySelector('.feedback-trigger').click();
     await Promise.resolve();
     expect(open).not.toHaveBeenCalled();
 
@@ -191,7 +191,7 @@ describe('init', () => {
       { id: 'context', type: 'custom_text', label: 'Context' },
       { id: 'capture-element-picker', type: 'element_picker', required: false },
     ]);
-    delete window.__NoxSpotCore;
+    delete window.__FeedbackCore;
   });
 });
 
@@ -217,7 +217,7 @@ describe('keyboard shortcut', () => {
 
   it('fires on default ctrl+shift+s combo (non-Mac)', () => {
     init({ siteId: 'test-site' });
-    const trigger = document.querySelector('.noxspot-trigger');
+    const trigger = document.querySelector('.feedback-trigger');
     expect(trigger.style.display).not.toBe('none');
 
     // jsdom reports a non-Mac platform, so the default resolves to ctrl+shift+s.
@@ -229,7 +229,7 @@ describe('keyboard shortcut', () => {
 
   it('accepts a custom shortcut', () => {
     init({ siteId: 'test-site', shortcut: 'ctrl+alt+k' });
-    const trigger = document.querySelector('.noxspot-trigger');
+    const trigger = document.querySelector('.feedback-trigger');
 
     dispatchKey({ key: 's', altKey: true, shiftKey: true });
     expect(trigger.style.display).not.toBe('none');
@@ -241,7 +241,7 @@ describe('keyboard shortcut', () => {
 
   it('does not fire when modifiers are missing', () => {
     init({ siteId: 'test-site' });
-    const trigger = document.querySelector('.noxspot-trigger');
+    const trigger = document.querySelector('.feedback-trigger');
 
     const event = dispatchKey({ key: 's' });
     expect(event.defaultPrevented).toBe(false);
@@ -250,7 +250,7 @@ describe('keyboard shortcut', () => {
 
   it('does not attach a listener when shortcut is disabled', () => {
     init({ siteId: 'test-site', shortcut: null });
-    const trigger = document.querySelector('.noxspot-trigger');
+    const trigger = document.querySelector('.feedback-trigger');
 
     const event = dispatchKey({ key: 's', ctrlKey: true, shiftKey: true });
     expect(event.defaultPrevented).toBe(false);
@@ -261,7 +261,7 @@ describe('keyboard shortcut', () => {
     init({ siteId: 'test-site' });
     destroy();
 
-    const trigger = document.querySelector('.noxspot-trigger');
+    const trigger = document.querySelector('.feedback-trigger');
     expect(trigger).toBeNull();
 
     // Re-init so the afterEach destroy() call has something to clean up.

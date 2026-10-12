@@ -2,14 +2,14 @@
  * Auto-collect metadata about the page and environment.
  *
  * Console history lives in the loader bundle (see console-buffer.js); we read
- * it here through `window.__NoxSpotConsole` so reports include errors that
+ * it here through `window.__FeedbackConsole` so reports include errors that
  * occurred before the core bundle loaded.
  */
 
 import { getBrowser, getOS, extractUrlEntities } from './env.js';
 
 function getRecentConsoleLogs() {
-  return window.__NoxSpotConsole?.getLogs?.() ?? [];
+  return window.__FeedbackConsole?.getLogs?.() ?? [];
 }
 
 export function collectMetadata() {

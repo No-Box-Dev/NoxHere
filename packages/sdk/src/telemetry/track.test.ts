@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createNoxCue as createBrowserNoxCue } from "./browser.js";
-import { createNoxCue as createServerNoxCue } from "./server.js";
+import { createTelemetry as createBrowserTelemetry } from "./browser.js";
+import { createTelemetry as createServerTelemetry } from "./server.js";
 
 const serverKey = `nox_secret_${"b".repeat(32)}`;
 const browserKey = `nox_pub_${"a".repeat(32)}`;
@@ -11,7 +11,7 @@ const accepted = () => new Response('{"eventId":"stored"}', { status: 202 });
 describe("unified telemetry track API", () => {
   it("protects a server identity before serializing the request", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const client = createServerNoxCue({ key: serverKey, identityHashKey, environment: "production", fetch: request });
+    const client = createServerTelemetry({ key: serverKey, identityHashKey, environment: "production", fetch: request });
 
     await expect(client.track("records.parsed", { userId: "user-42", value: 3 }))
       .resolves.toMatchObject({ ok: true });
@@ -28,7 +28,7 @@ describe("unified telemetry track API", () => {
 
   it("fails closed without an identity hashing key", async () => {
     const request = vi.fn<typeof fetch>();
-    const client = createServerNoxCue({ key: serverKey, fetch: request });
+    const client = createServerTelemetry({ key: serverKey, fetch: request });
     await expect(client.track("records.parsed", { userId: "raw-user" }))
       .resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
     expect(request).not.toHaveBeenCalled();
@@ -36,7 +36,7 @@ describe("unified telemetry track API", () => {
 
   it("sends an anonymous browser count without storing an identity", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
-    const client = createBrowserNoxCue({ key: browserKey, fetch: request });
+    const client = createBrowserTelemetry({ key: browserKey, fetch: request });
     client.identify({ id: "must-not-leave" });
 
     await client.track("website.demo_clicked", { value: 2 });
@@ -52,7 +52,7 @@ describe("unified telemetry track API", () => {
 
   it("rejects non-website activity from a public key", async () => {
     const request = vi.fn<typeof fetch>();
-    const client = createBrowserNoxCue({ key: browserKey, fetch: request });
+    const client = createBrowserTelemetry({ key: browserKey, fetch: request });
     await expect(client.track("records.parsed" as "website.demo_clicked"))
       .resolves.toMatchObject({ ok: false, error: "invalid_configuration" });
     expect(request).not.toHaveBeenCalled();

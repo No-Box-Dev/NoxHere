@@ -26,7 +26,7 @@ export default function SettingsPage() {
     mutationFn: (next: ProjectSettings) => platformApi.setProjectSettings(organizationId, projectId, next),
     onSuccess: (next) => {
       queryClient.setQueryData(settingsKey, next);
-      void queryClient.invalidateQueries({ queryKey: ["feed", organizationId, projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["activity", organizationId, projectId] });
     },
   });
   const excluded = new Set(settings.data?.excludedMembers ?? []);
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     <SettingsAccordion id="maintenance" symbol="M" title="Maintenance" description="Synchronization, recovery and background operations" status="Connected">
       <Maintenance organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} />
     </SettingsAccordion>
-  </div><div className="callout"><div><b>Projects belong to NoxConnect</b><p>Change the active project with the NoxConnect project picker; settings then apply to that selected project.</p></div><StatusTag tone="positive">Boundary enforced</StatusTag></div></div></section>;
+  </div><div className="callout"><div><b>Projects belong to NoxHere</b><p>Change the active project with the NoxHere project picker; settings then apply to that selected project.</p></div><StatusTag tone="positive">Boundary enforced</StatusTag></div></div></section>;
 }
 
 function SettingsAccordion({ id, symbol, title, description, status, children, initialOpen = false }: { id: SettingsSection; symbol: string; title: string; description: string; status: string; children: ReactNode; initialOpen?: boolean }) {
@@ -94,7 +94,7 @@ function ApiAccess({ organizationId, projectId, projectName, isAdmin }: { organi
 function ApiReference({ projectName }: { projectName: string }) {
   return <div className="api-reference">
     <div className="api-reference-intro"><div><span className="eyebrow">BASE URL</span><code>https://app.noxhere.com/api/v1</code></div><div><span className="eyebrow">AUTHENTICATION</span><p>Send the project-scoped automation token as <code>Authorization: Bearer nox_sk_…</code></p></div><a className="button secondary" href="/openapi.json" target="_blank" rel="noreferrer">Open full API specification ↗</a></div>
-    <div className="list-surface"><ListRow symbol="S" title="Discover capabilities" description="GET /api/v1/services" meta={<StatusTag>read</StatusTag>} /><ListRow symbol="P" title="List projects" description="GET /api/v1/projects" meta={<StatusTag>{projectName}</StatusTag>} /><ListRow symbol="A" title="Read project activity" description="GET /api/v1/projects/{id}/activity" meta={<StatusTag>Activity read</StatusTag>} /><ListRow symbol="E" title="Ingest a public stat event" description="POST /api/v1/cues/public/events" meta={<StatusTag>Incident ingest</StatusTag>} /></div>
+    <div className="list-surface"><ListRow symbol="S" title="Discover capabilities" description="GET /api/v1/services" meta={<StatusTag>read</StatusTag>} /><ListRow symbol="P" title="List projects" description="GET /api/v1/projects" meta={<StatusTag>{projectName}</StatusTag>} /><ListRow symbol="A" title="Read project activity" description="GET /api/v1/projects/{id}/activity" meta={<StatusTag>Activity read</StatusTag>} /><ListRow symbol="E" title="Ingest a public stat event" description="POST /api/v1/telemetry/public/events" meta={<StatusTag>Incident ingest</StatusTag>} /></div>
     <p className="section-note">Project IDs, tokens, scopes and API documentation stay together in project settings.</p>
   </div>;
 }

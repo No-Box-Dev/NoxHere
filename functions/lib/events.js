@@ -272,7 +272,7 @@ export async function storeEvent(db, ghEvent, deliveryId, payload, ownerId) {
         name: author.name,
       });
     } catch (err) {
-      console.error("[noxconnect events] upsertGhUser failed:", err);
+      console.error("[noxhere events] upsertGhUser failed:", err);
     }
   }
   const actor = author ? await resolveActorFromGithub(db, ownerId, author) : null;
@@ -319,7 +319,7 @@ export async function recordMergedPr(env, args) {
         name: pr.user.name ?? null,
       });
     } catch (err) {
-      console.error("[noxconnect events] upsertGhUser failed:", err);
+      console.error("[noxhere events] upsertGhUser failed:", err);
     }
   }
 

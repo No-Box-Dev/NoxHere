@@ -2,7 +2,7 @@
 
 NoxHere is the customer-facing product: the web app, public API, CLI, sessions,
 organization/project authorization, capability enablement, and API
-documentation. Feed, Ticket, Spot, Cue, and Connect are capabilities in this
+documentation. Feed, Ticket, Spot, Telemetry, and Connect are capabilities in this
 repository, not separate products. The gateway at `app.noxhere.com`
 authenticates and scopes every request before it calls an internal service.
 
@@ -18,7 +18,7 @@ services receive bounded domain records or public GitHub URLs only; they never
 receive an installation token, App private key, GitHub client, or permission to
 call GitHub directly. Generic issue transport lives in `functions/lib/github-issues.js`.
 Browser, CLI, and native clients use `/api/v1/auth/profile`,
-`/api/v1/github/details`, and the other canonical NoxConnect APIs rather than
+`/api/v1/github/details`, and the other canonical NoxHere APIs rather than
 Octokit or `api.github.com`. The gateway brokers GitHub approval, the connectors
 layer stores the encrypted provider credential, and the gateway issues the
 app-facing `nox_at_…`/`nox_rt_…` session. Clients never receive, keep, or forward
@@ -33,10 +33,10 @@ the GitHub credential.
 
 ## Runtime contracts
 
-- Feedback exposes the compatibility contract `noxspot.response` version 1 through the private `NOXSPOT_RESPONSE` binding.
-- Incidents exposes the compatibility contract `noxcue.response` version 1 through the private `NOXCUE_RESPONSE` binding.
-- Activity exposes the compatibility contract `noxfeed.response` version 1 through the private `NOXFEED_RESPONSE` binding. Its Worker returns either validated generated content or a typed unavailable result; `generationInfo()` reports only provider, model, and secret availability.
-- Planning response policy currently lives under `functions/products/noxticket`; the directory and identifiers remain for contract compatibility.
+- Feedback exposes the compatibility contract `feedback.response` version 1 through the private `FEEDBACK_RESPONSE` binding.
+- Incidents exposes the compatibility contract `telemetry.response` version 1 through the private `TELEMETRY_RESPONSE` binding.
+- Activity exposes the compatibility contract `activity.response` version 1 through the private `ACTIVITY_RESPONSE` binding. Its Worker returns either validated generated content or a typed unavailable result; `generationInfo()` reports only provider, model, and secret availability.
+- Planning response policy currently lives under `functions/products/planning`; the directory and identifiers remain for contract compatibility.
 
 Every adapter validates the contract version, structure, and Slack payload size before shared plumbing stores it. Product services receive only the data needed to render their response; they do not receive Slack tokens, connection IDs, or delivery state.
 
@@ -50,8 +50,8 @@ Private Workers must not receive the gateway database binding.
 When adding behavior, use these rules:
 
 - If it answers “who may do this, for which organization/project, and which
-  capability is enabled?”, it belongs to the NoxConnect gateway.
+  capability is enabled?”, it belongs to the NoxHere gateway.
 - If it answers “which provider is connected, how do we call it, where should
-  this go, and was it delivered?”, it belongs to NoxConnect.
+  this go, and was it delivered?”, it belongs to NoxHere.
 - If it answers “what should this capability store, do, detect, or say?”, it
   belongs to that capability module.

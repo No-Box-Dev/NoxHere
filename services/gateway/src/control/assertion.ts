@@ -5,7 +5,7 @@ const encoder = new TextEncoder();
 export interface InternalAssertion {
   version: 1;
   issuer: "noxhere";
-  audience: "noxconnect";
+  audience: "noxhere";
   issuedAt: number;
   expiresAt: number;
   method: string;
@@ -29,7 +29,7 @@ export async function signedAssertionHeaders(
   const assertion: InternalAssertion = {
     version: 1,
     issuer: "noxhere",
-    audience: "noxconnect",
+    audience: "noxhere",
     issuedAt: now,
     expiresAt: now + 30,
     method: request.method.toUpperCase(),

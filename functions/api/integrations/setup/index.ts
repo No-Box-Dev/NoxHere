@@ -37,13 +37,13 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   let slack: Record<string, unknown>;
   try { slack = (await readSlackSettings(context.env.DB, orgId, projectId)).slack; }
   catch (error) { return errorResponse(error instanceof Error ? error.message : String(error), 500); }
-  const routeFields = ["fallbackChannelId", "noxCueChannelId", "noxTicketChannelId", "postsChannelId", "releaseNotesChannelId", "dailySummaryChannelId"];
+  const routeFields = ["fallbackChannelId", "telemetryChannelId", "planningChannelId", "postsChannelId", "releaseNotesChannelId", "dailySummaryChannelId"];
   const configuredRouteCount = routeFields.filter((field) => {
     const value = slack[field];
     return typeof value === "string" && Boolean(value.trim());
   }).length;
   const hasRoute = (field: string) => Boolean(resolveSavedSlackChannel(slack, field));
-  const [spotCount, cueCount, projectRouteCount] = await Promise.all([
+  const [spotCount, telemetryCount, projectRouteCount] = await Promise.all([
     countRows(context.env.DB, `SELECT COUNT(*) AS count FROM spot_sites WHERE org_id = ?${projectId ? " AND project_id = ?" : ""}`, ...(projectId ? [orgId, projectId] : [orgId])),
     countRows(context.env.DB, `SELECT COUNT(*) AS count FROM cue_sources WHERE org_id = ?${projectId ? " AND project_id = ?" : ""} AND enabled = 1`, ...(projectId ? [orgId, projectId] : [orgId])),
     countRows(context.env.DB, `SELECT COUNT(*) AS count FROM project_routing_settings WHERE org_id = ?${projectId ? " AND project_id = ?" : ""} AND enabled = 1`, ...(projectId ? [orgId, projectId] : [orgId])),
@@ -85,45 +85,45 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       automatable: true,
       action: githubComplete && isAdmin ? apiAction("PUT", "/api/v1/projects/{projectId}/routing") : null,
       discover: githubComplete && isAdmin ? apiAction("GET", "/api/v1/projects/routing") : null,
-      instructions: "Explicitly enable the NoxConnect projects you use, assign one or more repositories, and optionally set NoxFeed or NoxCue destinations.",
+      instructions: "Explicitly enable the NoxHere projects you use, assign one or more repositories, and optionally set Activity or Telemetry destinations.",
     },
-    configure_noxfeed: {
-      title: "Configure NoxFeed delivery",
+    configure_activity: {
+      title: "Configure Activity delivery",
       required: false,
       dependsOn: ["connect_slack"],
       state: !slackComplete || !isAdmin ? "blocked" : (hasRoute("postsChannelId") && hasRoute("releaseNotesChannelId") ? "complete" : "available"),
       automatable: true,
       action: slackComplete && isAdmin ? apiAction("PATCH", "/api/v1/integrations/slack/routing", {
         type: "object",
-        properties: { routes: { type: "object", properties: { noxfeed_posts: { type: ["string", "null"] }, noxfeed_release_notes: { type: ["string", "null"] }, noxfeed_daily_summary: { type: ["string", "null"] } } } },
+        properties: { routes: { type: "object", properties: { activity_posts: { type: ["string", "null"] }, activity_release_notes: { type: ["string", "null"] }, activity_daily_summary: { type: ["string", "null"] } } } },
       }) : null,
     },
-    configure_noxticket: {
-      title: "Configure NoxTicket delivery",
+    configure_planning: {
+      title: "Configure Planning delivery",
       required: false,
       dependsOn: ["connect_slack"],
-      state: !slackComplete || !isAdmin ? "blocked" : (hasRoute("noxTicketChannelId") ? "complete" : "available"),
+      state: !slackComplete || !isAdmin ? "blocked" : (hasRoute("planningChannelId") ? "complete" : "available"),
       automatable: true,
       action: slackComplete && isAdmin ? apiAction("PATCH", "/api/v1/integrations/slack/routing") : null,
     },
-    configure_noxcue: {
-      title: "Configure NoxCue",
+    configure_telemetry: {
+      title: "Configure Telemetry",
       required: false,
       dependsOn: ["connect_slack"],
-      state: !slackComplete || !isAdmin ? "blocked" : (Number(cueCount?.count || 0) > 0 ? "complete" : "available"),
+      state: !slackComplete || !isAdmin ? "blocked" : (Number(telemetryCount?.count || 0) > 0 ? "complete" : "available"),
       automatable: true,
-      action: slackComplete && isAdmin ? apiAction("POST", "/api/v1/cues/sources") : null,
-      discover: isAdmin ? apiAction("GET", "/api/v1/cues/sources") : null,
+      action: slackComplete && isAdmin ? apiAction("POST", "/api/v1/telemetry/sources") : null,
+      discover: isAdmin ? apiAction("GET", "/api/v1/telemetry/sources") : null,
       instructions: "Create a user-stat source, link it to a project, select report metrics and a Slack destination, then create a one-time server ingest key.",
     },
-    configure_noxspot: {
-      title: "Configure NoxSpot",
+    configure_feedback: {
+      title: "Configure Feedback",
       required: false,
       dependsOn: ["connect_github"],
       state: !githubComplete || !isAdmin ? "blocked" : (Number(spotCount?.count || 0) > 0 ? "complete" : "available"),
       automatable: true,
-      action: githubComplete && isAdmin ? apiAction("POST", "/api/v1/spots/sites") : null,
-      discover: githubComplete ? apiAction("GET", "/api/v1/spots/sites") : null,
+      action: githubComplete && isAdmin ? apiAction("POST", "/api/v1/feedback/sites") : null,
+      discover: githubComplete ? apiAction("GET", "/api/v1/feedback/sites") : null,
     },
   };
 

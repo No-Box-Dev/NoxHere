@@ -32,20 +32,13 @@ import {
 describe("slackInstallNeedsReconnect", () => {
   const currentApp = { SLACK_APP_ID: "A_CURRENT" };
 
-  it("requires legacy installs to reconnect by default", () => {
+  it("requires installs without a recorded app identity to reconnect", () => {
     expect(slackInstallNeedsReconnect(currentApp, { appId: null })).toBe(true);
   });
 
-  it("accepts legacy installs only when the compatibility flag is explicit", () => {
+  it("rejects an install recorded for a different app", () => {
     expect(slackInstallNeedsReconnect(
-      { ...currentApp, SLACK_ACCEPT_LEGACY_INSTALLS: "true" },
-      { appId: null },
-    )).toBe(false);
-  });
-
-  it("rejects a known different app even in legacy compatibility mode", () => {
-    expect(slackInstallNeedsReconnect(
-      { ...currentApp, SLACK_ACCEPT_LEGACY_INSTALLS: "true" },
+      currentApp,
       { appId: "A_OTHER" },
     )).toBe(true);
   });
@@ -114,7 +107,7 @@ describe("listSlackConnections", () => {
 });
 
 describe("central Slack routing cleanup", () => {
-  it("clears NoxSpot channels even when no feed settings exist", async () => {
+  it("clears Feedback channels even when no feed settings exist", async () => {
     const calls = [];
     const db = {
       prepare(sql) {
@@ -156,7 +149,7 @@ describe("buildOAuthAuthorizeUrl", () => {
     expect(url).toContain(encodeURIComponent("https://app.example.com/api/slack/oauth/callback"));
   });
 
-  it("uses the direct central callback for NoxConnect", () => {
+  it("uses the direct central callback for NoxHere", () => {
     expect(SLACK_OAUTH_REDIRECT_URI).toBe("https://app.noxhere.com/api/slack/oauth/callback");
     const url = new URL(buildOAuthAuthorizeUrl(
       "client-123",
@@ -187,9 +180,9 @@ describe("buildOAuthAuthorizeUrl", () => {
     expect(unpinned.searchParams.has("team")).toBe(false);
   });
 
-  it("ignores the retired NoxSpot callback override", () => {
+  it("ignores the retired Feedback callback override", () => {
     expect(resolveSlackOAuthRedirectUri({
-      SLACK_OAUTH_REDIRECT_URI: "https://api.noxspot.dev/slack/callback",
+      SLACK_OAUTH_REDIRECT_URI: "https://app.noxhere.com/slack/callback",
     })).toBe(SLACK_OAUTH_REDIRECT_URI);
   });
 
@@ -204,8 +197,8 @@ describe("Slack app manifest", () => {
   const manifest = JSON.parse(readFileSync(join(process.cwd(), "slack-app-manifest.json"), "utf8"));
 
   it("stays aligned with the OAuth flow and production endpoints", () => {
-    expect(manifest.display_information.name).toBe("NoxConnect");
-    expect(manifest.features.bot_user.display_name).toBe("NoxConnect");
+    expect(manifest.display_information.name).toBe("NoxHere");
+    expect(manifest.features.bot_user.display_name).toBe("NoxHere");
     expect(manifest.oauth_config.scopes.bot).toEqual(SLACK_BOT_SCOPES);
     expect(manifest.oauth_config.redirect_urls).toEqual([
       "https://app.noxhere.com/api/slack/oauth/callback",
@@ -370,91 +363,80 @@ describe("resolveSlackChannels", () => {
   }
   it("returns empty IDs when no settings", async () => {
     expect(await resolveSlackChannels(mkDb(null), "org-1")).toEqual({
-      fallbackChannelId: "", noxCueChannelId: "", noxTicketChannelId: "", noxFeedChannelId: "",
-      postsChannelId: "", releaseNotesChannelId: "", fallbackConnectionId: "", noxCueConnectionId: "",
-      noxTicketConnectionId: "", postsConnectionId: "", releaseNotesConnectionId: "",
-      dailySummaryChannelId: "", dailySummaryConnectionId: "", noxFeedProjectId: "",
+      fallbackChannelId: "", telemetryChannelId: "", planningChannelId: "", activityChannelId: "",
+      postsChannelId: "", releaseNotesChannelId: "", fallbackConnectionId: "", telemetryConnectionId: "",
+      planningConnectionId: "", postsConnectionId: "", releaseNotesConnectionId: "",
+      dailySummaryChannelId: "", dailySummaryConnectionId: "", activityProjectId: "",
     });
   });
-  it("adopts a combined NoxFeed route for both streams", async () => {
+  it("adopts a combined Activity route for both streams", async () => {
     const row = { data: JSON.stringify({ slack: {
-      fallbackChannelId: "C0", noxCueChannelId: "CA", noxTicketChannelId: "CU", noxFeedChannelId: "CF",
+      fallbackChannelId: "C0", telemetryChannelId: "CA", planningChannelId: "CU", activityChannelId: "CF",
     } }) };
     expect(await resolveSlackChannels(mkDb(row), "org-1")).toEqual({
-      fallbackChannelId: "C0", noxCueChannelId: "CA", noxTicketChannelId: "CU", noxFeedChannelId: "CF",
-      postsChannelId: "CF", releaseNotesChannelId: "CF", fallbackConnectionId: "", noxCueConnectionId: "",
-      noxTicketConnectionId: "", postsConnectionId: "", releaseNotesConnectionId: "",
-      dailySummaryChannelId: "", dailySummaryConnectionId: "", noxFeedProjectId: "",
+      fallbackChannelId: "C0", telemetryChannelId: "CA", planningChannelId: "CU", activityChannelId: "CF",
+      postsChannelId: "CF", releaseNotesChannelId: "CF", fallbackConnectionId: "", telemetryConnectionId: "",
+      planningConnectionId: "", postsConnectionId: "", releaseNotesConnectionId: "",
+      dailySummaryChannelId: "", dailySummaryConnectionId: "", activityProjectId: "",
     });
   });
-  it("keeps dedicated NoxFeed routes distinct", async () => {
+  it("keeps dedicated Activity routes distinct", async () => {
     const row = { data: JSON.stringify({ slack: {
       postsChannelId: "C-POSTS", releaseNotesChannelId: "C-RELEASES",
     } }) };
     expect(await resolveSlackChannels(mkDb(row), "org-1")).toMatchObject({
       postsChannelId: "C-POSTS", releaseNotesChannelId: "C-RELEASES",
-    });
-  });
-  it("adopts pre-rename NoxTicket channel fields", async () => {
-    const prefix = ["un", "ticket"].join("");
-    const row = { data: JSON.stringify({ slack: {
-      [`${prefix}ChannelId`]: "C-TICKET",
-      [`${prefix}ConnectionId`]: "conn-ticket",
-    } }) };
-    expect(await resolveSlackChannels(mkDb(row), "org-1")).toMatchObject({
-      noxTicketChannelId: "C-TICKET",
-      noxTicketConnectionId: "conn-ticket",
     });
   });
   it("tolerates corrupt JSON", async () => {
     expect(await resolveSlackChannels(mkDb({ data: "not json" }), "org-1")).toEqual({
-      fallbackChannelId: "", noxCueChannelId: "", noxTicketChannelId: "", noxFeedChannelId: "",
-      postsChannelId: "", releaseNotesChannelId: "", fallbackConnectionId: "", noxCueConnectionId: "",
-      noxTicketConnectionId: "", postsConnectionId: "", releaseNotesConnectionId: "",
-      dailySummaryChannelId: "", dailySummaryConnectionId: "", noxFeedProjectId: "",
+      fallbackChannelId: "", telemetryChannelId: "", planningChannelId: "", activityChannelId: "",
+      postsChannelId: "", releaseNotesChannelId: "", fallbackConnectionId: "", telemetryConnectionId: "",
+      planningConnectionId: "", postsConnectionId: "", releaseNotesConnectionId: "",
+      dailySummaryChannelId: "", dailySummaryConnectionId: "", activityProjectId: "",
     });
   });
 
-  it("returns the optional NoxFeed project scope", async () => {
-    const row = { data: JSON.stringify({ slack: { noxFeedProjectId: " proj-1 " } }) };
-    expect(await resolveSlackChannels(mkDb(row), "org-1")).toMatchObject({ noxFeedProjectId: "proj-1" });
+  it("returns the optional Activity project scope", async () => {
+    const row = { data: JSON.stringify({ slack: { activityProjectId: " proj-1 " } }) };
+    expect(await resolveSlackChannels(mkDb(row), "org-1")).toMatchObject({ activityProjectId: "proj-1" });
   });
 
   it("uses service-specific channels before the organization fallback", () => {
     const channels = {
-      fallbackChannelId: "C0", noxCueChannelId: "CA", noxTicketChannelId: "CU",
+      fallbackChannelId: "C0", telemetryChannelId: "CA", planningChannelId: "CU",
       postsChannelId: "CP", releaseNotesChannelId: "CR", dailySummaryChannelId: "CD",
     };
-    expect(resolveSlackRoute(channels, "noxcue", "CS")).toBe("CA");
-    expect(resolveSlackRoute(channels, "noxspot", "CS")).toBe("CS");
-    expect(resolveSlackRoute(channels, "noxticket")).toBe("CU");
-    expect(resolveSlackRoute(channels, "noxfeed_posts")).toBe("CP");
-    expect(resolveSlackRoute(channels, "noxfeed_release_notes")).toBe("CR");
-    expect(resolveSlackRoute(channels, "noxfeed_daily_summary")).toBe("CD");
+    expect(resolveSlackRoute(channels, "telemetry", "CS")).toBe("CA");
+    expect(resolveSlackRoute(channels, "feedback", "CS")).toBe("CS");
+    expect(resolveSlackRoute(channels, "planning")).toBe("CU");
+    expect(resolveSlackRoute(channels, "activity_posts")).toBe("CP");
+    expect(resolveSlackRoute(channels, "activity_release_notes")).toBe("CR");
+    expect(resolveSlackRoute(channels, "activity_daily_summary")).toBe("CD");
   });
 
   it("falls back independently for every service", () => {
     const channels = { fallbackChannelId: "C0" };
-    expect(resolveSlackRoute(channels, "noxcue", "CS")).toBe("C0");
-    expect(resolveSlackRoute(channels, "noxspot")).toBe("C0");
-    expect(resolveSlackRoute(channels, "noxticket")).toBe("C0");
-    expect(resolveSlackRoute(channels, "noxfeed_posts")).toBe("C0");
-    expect(resolveSlackRoute(channels, "noxfeed_release_notes")).toBe("C0");
-    expect(resolveSlackRoute(channels, "noxfeed_daily_summary")).toBe("");
+    expect(resolveSlackRoute(channels, "telemetry", "CS")).toBe("C0");
+    expect(resolveSlackRoute(channels, "feedback")).toBe("C0");
+    expect(resolveSlackRoute(channels, "planning")).toBe("C0");
+    expect(resolveSlackRoute(channels, "activity_posts")).toBe("C0");
+    expect(resolveSlackRoute(channels, "activity_release_notes")).toBe("C0");
+    expect(resolveSlackRoute(channels, "activity_daily_summary")).toBe("");
   });
 
   it("resolves each service workspace independently from its channel", () => {
     const channels = {
       fallbackConnectionId: "conn-default",
-      noxCueConnectionId: "conn-alerts",
+      telemetryConnectionId: "conn-alerts",
       postsConnectionId: "conn-feed",
       dailySummaryConnectionId: "conn-summary",
     };
-    expect(resolveSlackConnectionId(channels, "noxcue")).toBe("conn-alerts");
-    expect(resolveSlackConnectionId(channels, "noxfeed_posts")).toBe("conn-feed");
-    expect(resolveSlackConnectionId(channels, "noxfeed_daily_summary")).toBe("conn-summary");
-    expect(resolveSlackConnectionId(channels, "noxticket")).toBe("conn-default");
-    expect(resolveSlackConnectionId(channels, "noxspot", "conn-site")).toBe("conn-site");
+    expect(resolveSlackConnectionId(channels, "telemetry")).toBe("conn-alerts");
+    expect(resolveSlackConnectionId(channels, "activity_posts")).toBe("conn-feed");
+    expect(resolveSlackConnectionId(channels, "activity_daily_summary")).toBe("conn-summary");
+    expect(resolveSlackConnectionId(channels, "planning")).toBe("conn-default");
+    expect(resolveSlackConnectionId(channels, "feedback", "conn-site")).toBe("conn-site");
   });
 });
 

@@ -19,7 +19,6 @@ interface SlackTransportEnvironment {
   DB: D1Database;
   ENCRYPTION_KEY?: string;
   SLACK_APP_ID?: string;
-  SLACK_ACCEPT_LEGACY_INSTALLS?: string;
 }
 
 export interface SlackMessagePayload {
@@ -45,14 +44,14 @@ const ROUTES: Record<SlackCommand["route"], {
   projectRoute?: ProjectRouteKey;
   legacyRoute: string;
 }> = {
-  activity: { projectRoute: "noxfeed_posts", legacyRoute: "noxfeed_posts" },
-  activity_release: { projectRoute: "noxfeed_release_notes", legacyRoute: "noxfeed_release_notes" },
-  activity_summary: { legacyRoute: "noxfeed_daily_summary" },
-  feedback: { legacyRoute: "noxspot" },
-  incidents: { projectRoute: "noxcue_alerts", legacyRoute: "noxcue_alerts" },
-  engagement: { projectRoute: "noxcue", legacyRoute: "noxcue" },
-  feature_delivery: { legacyRoute: "noxticket" },
-  operations: { projectRoute: "noxcue_alerts", legacyRoute: "noxcue_alerts" },
+  activity: { projectRoute: "activity_posts", legacyRoute: "activity_posts" },
+  activity_release: { projectRoute: "activity_release_notes", legacyRoute: "activity_release_notes" },
+  activity_summary: { legacyRoute: "activity_daily_summary" },
+  feedback: { legacyRoute: "feedback" },
+  incidents: { projectRoute: "telemetry_alerts", legacyRoute: "telemetry_alerts" },
+  engagement: { projectRoute: "telemetry", legacyRoute: "telemetry" },
+  feature_delivery: { legacyRoute: "planning" },
+  operations: { projectRoute: "telemetry_alerts", legacyRoute: "telemetry_alerts" },
 };
 
 const BLOCKED_CODES = new Set([

@@ -34,16 +34,16 @@ describe("direct HTTP examples", () => {
   it("uses the credential class declared by OpenAPI", () => {
     const byId = new Map(operations.map((item) => [item.operation.operationId, item.curl]));
     expect(byId.get("listNoxServices")).toContain("Authorization: Bearer $NOXHERE_API_TOKEN");
-    expect(byId.get("ingestNoxCueEvent")).toContain("X-Nox-Ingest-Key: $NOXHERE_INGEST_KEY");
-    expect(byId.get("getPublicNoxSpotConfig")).not.toContain("Authorization:");
+    expect(byId.get("ingestTelemetryEvent")).toContain("X-Nox-Ingest-Key: $NOXHERE_INGEST_KEY");
+    expect(byId.get("getPublicFeedbackConfig")).not.toContain("Authorization:");
     expect(byId.get("createApiToken")).toContain("Cookie: __Host-nox_session=$NOXHERE_SESSION");
     expect(byId.get("createApiToken")).toContain("X-CSRF-Token: $NOXHERE_CSRF_TOKEN");
   });
 
   it("uses the OpenAPI multipart field names", () => {
     const byId = new Map(operations.map((item) => [item.operation.operationId, item.curl]));
-    expect(byId.get("reopenResolvedNoxSpotReport")).toContain("--form 'response=string'");
-    expect(byId.get("reopenResolvedNoxSpotReport")).toContain("--form 'screenshot=@path/to/screenshot'");
+    expect(byId.get("reopenResolvedFeedbackReport")).toContain("--form 'response=string'");
+    expect(byId.get("reopenResolvedFeedbackReport")).toContain("--form 'screenshot=@path/to/screenshot'");
     expect(byId.get("uploadFeatureAttachment")).toContain("--form 'file=@path/to/file'");
   });
 });

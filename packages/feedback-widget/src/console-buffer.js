@@ -2,7 +2,7 @@
  * Loader-only console capture and auto-error reporting.
  *
  * The buffer state lives here, and `startConsoleCapture` publishes a getter at
- * `window.__NoxSpotConsole.getLogs()`. The core bundle's `collectMetadata`
+ * `window.__FeedbackConsole.getLogs()`. The core bundle's `collectMetadata`
  * reads through that global so console history captured before the core loaded
  * still ends up in the report.
  */
@@ -27,7 +27,7 @@ function addLogEntry(type, args) {
     return String(arg);
   }).join(' ');
 
-  if (message.startsWith('[NoxSpot]')) return;
+  if (message.startsWith('[Feedback]')) return;
 
   consoleLogs.push({
     type,
@@ -70,7 +70,7 @@ export function startConsoleCapture() {
     window.addEventListener('unhandledrejection', rejectionHandler);
   }
 
-  window.__NoxSpotConsole = { getLogs: () => [...consoleLogs] };
+  window.__FeedbackConsole = { getLogs: () => [...consoleLogs] };
 }
 
 export function stopConsoleCapture() {
@@ -92,11 +92,11 @@ export function stopConsoleCapture() {
   rejectionHandler = null;
   captureStarted = false;
 
-  if (window.__NoxSpotConsole) delete window.__NoxSpotConsole;
+  if (window.__FeedbackConsole) delete window.__FeedbackConsole;
 }
 
 /**
- * Auto-report uncaught errors to the NoxSpot API.
+ * Auto-report uncaught errors to the Feedback API.
  * Queues errors and flushes every 5s or at 10 items.
  */
 export function autoReportErrors(siteId, apiUrl) {
@@ -166,7 +166,7 @@ export function autoReportErrors(siteId, apiUrl) {
   }
 
   const onError = (event) => {
-    if (event.message?.startsWith('[NoxSpot]')) return;
+    if (event.message?.startsWith('[Feedback]')) return;
     enqueue({
       message: event.message || 'Unknown error',
       source: event.filename || null,

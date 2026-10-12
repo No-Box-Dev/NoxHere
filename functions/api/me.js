@@ -15,8 +15,8 @@ export async function onRequestGet(context) {
     accessLevel: auth?.accessLevel ?? "member",
     allowedServices: auth?.accessLevel === "guest"
       ? (auth.guestAccess?.organizationWide === true || projectServices === null
-        ? ["noxticket", "noxfeed", "noxspot", "noxcue"]
+        ? ["planning", "activity", "feedback", "telemetry"]
         : projectServices ?? [])
-      : ["noxticket", "noxfeed", "noxspot", "noxcue"],
+      : ["planning", "activity", "feedback", "telemetry"],
   });
 }

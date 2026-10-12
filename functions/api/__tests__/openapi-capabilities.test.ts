@@ -22,11 +22,11 @@ const openapi = openapiDocument as unknown as {
 
 const services = buildServiceCatalog({
   runtimeStates: {
-    noxconnect: { state: "ready", source: "binding" },
-    noxticket: { state: "ready", source: "binding" },
-    noxfeed: { state: "ready", source: "binding" },
-    noxspot: { state: "ready", source: "binding" },
-    noxcue: { state: "ready", source: "binding" },
+    noxhere: { state: "ready", source: "binding" },
+    planning: { state: "ready", source: "binding" },
+    activity: { state: "ready", source: "binding" },
+    feedback: { state: "ready", source: "binding" },
+    telemetry: { state: "ready", source: "binding" },
   },
   integrations: {
     github: { configured: true, connected: true, bootstrapping: false, health: "ok" },
@@ -37,7 +37,7 @@ const services = buildServiceCatalog({
 describe("capability discovery and OpenAPI stay aligned", () => {
   it("publishes every first-party operation under the canonical v1 namespace", () => {
     const nonCanonicalPaths = Object.keys(openapi.paths).filter((path) =>
-      !path.startsWith("/api/v1/") && !path.startsWith("/api/spots/public/v1/"),
+      !path.startsWith("/api/v1/") && !path.startsWith("/api/feedback/public/v1/"),
     );
     expect(nonCanonicalPaths).toEqual([]);
   });
@@ -50,7 +50,7 @@ describe("capability discovery and OpenAPI stay aligned", () => {
             ? decodeURIComponent(new URL(operation.path).pathname)
             : operation.path;
           const path = rawPath.replace(
-            /^\/api\/v1\/services\/(?:noxconnect|noxticket|noxfeed|noxspot|noxcue)\//,
+            /^\/api\/v1\/services\/(?:noxhere|planning|activity|feedback|telemetry)\//,
             "/api/v1/services/{service}/",
           );
           expect(
@@ -85,8 +85,8 @@ describe("capability discovery and OpenAPI stay aligned", () => {
     const responseRef = (path: string, method: (typeof methods)[number], status = "200") =>
       (openapi.paths[path]?.[method]?.responses?.[status]?.content as Record<string, { schema?: { $ref?: string } }> | undefined)
         ?.["application/json"]?.schema?.$ref;
-    expect(openapi.paths["/api/v1/projects/{projectId}/cue/dashboard"]?.get?.tags).toEqual(["Stats"]);
-    expect(responseRef("/api/v1/projects/{projectId}/cue/dashboard", "get")).toBe("#/components/schemas/StatsDashboard");
+    expect(openapi.paths["/api/v1/projects/{projectId}/telemetry/dashboard"]?.get?.tags).toEqual(["Stats"]);
+    expect(responseRef("/api/v1/projects/{projectId}/telemetry/dashboard", "get")).toBe("#/components/schemas/StatsDashboard");
     expect(openapi.paths["/api/v1/projects/{projectId}/incidents"]?.get?.tags).toEqual(["Incidents"]);
     expect(responseRef("/api/v1/projects/{projectId}/incidents", "get")).toBe("#/components/schemas/ProjectIncidentOverview");
     expect(responseRef("/api/v1/projects/{projectId}/incidents/{incidentId}", "get")).toBe("#/components/schemas/ProjectIncidentResponse");
@@ -95,12 +95,12 @@ describe("capability discovery and OpenAPI stay aligned", () => {
   it("documents rate limiting with Retry-After", () => {
     const rateLimited = (openapiDocument as any).components.responses.RateLimited;
     expect(rateLimited.headers["Retry-After"]).toBeDefined();
-    expect(openapi.paths["/api/v1/cues/public/events"]?.post?.responses?.["429"]?.$ref)
+    expect(openapi.paths["/api/v1/telemetry/public/events"]?.post?.responses?.["429"]?.$ref)
       .toBe("#/components/responses/RateLimited");
   });
 
   it("publishes valid anonymous and protected telemetry examples", () => {
-    const examples = (openapiDocument as any).paths["/api/v1/cues/public/events"].post
+    const examples = (openapiDocument as any).paths["/api/v1/telemetry/public/events"].post
       .requestBody.content["application/json"].examples;
     expect(examples.anonymousWebsiteActivity.value).not.toHaveProperty("userId");
     expect(examples.anonymousWebsiteActivity.value.eventId).toMatch(/^[0-9a-f-]{36}$/);
@@ -109,7 +109,7 @@ describe("capability discovery and OpenAPI stay aligned", () => {
 
   it("documents optional project context and exact automation support", () => {
     expect(openapi.components.parameters.projectContext.required).toBe(false);
-    expect(openapi.components.schemas.NoxFeedConfigPatch.properties).not.toHaveProperty("projectScope");
+    expect(openapi.components.schemas.ActivityConfigPatch.properties).not.toHaveProperty("projectScope");
     for (const [path, pathItem] of Object.entries(openapi.paths)) {
       for (const method of methods) {
         const operation = pathItem[method];
@@ -140,33 +140,33 @@ describe("capability discovery and OpenAPI stay aligned", () => {
     }
   });
 
-  it("publishes NoxCue ingest through the stable application gateway", () => {
-    expect(openapi.paths["/api/v1/cues/public/events"]?.post).toBeDefined();
+  it("publishes Telemetry ingest through the stable application gateway", () => {
+    expect(openapi.paths["/api/v1/telemetry/public/events"]?.post).toBeDefined();
     expect(JSON.stringify(openapi)).not.toContain("workers.dev");
   });
 
-  it("advertises NoxCue GitHub incidents only behind the GitHub connection", () => {
-    const noxCue = services.find((service) => service.id === "noxcue");
-    expect(noxCue?.setup.connections).toContainEqual(expect.objectContaining({
+  it("advertises Telemetry GitHub incidents only behind the GitHub connection", () => {
+    const telemetry = services.find((service) => service.id === "telemetry");
+    expect(telemetry?.setup.connections).toContainEqual(expect.objectContaining({
       provider: "github",
       requirement: "optional",
     }));
-    expect(noxCue?.capabilities).toContainEqual(expect.objectContaining({
+    expect(telemetry?.capabilities).toContainEqual(expect.objectContaining({
       id: "github_incidents",
       requires: ["github"],
       operations: expect.arrayContaining([
-        expect.objectContaining({ method: "GET", path: "/api/v1/cues/github-issues" }),
-        expect.objectContaining({ method: "PUT", path: "/api/v1/cues/github-issues" }),
+        expect.objectContaining({ method: "GET", path: "/api/v1/telemetry/github-issues" }),
+        expect.objectContaining({ method: "PUT", path: "/api/v1/telemetry/github-issues" }),
       ]),
     }));
 
     const withoutGitHub = buildServiceCatalog({
-      runtimeStates: { noxcue: { state: "ready", source: "binding" } },
+      runtimeStates: { telemetry: { state: "ready", source: "binding" } },
       integrations: {
         github: { configured: false, connected: false, bootstrapping: false, health: "unavailable" },
         slack: { configured: true, connected: true, needsReconnect: false, health: "ok" },
       },
-    }).find((service) => service.id === "noxcue");
+    }).find((service) => service.id === "telemetry");
     expect(withoutGitHub?.setup.state).toBe("ready");
     expect(withoutGitHub?.capabilities.find((capability) => capability.id === "github_incidents"))
       .toMatchObject({ state: "blocked", blockers: ["github"] });

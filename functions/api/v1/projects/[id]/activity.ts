@@ -1,3 +1,3 @@
-// Canonical NoxConnect activity capability. The legacy /api/v1/feed route
-// remains available for released clients during the naming migration.
-export { onRequestGet } from "../../feed";
+// Canonical NoxHere Activity capability. The /api/v1/activity route
+// is the public activity endpoint.
+export { onRequestGet } from "../../activity";

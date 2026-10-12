@@ -36,19 +36,19 @@ describe("API v1 response contract", () => {
   });
 
   it("normalizes legacy errors at the v1 boundary", async () => {
-    const response = await normalizeLegacyError(new Response(JSON.stringify({ error: "Bad route", route: "noxfeed" }), {
+    const response = await normalizeLegacyError(new Response(JSON.stringify({ error: "Bad route", route: "activity" }), {
       status: 409,
       headers: { "Content-Type": "application/json" },
     }));
     expect(await response.json()).toEqual({
       apiVersion: 1,
-      error: { code: "conflict", message: "Bad route", details: { route: "noxfeed" } },
+      error: { code: "conflict", message: "Bad route", details: { route: "activity" } },
     });
   });
 
   it("preserves an explicit stable dependency error code", async () => {
     const response = await normalizeLegacyError(new Response(JSON.stringify({
-      error: "NoxFeed generation service is unavailable",
+      error: "Activity generation service is unavailable",
       code: "dependency_unavailable",
     }), { status: 503, headers: { "Content-Type": "application/json" } }));
 
@@ -56,7 +56,7 @@ describe("API v1 response contract", () => {
       apiVersion: 1,
       error: {
         code: "dependency_unavailable",
-        message: "NoxFeed generation service is unavailable",
+        message: "Activity generation service is unavailable",
       },
     });
   });

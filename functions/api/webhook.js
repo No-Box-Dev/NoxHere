@@ -21,10 +21,10 @@ import { upsertInstallation, setInstallationRepos, getInstallationRepos } from "
 import { TASK, enqueueTask } from "../lib/tasks";
 import { recordFailure } from "../lib/op-failures";
 import { startRepoTracking } from "../lib/repo-tracking";
-import { stageNoxTicketActivity } from "../lib/noxticket-slack.js";
+import { stagePlanningActivity } from "../lib/planning-slack.js";
 import { enqueueReviewJob, cancelReviewJobs } from "../lib/review-jobs.js";
 import { isAppEnabled } from "../lib/apps.js";
-import { reopenNoxSpotReportFromIssue, resolveNoxSpotReportFromIssue } from "../lib/noxspot-resolution.js";
+import { reopenFeedbackReportFromIssue, resolveFeedbackReportFromIssue } from "../lib/feedback-resolution.js";
 
 // Every `waitUntil` handler that logs a failure runs after the webhook
 // response has already been returned — a plain console.error is invisible
@@ -32,7 +32,7 @@ import { reopenNoxSpotReportFromIssue, resolveNoxSpotReportFromIssue } from "../
 // human-readable line to the runtime logs AND persist to op_failures so
 // admins see it in Settings → Background failures.
 function reportWebhookFailure(db, orgLogin, op, deliveryId, err, extra) {
-  console.error(`[noxconnect webhook] ${op} failed`, {
+  console.error(`[noxhere webhook] ${op} failed`, {
     delivery: deliveryId,
     msg: err?.message ?? String(err),
     ...(extra ?? {}),
@@ -141,7 +141,7 @@ export async function onRequestPost(context) {
   const orgId = orgRow.id;
   const db = context.env.DB;
   const action = payload.action;
-  const noxFeedEnabled = await isAppEnabled(db, orgId, "noxfeed");
+  const activityEnabled = await isAppEnabled(db, orgId, "activity");
 
   // Bump orgs.last_event_at on every webhook write — the reconcile cron
   // uses this to flag installations that have gone silent (no events for
@@ -161,7 +161,7 @@ export async function onRequestPost(context) {
     // NoxLink's text convention (org github_login).
     try {
       const stored = await storeEvent(db, event, deliveryId, payload, orgLogin);
-      if (stored?.id && noxFeedEnabled) {
+      if (stored?.id && activityEnabled) {
         // Narrate via the durable queue so the webhook returns immediately and
         // the work survives a failed attempt (retried, then dead-lettered).
         // Three narrators, one PR lifecycle:
@@ -203,7 +203,7 @@ export async function onRequestPost(context) {
           .prepare("DELETE FROM issues WHERE org_id = ? AND repo = ? AND number = ?")
           .bind(orgId, repo, payload.issue.number)
           .run();
-        if (repo === "noxconnect") {
+        if (repo === "noxhere") {
           await db
             .prepare("DELETE FROM features WHERE org_id = ? AND number = ?")
             .bind(orgId, payload.issue.number)
@@ -217,7 +217,7 @@ export async function onRequestPost(context) {
 
       if (action === "closed") {
         try {
-          await resolveNoxSpotReportFromIssue(context.env, {
+          await resolveFeedbackReportFromIssue(context.env, {
             orgId,
             ownerId: orgLogin,
             repo,
@@ -226,7 +226,7 @@ export async function onRequestPost(context) {
             summary: "The linked GitHub issue was closed.",
           });
         } catch (err) {
-          await reportWebhookFailure(db, orgLogin, "noxspot_resolution", deliveryId, err, {
+          await reportWebhookFailure(db, orgLogin, "feedback_resolution", deliveryId, err, {
             repo,
             number: payload.issue?.number,
           });
@@ -234,7 +234,7 @@ export async function onRequestPost(context) {
       }
       if (action === "reopened") {
         try {
-          await reopenNoxSpotReportFromIssue(context.env, {
+          await reopenFeedbackReportFromIssue(context.env, {
             orgId,
             ownerId: orgLogin,
             repo,
@@ -242,7 +242,7 @@ export async function onRequestPost(context) {
             actor: payload.sender?.login ?? "github",
           });
         } catch (err) {
-          await reportWebhookFailure(db, orgLogin, "noxspot_reopen", deliveryId, err, {
+          await reportWebhookFailure(db, orgLogin, "feedback_reopen", deliveryId, err, {
             repo,
             number: payload.issue?.number,
           });
@@ -250,7 +250,7 @@ export async function onRequestPost(context) {
       }
 
       try {
-        await stageNoxTicketActivity(context.env, {
+        await stagePlanningActivity(context.env, {
           orgId,
           ownerId: orgLogin,
           repo,
@@ -259,7 +259,7 @@ export async function onRequestPost(context) {
           actor: payload.sender?.login ?? null,
         });
       } catch (err) {
-        await reportWebhookFailure(db, orgLogin, "noxconnect_slack", deliveryId, err, { repo, number: payload.issue?.number });
+        await reportWebhookFailure(db, orgLogin, "noxhere_slack", deliveryId, err, { repo, number: payload.issue?.number });
       }
 
       // Cache issue authors for attribution without granting them organization
@@ -272,8 +272,8 @@ export async function onRequestPost(context) {
         }
       }
 
-      // Also upsert into features table if this is a noxconnect repo issue
-      if (repo === "noxconnect") {
+      // Also upsert into features table if this is a noxhere repo issue
+      if (repo === "noxhere") {
         await upsertFeature(db, orgId, payload.issue);
       }
       return jsonResponse({ ok: true, event, action, repo, number: payload.issue.number });
@@ -415,7 +415,7 @@ export async function onRequestPost(context) {
     return jsonResponse({ ok: true, skipped: `unhandled event: ${event}` });
   } catch (e) {
     // Don't leak internal error details to webhook senders. Log server-side only.
-    console.error("[noxconnect webhook]", event, action, e instanceof Error ? e.stack : e);
+    console.error("[noxhere webhook]", event, action, e instanceof Error ? e.stack : e);
     return errorResponse("Webhook processing failed", 500);
   }
 }

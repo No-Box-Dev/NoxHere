@@ -1,12 +1,12 @@
-import type { DeliveryResult, ServerNoxCueClient } from "./types.js";
+import type { DeliveryResult, ServerTelemetryClient } from "./types.js";
 
-export interface NoxCueReadableSpan {
+export interface TelemetryReadableSpan {
   attributes?: Readonly<Record<string, unknown>>;
 }
 
-export interface NoxCueSpanProcessor {
+export interface TelemetrySpanProcessor {
   onStart(): void;
-  onEnd(span: NoxCueReadableSpan): void;
+  onEnd(span: TelemetryReadableSpan): void;
   forceFlush(): Promise<DeliveryResult[]>;
   shutdown(): Promise<DeliveryResult[]>;
 }
@@ -17,7 +17,7 @@ export interface NoxCueSpanProcessor {
  * `noxhere.user.id` are both present, so request paths and health data are
  * never captured automatically.
  */
-export function createNoxCueSpanProcessor(client: ServerNoxCueClient): NoxCueSpanProcessor {
+export function createTelemetrySpanProcessor(client: ServerTelemetryClient): TelemetrySpanProcessor {
   return {
     onStart: () => undefined,
     onEnd: (span) => {

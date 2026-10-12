@@ -72,7 +72,7 @@ export async function exchangeGitHubOAuthIdentity(
   }
   const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": "NoxConnect" },
+    headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": "NoxHere" },
     body: JSON.stringify({
       client_id: env.GITHUB_APP_CLIENT_ID,
       client_secret: env.GITHUB_APP_CLIENT_SECRET,
@@ -96,7 +96,7 @@ export async function exchangeLegacyGitHubCredential(
     throw new Error("invalid_legacy_identity_exchange");
   }
   const value = input as Record<string, unknown>;
-  if (value.client !== "noxfeed-mac"
+  if (value.client !== "activity-mac"
       || typeof value.accessToken !== "string"
       || !value.accessToken
       || value.accessToken.length > 2048
@@ -176,7 +176,7 @@ export async function startGitHubDeviceIdentity(
   if (!env.GITHUB_APP_CLIENT_ID || !env.ENCRYPTION_KEY) throw new Error("identity_provider_not_configured");
   const response = await fetch("https://github.com/login/device/code", {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "NoxConnect" },
+    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "NoxHere" },
     body: new URLSearchParams({ client_id: env.GITHUB_APP_CLIENT_ID }),
   });
   const data = await response.json<Record<string, unknown>>().catch(() => null);
@@ -237,7 +237,7 @@ export async function pollGitHubDeviceIdentity(
   const providerCode = await decryptToken(String(row.encrypted_device_code), env.ENCRYPTION_KEY);
   const response = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "NoxConnect" },
+    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "NoxHere" },
     body: new URLSearchParams({
       client_id: env.GITHUB_APP_CLIENT_ID,
       client_secret: env.GITHUB_APP_CLIENT_SECRET,
@@ -312,7 +312,7 @@ async function loadGitHubIdentity(
   db: D1Database,
   accessToken: string,
 ): Promise<Omit<IdentityExchangeResult, "version" | "connectionId">> {
-  const headers = { Authorization: `Bearer ${accessToken}`, Accept: "application/vnd.github+json", "User-Agent": "NoxConnect" };
+  const headers = { Authorization: `Bearer ${accessToken}`, Accept: "application/vnd.github+json", "User-Agent": "NoxHere" };
   const [userResponse, membershipsResponse] = await Promise.all([
     fetch("https://api.github.com/user", { headers }),
     fetch("https://api.github.com/user/memberships/orgs?state=active&per_page=100", { headers }),
@@ -375,7 +375,7 @@ function positiveSeconds(value: unknown): boolean {
 function parseDeviceClient(input: unknown): string {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid_device_request");
   const client = (input as Record<string, unknown>).client;
-  if (client !== "noxconnect-cli" && client !== "noxfeed-mac") throw new Error("invalid_device_client");
+  if (client !== "noxhere-cli" && client !== "activity-mac") throw new Error("invalid_device_client");
   return client;
 }
 

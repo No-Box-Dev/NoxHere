@@ -9,7 +9,7 @@ describe("@noxhere/sdk", () => {
     const client = createNoxHere({ fetch: vi.fn() as typeof fetch });
     expect(Object.keys(client.operations)).toHaveLength(operationDefinitions.length);
     expect(client.cue).not.toBe(client.incidents);
-    expect(client.cue.getNoxCueDailyHealth).toBe(client.stats.getNoxCueDailyHealth);
+    expect(client.cue.getTelemetryDailyHealth).toBe(client.stats.getTelemetryDailyHealth);
     expect(client.cue.getProjectIncidents).toBe(client.incidents.getProjectIncidents);
     expect(client.spot).toBe(client.feedback);
   });
@@ -20,7 +20,7 @@ describe("@noxhere/sdk", () => {
       path: { repo: string; number: number };
     }>();
     expectTypeOf(client.activity.getIssue).returns.toMatchTypeOf<Promise<Record<string, unknown>>>();
-    expectTypeOf(client.stats.getNoxCueDailyHealth).toBeFunction();
+    expectTypeOf(client.stats.getTelemetryDailyHealth).toBeFunction();
     expectTypeOf(client.incidents.getProjectIncidents).toBeFunction();
 
     const compileTimeAssertions = () => {
@@ -31,7 +31,7 @@ describe("@noxhere/sdk", () => {
       // @ts-expect-error Activity operations do not leak into the workspace namespace.
       void client.workspace.getIssue({ path: { repo: "owner/repo", number: 1 } });
       // @ts-expect-error Required OpenAPI request bodies cannot be omitted.
-      void client.feedback.createNoxSpotSite();
+      void client.feedback.createFeedbackSite();
     };
     void compileTimeAssertions;
   });
@@ -105,16 +105,16 @@ describe("@noxhere/sdk", () => {
       fetch: request as typeof fetch,
       onRequest: (event) => { observed.push(event.url); },
     }).withContext({ organization: "No-Box-Dev", projectId: "project-1" });
-    await client.feedback.getPublicNoxSpotConfig({ path: { siteId: "site-1" } });
+    await client.feedback.getPublicFeedbackConfig({ path: { siteId: "site-1" } });
     const [url, init] = (request.mock.calls as unknown as [URL, RequestInit][])[0];
-    expect(String(url)).toBe("https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config");
+    expect(String(url)).toBe("https://app.noxhere.com/api/feedback/public/v1/sites/site-1/config");
     const headers = new Headers(init.headers);
     expect(headers.get("authorization")).toBeNull();
     expect(headers.get("x-org")).toBeNull();
     expect(headers.get("x-project-id")).toBeNull();
     expect(headers.get("x-noxhere-sdk")).toBe("typescript/0.2.1");
 
-    await client.feedback.reopenResolvedNoxSpotReport({ path: { token: "secret-token" }, body: new FormData() });
+    await client.feedback.reopenResolvedFeedbackReport({ path: { token: "secret-token" }, body: new FormData() });
     expect(observed.at(-1)).toContain("[redacted]");
     expect(observed.at(-1)).not.toContain("secret-token");
   });
@@ -127,10 +127,10 @@ describe("@noxhere/sdk", () => {
       fetch: request as typeof fetch,
     });
 
-    await client.feedback.getPublicNoxSpotConfig({ path: { siteId: "site-1" } });
+    await client.feedback.getPublicFeedbackConfig({ path: { siteId: "site-1" } });
 
     const [url, init] = (request.mock.calls as unknown as [URL, RequestInit][])[0];
-    expect(String(url)).toBe("https://staging.example.test/api/spots/public/v1/sites/site-1/config");
+    expect(String(url)).toBe("https://staging.example.test/api/feedback/public/v1/sites/site-1/config");
     expect(new Headers(init.headers).get("authorization")).toBeNull();
   });
 

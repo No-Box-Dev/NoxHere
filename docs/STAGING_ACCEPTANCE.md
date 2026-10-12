@@ -1,6 +1,6 @@
 # Provider acceptance
 
-The live provider gate reuses NoxConnect's existing GitHub App and Slack App.
+The live provider gate reuses NoxHere's existing GitHub App and Slack App.
 Provider apps grant access; the repository, project, Slack connection, and Slack
 channel parameters determine where each operation goes. A second app or
 workspace is not required.
@@ -13,8 +13,8 @@ explicitly test-only:
 - the repository is private and not archived on GitHub;
 - the Slack channel name contains the same kind of test marker;
 - the selected Feedback site and Incidents source resolve to that exact channel;
-- a short-lived NoxConnect API token and explicit write confirmation are present;
-- the NoxConnect gateway and Feedback capture hosts match the built-in allowlist.
+- a short-lived NoxHere API token and explicit write confirmation are present;
+- the NoxHere gateway and Feedback capture hosts match the built-in allowlist.
 
 `No-Box-Dev/test` and a channel such as `#nox-acceptance` are the default
 destinations. Production product repositories and ordinary Slack channels are
@@ -39,12 +39,12 @@ apps or workspaces.
 
 ## One-time destination setup
 
-1. Ensure the existing NoxConnect GitHub App installation can access the
+1. Ensure the existing NoxHere GitHub App installation can access the
    private `No-Box-Dev/test` repository.
 2. In Nox, restore/enable the existing `proj_no-box-dev_test` project if it is
    archived and keep it linked only to the `test` repository.
 3. Create `#nox-acceptance` (or another explicitly test-labelled channel) in
-   the existing Slack workspace and invite the NoxConnect bot.
+   the existing Slack workspace and invite the NoxHere bot.
 4. Configure the test project:
    - Planning feature repository → `test`;
    - Activity release notes → the acceptance Slack connection/channel;
@@ -58,13 +58,13 @@ apps or workspaces.
    session with the required project/service scopes.
 
 No provider secret needs to be copied into the acceptance file. Existing
-GitHub and Slack credentials stay encrypted inside NoxConnect.
+GitHub and Slack credentials stay encrypted inside NoxHere.
 
 ## Run the gate
 
 Copy `.env.staging-acceptance.example` to the ignored
 `.env.staging-acceptance`, then fill the project/site/source IDs, Slack
-connection/channel IDs, NoxConnect access token, and Incidents ingest key. The
+connection/channel IDs, NoxHere access token, and Incidents ingest key. The
 environment-variable names retain their compatibility spelling.
 
 Run the read-only preflight first:
@@ -95,8 +95,8 @@ missing receipt without printing credentials.
 ## Enable the GitHub gates
 
 Cross-repository contract CI is disabled until the `NOX_ECOSYSTEM_CI_TOKEN`
-repository secret contains a read-only token that can clone NoxTicket, NoxCue,
-and NoxFeed. Set the `NOX_ECOSYSTEM_CI_ENABLED` repository variable to `true`
+repository secret contains a read-only token that can clone Planning, Telemetry,
+and Activity. Set the `NOX_ECOSYSTEM_CI_ENABLED` repository variable to `true`
 after adding that secret.
 
 The scheduled acceptance workflow uses the `staging-acceptance` GitHub

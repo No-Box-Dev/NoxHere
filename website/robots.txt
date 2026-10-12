@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://feed.noxhere.com/sitemap.xml

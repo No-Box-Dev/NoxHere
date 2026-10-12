@@ -1,7 +1,7 @@
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 export interface paths {
-    "/api/spots/public/v1/errors": {
+    "/api/feedback/public/v1/errors": {
         parameters: {
             query?: never;
             header?: never;
@@ -14,14 +14,14 @@ export interface paths {
          * Submit a bounded batch of automatic browser errors
          * @description Submit a bounded batch of automatic browser errors. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
-        post: operations["submitPublicNoxSpotErrors"];
+        post: operations["submitPublicFeedbackErrors"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/spots/public/v1/reports": {
+    "/api/feedback/public/v1/reports": {
         parameters: {
             query?: never;
             header?: never;
@@ -31,17 +31,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Submit a public NoxSpot capture
-         * @description Submit feedback from an origin-bound widget. NoxSpot cannot inspect a host website's login session: the host must explicitly pass its signed-in user through NoxSpot.identify(...) or NoxSpot.init({ getReporter }). reporterEmail is retained for resolution mail only when notifyOnResolution is true. An optional HTTPS reporterAvatarUrl is retained as private report metadata and is never copied into GitHub.
+         * Submit a public Feedback capture
+         * @description Submit feedback from an origin-bound widget. Feedback cannot inspect a host website's login session: the host must explicitly pass its signed-in user through Feedback.identify(...) or Feedback.init({ getReporter }). reporterEmail is retained for resolution mail only when notifyOnResolution is true. An optional HTTPS reporterAvatarUrl is retained as private report metadata and is never copied into GitHub.
          */
-        post: operations["submitPublicNoxSpotReport"];
+        post: operations["submitPublicFeedbackReport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/spots/public/v1/resolution-responses/{token}": {
+    "/api/feedback/public/v1/resolution-responses/{token}": {
         parameters: {
             query?: never;
             header?: never;
@@ -52,16 +52,16 @@ export interface paths {
         put?: never;
         /**
          * Reopen a resolved report with optional reporter context
-         * @description Consumes the single-use token from a NoxSpot resolution email, adds an optional response and screenshot to the original GitHub issue, and reopens the issue.
+         * @description Consumes the single-use token from a Feedback resolution email, adds an optional response and screenshot to the original GitHub issue, and reopens the issue.
          */
-        post: operations["reopenResolvedNoxSpotReport"];
+        post: operations["reopenResolvedFeedbackReport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/spots/public/v1/sites/{siteId}/config": {
+    "/api/feedback/public/v1/sites/{siteId}/config": {
         parameters: {
             query?: never;
             header?: never;
@@ -72,7 +72,7 @@ export interface paths {
          * Get effective public widget configuration for the request origin
          * @description Get effective public widget configuration for the request origin. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
-        get: operations["getPublicNoxSpotConfig"];
+        get: operations["getPublicFeedbackConfig"];
         put?: never;
         post?: never;
         delete?: never;
@@ -81,7 +81,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/spots/public/v1/sites/{siteId}/members": {
+    "/api/feedback/public/v1/sites/{siteId}/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -89,10 +89,70 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List public NoxSpot reporter choices for the request origin
+         * List public Feedback reporter choices for the request origin
          * @description Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.
          */
-        get: operations["getPublicNoxSpotMembers"];
+        get: operations["getPublicFeedbackMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get normalized current work, posts, and release notes
+         * @description Get normalized current work, posts, and release notes. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activity/current-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read per-person current-work counts for the selected project
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        get: operations["getCurrentWorkSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activity/release-notes-prompt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the server-owned Activity release-notes prompt
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        get: operations["getActivityDefaultPrompt"];
         put?: never;
         post?: never;
         delete?: never;
@@ -284,7 +344,7 @@ export interface paths {
         put?: never;
         /**
          * Poll native GitHub authorization
-         * @description NoxConnect completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials.
+         * @description NoxHere completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials.
          */
         post: operations["pollNativeDeviceAuthorization"];
         delete?: never;
@@ -304,7 +364,7 @@ export interface paths {
         put?: never;
         /**
          * Start native GitHub authorization
-         * @description Returns an opaque NoxConnect device handle plus the GitHub verification URI and user code.
+         * @description Returns an opaque NoxHere device handle plus the GitHub verification URI and user code.
          */
         post: operations["startNativeDeviceAuthorization"];
         delete?: never;
@@ -324,7 +384,7 @@ export interface paths {
         put?: never;
         /**
          * Upgrade a legacy native session
-         * @description Temporary one-time migration route for older NoxFeed releases. Normal sign-in uses the brokered device flow.
+         * @description Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow.
          */
         post: operations["exchangeLegacyNativeCredential"];
         delete?: never;
@@ -439,408 +499,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/cues/errors/{sourceId}/{fingerprint}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update an error incident status
-         * @description Acknowledge, resolve, or reopen one NoxCue error group in the optional project context.
-         */
-        put: operations["updateNoxCueErrorStatus"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List recent NoxCue events and Slack delivery state
-         * @description List recent NoxCue events and Slack delivery state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["listNoxCueEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/github-issues": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List project GitHub-incident settings
-         * @description Returns each active project's repository mapping, routing policy, and open NoxCue incident count.
-         */
-        get: operations["getNoxCueGitHubIssueSettings"];
-        /**
-         * Update project GitHub-incident settings
-         * @description Controls whether NoxCue opens or updates a GitHub issue for incidents in the selected project and environments.
-         */
-        put: operations["putNoxCueGitHubIssueSettings"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get stored NoxCue-derived user metrics and digest state
-         * @description Get stored NoxCue-derived user metrics and digest state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["getNoxCueDailyHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/project-overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read a guest-safe NoxCue project overview
-         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
-         */
-        get: operations["getNoxCueProjectOverview"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/projects/{projectId}/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List selectable metrics and their active event status for one project
-         * @description List selectable metrics and their active event status for one project. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["getNoxCueProjectMetrics"];
-        /**
-         * Choose metrics included in one project's daily report
-         * @description Choose metrics included in one project's daily report. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        put: operations["updateNoxCueProjectMetrics"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/public/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Submit one standardized NoxCue event through the stable NoxConnect gateway
-         * @description Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.
-         */
-        post: operations["ingestNoxCueEvent"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List NoxCue sources, linked projects, and ingest keys
-         * @description List NoxCue sources, linked projects, and ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["listNoxCueSources"];
-        put?: never;
-        /**
-         * Create a NoxCue event source
-         * @description Create a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        post: operations["createNoxCueSource"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update a NoxCue event source
-         * @description Update a NoxCue event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        put: operations["updateNoxCueSource"];
-        post?: never;
-        /**
-         * Delete a NoxCue source and revoke its keys
-         * @description Delete a NoxCue source and revoke its keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        delete: operations["deleteNoxCueSource"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/cards": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List source-scoped NoxCue report card configuration
-         * @description List source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["listNoxCueCards"];
-        /**
-         * Replace source-scoped NoxCue report card configuration
-         * @description Replace source-scoped NoxCue report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        put: operations["updateNoxCueCards"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/custom-metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List registered custom activity metrics and event status
-         * @description List registered custom activity metrics and event status. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["listNoxCueCustomMetrics"];
-        put?: never;
-        /**
-         * Register a custom activity metric before ingest
-         * @description Register a custom activity metric before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        post: operations["createNoxCueCustomMetric"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/custom-metrics/{metricKey}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Rename or pause a registered custom activity metric
-         * @description Rename or pause a registered custom activity metric. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        put: operations["updateNoxCueCustomMetric"];
-        post?: never;
-        /**
-         * Delete a custom metric definition while retaining historical events
-         * @description Delete a custom metric definition while retaining historical events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        delete: operations["deleteNoxCueCustomMetric"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/features": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List standard and registered custom features with health
-         * @description Linked sources share their project's custom catalog. Unlinked sources have an isolated source catalog.
-         */
-        get: operations["listNoxCueFeatures"];
-        put?: never;
-        /**
-         * Register a custom NoxCue feature before ingest
-         * @description Register a custom NoxCue feature before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        post: operations["createNoxCueCustomFeature"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/features/{featureKey}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update or pause a registered custom feature
-         * @description Update or pause a registered custom feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        put: operations["updateNoxCueCustomFeature"];
-        post?: never;
-        /**
-         * Delete a custom feature definition while retaining historical results
-         * @description Delete a custom feature definition while retaining historical results. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        delete: operations["deleteNoxCueCustomFeature"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/health/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test a NoxCue source destination
-         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
-         */
-        post: operations["testNoxCueSource"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List NoxCue key metadata, usage, and audit history
-         * @description List NoxCue key metadata, usage, and audit history. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["listNoxCueKeys"];
-        put?: never;
-        /**
-         * Create a one-time NoxCue browser or server ingest key
-         * @description The key value is returned once. Do not log it.
-         */
-        post: operations["createNoxCueKey"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/keys/{keyId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Revoke a NoxCue ingest key
-         * @description Revoke a NoxCue ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        delete: operations["revokeNoxCueKey"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cues/sources/{sourceId}/keys/{keyId}/rotate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Rotate a NoxCue ingest key with a 24-hour overlap
-         * @description Rotate a NoxCue ingest key with a 24-hour overlap. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        post: operations["rotateNoxCueKey"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/developer-feedback": {
         parameters: {
             query?: never;
@@ -909,7 +567,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List detailed NoxFeed events
+         * List detailed Activity events
          * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
          */
         get: operations["listFeedEvents"];
@@ -931,7 +589,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Read one detailed NoxFeed event
+         * Read one detailed Activity event
          * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
          */
         get: operations["getFeedEvent"];
@@ -951,8 +609,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List NoxTicket features
-         * @description List NoxTicket features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         * List Planning features
+         * @description List Planning features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
         get: operations["listFeatures"];
         put?: never;
@@ -1039,7 +697,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/feed": {
+    "/api/v1/feedback/project-overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -1047,10 +705,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get normalized current work, posts, and release notes
-         * @description Get normalized current work, posts, and release notes. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         * Read a guest-safe Feedback project overview
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
          */
-        get: operations["getNoxFeed"];
+        get: operations["getFeedbackProjectOverview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1059,7 +717,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/feed/current-summary": {
+    "/api/v1/feedback/reports/{reportId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a Feedback report status
+         * @description Mark a report open, investigating, or resolved and optionally send or retry the reporter's consented resolution email.
+         */
+        patch: operations["updateFeedbackReport"];
+        trace?: never;
+    };
+    "/api/v1/feedback/sites": {
         parameters: {
             query?: never;
             header?: never;
@@ -1067,12 +745,124 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Read per-person current-work counts for the selected project
-         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         * List Feedback sites
+         * @description List Feedback sites. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
-        get: operations["getCurrentWorkSummary"];
+        get: operations["listFeedbackSites"];
+        put?: never;
+        /**
+         * Create a Feedback site
+         * @description Create a Feedback site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createFeedbackSite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/sites/{siteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         post?: never;
+        /**
+         * Delete a Feedback site and its screenshots
+         * @description Delete a Feedback site and its screenshots. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["deleteFeedbackSite"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a Feedback site including its channel override
+         * @description Update a Feedback site including its channel override. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        patch: operations["updateFeedbackSite"];
+        trace?: never;
+    };
+    "/api/v1/feedback/sites/{siteId}/resolution-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the effective Feedback resolution email template
+         * @description Returns the site's custom content and appearance or the NoxHere default plus a revision for conditional updates. Organization admins and project-scoped API tokens can use the same endpoint.
+         */
+        get: operations["getFeedbackResolutionTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update or reset a Feedback resolution email template
+         * @description Send the revision returned by GET as If-Match. Set template to null to restore the default. This is the self-service configuration used by the NoxHere UI and is also available to project-scoped API tokens. Postmark is transport-only; NoxHere validates, renders, and snapshots the template used for each resolution.
+         */
+        patch: operations["updateFeedbackResolutionTemplate"];
+        trace?: never;
+    };
+    "/api/v1/feedback/sites/{siteId}/resolution-template/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Render a safe preview of a draft resolution email template
+         * @description Render a safe preview of a draft resolution email template. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["previewFeedbackResolutionTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/sites/{siteId}/resolution-template/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a draft resolution email through NoxHere and Postmark
+         * @description The draft does not need to be saved. NoxHere renders the safe email and sends it through its private Postmark-backed email capability.
+         */
+        post: operations["testFeedbackResolutionTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/sites/{siteId}/retry-deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry blocked deliveries for one Feedback site
+         * @description Retry blocked deliveries for one Feedback site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["retryFeedbackDeliveries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1479,7 +1269,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Read membership and NoxConnect role for the current organization
+         * Read membership and NoxHere role for the current organization
          * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
          */
         get: operations["getCurrentMember"];
@@ -1503,26 +1293,6 @@ export interface paths {
          * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
          */
         get: operations["listMembers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/noxfeed/release-notes-prompt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read the server-owned NoxFeed release-notes prompt
-         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
-         */
-        get: operations["getNoxFeedDefaultPrompt"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1623,8 +1393,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List NoxConnect projects, repository assignments, and product destinations
-         * @description List NoxConnect projects, repository assignments, and product destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         * List NoxHere projects, repository assignments, and product destinations
+         * @description List NoxHere projects, repository assignments, and product destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
         get: operations["getProjectRouting"];
         put?: never;
@@ -1691,114 +1461,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Queue bounded NoxFeed pull-request history
+         * Queue bounded Activity pull-request history
          * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
          */
         post: operations["backfillProjectPullRequests"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectId}/cue/actions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read project Cue actions
-         * @description Read project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["getCueProjectActions"];
-        /**
-         * Update project Cue actions
-         * @description Update project Cue actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        put: operations["updateCueProjectActions"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectId}/cue/alert-rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read project Cue alert rules
-         * @description Read project Cue alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["getCueProjectAlertRules"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectId}/cue/alerts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read project Cue alerts
-         * @description Read project Cue alerts. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["getCueProjectAlerts"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectId}/cue/dashboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read the project Cue dashboard
-         * @description Read the project Cue dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["getCueProjectDashboard"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectId}/cue/stat-events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read project Cue statistic events
-         * @description Read project Cue statistic events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["getCueProjectStatEvents"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1924,6 +1590,110 @@ export interface paths {
          * @description Atomically update one project's repositories and named Slack destinations. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
         put: operations["updateProjectRouting"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/telemetry/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project Telemetry actions
+         * @description Read project Telemetry actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getTelemetryProjectActions"];
+        /**
+         * Update project Telemetry actions
+         * @description Update project Telemetry actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateTelemetryProjectActions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/telemetry/alert-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project Telemetry alert rules
+         * @description Read project Telemetry alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getTelemetryProjectAlertRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/telemetry/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project Telemetry alerts
+         * @description Read project Telemetry alerts. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getTelemetryProjectAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/telemetry/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the project Telemetry dashboard
+         * @description Read the project Telemetry dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getTelemetryProjectDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/telemetry/stat-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project Telemetry statistic events
+         * @description Read project Telemetry statistic events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getTelemetryProjectStatEvents"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2283,8 +2053,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List NoxTicket specifications
-         * @description List NoxTicket specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         * List Planning specifications
+         * @description List Planning specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
         get: operations["listSpecs"];
         put?: never;
@@ -2390,178 +2160,6 @@ export interface paths {
          * @description Delete a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
         delete: operations["deleteSpecAttachment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/spots/project-overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read a guest-safe NoxSpot project overview
-         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
-         */
-        get: operations["getNoxSpotProjectOverview"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/spots/reports/{reportId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update a NoxSpot report status
-         * @description Mark a report open, investigating, or resolved and optionally send or retry the reporter's consented resolution email.
-         */
-        patch: operations["updateNoxSpotReport"];
-        trace?: never;
-    };
-    "/api/v1/spots/sites": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List NoxSpot sites
-         * @description List NoxSpot sites. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        get: operations["listNoxSpotSites"];
-        put?: never;
-        /**
-         * Create a NoxSpot site
-         * @description Create a NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        post: operations["createNoxSpotSite"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/spots/sites/{siteId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete a NoxSpot site and its screenshots
-         * @description Delete a NoxSpot site and its screenshots. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        delete: operations["deleteNoxSpotSite"];
-        options?: never;
-        head?: never;
-        /**
-         * Update a NoxSpot site including its channel override
-         * @description Update a NoxSpot site including its channel override. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        patch: operations["updateNoxSpotSite"];
-        trace?: never;
-    };
-    "/api/v1/spots/sites/{siteId}/resolution-template": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read the effective NoxSpot resolution email template
-         * @description Returns the site's custom content and appearance or the NoxConnect default plus a revision for conditional updates. Organization admins and project-scoped API tokens can use the same endpoint.
-         */
-        get: operations["getNoxSpotResolutionTemplate"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update or reset a NoxSpot resolution email template
-         * @description Send the revision returned by GET as If-Match. Set template to null to restore the default. This is the self-service configuration used by the NoxConnect UI and is also available to project-scoped API tokens. Postmark is transport-only; NoxConnect validates, renders, and snapshots the template used for each resolution.
-         */
-        patch: operations["updateNoxSpotResolutionTemplate"];
-        trace?: never;
-    };
-    "/api/v1/spots/sites/{siteId}/resolution-template/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Render a safe preview of a draft resolution email template
-         * @description Render a safe preview of a draft resolution email template. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        post: operations["previewNoxSpotResolutionTemplate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/spots/sites/{siteId}/resolution-template/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send a draft resolution email through NoxConnect and Postmark
-         * @description The draft does not need to be saved. NoxConnect renders the safe email and sends it through its private Postmark-backed email capability.
-         */
-        post: operations["testNoxSpotResolutionTemplate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/spots/sites/{siteId}/retry-deliveries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Retry blocked deliveries for one NoxSpot site
-         * @description Retry blocked deliveries for one NoxSpot site. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
-         */
-        post: operations["retryNoxSpotDeliveries"];
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2679,10 +2277,443 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/telemetry/errors/{sourceId}/{fingerprint}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update an error incident status
+         * @description Acknowledge, resolve, or reopen one Telemetry error group in the optional project context.
+         */
+        put: operations["updateTelemetryErrorStatus"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recent Telemetry events and Slack delivery state
+         * @description List recent Telemetry events and Slack delivery state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listTelemetryEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/github-issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List project GitHub-incident settings
+         * @description Returns each active project's repository mapping, routing policy, and open Telemetry incident count.
+         */
+        get: operations["getTelemetryGitHubIssueSettings"];
+        /**
+         * Update project GitHub-incident settings
+         * @description Controls whether Telemetry opens or updates a GitHub issue for incidents in the selected project and environments.
+         */
+        put: operations["putTelemetryGitHubIssueSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get stored Telemetry-derived user metrics and digest state
+         * @description Get stored Telemetry-derived user metrics and digest state. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getTelemetryDailyHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/project-overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a guest-safe Telemetry project overview
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        get: operations["getTelemetryProjectOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/projects/{projectId}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List selectable metrics and their active event status for one project
+         * @description List selectable metrics and their active event status for one project. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getTelemetryProjectMetrics"];
+        /**
+         * Choose metrics included in one project's daily report
+         * @description Choose metrics included in one project's daily report. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateTelemetryProjectMetrics"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/public/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit one standardized Telemetry event through the stable NoxHere gateway
+         * @description Authenticated by X-Nox-Ingest-Key. Supply eventId or idempotencyKey when retrying error and feature events. User lifecycle facts are intrinsically deduplicated by source, user, type, and period.
+         */
+        post: operations["ingestTelemetryEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Telemetry sources, linked projects, and ingest keys
+         * @description List Telemetry sources, linked projects, and ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listTelemetrySources"];
+        put?: never;
+        /**
+         * Create a Telemetry event source
+         * @description Create a Telemetry event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createTelemetrySource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update a Telemetry event source
+         * @description Update a Telemetry event source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateTelemetrySource"];
+        post?: never;
+        /**
+         * Delete a Telemetry source and revoke its keys
+         * @description Delete a Telemetry source and revoke its keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["deleteTelemetrySource"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List source-scoped Telemetry report card configuration
+         * @description List source-scoped Telemetry report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listTelemetryCards"];
+        /**
+         * Replace source-scoped Telemetry report card configuration
+         * @description Replace source-scoped Telemetry report card configuration. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateTelemetryCards"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/custom-metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List registered custom activity metrics and event status
+         * @description List registered custom activity metrics and event status. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listTelemetryCustomMetrics"];
+        put?: never;
+        /**
+         * Register a custom activity metric before ingest
+         * @description Register a custom activity metric before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createTelemetryCustomMetric"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/custom-metrics/{metricKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rename or pause a registered custom activity metric
+         * @description Rename or pause a registered custom activity metric. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateTelemetryCustomMetric"];
+        post?: never;
+        /**
+         * Delete a custom metric definition while retaining historical events
+         * @description Delete a custom metric definition while retaining historical events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["deleteTelemetryCustomMetric"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List standard and registered custom features with health
+         * @description Linked sources share their project's custom catalog. Unlinked sources have an isolated source catalog.
+         */
+        get: operations["listTelemetryFeatures"];
+        put?: never;
+        /**
+         * Register a custom Telemetry feature before ingest
+         * @description Register a custom Telemetry feature before ingest. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createTelemetryCustomFeature"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/features/{featureKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update or pause a registered custom feature
+         * @description Update or pause a registered custom feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateTelemetryCustomFeature"];
+        post?: never;
+        /**
+         * Delete a custom feature definition while retaining historical results
+         * @description Delete a custom feature definition while retaining historical results. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["deleteTelemetryCustomFeature"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/health/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test a Telemetry source destination
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        post: operations["testTelemetrySource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Telemetry key metadata, usage, and audit history
+         * @description List Telemetry key metadata, usage, and audit history. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listTelemetryKeys"];
+        put?: never;
+        /**
+         * Create a one-time Telemetry browser or server ingest key
+         * @description The key value is returned once. Do not log it.
+         */
+        post: operations["createTelemetryKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a Telemetry ingest key
+         * @description Revoke a Telemetry ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["revokeTelemetryKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate a Telemetry ingest key with a 24-hour overlap
+         * @description Rotate a Telemetry ingest key with a 24-hour overlap. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["rotateTelemetryKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ActivityActor: {
+            /** Format: uri */
+            avatarUrl: string | null;
+            login: string;
+            name: string | null;
+        };
+        ActivityConfigPatch: {
+            releaseNotesPrompt?: string | null;
+        };
+        ActivityEvent: {
+            actor: components["schemas"]["ActivityActor"];
+            /** Format: date-time */
+            createdAt: string;
+            id: string;
+            pr: components["schemas"]["ActivityPullRequest"] | null;
+            repo: string;
+            summary: string;
+            technicalSummary: string;
+            /** @enum {string} */
+            type: "opened" | "merged" | "release-notes";
+        };
+        ActivityPage: {
+            events: components["schemas"]["ActivityEvent"][];
+            nextCursor: string | null;
+        };
+        ActivityPullRequest: {
+            number: number;
+            title: string;
+            /** Format: uri */
+            url: string;
+        };
         ActorPatch: {
             avatar_url?: string | null;
             github_user_id?: string | null;
@@ -2696,8 +2727,8 @@ export interface components {
                 model: string;
                 provider: string;
                 services: {
-                    noxconnect: components["schemas"]["ManagedAiServiceStatus"];
-                    noxfeed: components["schemas"]["ManagedAiServiceStatus"];
+                    activity: components["schemas"]["ManagedAiServiceStatus"];
+                    noxhere: components["schemas"]["ManagedAiServiceStatus"];
                 };
             };
             /** @enum {string} */
@@ -2715,7 +2746,7 @@ export interface components {
             /** @default 90 */
             expiresInDays: number;
             name: string;
-            /** @description One enabled NoxConnect project. The token cannot access resources assigned to another project. */
+            /** @description One enabled NoxHere project. The token cannot access resources assigned to another project. */
             projectId: string;
             scopes: string[];
         };
@@ -2736,18 +2767,6 @@ export interface components {
             /** @enum {string} */
             method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
             path: string;
-        };
-        CueAction: {
-            key: string;
-            label: string;
-            slot: number;
-        };
-        CueActions: {
-            actions: components["schemas"]["CueAction"][];
-            projectId: string;
-            snippet: string;
-            /** @enum {integer} */
-            windowDays: 7 | 14 | 30;
         };
         DeveloperFeedbackCreate: {
             /** @enum {string} */
@@ -2780,7 +2799,7 @@ export interface components {
                 status: "received";
             };
         };
-        /** @description NoxTicket feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project. */
+        /** @description Planning feature mirrored from its GitHub issue, including number, title, workflow status, owners, labels, and project. */
         Feature: components["schemas"]["ApiRecord"];
         FeatureCreate: {
             backlog?: boolean;
@@ -2827,6 +2846,122 @@ export interface components {
             /** Format: uri */
             url: string;
         };
+        FeedbackBlock: {
+            environments?: string[];
+            id: string;
+            label?: string | null;
+            options?: string[];
+            required?: boolean;
+            /** @enum {string} */
+            type: "title" | "description" | "reporter" | "contact_email" | "category" | "custom_text" | "custom_textarea" | "custom_select" | "element_picker" | "metadata" | "console_logs";
+        };
+        FeedbackEnvironment: {
+            buttonColor?: string | null;
+            buttonText?: string | null;
+            /** @enum {string|null} */
+            captureMode?: "screenshot" | "dom" | null;
+            enabled?: boolean;
+            name: string;
+            url: string;
+            /** @enum {string|null} */
+            widgetMode?: "development" | "release" | null;
+        };
+        FeedbackErrorBatch: {
+            errors: ({
+                message: string;
+                title?: string;
+                /** Format: uri */
+                url?: string;
+            } & {
+                [key: string]: unknown;
+            })[];
+            siteId: string;
+        };
+        FeedbackReport: {
+            blockValues?: {
+                [key: string]: string;
+            } | null;
+            context?: Record<string, never> | null;
+            description?: string | null;
+            elements?: Record<string, never>[] | null;
+            environment?: string | null;
+            metadata?: Record<string, never> | null;
+            /**
+             * @description Explicit consent to retain the reporter email and send a transactional update when the report is resolved. Must not be true without reporter consent and requires reporterEmail.
+             * @default false
+             */
+            notifyOnResolution: boolean;
+            rating?: number | null;
+            reporter?: string | null;
+            /**
+             * Format: uri
+             * @description Optional signed-in reporter profile picture supplied explicitly by the host. It is private report metadata and is never copied into GitHub.
+             */
+            reporterAvatarUrl?: string | null;
+            /**
+             * Format: email
+             * @description Reporter email supplied explicitly by the host or reporter. It is never inferred from the website session and is not copied into GitHub.
+             */
+            reporterEmail?: string | null;
+            /** @description Bounded PNG, JPEG, or WebP data URL */
+            screenshot?: string | null;
+            siteId: string;
+            title: string;
+            /** @enum {string} */
+            type?: "bug" | "feature" | "feedback";
+        };
+        /** @description Site-level content and brand presentation for Feedback resolution emails. Every site can configure this in NoxHere or with a project-scoped API token. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxHere owns the evidence rules, AI safety prompt, safe HTML rendering, verified sender address, and reopen behavior. */
+        FeedbackResolutionTemplate: {
+            acknowledgement: string;
+            appearance: {
+                accentColor: string;
+                backgroundColor: string;
+                /**
+                 * @description Email-safe font stack. Custom fonts fall back safely when the recipient's client does not support them.
+                 * @enum {string}
+                 */
+                fontPreset: "system" | "playnist" | "humanist" | "editorial" | "mono";
+                mutedColor: string;
+                surfaceColor: string;
+                textColor: string;
+            };
+            buttonLabel: string;
+            closing: string;
+            reopenText: string;
+            /** Format: email */
+            replyTo: string | null;
+            /** @description Display name shown next to the platform's verified sending address. */
+            senderName: string;
+            subject: string;
+            /** @enum {string} */
+            tone: "default" | "warm" | "formal" | "concise";
+        };
+        FeedbackResolutionTemplateDocument: {
+            defaults: components["schemas"]["FeedbackResolutionTemplate"];
+            revision: string;
+            template: components["schemas"]["FeedbackResolutionTemplate"];
+            usingDefault: boolean;
+        };
+        FeedbackSiteCreate: {
+            autoErrorLogging?: boolean;
+            buttonColor?: string;
+            buttonText?: string;
+            name: string;
+            projectId: string;
+            /** @enum {string} */
+            widgetMode?: "development" | "release";
+        };
+        FeedbackSitePatch: {
+            autoErrorLogging?: boolean;
+            blocks?: components["schemas"]["FeedbackBlock"][];
+            buttonColor?: string;
+            buttonText?: string;
+            environments?: components["schemas"]["FeedbackEnvironment"][];
+            slackChannelId?: string | null;
+            slackConnectionId?: string | null;
+            /** @enum {string} */
+            widgetMode?: "development" | "release";
+        };
         IncidentAlert: {
             environment: string;
             fingerprint: string;
@@ -2870,216 +3005,15 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        NoxConnectConfigPatch: {
+        NoxHereConfigPatch: {
             enabledServices?: {
-                noxcue?: boolean;
-                noxfeed?: boolean;
-                noxspot?: boolean;
-                noxticket?: boolean;
+                activity?: boolean;
+                feedback?: boolean;
+                planning?: boolean;
+                telemetry?: boolean;
             };
             /** @enum {string} */
             newRepositoryPolicy?: "include" | "exclude";
-        };
-        NoxCueActivityEvent: {
-            context?: components["schemas"]["JsonValue"];
-            environment?: string;
-            /** Format: uuid */
-            eventId: string;
-            idempotencyKey?: string;
-            metric: string;
-            /** Format: date-time */
-            occurredAt?: string;
-            /** @constant */
-            type: "activity.occurred";
-            /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
-            userId: string;
-            /**
-             * @default 1
-             * @constant
-             */
-            version: 1;
-        };
-        NoxCueCardSelection: {
-            cards: {
-                cumulativeLabel?: string | null;
-                dailyLabel?: string | null;
-                /** @default true */
-                enabled: boolean;
-                metricKey: string;
-                /** @default false */
-                perActiveEnabled: boolean;
-            }[];
-        };
-        NoxCueCustomFeatureInput: {
-            /** @description Default user-impact text shown with the actual bounded technical error. */
-            failureMessage: string;
-            key: string;
-            label: string;
-        };
-        NoxCueCustomFeatureUpdate: {
-            enabled: boolean;
-            failureMessage: string;
-            label: string;
-        };
-        NoxCueCustomMetricInput: {
-            key: string;
-            label: string;
-        };
-        NoxCueCustomMetricUpdate: {
-            /** @description Accept new events and include both derived outputs in reports. */
-            enabled: boolean;
-            label: string;
-        };
-        NoxCueError: {
-            data?: {
-                /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
-                affectedUser?: string;
-                component?: string;
-                environment?: string;
-                errorCode?: string;
-                /** @default false */
-                fatal: boolean;
-                fingerprint?: string;
-                /** @default false */
-                unhandled: boolean;
-            };
-            idempotencyKey?: string;
-            message?: string;
-            /** Format: date-time */
-            occurredAt?: string;
-            title: string;
-            /** @constant */
-            type: "error.occurred";
-            /** Format: uri */
-            url?: string;
-            /**
-             * @default 1
-             * @constant
-             */
-            version: 1;
-        };
-        NoxCueFeatureResult: {
-            context?: components["schemas"]["JsonValue"];
-            durationMs?: number;
-            environment?: string;
-            error?: components["schemas"]["JsonValue"];
-            /** Format: uuid */
-            eventId?: string;
-            feature: string;
-            idempotencyKey?: string;
-            message?: string;
-            /** Format: date-time */
-            occurredAt?: string;
-            /** @enum {string} */
-            outcome: "success" | "rejected" | "failure";
-            reason?: string;
-            /** @default false */
-            test: boolean;
-            /** @constant */
-            type: "feature.result";
-            /** @description Optional SDK-generated HMAC pseudonym. */
-            userId?: string;
-            /**
-             * @default 1
-             * @constant
-             */
-            version: 1;
-        };
-        NoxCueGitHubIssueSettingsUpdate: {
-            /** @default false */
-            commentOnRepeat: boolean;
-            enabled: boolean;
-            environments: ("production" | "staging" | "development" | "preview" | "test" | "local")[];
-            projectId: string;
-            /** @default 360 */
-            repeatIntervalMinutes: number;
-        };
-        NoxCueIngestResponse: {
-            /** @constant */
-            accepted: true;
-            duplicate?: boolean;
-            eventId: string;
-            notificationSuppressed?: boolean;
-            period?: string;
-            queued: boolean;
-            stored: boolean;
-        };
-        NoxCueProjectMetricSelection: {
-            enabledMetricKeys: ("users.new" | "users.total" | "users.active.daily" | "users.active.weekly" | "users.active.monthly" | "users.stickiness.dau_mau")[];
-        };
-        NoxCueSourceInput: {
-            /** @default false */
-            aggregateOnlySlack: boolean;
-            /** @default true */
-            alertsEnabled: boolean;
-            allowedEvents?: string[];
-            allowedOrigins?: string[];
-            digestEnabled: boolean;
-            digestTimeLocal: string;
-            enabled: boolean;
-            /**
-             * @default production
-             * @enum {string}
-             */
-            environment: "production" | "staging" | "development" | "preview" | "test" | "local";
-            /** @default false */
-            healthEnabled: boolean;
-            /** Format: uri */
-            healthUrl?: string | null;
-            name: string;
-            /**
-             * @description May only be true for a production source.
-             * @default false
-             */
-            productionStats: boolean;
-            projectId: string | null;
-            reportTitle?: string | null;
-            /** @default 62 */
-            retentionDays: number;
-            slackChannelId: string | null;
-            slackConnectionId: string | null;
-            /** @description IANA timezone used for completed daily periods. */
-            timezone: string;
-        };
-        NoxCueTrackedEvent: {
-            attributes?: {
-                [key: string]: string | number | boolean;
-            };
-            context?: components["schemas"]["JsonValue"];
-            environment?: string;
-            /** Format: uuid */
-            eventId: string;
-            idempotencyKey?: string;
-            name: string;
-            /** Format: date-time */
-            occurredAt?: string;
-            /** @constant */
-            type: "activity.tracked";
-            /** @description Required for trusted non-website events and forbidden for public browser events. */
-            userId?: string;
-            /** @default 1 */
-            value: number;
-            /**
-             * @default 1
-             * @constant
-             */
-            version: 1;
-        };
-        NoxCueUserEvent: {
-            /** Format: date-time */
-            occurredAt?: string;
-            /** @enum {string} */
-            type: "user.registered" | "user.active";
-            /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
-            userId: string;
-            /**
-             * @default 1
-             * @constant
-             */
-            version: 1;
-        };
-        NoxFeedConfigPatch: {
-            releaseNotesPrompt?: string | null;
         };
         NoxService: {
             capabilities: components["schemas"]["ServiceCapability"][];
@@ -3087,7 +3021,7 @@ export interface components {
             enabled: boolean;
             focus: string;
             /** @enum {string} */
-            id: "noxconnect" | "noxticket" | "noxfeed" | "noxspot" | "noxcue";
+            id: "noxhere" | "planning" | "activity" | "feedback" | "telemetry";
             /** @enum {string} */
             kind: "foundation" | "product";
             links: {
@@ -3098,132 +3032,6 @@ export interface components {
             };
             name: string;
             setup: components["schemas"]["ServiceSetup"];
-        };
-        NoxSpotBlock: {
-            environments?: string[];
-            id: string;
-            label?: string | null;
-            options?: string[];
-            required?: boolean;
-            /** @enum {string} */
-            type: "title" | "description" | "reporter" | "contact_email" | "category" | "custom_text" | "custom_textarea" | "custom_select" | "element_picker" | "metadata" | "console_logs";
-        };
-        NoxSpotEnvironment: {
-            buttonColor?: string | null;
-            buttonText?: string | null;
-            /** @enum {string|null} */
-            captureMode?: "screenshot" | "dom" | null;
-            enabled?: boolean;
-            name: string;
-            url: string;
-            /** @enum {string|null} */
-            widgetMode?: "development" | "release" | null;
-        };
-        NoxSpotErrorBatch: {
-            errors: ({
-                message: string;
-                title?: string;
-                /** Format: uri */
-                url?: string;
-            } & {
-                [key: string]: unknown;
-            })[];
-            siteId: string;
-        };
-        NoxSpotReport: {
-            blockValues?: {
-                [key: string]: string;
-            } | null;
-            context?: Record<string, never> | null;
-            description?: string | null;
-            elements?: Record<string, never>[] | null;
-            environment?: string | null;
-            metadata?: Record<string, never> | null;
-            /**
-             * @description Explicit consent to retain the reporter email and send a transactional update when the report is resolved. Must not be true without reporter consent and requires reporterEmail.
-             * @default false
-             */
-            notifyOnResolution: boolean;
-            rating?: number | null;
-            reporter?: string | null;
-            /**
-             * Format: uri
-             * @description Optional signed-in reporter profile picture supplied explicitly by the host. It is private report metadata and is never copied into GitHub.
-             */
-            reporterAvatarUrl?: string | null;
-            /**
-             * Format: email
-             * @description Reporter email supplied explicitly by the host or reporter. It is never inferred from the website session and is not copied into GitHub.
-             */
-            reporterEmail?: string | null;
-            /** @description Bounded PNG, JPEG, or WebP data URL */
-            screenshot?: string | null;
-            siteId: string;
-            title: string;
-            /** @enum {string} */
-            type?: "bug" | "feature" | "feedback";
-        };
-        /** @description Site-level content and brand presentation for NoxSpot resolution emails. Every site can configure this in NoxConnect or with a project-scoped API token. Only {{report_title}} and {{site_name}} placeholders are accepted. NoxConnect owns the evidence rules, AI safety prompt, safe HTML rendering, verified sender address, and reopen behavior. */
-        NoxSpotResolutionTemplate: {
-            acknowledgement: string;
-            appearance: {
-                accentColor: string;
-                backgroundColor: string;
-                /**
-                 * @description Email-safe font stack. Custom fonts fall back safely when the recipient's client does not support them.
-                 * @enum {string}
-                 */
-                fontPreset: "system" | "playnist" | "humanist" | "editorial" | "mono";
-                mutedColor: string;
-                surfaceColor: string;
-                textColor: string;
-            };
-            buttonLabel: string;
-            closing: string;
-            reopenText: string;
-            /** Format: email */
-            replyTo: string | null;
-            /** @description Display name shown next to the platform's verified sending address. */
-            senderName: string;
-            subject: string;
-            /** @enum {string} */
-            tone: "default" | "warm" | "formal" | "concise";
-        };
-        NoxSpotResolutionTemplateDocument: {
-            defaults: components["schemas"]["NoxSpotResolutionTemplate"];
-            revision: string;
-            template: components["schemas"]["NoxSpotResolutionTemplate"];
-            usingDefault: boolean;
-        };
-        NoxSpotSiteCreate: {
-            autoErrorLogging?: boolean;
-            buttonColor?: string;
-            buttonText?: string;
-            name: string;
-            projectId: string;
-            /** @enum {string} */
-            widgetMode?: "development" | "release";
-        };
-        NoxSpotSitePatch: {
-            autoErrorLogging?: boolean;
-            blocks?: components["schemas"]["NoxSpotBlock"][];
-            buttonColor?: string;
-            buttonText?: string;
-            environments?: components["schemas"]["NoxSpotEnvironment"][];
-            slackChannelId?: string | null;
-            slackConnectionId?: string | null;
-            /** @enum {string} */
-            widgetMode?: "development" | "release";
-        };
-        NoxTicketConfigPatch: {
-            featureRepository?: string | null;
-            workflow?: {
-                stages: {
-                    color: string;
-                    id: string;
-                    label: string;
-                }[];
-            };
         };
         OrganizationReference: {
             login: string;
@@ -3252,6 +3060,16 @@ export interface components {
             draft: {
                 featureNumber: number | null;
                 title: string;
+            };
+        };
+        PlanningConfigPatch: {
+            featureRepository?: string | null;
+            workflow?: {
+                stages: {
+                    color: string;
+                    id: string;
+                    label: string;
+                }[];
             };
         };
         PlanningTask: {
@@ -3376,14 +3194,14 @@ export interface components {
             status: "open" | "acknowledged" | "resolved";
         };
         ProjectRoutingInput: {
-            /** @description Whether this repository-mirror row is explicitly enabled as a NoxConnect routing project */
+            /** @description Whether this repository-mirror row is explicitly enabled as a NoxHere routing project */
             enabled: boolean;
             repositories: string[];
             routes: {
-                noxCue: components["schemas"]["ProjectDestination"];
-                noxCueAlerts: components["schemas"]["ProjectDestination"];
-                noxfeedPosts: components["schemas"]["ProjectDestination"];
-                noxfeedReleaseNotes: components["schemas"]["ProjectDestination"];
+                activityPosts: components["schemas"]["ProjectDestination"];
+                activityReleaseNotes: components["schemas"]["ProjectDestination"];
+                telemetry: components["schemas"]["ProjectDestination"];
+                telemetryAlerts: components["schemas"]["ProjectDestination"];
             };
         };
         /** @enum {string} */
@@ -3393,15 +3211,15 @@ export interface components {
             /** @description Optional candidate channel; otherwise uses saved routing and fallback. */
             channelId?: string;
             /** @enum {string} */
-            route: "fallback" | "noxcue" | "noxticket" | "noxfeed_posts" | "noxfeed_release_notes";
+            route: "fallback" | "telemetry" | "planning" | "activity_posts" | "activity_release_notes";
         };
         RoutingPatch: {
             routes: {
+                activity_posts?: string | null;
+                activity_release_notes?: string | null;
                 fallback?: string | null;
-                noxcue?: string | null;
-                noxfeed_posts?: string | null;
-                noxfeed_release_notes?: string | null;
-                noxticket?: string | null;
+                planning?: string | null;
+                telemetry?: string | null;
             };
         };
         ServiceCapability: {
@@ -3426,7 +3244,7 @@ export interface components {
         ServiceConfig: {
             /** @constant */
             apiVersion: 1;
-            /** @description Shape depends on service. NoxSpot and NoxCue configuration is resource-scoped and linked from links.resources. */
+            /** @description Shape depends on service. Feedback and Telemetry configuration is resource-scoped and linked from links.resources. */
             config: Record<string, never>;
             configuration: {
                 /** @enum {string} */
@@ -3441,7 +3259,7 @@ export interface components {
             schemaVersion: 1;
             service: components["schemas"]["ServiceId"];
         };
-        ServiceConfigPatch: components["schemas"]["NoxConnectConfigPatch"] | components["schemas"]["NoxTicketConfigPatch"] | components["schemas"]["NoxFeedConfigPatch"] | Record<string, never>;
+        ServiceConfigPatch: components["schemas"]["NoxHereConfigPatch"] | components["schemas"]["PlanningConfigPatch"] | components["schemas"]["ActivityConfigPatch"] | Record<string, never>;
         ServiceConnectionRequirement: {
             /** @enum {string} */
             provider: "github" | "slack";
@@ -3475,7 +3293,7 @@ export interface components {
             state: "healthy" | "degraded" | "blocked" | "disabled";
         };
         /** @enum {string} */
-        ServiceId: "noxconnect" | "noxticket" | "noxfeed" | "noxspot" | "noxcue";
+        ServiceId: "noxhere" | "planning" | "activity" | "feedback" | "telemetry";
         ServiceLinks: {
             health: string;
             resources: {
@@ -3590,7 +3408,7 @@ export interface components {
             /** @description Project to own this workspace. Null is allowed only while it is the organization's sole workspace. */
             projectId?: string | null;
         };
-        /** @description NoxTicket specification with its project, workflow state, content, and archive metadata. */
+        /** @description Planning specification with its project, workflow state, content, and archive metadata. */
         Spec: components["schemas"]["ApiRecord"];
         /** @description Metadata for one specification attachment. */
         SpecAttachment: components["schemas"]["ApiRecord"];
@@ -3672,6 +3490,216 @@ export interface components {
             reportStatus: string;
             stats: components["schemas"]["StatCard"][];
         };
+        TelemetryAction: {
+            key: string;
+            label: string;
+            slot: number;
+        };
+        TelemetryActions: {
+            actions: components["schemas"]["TelemetryAction"][];
+            projectId: string;
+            snippet: string;
+            /** @enum {integer} */
+            windowDays: 7 | 14 | 30;
+        };
+        TelemetryActivityEvent: {
+            context?: components["schemas"]["JsonValue"];
+            environment?: string;
+            /** Format: uuid */
+            eventId: string;
+            idempotencyKey?: string;
+            metric: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** @constant */
+            type: "activity.occurred";
+            /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
+            userId: string;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
+        TelemetryCardSelection: {
+            cards: {
+                cumulativeLabel?: string | null;
+                dailyLabel?: string | null;
+                /** @default true */
+                enabled: boolean;
+                metricKey: string;
+                /** @default false */
+                perActiveEnabled: boolean;
+            }[];
+        };
+        TelemetryCustomFeatureInput: {
+            /** @description Default user-impact text shown with the actual bounded technical error. */
+            failureMessage: string;
+            key: string;
+            label: string;
+        };
+        TelemetryCustomFeatureUpdate: {
+            enabled: boolean;
+            failureMessage: string;
+            label: string;
+        };
+        TelemetryCustomMetricInput: {
+            key: string;
+            label: string;
+        };
+        TelemetryCustomMetricUpdate: {
+            /** @description Accept new events and include both derived outputs in reports. */
+            enabled: boolean;
+            label: string;
+        };
+        TelemetryError: {
+            data?: {
+                /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
+                affectedUser?: string;
+                component?: string;
+                environment?: string;
+                errorCode?: string;
+                /** @default false */
+                fatal: boolean;
+                fingerprint?: string;
+                /** @default false */
+                unhandled: boolean;
+            };
+            idempotencyKey?: string;
+            message?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            title: string;
+            /** @constant */
+            type: "error.occurred";
+            /** Format: uri */
+            url?: string;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
+        TelemetryFeatureResult: {
+            context?: components["schemas"]["JsonValue"];
+            durationMs?: number;
+            environment?: string;
+            error?: components["schemas"]["JsonValue"];
+            /** Format: uuid */
+            eventId?: string;
+            feature: string;
+            idempotencyKey?: string;
+            message?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** @enum {string} */
+            outcome: "success" | "rejected" | "failure";
+            reason?: string;
+            /** @default false */
+            test: boolean;
+            /** @constant */
+            type: "feature.result";
+            /** @description Optional SDK-generated HMAC pseudonym. */
+            userId?: string;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
+        TelemetryGitHubIssueSettingsUpdate: {
+            /** @default false */
+            commentOnRepeat: boolean;
+            enabled: boolean;
+            environments: ("production" | "staging" | "development" | "preview" | "test" | "local")[];
+            projectId: string;
+            /** @default 360 */
+            repeatIntervalMinutes: number;
+        };
+        TelemetryIngestResponse: {
+            /** @constant */
+            accepted: true;
+            duplicate?: boolean;
+            eventId: string;
+            notificationSuppressed?: boolean;
+            period?: string;
+            queued: boolean;
+            stored: boolean;
+        };
+        TelemetryProjectMetricSelection: {
+            enabledMetricKeys: ("users.new" | "users.total" | "users.active.daily" | "users.active.weekly" | "users.active.monthly" | "users.stickiness.dau_mau")[];
+        };
+        TelemetrySourceInput: {
+            /** @default false */
+            aggregateOnlySlack: boolean;
+            /** @default true */
+            alertsEnabled: boolean;
+            allowedEvents?: string[];
+            allowedOrigins?: string[];
+            digestEnabled: boolean;
+            digestTimeLocal: string;
+            enabled: boolean;
+            /**
+             * @default production
+             * @enum {string}
+             */
+            environment: "production" | "staging" | "development" | "preview" | "test" | "local";
+            /** @default false */
+            healthEnabled: boolean;
+            /** Format: uri */
+            healthUrl?: string | null;
+            name: string;
+            /**
+             * @description May only be true for a production source.
+             * @default false
+             */
+            productionStats: boolean;
+            projectId: string | null;
+            reportTitle?: string | null;
+            /** @default 62 */
+            retentionDays: number;
+            slackChannelId: string | null;
+            slackConnectionId: string | null;
+            /** @description IANA timezone used for completed daily periods. */
+            timezone: string;
+        };
+        TelemetryTrackedEvent: {
+            attributes?: {
+                [key: string]: string | number | boolean;
+            };
+            context?: components["schemas"]["JsonValue"];
+            environment?: string;
+            /** Format: uuid */
+            eventId: string;
+            idempotencyKey?: string;
+            name: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** @constant */
+            type: "activity.tracked";
+            /** @description Required for trusted non-website events and forbidden for public browser events. */
+            userId?: string;
+            /** @default 1 */
+            value: number;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
+        TelemetryUserEvent: {
+            /** Format: date-time */
+            occurredAt?: string;
+            /** @enum {string} */
+            type: "user.registered" | "user.active";
+            /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
+            userId: string;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
         UserAction: {
             provider: string;
             resume: Record<string, never>;
@@ -3750,7 +3778,7 @@ export interface components {
         projectId: string;
         provider: "github" | "slack";
         repo: string;
-        service: "noxconnect" | "noxticket" | "noxfeed" | "noxspot" | "noxcue";
+        service: "noxhere" | "planning" | "activity" | "feedback" | "telemetry";
         siteId: string;
         sourceId: string;
         specId: number;
@@ -3761,7 +3789,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    submitPublicNoxSpotErrors: {
+    submitPublicFeedbackErrors: {
         parameters: {
             query?: never;
             header?: never;
@@ -3770,7 +3798,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NoxSpotErrorBatch"];
+                "application/json": components["schemas"]["FeedbackErrorBatch"];
             };
         };
         responses: {
@@ -3821,7 +3849,7 @@ export interface operations {
             };
         };
     };
-    submitPublicNoxSpotReport: {
+    submitPublicFeedbackReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -3830,7 +3858,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NoxSpotReport"];
+                "application/json": components["schemas"]["FeedbackReport"];
             };
         };
         responses: {
@@ -3890,7 +3918,7 @@ export interface operations {
             };
         };
     };
-    reopenResolvedNoxSpotReport: {
+    reopenResolvedFeedbackReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -3942,7 +3970,7 @@ export interface operations {
             };
         };
     };
-    getPublicNoxSpotConfig: {
+    getPublicFeedbackConfig: {
         parameters: {
             query?: never;
             header?: never;
@@ -3982,7 +4010,7 @@ export interface operations {
             };
         };
     };
-    getPublicNoxSpotMembers: {
+    getPublicFeedbackMembers: {
         parameters: {
             query?: never;
             header?: never;
@@ -4026,6 +4054,101 @@ export interface operations {
                     "application/json": components["schemas"]["LegacyError"];
                 };
             };
+        };
+    };
+    getActivity: {
+        parameters: {
+            query?: {
+                /** @description Feed event mode */
+                mode?: "opened" | "merged" | "release-notes";
+                /** @description Repository name */
+                repo?: string;
+                /** @description GitHub login */
+                actor?: string;
+                /** @description Maximum events */
+                limit?: number;
+                /** @description Composite cursor returned by the previous page */
+                before?: string;
+            };
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Activity response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPage"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getCurrentWorkSummary: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getActivityDefaultPrompt: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiRecord"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
         };
     };
     listActors: {
@@ -4346,7 +4469,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @constant */
-                    client: "noxfeed-mac";
+                    client: "activity-mac";
                     device_code: string;
                 };
             };
@@ -4389,7 +4512,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @constant */
-                    client: "noxfeed-mac";
+                    client: "activity-mac";
                 };
             };
         };
@@ -4432,7 +4555,7 @@ export interface operations {
                 "application/json": {
                     access_token: string;
                     /** @constant */
-                    client: "noxfeed-mac";
+                    client: "activity-mac";
                     refresh_token?: string;
                 };
             };
@@ -4649,914 +4772,6 @@ export interface operations {
             400: components["responses"]["V1Error"];
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxCueErrorStatus: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: string;
-                fingerprint: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    status: "open" | "acknowledged" | "resolved";
-                };
-            };
-        };
-        responses: {
-            /** @description Error incident status updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    listNoxCueEvents: {
-        parameters: {
-            query?: {
-                /** @description Optional source filter */
-                sourceId?: string;
-                /** @description Maximum recent events */
-                limit?: number;
-            };
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Recent events */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getNoxCueGitHubIssueSettings: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Project incident settings */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    putNoxCueGitHubIssueSettings: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueGitHubIssueSettingsUpdate"];
-            };
-        };
-        responses: {
-            /** @description Project incident settings updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getNoxCueDailyHealth: {
-        parameters: {
-            query: {
-                sourceId: string;
-            };
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Daily user health */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getNoxCueProjectOverview: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getNoxCueProjectMetrics: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Project metric settings and readiness */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxCueProjectMetrics: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueProjectMetricSelection"];
-            };
-        };
-        responses: {
-            /** @description Project metric settings updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    ingestNoxCueEvent: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueUserEvent"] | components["schemas"]["NoxCueError"] | components["schemas"]["NoxCueFeatureResult"] | components["schemas"]["NoxCueActivityEvent"] | components["schemas"]["NoxCueTrackedEvent"];
-            };
-        };
-        responses: {
-            /** @description Event accepted and deduplicated */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoxCueIngestResponse"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            413: components["responses"]["PayloadTooLarge"];
-            415: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    listNoxCueSources: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sources */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    createNoxCueSource: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueSourceInput"];
-            };
-        };
-        responses: {
-            /** @description Source created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxCueSource: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueSourceInput"];
-            };
-        };
-        responses: {
-            /** @description Source updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    deleteNoxCueSource: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Source deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    listNoxCueCards: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Configured report cards */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxCueCards: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueCardSelection"];
-            };
-        };
-        responses: {
-            /** @description Cards updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    listNoxCueCustomMetrics: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Custom metric catalog */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    createNoxCueCustomMetric: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueCustomMetricInput"];
-            };
-        };
-        responses: {
-            /** @description Metric registered */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxCueCustomMetric: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                metricKey: components["parameters"]["metricKey"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueCustomMetricUpdate"];
-            };
-        };
-        responses: {
-            /** @description Metric updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    deleteNoxCueCustomMetric: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                metricKey: components["parameters"]["metricKey"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Metric deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    listNoxCueFeatures: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Feature catalog and current health */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    createNoxCueCustomFeature: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueCustomFeatureInput"];
-            };
-        };
-        responses: {
-            /** @description Feature registered */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxCueCustomFeature: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                featureKey: components["parameters"]["featureKey"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxCueCustomFeatureUpdate"];
-            };
-        };
-        responses: {
-            /** @description Feature updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    deleteNoxCueCustomFeature: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                featureKey: components["parameters"]["featureKey"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Feature deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    testNoxCueSource: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["JsonValue"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    listNoxCueKeys: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Key lifecycle metadata */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    createNoxCueKey: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    kind: "publishable" | "secret";
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Key created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    revokeNoxCueKey: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                keyId: components["parameters"]["keyId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Key revoked */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    rotateNoxCueKey: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                keyId: components["parameters"]["keyId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Replacement key shown once */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["RateLimited"];
         };
@@ -5982,46 +5197,7 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
-    getNoxFeed: {
-        parameters: {
-            query?: {
-                /** @description Feed event mode */
-                mode?: "opened" | "merged" | "release-notes";
-                /** @description Repository name */
-                repo?: string;
-                /** @description GitHub login */
-                actor?: string;
-                /** @description Maximum events */
-                limit?: number;
-                /** @description Composite cursor returned by the previous page */
-                before?: string;
-            };
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description NoxFeed response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeedPage"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getCurrentWorkSummary: {
+    getFeedbackProjectOverview: {
         parameters: {
             query?: never;
             header?: {
@@ -6045,6 +5221,348 @@ export interface operations {
             400: components["responses"]["V1Error"];
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateFeedbackReport: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @default false */
+                    notify?: boolean;
+                    /** @default false */
+                    retryNotification?: boolean;
+                    /** @enum {string} */
+                    status: "open" | "investigating" | "resolved";
+                    summary?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Report updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listFeedbackSites: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sites */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createFeedbackSite: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackSiteCreate"];
+            };
+        };
+        responses: {
+            /** @description Site created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    deleteFeedbackSite: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                siteId: components["parameters"]["siteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Site deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateFeedbackSite: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                siteId: components["parameters"]["siteId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackSitePatch"];
+            };
+        };
+        responses: {
+            /** @description Site updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getFeedbackResolutionTemplate: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                siteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackResolutionTemplateDocument"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateFeedbackResolutionTemplate: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+                "If-Match": string;
+            };
+            path: {
+                siteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    template: components["schemas"]["FeedbackResolutionTemplate"] | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Saved template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackResolutionTemplateDocument"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            412: components["responses"]["V1Error"];
+            428: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    previewFeedbackResolutionTemplate: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                siteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    template: components["schemas"]["FeedbackResolutionTemplate"];
+                };
+            };
+        };
+        responses: {
+            /** @description Rendered preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    testFeedbackResolutionTemplate: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                siteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    recipient: string;
+                    template: components["schemas"]["FeedbackResolutionTemplate"];
+                };
+            };
+        };
+        responses: {
+            /** @description Postmark accepted the test email */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["V1Error"];
+        };
+    };
+    retryFeedbackDeliveries: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                siteId: components["parameters"]["siteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Eligible deliveries queued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["RateLimited"];
         };
@@ -6754,34 +6272,6 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
-    getNoxFeedDefaultPrompt: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiRecord"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
     listOperationFailures: {
         parameters: {
             query?: never;
@@ -7084,196 +6574,6 @@ export interface operations {
             503: components["responses"]["V1Error"];
         };
     };
-    getCueProjectActions: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Capability response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CueActions"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateCueProjectActions: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApiRecord"];
-            };
-        };
-        responses: {
-            /** @description Capability response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CueActions"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getCueProjectAlertRules: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Capability response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncidentAlertRuleList"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getCueProjectAlerts: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Capability response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncidentAlertList"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getCueProjectDashboard: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Capability response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatsDashboard"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getCueProjectStatEvents: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                projectId: components["parameters"]["projectId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Capability response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatEventList"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
     getProjectFeedback: {
         parameters: {
             query?: never;
@@ -7498,6 +6798,196 @@ export interface operations {
             404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             422: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryProjectActions: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryActions"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateTelemetryProjectActions: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiRecord"];
+            };
+        };
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryActions"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryProjectAlertRules: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentAlertRuleList"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryProjectAlerts: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentAlertList"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryProjectDashboard: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatsDashboard"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryProjectStatEvents: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatEventList"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
             429: components["responses"]["RateLimited"];
         };
     };
@@ -8424,376 +7914,6 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
-    getNoxSpotProjectOverview: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxSpotReport: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                reportId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @default false */
-                    notify?: boolean;
-                    /** @default false */
-                    retryNotification?: boolean;
-                    /** @enum {string} */
-                    status: "open" | "investigating" | "resolved";
-                    summary?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Report updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    listNoxSpotSites: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sites */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    createNoxSpotSite: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxSpotSiteCreate"];
-            };
-        };
-        responses: {
-            /** @description Site created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    deleteNoxSpotSite: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                siteId: components["parameters"]["siteId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Site deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxSpotSite: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                siteId: components["parameters"]["siteId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoxSpotSitePatch"];
-            };
-        };
-        responses: {
-            /** @description Site updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    getNoxSpotResolutionTemplate: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                siteId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Effective template */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoxSpotResolutionTemplateDocument"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    updateNoxSpotResolutionTemplate: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-                "If-Match": string;
-            };
-            path: {
-                siteId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    template: components["schemas"]["NoxSpotResolutionTemplate"] | null;
-                };
-            };
-        };
-        responses: {
-            /** @description Saved template */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoxSpotResolutionTemplateDocument"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            412: components["responses"]["V1Error"];
-            428: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    previewNoxSpotResolutionTemplate: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                siteId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    template: components["schemas"]["NoxSpotResolutionTemplate"];
-                };
-            };
-        };
-        responses: {
-            /** @description Rendered preview */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
-    testNoxSpotResolutionTemplate: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                siteId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: email */
-                    recipient: string;
-                    template: components["schemas"]["NoxSpotResolutionTemplate"];
-                };
-            };
-        };
-        responses: {
-            /** @description Postmark accepted the test email */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-            503: components["responses"]["V1Error"];
-        };
-    };
-    retryNoxSpotDeliveries: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
-                "X-Project-ID"?: components["parameters"]["projectContext"];
-            };
-            path: {
-                siteId: components["parameters"]["siteId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Eligible deliveries queued */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JsonValue"];
-                };
-            };
-            400: components["responses"]["V1Error"];
-            401: components["responses"]["V1Error"];
-            403: components["responses"]["V1Error"];
-            404: components["responses"]["V1Error"];
-            409: components["responses"]["V1Error"];
-            429: components["responses"]["RateLimited"];
-        };
-    };
     getSyncStatus: {
         parameters: {
             query?: never;
@@ -9046,6 +8166,914 @@ export interface operations {
             400: components["responses"]["V1Error"];
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateTelemetryErrorStatus: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: string;
+                fingerprint: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "open" | "acknowledged" | "resolved";
+                };
+            };
+        };
+        responses: {
+            /** @description Error incident status updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listTelemetryEvents: {
+        parameters: {
+            query?: {
+                /** @description Optional source filter */
+                sourceId?: string;
+                /** @description Maximum recent events */
+                limit?: number;
+            };
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recent events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryGitHubIssueSettings: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Project incident settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    putTelemetryGitHubIssueSettings: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryGitHubIssueSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Project incident settings updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryDailyHealth: {
+        parameters: {
+            query: {
+                sourceId: string;
+            };
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daily user health */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryProjectOverview: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getTelemetryProjectMetrics: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Project metric settings and readiness */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateTelemetryProjectMetrics: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryProjectMetricSelection"];
+            };
+        };
+        responses: {
+            /** @description Project metric settings updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    ingestTelemetryEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryUserEvent"] | components["schemas"]["TelemetryError"] | components["schemas"]["TelemetryFeatureResult"] | components["schemas"]["TelemetryActivityEvent"] | components["schemas"]["TelemetryTrackedEvent"];
+            };
+        };
+        responses: {
+            /** @description Event accepted and deduplicated */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryIngestResponse"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
+            415: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listTelemetrySources: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sources */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createTelemetrySource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetrySourceInput"];
+            };
+        };
+        responses: {
+            /** @description Source created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateTelemetrySource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetrySourceInput"];
+            };
+        };
+        responses: {
+            /** @description Source updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    deleteTelemetrySource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Source deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listTelemetryCards: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configured report cards */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateTelemetryCards: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryCardSelection"];
+            };
+        };
+        responses: {
+            /** @description Cards updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listTelemetryCustomMetrics: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Custom metric catalog */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createTelemetryCustomMetric: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryCustomMetricInput"];
+            };
+        };
+        responses: {
+            /** @description Metric registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateTelemetryCustomMetric: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                metricKey: components["parameters"]["metricKey"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryCustomMetricUpdate"];
+            };
+        };
+        responses: {
+            /** @description Metric updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    deleteTelemetryCustomMetric: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                metricKey: components["parameters"]["metricKey"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Metric deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listTelemetryFeatures: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Feature catalog and current health */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createTelemetryCustomFeature: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryCustomFeatureInput"];
+            };
+        };
+        responses: {
+            /** @description Feature registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateTelemetryCustomFeature: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                featureKey: components["parameters"]["featureKey"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryCustomFeatureUpdate"];
+            };
+        };
+        responses: {
+            /** @description Feature updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    deleteTelemetryCustomFeature: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                featureKey: components["parameters"]["featureKey"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Feature deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    testTelemetrySource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JsonValue"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listTelemetryKeys: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key lifecycle metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createTelemetryKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "publishable" | "secret";
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Key created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    revokeTelemetryKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                keyId: components["parameters"]["keyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    rotateTelemetryKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                keyId: components["parameters"]["keyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Replacement key shown once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["RateLimited"];
         };

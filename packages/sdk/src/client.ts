@@ -131,7 +131,7 @@ export type OperationMap = { readonly [K in OperationId]: Operation<K> };
 type Definition = (typeof operationDefinitions)[number];
 export type OperationIdFor<N extends ResourceNamespace> = Extract<Definition, { namespace: N }>["id"];
 export type ResourceClient<N extends ResourceNamespace = ResourceNamespace> = Readonly<Pick<OperationMap, OperationIdFor<N>>>;
-export type CueResourceClient = ResourceClient<"stats"> & ResourceClient<"incidents">;
+export type TelemetryResourceClient = ResourceClient<"stats"> & ResourceClient<"incidents">;
 
 export interface NoxHereClient {
   readonly operations: OperationMap;
@@ -146,7 +146,7 @@ export interface NoxHereClient {
   readonly ticket: ResourceClient<"planning">;
   readonly spot: ResourceClient<"feedback">;
   /** @deprecated Use `stats` or `incidents`. */
-  readonly cue: CueResourceClient;
+  readonly cue: TelemetryResourceClient;
   request<K extends OperationId>(operationId: K, ...args: OperationArguments<K>): Promise<OperationOutput<K>>;
   withContext(context: { organization?: string; projectId?: string }): NoxHereClient;
 }
@@ -327,7 +327,7 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
   }
   for (const resource of Object.values(resources)) Object.freeze(resource);
   Object.freeze(operations);
-  const cue = Object.freeze({ ...resources.stats, ...resources.incidents }) as unknown as CueResourceClient;
+  const cue = Object.freeze({ ...resources.stats, ...resources.incidents }) as unknown as TelemetryResourceClient;
   const client = {
     operations: operations as unknown as OperationMap,
     ...resources,

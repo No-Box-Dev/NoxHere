@@ -8,9 +8,9 @@ import {
   sanitizeFilename,
   type SpecAttachmentRow,
 } from "../../../../lib/spec-attachments";
-import { callNoxTicket, type NoxTicketEnvironment } from "../../../../lib/noxticket-service";
+import { callPlanning, type PlanningEnvironment } from "../../../../lib/planning-service";
 
-interface Env extends NoxTicketEnvironment {
+interface Env extends PlanningEnvironment {
   DB: D1Database;
   SPEC_ATTACHMENTS?: R2Bucket;
 }
@@ -33,7 +33,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const specId = Number.parseInt(context.params.id, 10);
   if (!Number.isFinite(specId) || specId <= 0) return errorResponse("Invalid spec id", 400);
 
-  const delegated = projectId ? await callNoxTicket(context.env, (service) => service.listAttachments(
+  const delegated = projectId ? await callPlanning(context.env, (service) => service.listAttachments(
     { orgId, projectId, userLogin: context.data.userLogin },
     specId,
   )) : null;
@@ -94,7 +94,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     );
   }
 
-  const delegated = projectId ? await callNoxTicket(context.env, async (service) => service.putAttachment(
+  const delegated = projectId ? await callPlanning(context.env, async (service) => service.putAttachment(
     { orgId, projectId, userLogin },
     specId,
     filename,

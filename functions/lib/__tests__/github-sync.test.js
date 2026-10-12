@@ -5,7 +5,7 @@ vi.mock("../feature-metadata.js", () => ({
 }));
 vi.mock("../inactive-repos.js", () => ({
   filterInactive: vi.fn(async (_db, _o, _l, names) => names),
-  getNoxTicketRepoName: vi.fn(async () => "noxconnect"),
+  getPlanningRepoName: vi.fn(async () => "noxhere"),
 }));
 vi.mock("../github-app.js", () => ({
   getInstallationToken: vi.fn(async () => "ghs_token"),
@@ -134,18 +134,18 @@ describe("upsertIssue", () => {
 });
 
 describe("upsertFeature", () => {
-  it("DELETEs feature row when labels don't include both noxticket+feature", async () => {
+  it("DELETEs feature row when labels don't include both planning+feature", async () => {
     const db = makeDb();
     await upsertFeature(db, "org", { number: 1, labels: [{ name: "bug" }] });
     expect(db._calls.runs[0].sql).toContain("DELETE FROM features");
   });
 
-  it("requires both 'noxticket' AND 'feature' labels", async () => {
+  it("requires both 'planning' AND 'feature' labels", async () => {
     const db = makeDb();
     await upsertFeature(db, "org", { number: 1, labels: [{ name: "feature" }] });
     expect(db._calls.runs[0].sql).toContain("DELETE");
 
-    await upsertFeature(db, "org", { number: 2, labels: [{ name: "noxticket" }] });
+    await upsertFeature(db, "org", { number: 2, labels: [{ name: "planning" }] });
     expect(db._calls.runs[1].sql).toContain("DELETE");
   });
 
@@ -153,7 +153,7 @@ describe("upsertFeature", () => {
     const db = makeDb();
     await upsertFeature(db, "org", {
       number: 5, title: "F", state: "open", body: "b",
-      labels: [{ name: "noxticket" }, { name: "feature" }],
+      labels: [{ name: "planning" }, { name: "feature" }],
       assignees: [], html_url: "u",
       created_at: "2026-05-01", updated_at: "2026-05-01",
     });
@@ -164,22 +164,13 @@ describe("upsertFeature", () => {
     const db = makeDb();
     await upsertFeature(db, "org", {
       number: 5, title: "F", state: "open",
-      labels: ["noxticket", "feature"],
+      labels: ["planning", "feature"],
       assignees: [], html_url: "u",
       created_at: "x", updated_at: "x",
     });
     expect(db._calls.runs[0].sql).toContain("INSERT INTO features");
   });
 
-  it("accepts the pre-rename ticket label until GitHub issues are canonicalized", async () => {
-    const db = makeDb();
-    await upsertFeature(db, "org", {
-      number: 6, title: "F", state: "open",
-      labels: [["un", "ticket"].join(""), "feature"],
-      assignees: [], html_url: "u", created_at: "x", updated_at: "x",
-    });
-    expect(db._calls.runs[0].sql).toContain("INSERT INTO features");
-  });
 });
 
 describe("upsertPR", () => {
@@ -629,50 +620,6 @@ describe("syncMembers", () => {
     expect(db._calls.runs.some((call) =>
       call.sql.includes("INSERT INTO members") && call.binds[1] === "jasper"
     )).toBe(true);
-  });
-});
-
-describe("syncFeatures", () => {
-  it("migrates a legacy feature label with an authenticated GitHub request", async () => {
-    const legacyLabel = ["un", "ticket"].join("");
-    const issue = {
-      number: 17,
-      title: "Restore release notes",
-      state: "open",
-      body: "",
-      assignees: [],
-      labels: [{ name: legacyLabel, color: "999999" }, { name: "feature", color: "123456" }],
-      milestone: null,
-      html_url: "https://github.com/no-box-dev/noxconnect/issues/17",
-      created_at: "2026-09-01T00:00:00Z",
-      updated_at: "2026-09-09T00:00:00Z",
-    };
-
-    fetch.mockImplementation(async (url, init = {}) => {
-      if (init.method === "POST") {
-        return { ok: true, json: async () => ({ name: "noxticket" }) };
-      }
-      if (init.method === "PATCH") {
-        return { ok: true, json: async () => ({ ...issue, labels: [{ name: "noxticket" }, { name: "feature" }] }) };
-      }
-      return {
-        ok: true,
-        headers: { get: () => null },
-        json: async () => [issue],
-      };
-    });
-
-    const db = makeDb();
-    await expect(syncFeatures(db, "install-token", 1, "no-box-dev")).resolves.toMatchObject({ synced: 1 });
-
-    const patchCall = fetch.mock.calls.find(([, init]) => init?.method === "PATCH");
-    expect(patchCall).toBeDefined();
-    expect(patchCall[1].headers).toMatchObject({
-      Authorization: "Bearer install-token",
-      Accept: "application/vnd.github+json",
-      "Content-Type": "application/json",
-    });
-    expect(JSON.parse(patchCall[1].body).labels).toEqual(["noxticket", "feature"]);
   });
 });
 

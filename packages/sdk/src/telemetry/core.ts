@@ -2,21 +2,21 @@ import type {
   ActivityOptions,
   AnonymousTrackOptions,
   BrowserErrorOptions,
-  BrowserNoxCueClient,
+  BrowserTelemetryClient,
   DeliveryResult,
   EventOptions,
   FeatureResultOptions,
-  NoxCueAuthFeature,
-  NoxCueFeature,
-  NoxCueOptions,
-  NoxCueOutcome,
-  NoxCueReason,
+  TelemetryAuthFeature,
+  TelemetryFeature,
+  TelemetryOptions,
+  TelemetryOutcome,
+  TelemetryReason,
   ObserveOptions,
   ServerErrorOptions,
-  ServerNoxCueClient,
+  ServerTelemetryClient,
   TrackOptions,
 } from "./types.js";
-import { NOXCUE_WEBSITE_EVENTS } from "./types.js";
+import { TELEMETRY_WEBSITE_EVENTS } from "./types.js";
 import { PROTECTED_IDENTITY, protectIdentity, validIdentityKey } from "./identity.js";
 import {
   DEFAULT_ENDPOINT,
@@ -42,7 +42,7 @@ const IDENTITY_TRACK_NAMES = new Set([
   "records.parsed",
   "reports.generated",
 ]);
-const WEBSITE_TRACK_NAMES = new Set<string>(NOXCUE_WEBSITE_EVENTS);
+const WEBSITE_TRACK_NAMES = new Set<string>(TELEMETRY_WEBSITE_EVENTS);
 
 interface ProviderResult {
   error?: unknown;
@@ -136,7 +136,7 @@ function inferredRelease(explicit: string | undefined): string | undefined {
   if (configured) return configured;
   const process = (globalThis as typeof globalThis & { process?: RuntimeProcess }).process;
   const env = process?.env;
-  return bounded(env?.NOXCUE_RELEASE ?? env?.VERCEL_GIT_COMMIT_SHA ?? env?.CF_PAGES_COMMIT_SHA
+  return bounded(env?.TELEMETRY_RELEASE ?? env?.VERCEL_GIT_COMMIT_SHA ?? env?.CF_PAGES_COMMIT_SHA
     ?? env?.GITHUB_SHA ?? env?.RENDER_GIT_COMMIT ?? env?.HEROKU_SLUG_COMMIT, 120);
 }
 
@@ -209,7 +209,7 @@ async function readEventId(response: Response, fallback: string): Promise<string
   }
 }
 
-function classify(feature: NoxCueFeature, value: unknown): { outcome: NoxCueOutcome; reason?: NoxCueReason } {
+function classify(feature: TelemetryFeature, value: unknown): { outcome: TelemetryOutcome; reason?: TelemetryReason } {
   const status = statusOf(value);
   if (status === 429) return { outcome: "rejected", reason: "rate_limited" };
   if (status !== null && status >= 500) return { outcome: "failure", reason: "dependency_unavailable" };
@@ -226,7 +226,7 @@ function classify(feature: NoxCueFeature, value: unknown): { outcome: NoxCueOutc
 }
 
 function observedResult(
-  measured: { outcome: NoxCueOutcome; reason?: NoxCueReason },
+  measured: { outcome: TelemetryOutcome; reason?: TelemetryReason },
   durationMs: number,
   evidence: unknown,
 ): FeatureResultOptions {
@@ -247,13 +247,13 @@ function primitiveAttributes(value: Record<string, string | number | boolean> | 
   return entries.length ? Object.fromEntries(entries) : undefined;
 }
 
-export function createClient(options: NoxCueOptions, keyKind: "publishable", runtime: ClientRuntime): BrowserNoxCueClient;
-export function createClient(options: NoxCueOptions, keyKind: "secret", runtime: ClientRuntime): ServerNoxCueClient;
+export function createClient(options: TelemetryOptions, keyKind: "publishable", runtime: ClientRuntime): BrowserTelemetryClient;
+export function createClient(options: TelemetryOptions, keyKind: "secret", runtime: ClientRuntime): ServerTelemetryClient;
 export function createClient(
-  options: NoxCueOptions,
+  options: TelemetryOptions,
   keyKind: KeyKind,
   runtime: ClientRuntime,
-): BrowserNoxCueClient | ServerNoxCueClient {
+): BrowserTelemetryClient | ServerTelemetryClient {
   const endpoint = (options.endpoint ?? DEFAULT_ENDPOINT).trim();
   const timeoutMs = Math.min(MAX_TIMEOUT_MS, Math.max(250, options.timeoutMs ?? DEFAULT_TIMEOUT_MS));
   const maxRetries = Math.min(3, Math.max(0, Math.round(options.maxRetries ?? 2)));
@@ -432,7 +432,7 @@ export function createClient(
     });
   }
 
-  function featureEvent(feature: NoxCueFeature, result: FeatureResultOptions): Record<string, unknown> {
+  function featureEvent(feature: TelemetryFeature, result: FeatureResultOptions): Record<string, unknown> {
     const error = result.outcome === "failure" ? safeErrorDetails(result.error) : undefined;
     const userId = currentUserId();
     return {
@@ -452,7 +452,7 @@ export function createClient(
   }
 
   async function observe<T>(
-    feature: NoxCueFeature,
+    feature: TelemetryFeature,
     operation: () => T | Promise<T>,
     observeOptions?: ObserveOptions,
   ): Promise<T> {
@@ -477,12 +477,12 @@ export function createClient(
     }
   }
 
-  const wrap = (feature: NoxCueAuthFeature) => <T>(operation: () => T | Promise<T>, observeOptions?: ObserveOptions) =>
+  const wrap = (feature: TelemetryAuthFeature) => <T>(operation: () => T | Promise<T>, observeOptions?: ObserveOptions) =>
     observe(feature, operation, observeOptions);
 
   const shared = {
     feature: {
-      result: (feature: NoxCueFeature, result: FeatureResultOptions) => deliver(featureEvent(feature, result)),
+      result: (feature: TelemetryFeature, result: FeatureResultOptions) => deliver(featureEvent(feature, result)),
       observe,
     },
     auth: {
@@ -498,7 +498,7 @@ export function createClient(
     identify: (user: { id: string } | null) => {
       identifiedUserId = keyKind === "secret" ? bounded(user?.id, 200) : undefined;
     },
-    test: (feature: NoxCueAuthFeature = "auth.signup") => deliver(featureEvent(feature, {
+    test: (feature: TelemetryAuthFeature = "auth.signup") => deliver(featureEvent(feature, {
       outcome: "success",
       test: true,
       occurredAt: new Date().toISOString(),

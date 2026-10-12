@@ -2,8 +2,8 @@
 <!--
   Canonical Nox suite navigation prototype — saved 2026-09-11.
   Project is the only selector; products live in the sidebar; product subareas
-  use top tabs; the top-right gear opens organization-wide NoxConnect settings.
-  Environment is shown only where runtime context matters (NoxSpot and NoxCue).
+  use top tabs; the top-right gear opens organization-wide NoxHere settings.
+  Environment is shown only where runtime context matters (Feedback and Telemetry).
 -->
 <html lang="en">
   <head>
@@ -753,7 +753,7 @@
         color: #999;
         font-size: 8px;
       }
-      /* NoxTicket flexible workspace */
+      /* Planning flexible workspace */
       .nt-shell {
         display: grid;
         grid-template-columns: 190px minmax(0, 1fr);
@@ -1183,7 +1183,7 @@
         color: #aaa;
       }
 
-      /* Nox product UI — shared with the NoxFeed/NoxKey visual language. */
+      /* Nox product UI — shared with the Activity/NoxKey visual language. */
       button,
       input,
       select {
@@ -1788,7 +1788,7 @@
         border-radius: 10px;
         font-size: 9px;
       }
-      .noxfeed-workspace {
+      .activity-workspace {
         max-width: 760px;
         margin-inline: auto;
       }
@@ -1797,7 +1797,7 @@
         max-width: 760px;
         margin-inline: auto;
       }
-      .noxfeed-mode-tabs {
+      .activity-mode-tabs {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 2px;
@@ -1810,34 +1810,34 @@
         background: var(--panel);
         box-shadow: var(--shadow-sm);
       }
-      .noxfeed-mode-tabs button {
+      .activity-mode-tabs button {
         min-width: 0;
         padding: 9px 10px;
         border-radius: 7px;
       }
-      .noxfeed-mode-tabs button.active {
+      .activity-mode-tabs button.active {
         background: var(--service-soft);
         color: var(--service);
       }
-      .noxfeed-mode-tabs button.active:after {
+      .activity-mode-tabs button.active:after {
         display: none;
       }
-      .noxfeed-stack {
+      .activity-stack {
         display: grid;
         gap: 10px;
       }
-      .noxfeed-post {
+      .activity-post {
         border: 1px solid var(--line);
         border-radius: 12px;
         background: var(--panel);
         box-shadow: var(--shadow-sm);
       }
-      .noxfeed-pills {
+      .activity-pills {
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
       }
-      .noxfeed-pill {
+      .activity-pill {
         padding: 3px 8px;
         border: 1px solid color-mix(in srgb, var(--service) 35%, transparent);
         border-radius: 999px;
@@ -1846,46 +1846,46 @@
         font-size: 10px;
         font-weight: 700;
       }
-      .noxfeed-pill.mono {
+      .activity-pill.mono {
         border-color: var(--line);
         background: var(--soft);
         color: var(--muted);
         font-family: "SFMono-Regular", Consolas, monospace;
         font-weight: 400;
       }
-      .noxfeed-age {
+      .activity-age {
         color: var(--faint);
         font-size: 10px;
         white-space: nowrap;
       }
-      .noxfeed-post {
+      .activity-post {
         padding: 15px 16px;
       }
-      .noxfeed-post[data-detail],
+      .activity-post[data-detail],
       .nox-web-bucket[data-detail] {
         cursor: pointer;
       }
-      .noxfeed-post[data-detail] {
+      .activity-post[data-detail] {
         transition: border-color 150ms ease, transform 150ms ease,
           box-shadow 150ms ease;
       }
-      .noxfeed-post[data-detail]:hover,
-      .noxfeed-post[data-detail]:focus-visible,
+      .activity-post[data-detail]:hover,
+      .activity-post[data-detail]:focus-visible,
       .nox-web-bucket[data-detail]:focus-visible {
         border-color: color-mix(in srgb, var(--service) 46%, var(--line));
         box-shadow: 0 8px 24px rgba(53, 45, 40, 0.08);
         outline: none;
       }
-      .noxfeed-post[data-detail]:hover {
+      .activity-post[data-detail]:hover {
         transform: translateY(-1px);
       }
-      .noxfeed-post-head {
+      .activity-post-head {
         display: grid;
         grid-template-columns: 30px minmax(0, 1fr) auto;
         gap: 9px;
         align-items: center;
       }
-      .noxfeed-avatar {
+      .activity-avatar {
         display: grid;
         place-items: center;
         width: 30px;
@@ -1896,12 +1896,12 @@
         font-size: 10px;
         font-weight: 800;
       }
-      .noxfeed-post-name {
+      .activity-post-name {
         margin-bottom: 4px;
         color: var(--ink);
         font: 700 13px var(--font-display);
       }
-      .noxfeed-post-copy {
+      .activity-post-copy {
         margin: 12px 0 0;
         padding-top: 12px;
         border-top: 1px solid var(--soft);
@@ -2896,7 +2896,7 @@
         gap: 13px;
         min-width: 0;
       }
-      .detail-person .noxfeed-avatar {
+      .detail-person .activity-avatar {
         width: 42px;
         height: 42px;
         font-size: 12px;
@@ -3019,7 +3019,7 @@
       .issue-comment:last-child {
         border-bottom: 0;
       }
-      .issue-comment .noxfeed-avatar {
+      .issue-comment .activity-avatar {
         width: 28px;
         height: 28px;
         font-size: 8px;
@@ -3359,11 +3359,11 @@
         .nox-web-grid {
           grid-template-columns: 1fr;
         }
-        .noxfeed-mode-tabs {
+        .activity-mode-tabs {
           gap: 1px;
           padding: 2px;
         }
-        .noxfeed-mode-tabs button {
+        .activity-mode-tabs button {
           padding: 8px 3px;
           font-size: 8px;
         }
@@ -3759,7 +3759,7 @@
           margin-right: 0;
         }
       }
-      /* NoxTicket uses the same branded page shell as every Nox workspace. */
+      /* Planning uses the same branded page shell as every Nox workspace. */
       body[data-service="ticket"][data-mode="workspace"][data-ticket-section="board"] .nt-shell {
         grid-template-columns: minmax(0, 1fr);
         width: 100%;
@@ -3857,7 +3857,7 @@
         .nt-modal-grid { grid-template-columns: 1fr; }
         .nt-modal-grid .wide { grid-column: auto; }
       }
-      /* Trello-style NoxTicket board */
+      /* Trello-style Planning board */
       .trello-boardbar { min-height: 62px; background: rgba(255,255,255,.96); }
       .trello-boardbar .nt-context-actions { align-items: center; min-height: 38px; margin-right: 48px; margin-left: auto; }
       body[data-service="ticket"][data-mode="workspace"][data-ticket-section="board"] > .shell > .content > .global-settings-button {
@@ -3970,11 +3970,11 @@
       .noxkey-roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 760px; margin: 12px auto 0; }
       .noxkey-roadmap article { padding: 16px; }
       .noxkey-roadmap h3 { margin-bottom: 5px; }
-      /* NoxFeed alignment pass */
+      /* Activity alignment pass */
       [data-page="feed"] > .head { margin-bottom: 14px; }
       [data-page="feed"] > .head .actions { align-items: center; gap: 8px; }
       [data-page="feed"] > .panel { width: min(100%, 980px); max-width: 980px; margin-right: 0; margin-left: 0; }
-      body[data-service="feed"][data-mode="workspace"] .app-body [data-page="feed"] > .noxfeed-mode-tabs {
+      body[data-service="feed"][data-mode="workspace"] .app-body [data-page="feed"] > .activity-mode-tabs {
         display: flex !important;
         width: max-content;
         max-width: 100%;
@@ -3982,16 +3982,16 @@
         margin: 0 0 18px !important;
         padding: 3px;
       }
-      body[data-service="feed"][data-mode="workspace"] .noxfeed-mode-tabs button { min-width: 78px; padding: 9px 13px; text-align: center; }
-      body[data-service="feed"][data-mode="workspace"] .noxfeed-mode-tabs button:focus-visible { outline: 2px solid color-mix(in srgb, var(--service) 48%, transparent); outline-offset: -2px; }
+      body[data-service="feed"][data-mode="workspace"] .activity-mode-tabs button { min-width: 78px; padding: 9px 13px; text-align: center; }
+      body[data-service="feed"][data-mode="workspace"] .activity-mode-tabs button:focus-visible { outline: 2px solid color-mix(in srgb, var(--service) 48%, transparent); outline-offset: -2px; }
       [data-page="feed"] .nox-web-toolbar { width: 100%; max-width: none; margin-right: 0; margin-left: 0; }
       [data-page="feed"] .nox-web-toolbar .nox-web-spacer { display: none; }
       [data-page="feed"] .nox-web-toolbar .nox-web-total { margin-left: 0; padding-left: 2px; }
-      [data-page="feed"] .noxfeed-workspace { width: 100%; max-width: none; margin-right: 0; margin-left: 0; }
+      [data-page="feed"] .activity-workspace { width: 100%; max-width: none; margin-right: 0; margin-left: 0; }
       [data-page="feed"] .nox-web-grid { align-items: stretch; }
       [data-page="feed"] .nox-web-bucket { min-height: 124px; justify-content: space-between; }
       [data-page="feed"] .notice { width: 100%; }
-      /* NoxFeed macOS app mirror */
+      /* Activity macOS app mirror */
       .nf-native-shell {
         width: min(100%, 1100px);
       }
@@ -4062,7 +4062,7 @@
         color: var(--ink);
         font: 500 11px var(--font-body);
       }
-      body[data-service="feed"][data-mode="workspace"] .app-body .view.active[data-page="feed"] .nf-native-shell > .noxfeed-mode-tabs {
+      body[data-service="feed"][data-mode="workspace"] .app-body .view.active[data-page="feed"] .nf-native-shell > .activity-mode-tabs {
         display: flex !important;
         width: auto;
         max-width: none;
@@ -4074,7 +4074,7 @@
         background: var(--panel);
         box-shadow: none;
       }
-      body[data-service="feed"][data-mode="workspace"] .nf-native-shell > .noxfeed-mode-tabs button {
+      body[data-service="feed"][data-mode="workspace"] .nf-native-shell > .activity-mode-tabs button {
         min-width: 0;
         flex: 1 1 0;
         padding: 11px 8px;
@@ -4082,7 +4082,7 @@
         font-size: 12px;
         text-align: center;
       }
-      body[data-service="feed"][data-mode="workspace"] .nf-native-shell > .noxfeed-mode-tabs button.active {
+      body[data-service="feed"][data-mode="workspace"] .nf-native-shell > .activity-mode-tabs button.active {
         background: var(--service-soft);
         color: var(--service);
       }
@@ -4155,8 +4155,8 @@
         padding: 0 0 14px;
         border-bottom: 0;
       }
-      .nf-native-shell .noxfeed-workspace { display: grid; grid-template-columns: 1fr; width: auto; gap: 10px; margin: 0; padding: 0; }
-      .nf-native-shell .noxfeed-post { padding: 16px 18px; border-radius: 12px; }
+      .nf-native-shell .activity-workspace { display: grid; grid-template-columns: 1fr; width: auto; gap: 10px; margin: 0; padding: 0; }
+      .nf-native-shell .activity-post { padding: 16px 18px; border-radius: 12px; }
       .nf-post-link { display: block; margin-top: 8px; color: var(--service); font-size: 10px; font-weight: 650; }
       .nf-release-note { white-space: pre-line; }
       .nf-issue-total { margin-left: auto; color: var(--faint); font-size: 9px; }
@@ -4229,10 +4229,10 @@
               </select>
             </div>
             <select id="service-picker" hidden aria-label="Choose Nox service">
-              <option value="ticket">NoxTicket</option>
-              <option value="feed" selected>NoxFeed</option>
-              <option value="spot">NoxSpot</option>
-              <option value="cue">NoxCue</option>
+              <option value="ticket">Planning</option>
+              <option value="feed" selected>Activity</option>
+              <option value="spot">Feedback</option>
+              <option value="cue">Telemetry</option>
               <option value="key">NoxKey</option>
             </select>
             <div class="scope-sidebar-nav" data-scope-sidebar></div>
@@ -4264,12 +4264,12 @@
               </div>
               <div class="connect-overview-grid">
                 <div class="connect-overview-stack">
-                  <article class="card pad"><div class="detail-card-head"><div><h2>Connections</h2><p class="small">Provider access held centrally by NoxConnect</p></div><button class="btn" data-setup-target="connections">Manage</button></div><div class="connection-row"><span class="connection-logo">GH</span><div><b>GitHub</b><small>No-Box-Dev · App installation</small></div><span class="tag green">Connected</span></div><div class="connection-row"><span class="connection-logo">SL</span><div><b>Slack</b><small>Playnist · shared workspace</small></div><span class="tag green">Connected</span></div></article>
-                  <article class="card pad"><div class="detail-card-head"><div><h2>Connected resources</h2><p class="small">Organization data managed centrally by NoxConnect</p></div></div><div class="control-plane-list"><button data-setup-target="people"><span><b>People</b><small>4 identities mapped</small></span><span>Manage →</span></button><button data-setup-target="repositories"><span><b>Repositories</b><small>12 tracked · 2 awaiting review</small></span><span>Manage →</span></button><button data-setup-target="repositories"><span><b>Projects</b><small>3 project scopes configured</small></span><span>Manage →</span></button></div></article>
+                  <article class="card pad"><div class="detail-card-head"><div><h2>Connections</h2><p class="small">Provider access held centrally by NoxHere</p></div><button class="btn" data-setup-target="connections">Manage</button></div><div class="connection-row"><span class="connection-logo">GH</span><div><b>GitHub</b><small>No-Box-Dev · App installation</small></div><span class="tag green">Connected</span></div><div class="connection-row"><span class="connection-logo">SL</span><div><b>Slack</b><small>Playnist · shared workspace</small></div><span class="tag green">Connected</span></div></article>
+                  <article class="card pad"><div class="detail-card-head"><div><h2>Connected resources</h2><p class="small">Organization data managed centrally by NoxHere</p></div></div><div class="control-plane-list"><button data-setup-target="people"><span><b>People</b><small>4 identities mapped</small></span><span>Manage →</span></button><button data-setup-target="repositories"><span><b>Repositories</b><small>12 tracked · 2 awaiting review</small></span><span>Manage →</span></button><button data-setup-target="repositories"><span><b>Projects</b><small>3 project scopes configured</small></span><span>Manage →</span></button></div></article>
                 </div>
                 <aside class="connect-overview-stack">
                   <article class="card pad"><div class="detail-card-head"><div><h2>Sync and delivery</h2><p class="small">Shared transport and delivery infrastructure</p></div><span class="tag green">Healthy</span></div><div class="overview-health"><span>GitHub synchronization <small>4m ago</small></span><span>Webhook intake <small>Receiving</small></span><span>Slack delivery queue <small>Clear</small></span><span>Blocked deliveries <small>0</small></span><span>Background failures <small>0</small></span></div><div class="chip-row spaced-button"><button class="btn" data-setup-verify>Run checks</button><button class="btn" data-setup-target="maintenance">Maintenance</button></div></article>
-                  <article class="card pad"><div class="detail-card-head"><div><h2>Access</h2><p class="small">NoxConnect credentials and service readiness</p></div><button class="btn" data-setup-target="security">Manage</button></div><div class="overview-health"><span>Automation tokens <small>2 active</small></span><span>Enabled services <small>4 ready</small></span><span>Security warnings <small>None</small></span></div></article>
+                  <article class="card pad"><div class="detail-card-head"><div><h2>Access</h2><p class="small">NoxHere credentials and service readiness</p></div><button class="btn" data-setup-target="security">Manage</button></div><div class="overview-health"><span>Automation tokens <small>2 active</small></span><span>Enabled services <small>4 ready</small></span><span>Security warnings <small>None</small></span></div></article>
                 </aside>
               </div>
             </div>
@@ -4284,20 +4284,20 @@
             </nav>
             <div class="panel active admin-only" data-panel="connect-admin-services">
               <div class="connect-setup-intro">
-                <div><span class="label">NoxConnect settings</span><h1>Organization setup</h1><p>Enable services and manage the shared infrastructure used across every project.</p></div>
+                <div><span class="label">NoxHere settings</span><h1>Organization setup</h1><p>Enable services and manage the shared infrastructure used across every project.</p></div>
               </div>
               <article class="card pad">
                 <div class="detail-card-head"><div><h2>Services</h2><p class="small">Choose which Nox products are available to your organization.</p></div><span class="tag green">4 enabled</span></div>
                 <div class="service-toggle-list">
-                  <div><span><b>NoxTicket</b><small>Feature planning and specifications</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="NoxTicket enabled"></button></div>
-                  <div><span><b>NoxFeed</b><small>Pull request activity and release communication</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="NoxFeed enabled"></button></div>
-                  <div><span><b>NoxSpot</b><small>Customer feedback capture and portals</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="NoxSpot enabled"></button></div>
-                  <div><span><b>NoxCue</b><small>Product health, usage and alerts</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="NoxCue enabled"></button></div>
+                  <div><span><b>Planning</b><small>Feature planning and specifications</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="Planning enabled"></button></div>
+                  <div><span><b>Activity</b><small>Pull request activity and release communication</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="Activity enabled"></button></div>
+                  <div><span><b>Feedback</b><small>Customer feedback capture and portals</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="Feedback enabled"></button></div>
+                  <div><span><b>Telemetry</b><small>Product health, usage and alerts</small></span><span class="tag green">Enabled</span><button class="toggle" aria-label="Telemetry enabled"></button></div>
                   <div><span><b>NoxKey</b><small>Secure organization credential sharing</small></span><span class="tag">Coming soon</span><button class="toggle" aria-label="NoxKey coming soon" disabled></button></div>
                 </div>
               </article>
               <div class="grid two spaced-card">
-                <article class="card pad"><h2>Shared setup</h2><p class="small">NoxConnect owns provider authorization, identities and project scopes. Each product owns its own behavior and delivery rules.</p><div class="compact-list"><button data-setup-target="connections">Connections <span>2 healthy →</span></button><button data-setup-target="people">People <span>4 mapped →</span></button></div></article>
+                <article class="card pad"><h2>Shared setup</h2><p class="small">NoxHere owns provider authorization, identities and project scopes. Each product owns its own behavior and delivery rules.</p><div class="compact-list"><button data-setup-target="connections">Connections <span>2 healthy →</span></button><button data-setup-target="people">People <span>4 mapped →</span></button></div></article>
                 <article class="card pad"><h2>Project access</h2><p class="small">Choose which services run for each project and repository scope.</p><div class="compact-list"><button data-setup-target="repositories">Playnist <span>4 services →</span></button><button data-setup-target="repositories">N1 Healthcare <span>3 services →</span></button><button data-setup-target="repositories">Nox <span>2 services →</span></button></div></article>
               </div>
             </div>
@@ -4311,19 +4311,19 @@
               <article class="card pad">
                 <div class="detail-card-head"><div><h2>Tracked people</h2><p class="small">Choose organization members, display names and roles used across Nox.</p></div><button class="btn primary">Add people</button></div>
                 <div class="toolbar-row"><input class="inline-input" value="" placeholder="Search by name, GitHub, or role…" /><span class="tag">4 tracked</span></div>
-                <div class="people-table"><div><span class="noxfeed-avatar">JM</span><b>Jasper Middendorp</b><span class="small">@JasperNoBoxDev</span><span>Founder</span><button class="btn">Edit</button></div><div><span class="noxfeed-avatar">EN</span><b>Emma Nicole</b><span class="small">@EmmaNicole</span><span>Product</span><button class="btn">Edit</button></div></div>
+                <div class="people-table"><div><span class="activity-avatar">JM</span><b>Jasper Middendorp</b><span class="small">@JasperNoBoxDev</span><span>Founder</span><button class="btn">Edit</button></div><div><span class="activity-avatar">EN</span><b>Emma Nicole</b><span class="small">@EmmaNicole</span><span>Product</span><button class="btn">Edit</button></div></div>
               </article>
             </div>
             <div class="panel admin-only" data-panel="connect-admin-repositories">
               <div class="grid two">
                 <article class="card pad"><div class="detail-card-head"><div><h2>New repositories</h2><p class="small">Review repositories recently detected in GitHub.</p></div><span class="tag amber">2 new</span></div><div class="compact-list"><button>playnist-mobile <span>Add →</span></button><button>nox-docs <span>Add →</span></button></div></article>
-                <article class="card pad"><div class="detail-card-head"><div><h2>Tracked repositories</h2><p class="small">Archive or restore repositories without deleting history.</p></div><span class="tag green">12 active</span></div><div class="compact-list"><button data-detail="feed-repo" data-detail-key="playnist">playnist <span>Inspect →</span></button><button data-detail="feed-repo" data-detail-key="noxspot">noxspot <span>Inspect →</span></button><button>noxhere <span>Inspect →</span></button></div></article>
+                <article class="card pad"><div class="detail-card-head"><div><h2>Tracked repositories</h2><p class="small">Archive or restore repositories without deleting history.</p></div><span class="tag green">12 active</span></div><div class="compact-list"><button data-detail="feed-repo" data-detail-key="playnist">playnist <span>Inspect →</span></button><button data-detail="feed-repo" data-detail-key="feedback">feedback <span>Inspect →</span></button><button>noxhere <span>Inspect →</span></button></div></article>
               </div>
-              <article class="card pad spaced-card"><h2>Projects and product access</h2><p class="small">NoxConnect groups repositories into projects and enables products. Product-specific channels, signals and automation stay inside each product.</p><div class="route-grid"><span><b>Playnist</b><small>4 repositories</small></span><span>Scope <b>Project</b></span><span>NoxCue <b>Enabled</b></span><span>NoxFeed <b>Enabled</b></span><button class="btn">Edit project</button></div></article>
+              <article class="card pad spaced-card"><h2>Projects and product access</h2><p class="small">NoxHere groups repositories into projects and enables products. Product-specific channels, signals and automation stay inside each product.</p><div class="route-grid"><span><b>Playnist</b><small>4 repositories</small></span><span>Scope <b>Project</b></span><span>Telemetry <b>Enabled</b></span><span>Activity <b>Enabled</b></span><button class="btn">Edit project</button></div></article>
             </div>
             <div class="panel admin-only" data-panel="connect-admin-security">
               <div class="cue-callout"><div><b>NoxHere API documentation</b><p class="small">Read the quickstart, authentication model, service capabilities and complete generated API reference.</p></div><a class="btn primary" href="https://app.noxhere.com/developers" target="_blank" rel="noreferrer">Open API docs ↗</a></div>
-              <article class="card pad spaced-card"><div class="detail-card-head"><div><h2>Automation tokens</h2><p class="small">Project-scoped API credentials with explicit service scopes and expiry.</p></div><button class="btn primary">Create token</button></div><div class="token-list"><div><div><b>CI production</b><p class="small mono">nx_live_8a2… · Playnist · expires Dec 9</p></div><div class="chip-row"><span class="tag">NoxFeed write</span><span class="tag">NoxCue ingest</span></div><button class="btn">Rotate</button><button class="btn">Revoke</button></div><div><div><b>Release automation</b><p class="small mono">nx_live_31f… · Playnist · expires Nov 14</p></div><div class="chip-row"><span class="tag">NoxTicket read</span></div><button class="btn">Rotate</button><button class="btn">Revoke</button></div></div></article>
+              <article class="card pad spaced-card"><div class="detail-card-head"><div><h2>Automation tokens</h2><p class="small">Project-scoped API credentials with explicit service scopes and expiry.</p></div><button class="btn primary">Create token</button></div><div class="token-list"><div><div><b>CI production</b><p class="small mono">nx_live_8a2… · Playnist · expires Dec 9</p></div><div class="chip-row"><span class="tag">Activity write</span><span class="tag">Telemetry ingest</span></div><button class="btn">Rotate</button><button class="btn">Revoke</button></div><div><div><b>Release automation</b><p class="small mono">nx_live_31f… · Playnist · expires Nov 14</p></div><div class="chip-row"><span class="tag">Planning read</span></div><button class="btn">Rotate</button><button class="btn">Revoke</button></div></div></article>
             </div>
             <div class="panel admin-only" data-panel="connect-admin-maintenance">
               <div class="grid two maintenance-grid"><article class="card pad"><h2>Manual sync</h2><p class="small">Refresh current GitHub data incrementally.</p><button class="btn primary">Sync now</button></article><article class="card pad"><h2>Full re-sync</h2><p class="small">Re-fetch historical PR and issue data.</p><button class="btn">Full re-sync</button></article><article class="card pad"><h2>Recover repository history</h2><p class="small">Import history for an archived or renamed repository.</p><button class="btn">Recover history</button></article><article class="card pad"><h2>Live activity backfill</h2><p class="small">Re-derive missing activity events from the last 30 days.</p><button class="btn">Backfill events</button></article></div>
@@ -4338,7 +4338,7 @@
             data-soft="#f1eef9"
           >
             <header class="head workspace-only">
-              <div><h1 data-view-heading>NoxTicket</h1><p class="small">One flexible workspace for projects, tasks, specs and delivery.</p></div>
+              <div><h1 data-view-heading>Planning</h1><p class="small">One flexible workspace for projects, tasks, specs and delivery.</p></div>
               <div class="actions workspace-only">
                 <button class="btn primary" data-nt-create>New task</button>
               </div>
@@ -4415,7 +4415,7 @@
               <article class="card pad"><div class="detail-card-head"><div><h2>Board stages</h2><p class="small">Define and reorder the project stages used by the feature board.</p></div><button class="btn primary">Save workflow</button></div><div class="stage-list"><div><b>1</b><input value="Planned" /><span class="tag">2 features</span><button class="btn">↑↓</button></div><div><b>2</b><input value="In progress" /><span class="tag amber">2 features</span><button class="btn">↑↓</button></div><div><b>3</b><input value="Review" /><span class="tag">1 feature</span><button class="btn">↑↓</button></div><div><b>4</b><input value="Done" /><span class="tag green">2 features</span><button class="btn">↑↓</button></div></div><button class="btn spaced-button">Add stage</button></article>
             </div>
             <div class="panel admin-only" data-panel="ticket-admin-storage">
-              <div class="grid two"><article class="card pad"><h2>Feature repository</h2><p class="small">NoxTicket features are stored as GitHub issues in one repository.</p><div class="field"><label>REPOSITORY</label><select><option>No-Box-Dev/playnist</option></select></div><button class="btn primary spaced-button">Save repository</button></article><article class="card pad"><h2>Agent rules</h2><p class="small">Maintain the repository instructions used when agents create or update feature work.</p><pre class="code compact-code">.github/nox/rules.md\nAGENTS.md</pre><button class="btn spaced-button">Open rules</button></article></div>
+              <div class="grid two"><article class="card pad"><h2>Feature repository</h2><p class="small">Planning features are stored as GitHub issues in one repository.</p><div class="field"><label>REPOSITORY</label><select><option>No-Box-Dev/playnist</option></select></div><button class="btn primary spaced-button">Save repository</button></article><article class="card pad"><h2>Agent rules</h2><p class="small">Maintain the repository instructions used when agents create or update feature work.</p><pre class="code compact-code">.github/nox/rules.md\nAGENTS.md</pre><button class="btn spaced-button">Open rules</button></article></div>
             </div>
             <div class="panel admin-only" data-panel="ticket-admin-delivery">
               <article class="card pad"><div class="detail-card-head"><div><h2>Slack delivery</h2><p class="small">Route feature and backlog activity to a channel, or inherit the shared fallback.</p></div><span class="tag green">Connected</span></div><div class="form-grid"><label>Workspace<select><option>Playnist</option></select></label><label>Channel<select><option>#product-work</option></select></label></div><button class="btn primary spaced-button">Save delivery</button></article>
@@ -4430,7 +4430,7 @@
           >
             <header class="head workspace-only">
               <div>
-                <h1 data-view-heading>NoxFeed</h1>
+                <h1 data-view-heading>Activity</h1>
                 <p class="small">Pull requests and project updates in one feed.</p>
               </div>
               <div class="actions">
@@ -4440,7 +4440,7 @@
             </header>
             <div class="nf-native-shell workspace-only">
               <label class="nf-native-search"><span>⌕</span><input type="search" placeholder="Search posts, pull requests and issues" /></label>
-              <nav class="tabs noxfeed-mode-tabs" data-tabs="feed-workspace">
+              <nav class="tabs activity-mode-tabs" data-tabs="feed-workspace">
                 <button class="active" data-tab="current">Current</button><button data-tab="opened">Opened</button><button data-tab="merged">Merged</button><button data-tab="issues">Issues</button>
               </nav>
               <div class="panel active" data-panel="feed-workspace-current">
@@ -4448,57 +4448,57 @@
                   <div class="nf-person-bar"><button type="button" data-nf-current="people">‹ All people</button><b>@JasperNoBoxDev</b><span>Updated now</span></div>
                   <div class="nf-panel-scroll">
                     <section class="nf-section"><div class="nf-section-head"><b>Open pull requests</b><span class="nf-count">2</span></div>
-                      <button class="nf-item" data-detail="feed-pr" data-detail-key="1627"><i>⑂</i><span><h3>Improve Discover filters and empty states</h3><span class="nf-inline-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill mono">#1627</span><span class="noxfeed-pill">READY</span></span></span><time>18m</time></button>
-                      <button class="nf-item" data-detail="feed-pr" data-detail-key="1624"><i>⑂</i><span><h3>Collection editor mobile fixes</h3><span class="nf-inline-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill mono">#1624</span><span class="noxfeed-pill">REVIEW</span></span></span><time>2h</time></button>
+                      <button class="nf-item" data-detail="feed-pr" data-detail-key="1627"><i>⑂</i><span><h3>Improve Discover filters and empty states</h3><span class="nf-inline-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill mono">#1627</span><span class="activity-pill">READY</span></span></span><time>18m</time></button>
+                      <button class="nf-item" data-detail="feed-pr" data-detail-key="1624"><i>⑂</i><span><h3>Collection editor mobile fixes</h3><span class="nf-inline-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill mono">#1624</span><span class="activity-pill">REVIEW</span></span></span><time>2h</time></button>
                     </section>
                     <section class="nf-section"><div class="nf-section-head"><b>Assigned issues</b><span class="nf-count">2</span></div>
-                      <button class="nf-item" data-detail="feed-issue" data-detail-key="1815"><i>◉</i><span><h3>Layout for Review Experiences to be consistent</h3><span class="nf-inline-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill">HIGH</span></span></span><time>2h</time></button>
-                      <button class="nf-item" data-detail="feed-issue" data-detail-key="1812"><i>◉</i><span><h3>Preserve filters in empty Discover results</h3><span class="nf-inline-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill">MEDIUM</span></span></span><time>1d</time></button>
+                      <button class="nf-item" data-detail="feed-issue" data-detail-key="1815"><i>◉</i><span><h3>Layout for Review Experiences to be consistent</h3><span class="nf-inline-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill">HIGH</span></span></span><time>2h</time></button>
+                      <button class="nf-item" data-detail="feed-issue" data-detail-key="1812"><i>◉</i><span><h3>Preserve filters in empty Discover results</h3><span class="nf-inline-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill">MEDIUM</span></span></span><time>1d</time></button>
                     </section>
                     <section class="nf-section"><div class="nf-section-head"><b>Features</b><span class="nf-count">2</span></div>
-                      <button class="nf-item" data-detail="ticket-feature" data-detail-key="NT-151"><i>◇</i><span><h3>Discover filters</h3><span class="nf-inline-pills"><span class="noxfeed-pill">NT-151</span><span class="noxfeed-pill">IN REVIEW</span></span></span><time>Today</time></button>
-                      <button class="nf-item" data-detail="ticket-feature" data-detail-key="NT-145"><i>◇</i><span><h3>Mobile journal editor</h3><span class="nf-inline-pills"><span class="noxfeed-pill">NT-145</span><span class="noxfeed-pill">IN PROGRESS</span></span></span><time>Tomorrow</time></button>
+                      <button class="nf-item" data-detail="ticket-feature" data-detail-key="NT-151"><i>◇</i><span><h3>Discover filters</h3><span class="nf-inline-pills"><span class="activity-pill">NT-151</span><span class="activity-pill">IN REVIEW</span></span></span><time>Today</time></button>
+                      <button class="nf-item" data-detail="ticket-feature" data-detail-key="NT-145"><i>◇</i><span><h3>Mobile journal editor</h3><span class="nf-inline-pills"><span class="activity-pill">NT-145</span><span class="activity-pill">IN PROGRESS</span></span></span><time>Tomorrow</time></button>
                     </section>
                   </div>
                 </div>
                 <div class="nf-hidden" data-nf-people-view>
                   <div class="nf-person-bar"><span></span><b>Current</b><span>4 people</span></div>
                   <div class="nf-people-list">
-                    <button class="nf-person-row" data-nf-person="JasperNoBoxDev"><span class="noxfeed-avatar">JM</span><b>JasperNoBoxDev</b><span class="nf-mini-count">2 PRs</span><span class="nf-mini-count">2 issues</span></button>
-                    <button class="nf-person-row" data-nf-person="EmmaNicole"><span class="noxfeed-avatar">EN</span><b>EmmaNicole</b><span class="nf-mini-count">1 PR</span><span class="nf-mini-count">3 issues</span></button>
-                    <button class="nf-person-row" data-nf-person="nobox-web"><span class="noxfeed-avatar">NW</span><b>nobox-web</b><span class="nf-mini-count">1 PR</span></button>
-                    <button class="nf-person-row" data-nf-person="noboxbot"><span class="noxfeed-avatar">NB</span><b>noboxbot</b><span class="nf-mini-count">Clear</span></button>
+                    <button class="nf-person-row" data-nf-person="JasperNoBoxDev"><span class="activity-avatar">JM</span><b>JasperNoBoxDev</b><span class="nf-mini-count">2 PRs</span><span class="nf-mini-count">2 issues</span></button>
+                    <button class="nf-person-row" data-nf-person="EmmaNicole"><span class="activity-avatar">EN</span><b>EmmaNicole</b><span class="nf-mini-count">1 PR</span><span class="nf-mini-count">3 issues</span></button>
+                    <button class="nf-person-row" data-nf-person="nobox-web"><span class="activity-avatar">NW</span><b>nobox-web</b><span class="nf-mini-count">1 PR</span></button>
+                    <button class="nf-person-row" data-nf-person="noboxbot"><span class="activity-avatar">NB</span><b>noboxbot</b><span class="nf-mini-count">Clear</span></button>
                   </div>
                 </div>
               </div>
               <div class="panel" data-panel="feed-workspace-opened">
                 <div class="nf-feed-controls"><div class="nox-web-segment"><button class="active">All</button><button>Me</button></div><select class="nox-web-select"><option>All people</option><option>Jasper Middendorp</option><option>Emma Nicole</option></select><select class="nox-web-select"><option>All repos</option><option>playnist</option></select><div class="nox-web-segment"><button class="active">Social</button><button>Technical</button></div></div>
-                <div class="noxfeed-workspace">
-                  <article class="noxfeed-post" data-detail="feed-pr" data-detail-key="1627" tabindex="0" role="link"><header class="noxfeed-post-head"><span class="noxfeed-avatar">JM</span><div><div class="noxfeed-post-name">Jasper Middendorp</div><div class="noxfeed-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill mono">pr:opened</span></div></div><time class="noxfeed-age">18m</time></header><p class="noxfeed-post-copy">I’m tightening the Discover filters and their empty states so browsing remains clear when a combination returns no games.</p><span class="nf-post-link">Open pull request #1627 →</span></article>
-                  <article class="noxfeed-post" data-detail="feed-pr" data-detail-key="1618" tabindex="0" role="link"><header class="noxfeed-post-head"><span class="noxfeed-avatar">EN</span><div><div class="noxfeed-post-name">Emma Nicole</div><div class="noxfeed-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill mono">pr:opened</span></div></div><time class="noxfeed-age">3h</time></header><p class="noxfeed-post-copy">I’m bringing journal image handling in line with the rest of the app, including Safari orientation fixes.</p><span class="nf-post-link">Open pull request #1618 →</span></article>
+                <div class="activity-workspace">
+                  <article class="activity-post" data-detail="feed-pr" data-detail-key="1627" tabindex="0" role="link"><header class="activity-post-head"><span class="activity-avatar">JM</span><div><div class="activity-post-name">Jasper Middendorp</div><div class="activity-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill mono">pr:opened</span></div></div><time class="activity-age">18m</time></header><p class="activity-post-copy">I’m tightening the Discover filters and their empty states so browsing remains clear when a combination returns no games.</p><span class="nf-post-link">Open pull request #1627 →</span></article>
+                  <article class="activity-post" data-detail="feed-pr" data-detail-key="1618" tabindex="0" role="link"><header class="activity-post-head"><span class="activity-avatar">EN</span><div><div class="activity-post-name">Emma Nicole</div><div class="activity-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill mono">pr:opened</span></div></div><time class="activity-age">3h</time></header><p class="activity-post-copy">I’m bringing journal image handling in line with the rest of the app, including Safari orientation fixes.</p><span class="nf-post-link">Open pull request #1618 →</span></article>
                 </div>
               </div>
               <div class="panel" data-panel="feed-workspace-merged">
                 <div class="nf-feed-controls"><div class="nox-web-segment"><button class="active">All</button><button>Me</button></div><select class="nox-web-select"><option>All people</option><option>Jasper Middendorp</option><option>Emma Nicole</option></select><select class="nox-web-select"><option>All repos</option><option>playnist</option></select><select class="nox-web-select" data-nf-merged-content aria-label="Merged content"><option value="social">Social</option><option value="technical">Technical</option><option value="notes">Release notes</option></select></div>
-                <div class="noxfeed-workspace">
-                  <article class="noxfeed-post" data-nf-merged-post="1624" data-detail="feed-pr" data-detail-key="1624" tabindex="0" role="link"><header class="noxfeed-post-head"><span class="noxfeed-avatar">JM</span><div><div class="noxfeed-post-name">Jasper Middendorp</div><div class="noxfeed-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill mono" data-nf-merged-kind>pr:merged</span></div></div><time class="noxfeed-age">42m</time></header><p class="noxfeed-post-copy">I shipped the collection editor fixes. The mobile picker stays compact, preserves its selection, and no longer pushes the dialog outside the viewport.</p><span class="nf-post-link">View merged pull request #1624 →</span></article>
-                  <article class="noxfeed-post" data-nf-merged-post="1612" data-detail="feed-pr" data-detail-key="1612" tabindex="0" role="link"><header class="noxfeed-post-head"><span class="noxfeed-avatar">EN</span><div><div class="noxfeed-post-name">Emma Nicole</div><div class="noxfeed-pills"><span class="noxfeed-pill">PLAYNIST</span><span class="noxfeed-pill mono" data-nf-merged-kind>pr:merged</span></div></div><time class="noxfeed-age">1d</time></header><p class="noxfeed-post-copy">I simplified review details across game cards and profiles, removing repeated controls while keeping the useful context.</p><span class="nf-post-link">View merged pull request #1612 →</span></article>
+                <div class="activity-workspace">
+                  <article class="activity-post" data-nf-merged-post="1624" data-detail="feed-pr" data-detail-key="1624" tabindex="0" role="link"><header class="activity-post-head"><span class="activity-avatar">JM</span><div><div class="activity-post-name">Jasper Middendorp</div><div class="activity-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill mono" data-nf-merged-kind>pr:merged</span></div></div><time class="activity-age">42m</time></header><p class="activity-post-copy">I shipped the collection editor fixes. The mobile picker stays compact, preserves its selection, and no longer pushes the dialog outside the viewport.</p><span class="nf-post-link">View merged pull request #1624 →</span></article>
+                  <article class="activity-post" data-nf-merged-post="1612" data-detail="feed-pr" data-detail-key="1612" tabindex="0" role="link"><header class="activity-post-head"><span class="activity-avatar">EN</span><div><div class="activity-post-name">Emma Nicole</div><div class="activity-pills"><span class="activity-pill">PLAYNIST</span><span class="activity-pill mono" data-nf-merged-kind>pr:merged</span></div></div><time class="activity-age">1d</time></header><p class="activity-post-copy">I simplified review details across game cards and profiles, removing repeated controls while keeping the useful context.</p><span class="nf-post-link">View merged pull request #1612 →</span></article>
                 </div>
               </div>
               <div class="panel" data-panel="feed-workspace-issues">
                 <div class="nf-issue-controls"><div class="nox-web-segment"><button class="active" data-nf-issue-scope="all">All</button><button data-nf-issue-scope="me">Me</button></div><div class="nox-web-segment"><button class="active accent" data-nf-issue-state="open">Open</button><button data-nf-issue-state="closed">Closed (30d)</button></div><div class="nox-web-segment"><button class="active accent" data-nf-issue-group="people">By People</button><button data-nf-issue-group="repo">By Repo</button></div><span class="nf-issue-total">6 open issues</span></div>
                 <button class="nf-critical" type="button" data-nf-open-only data-detail="feed-issue" data-detail-key="1815"><i>!</i><span><b>1 critical issue</b><span>Image uploads are failing for some Safari sessions.</span></span></button>
                 <div class="nf-issue-buckets" data-nf-issue-people data-nf-open-only>
-                  <button class="nf-issue-bucket unassigned" data-detail="feed-issues" data-detail-key="unassigned"><span class="nf-bucket-head"><span class="noxfeed-avatar">—</span><span><b>Unassigned</b><small>Needs an owner</small></span></span><span class="nf-bucket-metrics"><span><strong>1</strong><small>Total</small></span><span><strong>8d</strong><small>Avg age</small></span><span class="stale"><strong>1</strong><small>Stale</small></span></span></button>
-                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="JasperNoBoxDev"><span class="nf-bucket-head"><span class="noxfeed-avatar">JM</span><span><b>JasperNoBoxDev</b><small>Assigned issues</small></span></span><span class="nf-bucket-metrics"><span><strong>2</strong><small>Total</small></span><span><strong>1d</strong><small>Avg age</small></span><span class="stale"><strong>0</strong><small>Stale</small></span></span></button>
-                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="EmmaNicole"><span class="nf-bucket-head"><span class="noxfeed-avatar">EN</span><span><b>EmmaNicole</b><small>Assigned issues</small></span></span><span class="nf-bucket-metrics"><span><strong>3</strong><small>Total</small></span><span><strong>4d</strong><small>Avg age</small></span><span class="critical"><strong>1</strong><small>Critical</small></span><span class="stale"><strong>1</strong><small>Stale</small></span></span></button>
+                  <button class="nf-issue-bucket unassigned" data-detail="feed-issues" data-detail-key="unassigned"><span class="nf-bucket-head"><span class="activity-avatar">—</span><span><b>Unassigned</b><small>Needs an owner</small></span></span><span class="nf-bucket-metrics"><span><strong>1</strong><small>Total</small></span><span><strong>8d</strong><small>Avg age</small></span><span class="stale"><strong>1</strong><small>Stale</small></span></span></button>
+                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="JasperNoBoxDev"><span class="nf-bucket-head"><span class="activity-avatar">JM</span><span><b>JasperNoBoxDev</b><small>Assigned issues</small></span></span><span class="nf-bucket-metrics"><span><strong>2</strong><small>Total</small></span><span><strong>1d</strong><small>Avg age</small></span><span class="stale"><strong>0</strong><small>Stale</small></span></span></button>
+                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="EmmaNicole"><span class="nf-bucket-head"><span class="activity-avatar">EN</span><span><b>EmmaNicole</b><small>Assigned issues</small></span></span><span class="nf-bucket-metrics"><span><strong>3</strong><small>Total</small></span><span><strong>4d</strong><small>Avg age</small></span><span class="critical"><strong>1</strong><small>Critical</small></span><span class="stale"><strong>1</strong><small>Stale</small></span></span></button>
                 </div>
                 <div class="nf-issue-buckets nf-hidden" data-nf-issue-repos data-nf-open-only>
-                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="playnist"><span class="nf-bucket-head"><span class="noxfeed-avatar">PL</span><span><b>playnist</b><small>No-Box-Dev/playnist</small></span></span><span class="nf-bucket-metrics"><span><strong>6</strong><small>Total</small></span><span><strong>3d</strong><small>Avg age</small></span><span class="critical"><strong>1</strong><small>Critical</small></span><span class="stale"><strong>2</strong><small>Stale</small></span></span></button>
+                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="playnist"><span class="nf-bucket-head"><span class="activity-avatar">PL</span><span><b>playnist</b><small>No-Box-Dev/playnist</small></span></span><span class="nf-bucket-metrics"><span><strong>6</strong><small>Total</small></span><span><strong>3d</strong><small>Avg age</small></span><span class="critical"><strong>1</strong><small>Critical</small></span><span class="stale"><strong>2</strong><small>Stale</small></span></span></button>
                 </div>
                 <div class="nf-issue-buckets nf-hidden" data-nf-closed-only>
-                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="JasperNoBoxDev"><span class="nf-bucket-head"><span class="noxfeed-avatar">JM</span><span><b>JasperNoBoxDev</b><small>Closed in the last 30 days</small></span></span><span class="nf-bucket-metrics"><span><strong>7</strong><small>Total</small></span><span><strong>2d</strong><small>Avg close</small></span></span></button>
-                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="EmmaNicole"><span class="nf-bucket-head"><span class="noxfeed-avatar">EN</span><span><b>EmmaNicole</b><small>Closed in the last 30 days</small></span></span><span class="nf-bucket-metrics"><span><strong>5</strong><small>Total</small></span><span><strong>3d</strong><small>Avg close</small></span></span></button>
+                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="JasperNoBoxDev"><span class="nf-bucket-head"><span class="activity-avatar">JM</span><span><b>JasperNoBoxDev</b><small>Closed in the last 30 days</small></span></span><span class="nf-bucket-metrics"><span><strong>7</strong><small>Total</small></span><span><strong>2d</strong><small>Avg close</small></span></span></button>
+                  <button class="nf-issue-bucket" data-detail="feed-issues" data-detail-key="EmmaNicole"><span class="nf-bucket-head"><span class="activity-avatar">EN</span><span><b>EmmaNicole</b><small>Closed in the last 30 days</small></span></span><span class="nf-bucket-metrics"><span><strong>5</strong><small>Total</small></span><span><strong>3d</strong><small>Avg close</small></span></span></button>
                 </div>
               </div>
             </div>
@@ -4527,7 +4527,7 @@
             data-soft="#f1eef9"
           >
             <header class="head workspace-only">
-              <div><h1 data-view-heading>NoxSpot</h1><p class="small workspace-only">Issues and the widgets that create them.</p></div>
+              <div><h1 data-view-heading>Feedback</h1><p class="small workspace-only">Issues and the widgets that create them.</p></div>
             </header>
             <nav class="tabs workspace-only" data-tabs="spot-workspace">
               <button class="active" data-tab="issues">Issues</button
@@ -4571,7 +4571,7 @@
                     </p>
                     <div class="spot-solved-trail" aria-label="Resolution artifacts">
                       <button type="button" data-detail="feed-pr" data-detail-key="1624">⑂ PR #1624</button>
-                      <button type="button" data-detail="feed-pr" data-detail-key="1624">NoxFeed post</button>
+                      <button type="button" data-detail="feed-pr" data-detail-key="1624">Activity post</button>
                       <button type="button" data-detail="feed-pr" data-detail-key="1624">Release note</button>
                     </div>
                     <div class="spot-delivery-note">✓ Emma was notified by email · 40m ago</div>
@@ -4626,7 +4626,7 @@
             <div class="panel workspace-only" data-panel="spot-workspace-messaging">
               <div class="cue-section-head"><div><span class="label" data-project-name>Playnist</span><h2>Resolution messaging</h2><p class="small">Tell reporters when their issue is solved and show the work that resolved it.</p></div><span class="tag green">Enabled</span></div>
               <div class="grid two">
-                <article class="card pad"><div class="detail-card-head"><div><h2>Delivery</h2><p class="small">Messages are sent only when a report has a reachable reporter.</p></div><button class="toggle" aria-label="Resolution messaging enabled"></button></div><div class="check-list"><label><input type="checkbox" checked> Send an email when an issue is solved</label><label><input type="checkbox" checked> Show the update inside the originating widget</label><label><input type="checkbox" checked> Include the public NoxFeed post</label><label><input type="checkbox" checked> Include the release note</label><label><input type="checkbox"> Include the pull request link</label></div><div class="form-grid one-column spaced-card"><label>Sender name<input value="Jasper from Playnist"></label><label>Reply-to address<input type="email" value="support@playnist.com"></label><label>When no email is available<select><option>Keep the update in the widget</option><option>Do not create a message</option></select></label></div><button class="btn primary spaced-button" data-spot-message-action="Resolution delivery settings saved">Save delivery settings</button></article>
+                <article class="card pad"><div class="detail-card-head"><div><h2>Delivery</h2><p class="small">Messages are sent only when a report has a reachable reporter.</p></div><button class="toggle" aria-label="Resolution messaging enabled"></button></div><div class="check-list"><label><input type="checkbox" checked> Send an email when an issue is solved</label><label><input type="checkbox" checked> Show the update inside the originating widget</label><label><input type="checkbox" checked> Include the public Activity post</label><label><input type="checkbox" checked> Include the release note</label><label><input type="checkbox"> Include the pull request link</label></div><div class="form-grid one-column spaced-card"><label>Sender name<input value="Jasper from Playnist"></label><label>Reply-to address<input type="email" value="support@playnist.com"></label><label>When no email is available<select><option>Keep the update in the widget</option><option>Do not create a message</option></select></label></div><button class="btn primary spaced-button" data-spot-message-action="Resolution delivery settings saved">Save delivery settings</button></article>
                 <article class="card pad"><div class="detail-card-head"><div><h2>Message content</h2><p class="small">A team member can edit the message before marking an issue solved.</p></div><span class="tag">Project default</span></div><div class="form-grid one-column"><label>Subject<input value="We resolved your report: {{issue_title}}"></label><label>Opening line<input value="Hi {{reporter_name}}, thanks for helping us improve Playnist."></label><label>Resolution message<textarea>We fixed the issue you reported. The journal modal now stays in place after you select an image.</textarea></label><label>Closing line<input value="You can reply if the problem is still happening."></label></div><div class="check-list"><label><input type="checkbox" checked> Require a final review before sending</label></div><button class="btn primary spaced-button" data-spot-message-action="Resolution message template saved">Save message template</button></article>
               </div>
               <div class="cue-section-head"><div><h2>Reporter preview</h2><p class="small">Example using the most recently solved issue.</p></div><button class="btn" data-spot-message-action="Preview email sent to your address">Send preview to me</button></div>
@@ -4638,11 +4638,11 @@
 
           <section class="view" data-page="cue" data-color="#6d5cc8" data-soft="#f1eef9">
             <header class="head workspace-only">
-              <div><h1 data-view-heading>NoxCue</h1><p class="small">Playnist stats and active alerts.</p></div>
-              <div class="actions"><span class="tag amber">2 active alerts</span><span class="noxfeed-pill mono">Updated 4m ago</span></div>
+              <div><h1 data-view-heading>Telemetry</h1><p class="small">Playnist stats and active alerts.</p></div>
+              <div class="actions"><span class="tag amber">2 active alerts</span><span class="activity-pill mono">Updated 4m ago</span></div>
             </header>
             <header class="head admin-only">
-              <div><span class="label">PLAYNIST · NOXCUE</span><h1>Settings</h1><p class="small">Choose where NoxCue runs, what it watches and where it sends alerts.</p></div>
+              <div><span class="label">PLAYNIST · TELEMETRY</span><h1>Settings</h1><p class="small">Choose where Telemetry runs, what it watches and where it sends alerts.</p></div>
               <button class="btn" data-mode-button="workspace">← Back to Stats</button>
             </header>
             <nav class="tabs workspace-only" data-tabs="cue-workspace">
@@ -4678,7 +4678,7 @@
               </div>
               </div>
               <div class="cue-subview" data-cue-subview="stats-events" hidden>
-                <div class="cue-section-head"><div><span class="label">ACTIVITY LOG</span><h2>Stat events</h2><p class="small">Individual events received by NoxCue that update the dashboard totals.</p></div><div class="chip-row"><span class="tag green">Receiving</span><button class="btn" data-cue-refresh>Refresh</button></div></div>
+                <div class="cue-section-head"><div><span class="label">ACTIVITY LOG</span><h2>Stat events</h2><p class="small">Individual events received by Telemetry that update the dashboard totals.</p></div><div class="chip-row"><span class="tag green">Receiving</span><button class="btn" data-cue-refresh>Refresh</button></div></div>
                 <div class="nox-web-toolbar wide-toolbar cue-filter-bar"><select class="nox-web-select"><option>All stat events</option><option>New user</option><option>User active</option><option>Custom activity</option></select><select class="nox-web-select"><option>All environments</option><option>Production</option><option>Staging</option></select><div class="nox-web-spacer"></div><span class="small">Showing today</span></div>
                 <div class="cue-list">
                   <div class="cue-row"><span class="cue-row-main"><span class="cue-symbol good">↗</span><span><h3>New user</h3><p class="small mono">user.registered · usr_1842 · Production</p></span></span><span class="cue-row-meta"><span class="tag green">Accepted</span><span>2m ago</span></span></div>
@@ -4693,7 +4693,7 @@
             <div class="panel workspace-only" data-panel="cue-workspace-incidents">
               <nav class="cue-subtabs" data-cue-subtabs="alerts" aria-label="Alert views"><button class="active" data-cue-subtab="log"><b>Alert log</b><small>Triggered and resolved</small></button><button data-cue-subtab="rules"><b>Alert rules</b><small>What is being watched</small></button></nav>
               <div class="cue-subview" data-cue-subview="alerts-log">
-                <div class="cue-section-head"><div><span class="label">TRIGGER HISTORY</span><h2>Alert log</h2><p class="small">Every alert NoxCue triggered, including active and resolved problems.</p></div><div class="chip-row"><span class="tag amber">2 active</span><button class="btn" data-cue-refresh>Refresh</button></div></div>
+                <div class="cue-section-head"><div><span class="label">TRIGGER HISTORY</span><h2>Alert log</h2><p class="small">Every alert Telemetry triggered, including active and resolved problems.</p></div><div class="chip-row"><span class="tag amber">2 active</span><button class="btn" data-cue-refresh>Refresh</button></div></div>
                 <div class="cue-list">
                   <button class="cue-row" data-detail="cue-incident" data-detail-key="image-upload"><span class="cue-row-main"><span class="cue-symbol issue">!</span><span><h3>Image upload failed</h3><p class="small">Production · affecting 5 users</p></span></span><span class="cue-row-meta"><span class="tag amber">Active</span><b>7 times</b><span>Triggered 12m ago</span></span></button>
                   <button class="cue-row" data-detail="cue-incident" data-detail-key="configuration-timeout"><span class="cue-row-main"><span class="cue-symbol issue">!</span><span><h3>Configuration request timed out</h3><p class="small">Production · affecting 2 users</p></span></span><span class="cue-row-meta"><span class="tag amber">Active</span><b>2 times</b><span>Triggered 3h ago</span></span></button>
@@ -4713,22 +4713,22 @@
             </div>
 
             <div class="panel active admin-only" data-panel="cue-admin-sources">
-              <div class="cue-section-head"><div><span class="label">PLAYNIST</span><h2>Environments</h2><p class="small">Where is NoxCue connected?</p></div><button class="btn primary" data-cue-add-source>Add environment</button></div>
+              <div class="cue-section-head"><div><span class="label">PLAYNIST</span><h2>Environments</h2><p class="small">Where is Telemetry connected?</p></div><button class="btn primary" data-cue-add-source>Add environment</button></div>
               <div class="cue-list">
                 <button class="cue-row active" data-cue-environment="production" data-name="Production" data-last="4m ago" data-health="Healthy" data-url="https://app.playnist.com/health"><span class="cue-row-main"><span class="cue-symbol good">✓</span><span><h3>Production</h3><p class="small">app.playnist.com</p></span></span><span class="cue-row-meta"><span class="tag green">Connected</span><span>Last signal 4m ago</span><b>Manage →</b></span></button>
                 <button class="cue-row" data-cue-environment="staging" data-name="Staging" data-last="38m ago" data-health="Healthy" data-url="https://staging.playnist.com/health"><span class="cue-row-main"><span class="cue-symbol good">✓</span><span><h3>Staging</h3><p class="small">staging.playnist.com</p></span></span><span class="cue-row-meta"><span class="tag green">Connected</span><span>Last signal 38m ago</span><b>Manage →</b></span></button>
                 <button class="cue-row" data-cue-environment="preview" data-name="Preview" data-last="No signals yet" data-health="Not configured" data-url="No health check"><span class="cue-row-main"><span class="cue-symbol waiting">…</span><span><h3>Preview</h3><p class="small">Mobile preview builds</p></span></span><span class="cue-row-meta"><span class="tag">Setup incomplete</span><b>Continue setup →</b></span></button>
               </div>
               <article class="card pad spaced-card" data-cue-environment-detail>
-                <div class="detail-card-head"><div><span class="label">SELECTED ENVIRONMENT</span><h2 data-cue-environment-name>Production</h2><p class="small" data-cue-environment-summary>NoxCue is receiving Playnist health signals normally.</p></div><span class="tag green" data-cue-environment-status>Connected</span></div>
+                <div class="detail-card-head"><div><span class="label">SELECTED ENVIRONMENT</span><h2 data-cue-environment-name>Production</h2><p class="small" data-cue-environment-summary>Telemetry is receiving Playnist health signals normally.</p></div><span class="tag green" data-cue-environment-status>Connected</span></div>
                 <div class="spot-message-status"><span>Connection<b data-cue-environment-connection>Receiving signals · 4m ago</b></span><span>Health check<b data-cue-environment-health>Healthy · https://app.playnist.com/health</b></span><span>Data collection<b data-cue-environment-collection>Enabled</b></span></div>
                 <div class="chip-row"><button class="btn primary" data-cue-open-integration>View installation</button><button class="btn" data-cue-action="Health check settings opened">Edit health check</button><button class="btn" data-cue-action="Collection paused">Pause collection</button></div>
               </article>
-              <div class="cue-callout"><div><b>Playnist project and connections</b><p class="small">People, repositories, GitHub and Slack are managed centrally in NoxConnect.</p></div><button class="btn" data-setup-target="repositories">Open NoxConnect</button></div>
+              <div class="cue-callout"><div><b>Playnist project and connections</b><p class="small">People, repositories, GitHub and Slack are managed centrally in NoxHere.</p></div><button class="btn" data-setup-target="repositories">Open NoxHere</button></div>
             </div>
 
             <div class="panel admin-only" data-panel="cue-admin-definitions">
-              <div class="cue-section-head"><div><span class="label">DAILY REPORT</span><h2>Choose stats</h2><p class="small">Checked stats appear in the NoxCue Stats tab and are sent in the daily Slack report.</p></div><div><span class="cue-stat-choice-count" data-cue-stat-count>12 stats selected</span><button class="btn primary" data-cue-action="Daily report stats saved">Save</button></div></div>
+              <div class="cue-section-head"><div><span class="label">DAILY REPORT</span><h2>Choose stats</h2><p class="small">Checked stats appear in the Telemetry Stats tab and are sent in the daily Slack report.</p></div><div><span class="cue-stat-choice-count" data-cue-stat-count>12 stats selected</span><button class="btn primary" data-cue-action="Daily report stats saved">Save</button></div></div>
               <div class="cue-list">
                 <label class="cue-row"><span class="cue-row-main"><input type="checkbox" data-cue-stat-choice checked><span><h3>New users</h3><p class="small">Built-in · daily registrations</p></span></span><span class="tag green">Sent daily</span></label>
                 <label class="cue-row"><span class="cue-row-main"><input type="checkbox" data-cue-stat-choice checked><span><h3>Total users</h3><p class="small">Built-in · registered user total</p></span></span><span class="tag green">Sent daily</span></label>
@@ -4747,22 +4747,22 @@
             </div>
 
             <div class="panel admin-only" data-panel="cue-admin-routing">
-              <div class="cue-section-head"><div><h2>NoxCue Slack delivery</h2><p class="small">Choose channels for NoxCue output using the Slack connection authorized in NoxConnect.</p></div><span class="tag green">Last test delivered</span></div>
-              <div class="cue-callout"><div><b>Connection supplied by NoxConnect</b><p class="small">No-Box-Dev Slack is connected and healthy. NoxCue only chooses where its own digests and alerts are delivered.</p></div><button class="btn" data-setup-target="connections">Manage connection</button></div>
+              <div class="cue-section-head"><div><h2>Telemetry Slack delivery</h2><p class="small">Choose channels for Telemetry output using the Slack connection authorized in NoxHere.</p></div><span class="tag green">Last test delivered</span></div>
+              <div class="cue-callout"><div><b>Connection supplied by NoxHere</b><p class="small">No-Box-Dev Slack is connected and healthy. Telemetry only chooses where its own digests and alerts are delivered.</p></div><button class="btn" data-setup-target="connections">Manage connection</button></div>
               <article class="card pad"><div class="form-grid"><label>Daily digest channel<select><option>#daily-stats</option></select></label><label>Immediate alerts channel<select><option>#app-alerts</option></select></label><label>Timezone<input value="Europe/Amsterdam"></label><label>Post after<input type="time" value="09:00"></label></div><div class="chip-row"><button class="btn primary" data-cue-action="Slack routing saved">Save Slack routing</button><button class="btn" data-cue-action="A real Slack test was queued">Send real test</button></div></article>
               <div class="cue-section-head"><div><h2>GitHub incidents</h2><p class="small">One fingerprint updates one open issue. Recurrence after human closure creates a linked issue.</p></div><button class="toggle" aria-label="GitHub incidents enabled"></button></div>
-              <article class="card pad"><div class="form-grid"><label>Repository scope<div class="managed-field"><span>No-Box-Dev/playnist</span><small>Mapped by NoxConnect</small></div></label><label>Refresh open issue at most<select><option>Every 30 minutes</option></select></label></div><div class="check-list"><label><input type="checkbox" checked> Create incidents for Production</label><label><input type="checkbox"> Create incidents for Staging</label><label><input type="checkbox" checked> Create a linked issue after recurrence</label></div><div class="route-flow"><span>NoxCue environment<br><b>Production</b></span><i>→</i><span>NoxConnect project<br><b>Playnist</b></span><i>→</i><span>Connected repository<br><b>playnist</b></span></div><button class="btn primary spaced-button" data-cue-action="Incident routing saved">Save NoxCue incident behavior</button></article>
-              <div class="cue-callout"><div><b>Access remains in NoxConnect</b><p class="small">Invite people and grant project or NoxCue access centrally. NoxCue does not maintain its own users or passwords.</p></div><button class="btn" data-setup-target="people">Manage in NoxConnect</button></div>
+              <article class="card pad"><div class="form-grid"><label>Repository scope<div class="managed-field"><span>No-Box-Dev/playnist</span><small>Mapped by NoxHere</small></div></label><label>Refresh open issue at most<select><option>Every 30 minutes</option></select></label></div><div class="check-list"><label><input type="checkbox" checked> Create incidents for Production</label><label><input type="checkbox"> Create incidents for Staging</label><label><input type="checkbox" checked> Create a linked issue after recurrence</label></div><div class="route-flow"><span>Telemetry environment<br><b>Production</b></span><i>→</i><span>NoxHere project<br><b>Playnist</b></span><i>→</i><span>Connected repository<br><b>playnist</b></span></div><button class="btn primary spaced-button" data-cue-action="Incident routing saved">Save Telemetry incident behavior</button></article>
+              <div class="cue-callout"><div><b>Access remains in NoxHere</b><p class="small">Invite people and grant project or Telemetry access centrally. Telemetry does not maintain its own users or passwords.</p></div><button class="btn" data-setup-target="people">Manage in NoxHere</button></div>
             </div>
 
             <div class="panel admin-only" data-panel="cue-admin-integration">
-              <div class="cue-section-head"><div><h2>Production installation</h2><p class="small">Credentials used by app.playnist.com to send health signals to NoxCue.</p></div><span class="tag green">Connected</span></div>
-              <div class="cue-callout"><div><b>NoxCue ingestion credentials</b><p class="small">These keys can only submit NoxCue product-health events for Production. Organization automation tokens remain in NoxConnect API access.</p></div><button class="btn" data-setup-target="security">NoxConnect API access</button></div>
+              <div class="cue-section-head"><div><h2>Production installation</h2><p class="small">Credentials used by app.playnist.com to send health signals to Telemetry.</p></div><span class="tag green">Connected</span></div>
+              <div class="cue-callout"><div><b>Telemetry ingestion credentials</b><p class="small">These keys can only submit Telemetry product-health events for Production. Organization automation tokens remain in NoxHere API access.</p></div><button class="btn" data-setup-target="security">NoxHere API access</button></div>
               <div class="cue-list"><div class="cue-row"><span class="cue-row-main"><span class="cue-symbol">PK</span><span><h3>Browser production</h3><p class="small mono">nx_pk_9fa… · used 2m ago</p></span></span><span class="cue-row-meta"><button class="btn" data-cue-action="Publishable key copied">Copy</button><button class="btn" data-cue-action="Publishable key revoked">Revoke</button></span></div><div class="cue-row"><span class="cue-row-main"><span class="cue-symbol">SK</span><span><h3>Server production</h3><p class="small mono">nx_sk_7cb… · used 4m ago</p></span></span><span class="cue-row-meta"><button class="btn" data-cue-action="Secret key copied">Copy</button><button class="btn" data-cue-action="Secret key revoked">Revoke</button></span></div></div>
               <div class="chip-row"><button class="btn primary" data-cue-action="New publishable key created — copy it now">Create publishable key</button><button class="btn" data-cue-action="New secret key created — it will only be shown once">Create secret key</button></div>
               <div class="cue-section-head"><div><h2>Recent signals</h2><p class="small">Installation diagnostics for Production—not a general application event log.</p></div><button class="btn" data-cue-refresh>Refresh</button></div>
               <div class="cue-list"><div class="cue-row"><span class="cue-row-main"><span class="cue-symbol good">✓</span><span><h3>feature.result accepted</h3><p class="small mono">custom.image.upload · success · safe context only</p></span></span><span class="cue-row-meta"><span class="tag green">202 Accepted</span><span>2m</span></span></div><div class="cue-row"><span class="cue-row-main"><span class="cue-symbol good">✓</span><span><h3>user.active accepted</h3><p class="small">Production · server key</p></span></span><span class="cue-row-meta"><span class="tag green">202 Accepted</span><span>4m</span></span></div><div class="cue-row"><span class="cue-row-main"><span class="cue-symbol issue">!</span><span><h3>custom.unknown rejected</h3><p class="small">Register the custom metric before sending activity</p></span></span><span class="cue-row-meta"><span class="tag amber">UNREGISTERED</span><span>1h</span></span></div></div>
-              <article class="card pad spaced-card"><h2>Accepted event contract</h2><div class="metric-rows"><span>User lifecycle <b class="mono">user.registered · user.active</b></span><span>Registered activity <b class="mono">activity.occurred</b></span><span>Feature outcomes <b class="mono">feature.result</b></span><span>Application failures <b class="mono">error.occurred</b></span></div><p class="small spaced-button">NoxCue does not collect logs, traces, arbitrary metrics, sessions or funnels.</p></article>
+              <article class="card pad spaced-card"><h2>Accepted event contract</h2><div class="metric-rows"><span>User lifecycle <b class="mono">user.registered · user.active</b></span><span>Registered activity <b class="mono">activity.occurred</b></span><span>Feature outcomes <b class="mono">feature.result</b></span><span>Application failures <b class="mono">error.occurred</b></span></div><p class="small spaced-button">Telemetry does not collect logs, traces, arbitrary metrics, sessions or funnels.</p></article>
             </div>
           </section>
 
@@ -4773,7 +4773,7 @@
             data-soft="#f1eef9"
           >
             <header class="head workspace-only">
-              <div><h1 data-view-heading>NoxCue</h1><p class="small">Project health, activity and failures.</p></div>
+              <div><h1 data-view-heading>Telemetry</h1><p class="small">Project health, activity and failures.</p></div>
               <div class="actions"><span data-environment-slot></span><button class="btn primary workspace-only" data-detail="public-cue" data-detail-key="playnist">Open dashboard</button></div>
             </header>
             <nav class="tabs workspace-only" data-tabs="cue-workspace">
@@ -4838,7 +4838,7 @@
                   <div class="issue">
                     <i class="dot"></i>
                     <div>
-                      <h3>NoxSpot widget loaded</h3>
+                      <h3>Feedback widget loaded</h3>
                       <p class="small">Production · latest loader</p>
                     </div>
                   </div>
@@ -4850,7 +4850,7 @@
             </div>
             <div class="panel active admin-only" data-panel="cue-admin-sources">
               <article class="card pad"><div class="detail-card-head"><div><h2>App environments</h2><p class="small">Each source has project scope, environment, timezone, browser origins, collection and alert controls.</p></div><button class="btn primary">Add environment</button></div><div class="source-list"><button class="active"><span><i class="dot"></i><b>Playnist</b><small>Production · Europe/Amsterdam</small></span><span class="tag green">Collecting</span></button><button><span><i class="dot"></i><b>Playnist</b><small>Staging · Europe/Amsterdam</small></span><span class="tag green">Collecting</span></button></div></article>
-              <article class="card pad spaced-card"><div class="detail-card-head"><div><h2>Setup progress</h2><p class="small">NoxCue confirms configuration, delivery and the first genuine user event.</p></div><span class="tag green">5 / 5 complete</span></div><div class="setup-steps"><span><i class="dot"></i> App configured</span><span><i class="dot"></i> Slack destination</span><span><i class="dot"></i> Secret key created</span><span><i class="dot"></i> First user event stored</span><span><i class="dot"></i> Test delivered</span></div><button class="btn spaced-button">Post another real test</button></article>
+              <article class="card pad spaced-card"><div class="detail-card-head"><div><h2>Setup progress</h2><p class="small">Telemetry confirms configuration, delivery and the first genuine user event.</p></div><span class="tag green">5 / 5 complete</span></div><div class="setup-steps"><span><i class="dot"></i> App configured</span><span><i class="dot"></i> Slack destination</span><span><i class="dot"></i> Secret key created</span><span><i class="dot"></i> First user event stored</span><span><i class="dot"></i> Test delivered</span></div><button class="btn spaced-button">Post another real test</button></article>
               <div class="grid two spaced-card"><article class="card pad"><h2>Source settings</h2><div class="form-grid one-column"><label>Browser origins<textarea>https://app.playnist.com</textarea></label><label>Public health URL<input value="https://app.playnist.com/health" /></label><label>Post daily digest after<input value="09:00" /></label></div><div class="check-list"><label><input type="checkbox" checked /> Collect events</label><label><input type="checkbox" checked /> Send daily digest</label><label><input type="checkbox" checked /> Send immediate alerts</label></div><button class="btn primary spaced-button">Save settings</button></article><article class="card pad"><h2>Connect the app</h2><p class="small">Publishable keys are origin-bound for browser auth health. Secret keys send server-side user statistics.</p><div class="chip-row"><button class="btn">Create publishable key</button><button class="btn">Create secret key</button></div><div class="token-list compact-token"><div><div><b>Browser production</b><p class="small mono">nx_pk_9fa… · used 2m ago</p></div><button class="btn">Revoke</button></div><div><div><b>Server production</b><p class="small mono">nx_sk_7cb… · used 4m ago</p></div><button class="btn">Revoke</button></div></div></article></div>
             </div>
             <div
@@ -4907,7 +4907,7 @@
               <button class="detail-back" type="button" data-detail-back>← Back to Current</button>
               <header class="detail-hero">
                 <div class="detail-person">
-                  <span class="noxfeed-avatar" data-person-initials>JM</span>
+                  <span class="activity-avatar" data-person-initials>JM</span>
                   <div>
                     <h1 data-person-name>JasperNoBoxDev</h1>
                     <p><span data-person-count>2</span> ready pull requests · <span data-project-name>Playnist</span></p>
@@ -4935,11 +4935,11 @@
               </div>
             </div>
             <div class="detail-view" data-detail-view="feed-pr">
-              <button class="detail-back" type="button" data-detail-back>← Back to NoxFeed</button>
+              <button class="detail-back" type="button" data-detail-back>← Back to Activity</button>
               <div class="detail-title">
                 <h1 data-pr-title>Collection editor mobile fixes</h1>
                 <p data-pr-subtitle>Playnist · PR #1624 · Jasper Middendorp</p>
-                <div class="detail-meta"><span class="tag green" data-pr-state>Merged</span><span class="noxfeed-pill mono" data-pr-branch>fix/collection-editor → develop</span></div>
+                <div class="detail-meta"><span class="tag green" data-pr-state>Merged</span><span class="activity-pill mono" data-pr-branch>fix/collection-editor → develop</span></div>
               </div>
               <nav class="detail-tabs" data-detail-tabs="pr">
                 <button class="active" type="button" data-detail-tab="summary">Pull request</button>
@@ -4947,7 +4947,7 @@
               </nav>
               <div class="detail-panel active" data-detail-panel="pr-summary">
                 <article class="detail-card">
-                  <div class="detail-card-head"><h2>What changed</h2><span class="noxfeed-pill" data-pr-kind>MERGED POST</span></div>
+                  <div class="detail-card-head"><h2>What changed</h2><span class="activity-pill" data-pr-kind>MERGED POST</span></div>
                   <p data-pr-description></p>
                 </article>
               </div>
@@ -4988,18 +4988,18 @@
       <section class="command-dialog">
         <label class="command-search"><span aria-hidden="true">⌕</span><input data-command-input placeholder="Search features, people, services and views…" /><kbd>ESC</kbd></label>
         <div class="command-results" data-command-results>
-          <button data-command-service="feed" data-command-mode="workspace" data-command-tab="current"><small>View</small><b>Current pull requests</b><span>NoxFeed</span></button>
-          <button data-command-service="ticket" data-command-mode="workspace" data-command-tab="board"><small>View</small><b>Features</b><span>NoxTicket</span></button>
-          <button data-command-service="ticket" data-command-mode="workspace" data-command-tab="specs"><small>View</small><b>Specs</b><span>NoxTicket</span></button>
-          <button data-command-service="feed" data-command-mode="workspace" data-command-tab="opened"><small>View</small><b>Opened posts</b><span>NoxFeed</span></button>
-          <button data-command-service="feed" data-command-mode="workspace" data-command-tab="issues"><small>View</small><b>GitHub issues</b><span>NoxFeed</span></button>
-          <button data-command-service="spot" data-command-mode="workspace" data-command-tab="issues"><small>View</small><b>Widget-created issues</b><span>NoxSpot</span></button>
-          <button data-command-service="spot" data-command-mode="workspace" data-command-tab="widgets"><small>View</small><b>Feedback widgets</b><span>NoxSpot</span></button>
-          <button data-command-service="spot" data-command-mode="workspace" data-command-tab="messaging"><small>View</small><b>Resolution messaging</b><span>NoxSpot</span></button>
-          <button data-command-service="cue" data-command-mode="workspace" data-command-tab="overview"><small>View</small><b>Playnist stats</b><span>NoxCue</span></button>
-          <button data-command-service="cue" data-command-mode="workspace" data-command-tab="incidents"><small>View</small><b>Active alerts</b><span>NoxCue</span></button>
-          <button data-command-service="connect" data-command-mode="admin" data-command-tab="repositories"><small>Admin</small><b>Repositories</b><span>NoxConnect</span></button>
-          <button data-command-service="connect" data-command-mode="admin" data-command-tab="connections"><small>Admin</small><b>Connections</b><span>NoxConnect</span></button>
+          <button data-command-service="feed" data-command-mode="workspace" data-command-tab="current"><small>View</small><b>Current pull requests</b><span>Activity</span></button>
+          <button data-command-service="ticket" data-command-mode="workspace" data-command-tab="board"><small>View</small><b>Features</b><span>Planning</span></button>
+          <button data-command-service="ticket" data-command-mode="workspace" data-command-tab="specs"><small>View</small><b>Specs</b><span>Planning</span></button>
+          <button data-command-service="feed" data-command-mode="workspace" data-command-tab="opened"><small>View</small><b>Opened posts</b><span>Activity</span></button>
+          <button data-command-service="feed" data-command-mode="workspace" data-command-tab="issues"><small>View</small><b>GitHub issues</b><span>Activity</span></button>
+          <button data-command-service="spot" data-command-mode="workspace" data-command-tab="issues"><small>View</small><b>Widget-created issues</b><span>Feedback</span></button>
+          <button data-command-service="spot" data-command-mode="workspace" data-command-tab="widgets"><small>View</small><b>Feedback widgets</b><span>Feedback</span></button>
+          <button data-command-service="spot" data-command-mode="workspace" data-command-tab="messaging"><small>View</small><b>Resolution messaging</b><span>Feedback</span></button>
+          <button data-command-service="cue" data-command-mode="workspace" data-command-tab="overview"><small>View</small><b>Playnist stats</b><span>Telemetry</span></button>
+          <button data-command-service="cue" data-command-mode="workspace" data-command-tab="incidents"><small>View</small><b>Active alerts</b><span>Telemetry</span></button>
+          <button data-command-service="connect" data-command-mode="admin" data-command-tab="repositories"><small>Admin</small><b>Repositories</b><span>NoxHere</span></button>
+          <button data-command-service="connect" data-command-mode="admin" data-command-tab="connections"><small>Admin</small><b>Connections</b><span>NoxHere</span></button>
           <button data-command-detail="feed-person" data-command-key="JasperNoBoxDev"><small>Person</small><b>Jasper Middendorp</b><span>@JasperNoBoxDev</span></button>
           <button data-command-detail="ticket-feature" data-command-key="NT-151"><small>Feature</small><b>Discover filters and empty states</b><span>In progress</span></button>
         </div>
@@ -5061,7 +5061,7 @@
           branch: "fix/discover-filters → develop",
           kind: "OPENED POST",
           description: "The Discover filters now stay understandable when a combination returns no games, with clearer result counts and a useful way back to the full catalogue.",
-          timeline: [["Pull request opened", "18m"], ["NoxFeed opened post generated", "17m"], ["Checks started", "16m"]],
+          timeline: [["Pull request opened", "18m"], ["Activity opened post generated", "17m"], ["Checks started", "16m"]],
         },
         1618: {
           title: "Make journal image handling consistent",
@@ -5070,7 +5070,7 @@
           branch: "fix/journal-images → develop",
           kind: "OPENED POST",
           description: "Journal images now use the same upload and orientation path as the rest of Playnist, including a Safari-specific correction for rotated photos.",
-          timeline: [["Pull request opened", "3h"], ["NoxFeed opened post generated", "3h"], ["Review requested", "2h"]],
+          timeline: [["Pull request opened", "3h"], ["Activity opened post generated", "3h"], ["Review requested", "2h"]],
         },
         1624: {
           title: "Collection editor mobile fixes",
@@ -5079,7 +5079,7 @@
           branch: "fix/collection-editor → develop",
           kind: "MERGED POST",
           description: "The mobile collection picker stays compact, preserves the current selection and keeps its dialog inside the viewport. The same release also improves empty-state copy across collection views.",
-          timeline: [["Pull request opened", "2h"], ["Review approved", "58m"], ["Merged into develop", "42m"], ["NoxFeed merged post generated", "41m"], ["Release note generated", "40m"]],
+          timeline: [["Pull request opened", "2h"], ["Review approved", "58m"], ["Merged into develop", "42m"], ["Activity merged post generated", "41m"], ["Release note generated", "40m"]],
         },
         1612: {
           title: "Unify review details across Playnist",
@@ -5088,19 +5088,19 @@
           branch: "fix/review-details → develop",
           kind: "MERGED POST",
           description: "Review details are now consistent across game cards and profiles. Repeated controls were removed while the useful context remains available in each view.",
-          timeline: [["Pull request opened", "2d"], ["Review approved", "1d"], ["Merged into develop", "1d"], ["NoxFeed merged post generated", "1d"]],
+          timeline: [["Pull request opened", "2d"], ["Review approved", "1d"], ["Merged into develop", "1d"], ["Activity merged post generated", "1d"]],
         },
       };
       const genericDetailTypes = new Set(["feed-repo", "feed-issues", "feed-issue", "ticket-feature", "ticket-spec", "spot-issue", "public-spot", "cue-stat", "cue-incident", "operator"]);
       function genericDetail(type, key) {
         if (type === "operator") return {
-          back: "Back to Nox", title: "Nox business overview", subtitle: "Platform operator · service adoption and organization usage", meta: '<span class="tag green">Operator access</span><span class="noxfeed-pill mono">No-Box-Dev</span>',
-          content: '<div class="detail-grid"><article class="detail-card detail-stat"><span class="small">Organizations</span><strong>12</strong></article><article class="detail-card detail-stat"><span class="small">Active projects</span><strong>21</strong></article><article class="detail-card detail-stat"><span class="small">Events this month</span><strong>84k</strong></article></div><article class="detail-card"><h2>Service adoption</h2><div class="metric-rows"><span>NoxTicket <b>9 organizations</b></span><span>NoxFeed <b>12 organizations</b></span><span>NoxSpot <b>7 organizations</b></span><span>NoxCue <b>5 organizations</b></span></div></article><article class="detail-card"><h2>Organizations</h2><div class="compact-list"><button>No-Box-Dev <span>5 services · 3 projects</span></button><button>N1 Healthcare <span>3 services · 1 project</span></button><button>Playnist Labs <span>4 services · 2 projects</span></button></div></article>',
-          timeline: [["Usage snapshot refreshed", "Now"], ["Organization activated NoxCue", "2d"], ["New project created", "4d"]],
+          back: "Back to Nox", title: "Nox business overview", subtitle: "Platform operator · service adoption and organization usage", meta: '<span class="tag green">Operator access</span><span class="activity-pill mono">No-Box-Dev</span>',
+          content: '<div class="detail-grid"><article class="detail-card detail-stat"><span class="small">Organizations</span><strong>12</strong></article><article class="detail-card detail-stat"><span class="small">Active projects</span><strong>21</strong></article><article class="detail-card detail-stat"><span class="small">Events this month</span><strong>84k</strong></article></div><article class="detail-card"><h2>Service adoption</h2><div class="metric-rows"><span>Planning <b>9 organizations</b></span><span>Activity <b>12 organizations</b></span><span>Feedback <b>7 organizations</b></span><span>Telemetry <b>5 organizations</b></span></div></article><article class="detail-card"><h2>Organizations</h2><div class="compact-list"><button>No-Box-Dev <span>5 services · 3 projects</span></button><button>N1 Healthcare <span>3 services · 1 project</span></button><button>Playnist Labs <span>4 services · 2 projects</span></button></div></article>',
+          timeline: [["Usage snapshot refreshed", "Now"], ["Organization activated Telemetry", "2d"], ["New project created", "4d"]],
         };
         if (type === "public-spot") return {
-          back: "Back to NoxSpot", title: `${selectedProject().name} feedback`, subtitle: "Password-protected external NoxSpot portal · read only", meta: '<span class="tag amber">4 open</span><span class="tag green">405 solved</span><span class="noxfeed-pill mono">Filter by submitter</span>',
-          content: '<article class="detail-card"><div class="detail-card-head"><div><h2>Open issues</h2><p>Visible report title, description, submitter and captured screenshot.</p></div><select class="nox-web-select"><option>All submitters</option><option>Emma</option><option>Jasper</option></select></div><div class="compact-list"><button data-detail="spot-issue" data-detail-key="1815">Layout for Review Experiences <span class="tag amber">Open</span></button><button>Image upload intermittently fails <span class="tag amber">Open</span></button></div></article><article class="detail-card resolution-card"><h2>Solved timeline</h2><p>Resolutions appear before the original report and deduplicate shared PR/NoxFeed content when one merge closes several issues.</p><div class="compact-list"><button data-detail="spot-issue" data-detail-key="1531">Journal modal moves after image selection <span class="tag green">Solved</span></button></div></article>',
+          back: "Back to Feedback", title: `${selectedProject().name} feedback`, subtitle: "Password-protected external Feedback portal · read only", meta: '<span class="tag amber">4 open</span><span class="tag green">405 solved</span><span class="activity-pill mono">Filter by submitter</span>',
+          content: '<article class="detail-card"><div class="detail-card-head"><div><h2>Open issues</h2><p>Visible report title, description, submitter and captured screenshot.</p></div><select class="nox-web-select"><option>All submitters</option><option>Emma</option><option>Jasper</option></select></div><div class="compact-list"><button data-detail="spot-issue" data-detail-key="1815">Layout for Review Experiences <span class="tag amber">Open</span></button><button>Image upload intermittently fails <span class="tag amber">Open</span></button></div></article><article class="detail-card resolution-card"><h2>Solved timeline</h2><p>Resolutions appear before the original report and deduplicate shared PR/Activity content when one merge closes several issues.</p><div class="compact-list"><button data-detail="spot-issue" data-detail-key="1531">Journal modal moves after image selection <span class="tag green">Solved</span></button></div></article>',
           timeline: [["Portal refreshed", "Now"], ["Issue #1531 solved by PR #1624", "42m"], ["Issue #1815 submitted by Emma", "2h"]],
         };
         if (type === "cue-stat") {
@@ -5119,7 +5119,7 @@
             "reviews-per-user": ["Reviews / registered user", "0.01", "0.0 latest", "Same as previous period", "Calculated ratio"],
           })[key] || ["Daily stat", "—", "—", "No comparison", "Playnist metric"];
           return {
-            back: "Back to Stats", title: metric[0], subtitle: `Playnist · stats dashboard · ${metric[4]}`, meta: '<span class="tag green">Sent daily</span><span class="noxfeed-pill mono">Last 30 days</span>',
+            back: "Back to Stats", title: metric[0], subtitle: `Playnist · stats dashboard · ${metric[4]}`, meta: '<span class="tag green">Sent daily</span><span class="activity-pill mono">Last 30 days</span>',
             content: `<div class="nox-web-toolbar wide-toolbar cue-filter-bar"><select class="nox-web-select"><option>Last 30 days</option><option>Last 7 days</option><option>Last 90 days</option><option>Custom range…</option></select><select class="nox-web-select"><option>All environments</option><option>Production</option><option>Staging</option></select><select class="nox-web-select"><option>Compare previous period</option><option>No comparison</option></select></div><div class="detail-grid"><article class="detail-card detail-stat"><span class="small">Selected period</span><strong>${metric[1]}</strong><p>${metric[3]}</p></article><article class="detail-card detail-stat"><span class="small">Average / latest</span><strong>${metric[2]}</strong><p>Completed days</p></article><article class="detail-card detail-stat"><span class="small">Daily report</span><strong style="font-size:16px">Included</strong><p>#daily-stats · 09:00</p></article></div><article class="detail-card"><div class="detail-card-head"><div><h2>Trend</h2><p>${metric[0]} across the selected time range.</p></div><span class="tag">Aug 19 – Sep 17</span></div><div class="chart"><i style="height:28%"></i><i style="height:32%"></i><i style="height:30%"></i><i style="height:42%"></i><i style="height:37%"></i><i style="height:55%"></i><i style="height:49%"></i><i style="height:72%"></i><i style="height:61%"></i><i style="height:80%"></i><i style="height:74%"></i><i style="height:88%"></i><i style="height:79%"></i><i style="height:84%"></i></div></article><article class="detail-card"><h2>Recent daily values</h2><div class="metric-rows"><span>September 17 <b>${metric[2]}</b></span><span>September 16 <b>${metric[2]}</b></span><span>September 15 <b>${metric[2]}</b></span><span>September 14 <b>${metric[2]}</b></span></div></article>`,
             timeline: [["Daily value completed", "Sep 18 · 00:00"], ["Included in Slack report", "Sep 18 · 09:00"], ["Dashboard viewed", "Now"]],
           };
@@ -5131,9 +5131,9 @@
           const status = resolved ? "Resolved" : timeout ? "Acknowledged" : "Open";
           const statusClass = resolved ? "green" : timeout ? "" : "amber";
           return {
-            back: "Back to Incidents", title, subtitle: `${selectedProject().name} · Production · sanitized evidence`, meta: `<span class="tag ${statusClass}">${status}</span><span class="noxfeed-pill mono">${resolved ? "endpoint" : "application error"}</span>`,
+            back: "Back to Incidents", title, subtitle: `${selectedProject().name} · Production · sanitized evidence`, meta: `<span class="tag ${statusClass}">${status}</span><span class="activity-pill mono">${resolved ? "endpoint" : "application error"}</span>`,
             content: resolved
-              ? '<article class="detail-card"><div class="detail-card-head"><div><h2>Endpoint recovered</h2><p>Availability returned after two consecutive successful checks. NoxCue recorded the recovery; it did not change the application.</p></div><span class="tag green">Resolved</span></div><div class="metric-rows"><span>Health URL <b class="mono">https://app.playnist.com/health</b></span><span>Last response <b>HTTP 200 · 184 ms</b></span><span>Resolution rule <b>2 consecutive successes</b></span></div></article>'
+              ? '<article class="detail-card"><div class="detail-card-head"><div><h2>Endpoint recovered</h2><p>Availability returned after two consecutive successful checks. Telemetry recorded the recovery; it did not change the application.</p></div><span class="tag green">Resolved</span></div><div class="metric-rows"><span>Health URL <b class="mono">https://app.playnist.com/health</b></span><span>Last response <b>HTTP 200 · 184 ms</b></span><span>Resolution rule <b>2 consecutive successes</b></span></div></article>'
               : `<article class="detail-card"><div class="detail-card-head"><div><h2>Impact</h2><p>${timeout ? "Two users could not load application configuration." : "Five users were prevented from attaching an image."}</p></div><span class="tag ${statusClass}">${status}</span></div><div class="metric-rows"><span>Occurrences <b>${timeout ? "2" : "7"}</b></span><span>Affected users <b>${timeout ? "2" : "5"}</b></span><span>First seen <b>${timeout ? "5h ago" : "3h ago"}</b></span><span>Last seen <b>${timeout ? "3h ago" : "12m ago"}</b></span></div></article><article class="detail-card"><h2>Sanitized technical evidence</h2><div class="metric-rows"><span>Fingerprint <b class="mono">${timeout ? "cfg_timeout_81f" : "upload_fetch_43a"}</b></span><span>Message <b class="mono">${timeout ? "Request exceeded 10s" : "TypeError: Failed to fetch"}</b></span><span>Route <b class="mono">${timeout ? "/app" : "/journal/new"}</b></span><span>Client <b>Safari 19</b></span></div><p class="small spaced-button">Secrets, query values and personal data were removed before storage.</p></article><article class="detail-card"><div class="detail-card-head"><div><h2>Routing</h2><p>The open fingerprint is updated instead of creating duplicate work.</p></div><button class="btn">Open GitHub issue ↗</button></div><div class="metric-rows"><span>Slack alert <b>#app-alerts · delivered</b></span><span>GitHub issue <b>#1842 · open</b></span><span>Likely area <b>${timeout ? "Configuration API" : "Upload request handling"}</b></span></div></article>`,
             timeline: resolved ? [["Second successful endpoint check", "Yesterday"], ["Incident resolved", "Yesterday"], ["Slack recovery posted", "Yesterday"]] : [["Latest occurrence grouped", timeout ? "3h" : "12m"], ["GitHub issue updated", timeout ? "3h" : "12m"], ["Slack alert delivered", timeout ? "5h" : "3h"], ["First occurrence stored", timeout ? "5h" : "3h"]],
           };
@@ -5141,48 +5141,48 @@
         if (type === "ticket-feature") return {
           back: "Back to Features",
           title: ({ 142: "Personal game recommendations", 148: "Journal image gallery", 139: "Collection collaboration", 145: "Mobile journal editor", 151: "Discover filters", 136: "Profile review layout", 132: "Collection mobile picker" })[key] || "Feature",
-          subtitle: `NoxTicket · NT-${key} · ${selectedProject().name}`,
-          meta: '<span class="tag amber">In workflow</span><span class="noxfeed-pill mono">GitHub source of truth</span>',
+          subtitle: `Planning · NT-${key} · ${selectedProject().name}`,
+          meta: '<span class="tag amber">In workflow</span><span class="activity-pill mono">GitHub source of truth</span>',
           content: '<article class="detail-card"><h2>Feature brief</h2><p>Outcome, context and implementation notes remain attached to the feature while it moves through the configured workflow.</p></article><div class="detail-grid"><article class="detail-card detail-stat"><span class="small">Owner</span><strong style="font-size:16px">Jasper</strong></article><article class="detail-card detail-stat"><span class="small">Linked specs</span><strong>2</strong></article><article class="detail-card detail-stat"><span class="small">Pull requests</span><strong>1</strong></article></div><article class="detail-card"><div class="detail-card-head"><div><h2>Linked specifications</h2><p>Acceptance behavior and supporting design material.</p></div><button class="btn">Link spec</button></div><div class="compact-list"><button>Interaction and empty states <span>Open →</span></button><button>Mobile layout constraints <span>Open →</span></button></div></article>',
           timeline: [["Feature created", "Aug 29"], ["Assigned to Jasper", "Sep 1"], ["Moved to In progress", "Sep 7"], ["PR #1624 linked", "Today"]],
         };
         if (type === "ticket-spec") return {
-          back: "Back to Specifications", title: key === "journal-media" ? "Journal media requirements" : "Discover empty-state behavior", subtitle: `Specification · ${selectedProject().name}`, meta: '<span class="tag green">Active</span><span class="noxfeed-pill mono">Owner: JasperNoBoxDev</span>',
+          back: "Back to Specifications", title: key === "journal-media" ? "Journal media requirements" : "Discover empty-state behavior", subtitle: `Specification · ${selectedProject().name}`, meta: '<span class="tag green">Active</span><span class="activity-pill mono">Owner: JasperNoBoxDev</span>',
           content: '<article class="detail-card"><div class="detail-card-head"><div><h2>Specification</h2><p>Editable product requirements, acceptance criteria and implementation constraints.</p></div><button class="btn primary">Edit spec</button></div><p>When the current filter combination has no results, preserve the selected filters, show the reason clearly and offer a single action to reset the catalogue.</p></article><div class="detail-grid"><article class="detail-card"><h3>Feature</h3><p>Discover filters</p></article><article class="detail-card"><h3>Attachments</h3><p>1 design reference</p></article><article class="detail-card"><h3>Sources</h3><p>2 external links</p></article></div><article class="detail-card"><h2>Related material</h2><div class="compact-list"><button>Figma · Empty-state layout <span>Open ↗</span></button><button>GitHub · PR #1627 <span>Open ↗</span></button><button>Attachment · mobile-filters.png <span>Preview →</span></button></div></article>',
           timeline: [["Specification created", "Aug 30"], ["Linked to feature NT-151", "Sep 1"], ["Attachment added", "Sep 3"], ["Updated by Jasper", "Today"]],
         };
         if (type === "feed-issues") return {
-          back: "Back to Issues", title: key === "unassigned" ? "Unassigned issues" : key === "playnist" ? "Issues in playnist" : `Issues assigned to @${key}`, subtitle: `NoxFeed · 6 open · ${selectedProject().name}`, meta: '<span class="tag amber">Open issues</span><span class="noxfeed-pill mono">Sortable list</span>',
+          back: "Back to Issues", title: key === "unassigned" ? "Unassigned issues" : key === "playnist" ? "Issues in playnist" : `Issues assigned to @${key}`, subtitle: `Activity · 6 open · ${selectedProject().name}`, meta: '<span class="tag amber">Open issues</span><span class="activity-pill mono">Sortable list</span>',
           content: '<article class="detail-card" data-detail="feed-issue" data-detail-key="1817" tabindex="0" role="link"><div class="detail-card-head"><div><h2>Image upload intermittently fails in Safari</h2><p>playnist #1817 · critical · updated 12m ago</p></div><span class="tag amber">Critical</span></div><div class="chip-row"><span class="tag">Safari</span><span class="tag">upload</span><button class="btn">Copy link</button></div></article><article class="detail-card" data-detail="feed-issue" data-detail-key="1815" tabindex="0" role="link"><div class="detail-card-head"><div><h2>Discover count remains stale after reset</h2><p>playnist #1815 · updated 2h ago</p></div><span class="tag">Open</span></div><div class="chip-row"><span class="tag">discover</span><button class="btn">Copy link</button></div></article>',
           timeline: [["Issue list opened", "Now"], ["Critical issue updated", "12m"], ["Assignment changed", "2h"]],
         };
         if (type === "feed-issue") return {
-          back: "Back to issue list", title: key === "1817" ? "Image upload intermittently fails in Safari" : "Discover count remains stale after reset", subtitle: `${selectedProject().name} · Issue #${key} · opened by EmmaNicole`, meta: `<span class="tag amber">Open</span>${key === "1817" ? '<span class="tag amber">Critical</span>' : ''}<span class="noxfeed-pill mono">playnist</span>`,
+          back: "Back to issue list", title: key === "1817" ? "Image upload intermittently fails in Safari" : "Discover count remains stale after reset", subtitle: `${selectedProject().name} · Issue #${key} · opened by EmmaNicole`, meta: `<span class="tag amber">Open</span>${key === "1817" ? '<span class="tag amber">Critical</span>' : ''}<span class="activity-pill mono">playnist</span>`,
           content: `<article class="detail-card"><div class="detail-card-head"><h2>Description</h2><button class="btn">Open on GitHub ↗</button></div><p>${key === "1817" ? "Some Safari users cannot attach an image to a journal entry. The upload request fails before object storage and leaves the composer open with no attachment." : "Resetting Discover filters updates the selected controls but occasionally leaves the previous result count visible."}</p><div class="chip-row"><span class="tag">${key === "1817" ? "Safari" : "discover"}</span><span class="tag">bug</span><span class="tag">Assignee: EmmaNicole</span><button class="btn">Copy GitHub link</button></div></article><article class="detail-card"><h2>Repository context</h2><div class="metric-rows"><span>Repository <b>playnist</b></span><span>Last updated <b>${key === "1817" ? "12m ago" : "2h ago"}</b></span><span>State <b>Open</b></span></div></article>`,
           timeline: [["Issue opened", key === "1817" ? "3h" : "1d"], ["Assigned to EmmaNicole", "2h"], ["Label added: bug", "1h"], ["Issue updated", key === "1817" ? "12m" : "2h"]],
         };
         if (type === "feed-repo") return {
-          back: "Back to Repositories", title: key, subtitle: `Repository activity · No-Box-Dev/${key}`, meta: '<span class="tag green">Tracked</span><span class="noxfeed-pill mono">GitHub connected</span>',
+          back: "Back to Repositories", title: key, subtitle: `Repository activity · No-Box-Dev/${key}`, meta: '<span class="tag green">Tracked</span><span class="activity-pill mono">GitHub connected</span>',
           content: '<div class="detail-grid"><article class="detail-card detail-stat"><span class="small">Open PRs</span><strong>4</strong></article><article class="detail-card detail-stat"><span class="small">Open issues</span><strong>6</strong></article><article class="detail-card detail-stat"><span class="small">Contributors</span><strong>3</strong></article></div><article class="detail-card"><h2>Repository activity</h2><div class="compact-list"><button>Pull requests <span>4 open →</span></button><button>Issues <span>6 open →</span></button><button>Reviews <span>12 this month →</span></button><button>Pushes <span>31 this month →</span></button></div></article>',
           timeline: [["PR #1627 opened", "18m"], ["Push to develop", "31m"], ["PR #1624 merged", "42m"], ["Issue #1815 updated", "2h"]],
         };
         const spotIssue = ({
-          1531: { title: "Journal modal moves after image selection", reporter: "Emma", contact: "em••@example.com", state: "Solved", solver: "Emma Nicole", pr: 1624, noxFeed: true, description: "The journal dialog shifts outside the visible area after choosing an image.", comments: [["EN", "Emma Nicole", "I can reproduce this after selecting a portrait image on Safari.", "Aug 31"], ["JM", "Jasper", "Confirmed fixed in PR #1624. The modal now keeps its position.", "42m"]] },
+          1531: { title: "Journal modal moves after image selection", reporter: "Emma", contact: "em••@example.com", state: "Solved", solver: "Emma Nicole", pr: 1624, activity: true, description: "The journal dialog shifts outside the visible area after choosing an image.", comments: [["EN", "Emma Nicole", "I can reproduce this after selecting a portrait image on Safari.", "Aug 31"], ["JM", "Jasper", "Confirmed fixed in PR #1624. The modal now keeps its position.", "42m"]] },
           1814: { title: "Checkout button disappears on smaller screens", reporter: "Alex", contact: "al••@example.com", state: "Open", description: "The checkout action disappears below the product summary on smaller screens.", comments: [["EN", "Emma Nicole", "Reproduced at 375px. It looks like the action row is overflowing.", "3h"]] },
           1815: { title: "Layout for Review Experiences to be consistent across app", reporter: "Emma", contact: "em••@example.com", state: "Open", description: "Review cards use different spacing and action placement across the game and profile views.", comments: [["JM", "Jasper", "Agreed. I’ll align the profile variant with the game-card layout.", "1h"]] },
         })[key] || { title: "Captured issue", reporter: "Emma", state: "Open", description: "Feedback captured from the Playnist widget." };
         const solved = spotIssue.state === "Solved";
-        const comments = (spotIssue.comments || []).map(([initials, author, body, time]) => `<div class="issue-comment"><span class="noxfeed-avatar">${initials}</span><div><b>${author}</b><time>${time}</time><p>${body}</p></div></div>`).join("");
-        const resolution = !solved ? "" : spotIssue.noxFeed
-          ? `<article class="detail-card resolution-card"><div class="detail-card-head"><div><div class="resolution-byline"><span class="tag green">Solved</span><b>${spotIssue.solver}</b></div><p>Resolution and customer communication generated from the same merge.</p></div></div><div class="resolution-content"><div><b>Pull request #${spotIssue.pr}</b><p>Collection editor mobile fixes · merged by ${spotIssue.solver}.</p><button type="button" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">Open PR →</button></div><div><b>NoxFeed post</b><p>I shipped the collection editor fixes. The journal modal now stays steady after an image is selected.</p><button type="button" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">View post →</button></div><div><b>Release note</b><p>Fixed the journal modal moving outside the visible area after adding an image.</p><button type="button" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">View note →</button></div></div></article>`
+        const comments = (spotIssue.comments || []).map(([initials, author, body, time]) => `<div class="issue-comment"><span class="activity-avatar">${initials}</span><div><b>${author}</b><time>${time}</time><p>${body}</p></div></div>`).join("");
+        const resolution = !solved ? "" : spotIssue.activity
+          ? `<article class="detail-card resolution-card"><div class="detail-card-head"><div><div class="resolution-byline"><span class="tag green">Solved</span><b>${spotIssue.solver}</b></div><p>Resolution and customer communication generated from the same merge.</p></div></div><div class="resolution-content"><div><b>Pull request #${spotIssue.pr}</b><p>Collection editor mobile fixes · merged by ${spotIssue.solver}.</p><button type="button" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">Open PR →</button></div><div><b>Activity post</b><p>I shipped the collection editor fixes. The journal modal now stays steady after an image is selected.</p><button type="button" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">View post →</button></div><div><b>Release note</b><p>Fixed the journal modal moving outside the visible area after adding an image.</p><button type="button" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">View note →</button></div></div></article>`
           : `<article class="detail-card resolution-card"><div class="resolution-byline"><span class="tag green">Solved</span><b>${spotIssue.solver}</b><span>via PR #${spotIssue.pr}</span></div><details class="pr-description"><summary>PR description</summary><p>The modal now preserves its position and remains inside the viewport after image selection.</p></details></article>`;
         const reporterMessage = solved
           ? `<article class="detail-card"><div class="detail-card-head"><div><h2>Reporter message</h2><p>The resolution update was reviewed and delivered after this issue was solved.</p></div><span class="tag green">Delivered</span></div><div class="spot-message-status"><span>Recipient<b>${spotIssue.reporter} · ${spotIssue.contact || "in-widget"}</b></span><span>Channels<b>Email + originating widget</b></span><span>Delivered<b>40m ago</b></span></div><div class="spot-message-preview spaced-card"><div class="spot-message-body"><b>We resolved your report: ${spotIssue.title}</b><p class="small spaced-button">Hi ${spotIssue.reporter}, thanks for helping us improve Playnist. We fixed the issue you reported. The journal modal now stays in place after you select an image.</p><div class="spot-message-links"><button class="btn" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">Read the update</button><button class="btn" data-detail="feed-pr" data-detail-key="${spotIssue.pr}">View release note</button></div></div></div><div class="chip-row"><button class="btn" data-spot-message-action="Resolution message copied">Copy message</button><button class="btn" data-spot-message-action="Resolution message resent">Resend message</button></div></article>`
-          : `<article class="detail-card"><div class="detail-card-head"><div><h2>Resolution messaging</h2><p>${spotIssue.reporter} can be notified at ${spotIssue.contact || "the originating widget"} when this issue is solved.</p></div><span class="tag">Ready</span></div><div class="check-list"><label><input type="checkbox" checked> Send the project resolution message when marking solved</label><label><input type="checkbox" checked> Include the NoxFeed post and release note when available</label></div><button class="btn spaced-button" data-spot-open-messaging>View message settings</button></article>`;
+          : `<article class="detail-card"><div class="detail-card-head"><div><h2>Resolution messaging</h2><p>${spotIssue.reporter} can be notified at ${spotIssue.contact || "the originating widget"} when this issue is solved.</p></div><span class="tag">Ready</span></div><div class="check-list"><label><input type="checkbox" checked> Send the project resolution message when marking solved</label><label><input type="checkbox" checked> Include the Activity post and release note when available</label></div><button class="btn spaced-button" data-spot-open-messaging>View message settings</button></article>`;
         return {
-          back: "Back to Issues", title: spotIssue.title, subtitle: `playnist #${key} · reported by ${spotIssue.reporter}`, meta: solved ? `<span class="tag green">Solved</span><span class="noxfeed-pill mono">PR #${spotIssue.pr}</span>` : '<span class="tag amber">Open</span>',
+          back: "Back to Issues", title: spotIssue.title, subtitle: `playnist #${key} · reported by ${spotIssue.reporter}`, meta: solved ? `<span class="tag green">Solved</span><span class="activity-pill mono">PR #${spotIssue.pr}</span>` : '<span class="tag amber">Open</span>',
           content: `<article class="detail-card"><div class="capture-preview"><span>Screenshot</span><b>Selected element</b></div><p>${spotIssue.description}</p><div class="issue-provenance"><span>Repository <b class="mono">playnist</b></span><span>Reported by <b>${spotIssue.reporter}</b></span><span>Contact <b>${spotIssue.contact || "Widget only"}</b></span>${solved ? `<span>Solved by <b>${spotIssue.solver}</b></span>` : ""}<a class="github-link" href="https://github.com/No-Box-Dev/playnist/issues/${key}" target="_blank" rel="noreferrer">View on GitHub ↗</a></div></article>${resolution}${reporterMessage}<article class="detail-card"><h2>Comments <span class="tag">${spotIssue.comments?.length || 0}</span></h2><div class="issue-comments">${comments || '<p class="small">No comments yet.</p>'}</div></article>`,
-          timeline: solved ? [["Resolution merged", "42m"], ["NoxFeed post and release note generated", "41m"], ["Reporter message reviewed", "41m"], ["Email and widget update delivered", "40m"], ["Report closed", "40m"], ["Report submitted", "Aug 31"]] : [[`Report submitted by ${spotIssue.reporter}`, "2h"], ["Reporter contact captured", "2h"], ["Screenshot and DOM selection captured", "2h"], ["GitHub issue created", "2h"]],
+          timeline: solved ? [["Resolution merged", "42m"], ["Activity post and release note generated", "41m"], ["Reporter message reviewed", "41m"], ["Email and widget update delivered", "40m"], ["Report closed", "40m"], ["Report submitted", "Aug 31"]] : [[`Report submitted by ${spotIssue.reporter}`, "2h"], ["Reporter contact captured", "2h"], ["Screenshot and DOM selection captured", "2h"], ["GitHub issue created", "2h"]],
         };
       }
       const detailRoot = document.querySelector("#prototype-detail");
@@ -5191,7 +5191,7 @@
 
       function renderSidebar(service, mode = document.body.dataset.mode || "workspace", activeTab = null) {
         const sidebar = document.querySelector("[data-scope-sidebar]");
-        const serviceName = service === "connect" ? "NoxConnect" : picker.options[picker.selectedIndex]?.text || "Nox";
+        const serviceName = service === "connect" ? "NoxHere" : picker.options[picker.selectedIndex]?.text || "Nox";
         const scopeName = service === "connect" ? "No-Box-Dev · Organization" : selectedProject().name;
         const button = (label, targetMode, tab, active) => `<button type="button" class="${active ? "active" : ""}" data-sidebar-service="${service}" data-sidebar-mode="${targetMode}" data-sidebar-tab="${tab || ""}">${label}</button>`;
         const projectNavigation = {
@@ -5254,7 +5254,7 @@
           projectPicker.value = lastSpecificProject;
         }
         projectPicker.title = service === "connect"
-          ? "NoxConnect is managed across the organization"
+          ? "NoxHere is managed across the organization"
           : service === "feed"
             ? "Choose a project or view all projects read-only"
             : "Choose the active project";
@@ -5293,14 +5293,14 @@
         const environmentControl = document.querySelector(".environment-control");
         const environmentSlot = page?.querySelector("[data-environment-slot]");
         if (environmentSlot) environmentSlot.append(environmentControl);
-        const headings = { ticket: "NoxTicket", feed: "NoxFeed", spot: "NoxSpot", cue: "NoxCue", key: "NoxKey" };
+        const headings = { ticket: "Planning", feed: "Activity", spot: "Feedback", cue: "Telemetry", key: "NoxKey" };
         const heading = page?.querySelector("[data-view-heading]");
         if (heading && mode === "workspace") heading.textContent = headings[service] || heading.textContent;
       }
 
       function updateDocumentTitle() {
         const service = document.body.dataset.service === "connect"
-          ? "NoxConnect"
+          ? "NoxHere"
           : picker.options[picker.selectedIndex]?.text || "Nox";
         const admin = document.body.dataset.mode === "admin" ? " Admin" : "";
         document.title = document.body.dataset.service === "connect"
@@ -5928,8 +5928,8 @@
         document.querySelectorAll("[data-nf-merged-post]").forEach((post) => {
           const copy = mergedContent[post.dataset.nfMergedPost]?.[mode];
           if (!copy) return;
-          post.querySelector(".noxfeed-post-copy").innerHTML = copy;
-          post.querySelector(".noxfeed-post-copy").classList.toggle("nf-release-note", mode === "notes");
+          post.querySelector(".activity-post-copy").innerHTML = copy;
+          post.querySelector(".activity-post-copy").classList.toggle("nf-release-note", mode === "notes");
           post.querySelector("[data-nf-merged-kind]").textContent = mode === "notes" ? "release-notes" : mode === "technical" ? "technical-summary" : "pr:merged";
           post.querySelector(".nf-post-link").textContent = `${mode === "notes" ? "View source" : "View merged"} pull request #${post.dataset.nfMergedPost} →`;
         });
@@ -5959,7 +5959,7 @@
       });
       search?.addEventListener("input", () => {
         const query = search.value.trim().toLowerCase();
-        document.querySelectorAll(".view.active .ticket, .view.active .issue, .view.active .noxfeed-post, .view.active .nox-web-bucket").forEach((item) => {
+        document.querySelectorAll(".view.active .ticket, .view.active .issue, .view.active .activity-post, .view.active .nox-web-bucket").forEach((item) => {
           item.hidden = Boolean(query) && !item.textContent.toLowerCase().includes(query);
         });
       });
@@ -5974,39 +5974,39 @@
           closeNtModal();
           return;
         }
-        const cueSubtab = event.target.closest("[data-cue-subtab]");
-        if (cueSubtab) {
-          const subnav = cueSubtab.closest("[data-cue-subtabs]");
-          const group = subnav.dataset.cueSubtabs;
-          const target = cueSubtab.dataset.cueSubtab;
-          subnav.querySelectorAll("[data-cue-subtab]").forEach((button) => button.classList.toggle("active", button === cueSubtab));
+        const telemetrySubtab = event.target.closest("[data-cue-subtab]");
+        if (telemetrySubtab) {
+          const subnav = telemetrySubtab.closest("[data-cue-subtabs]");
+          const group = subnav.dataset.telemetrySubtabs;
+          const target = telemetrySubtab.dataset.telemetrySubtab;
+          subnav.querySelectorAll("[data-cue-subtab]").forEach((button) => button.classList.toggle("active", button === telemetrySubtab));
           subnav.closest("[data-panel]").querySelectorAll(`[data-cue-subview^="${group}-"]`).forEach((panel) => {
-            panel.hidden = panel.dataset.cueSubview !== `${group}-${target}`;
+            panel.hidden = panel.dataset.telemetrySubview !== `${group}-${target}`;
           });
           return;
         }
-        const cueAction = event.target.closest("[data-cue-action]");
-        if (cueAction) {
-          showToast(`${cueAction.dataset.cueAction}.`);
+        const telemetryAction = event.target.closest("[data-cue-action]");
+        if (telemetryAction) {
+          showToast(`${telemetryAction.dataset.telemetryAction}.`);
           return;
         }
         if (event.target.closest("[data-cue-manage-stats]")) {
           view("cue", "admin", "definitions");
           return;
         }
-        const cueEnvironment = event.target.closest("[data-cue-environment]");
-        if (cueEnvironment) {
-          const connected = cueEnvironment.dataset.cueEnvironment !== "preview";
-          document.querySelectorAll("[data-cue-environment]").forEach((item) => item.classList.toggle("active", item === cueEnvironment));
+        const telemetryEnvironment = event.target.closest("[data-cue-environment]");
+        if (telemetryEnvironment) {
+          const connected = telemetryEnvironment.dataset.telemetryEnvironment !== "preview";
+          document.querySelectorAll("[data-cue-environment]").forEach((item) => item.classList.toggle("active", item === telemetryEnvironment));
           const detail = document.querySelector("[data-cue-environment-detail]");
           if (detail) {
-            detail.querySelector("[data-cue-environment-name]").textContent = cueEnvironment.dataset.name;
-            detail.querySelector("[data-cue-environment-summary]").textContent = connected ? "NoxCue is receiving Playnist health signals normally." : "Finish installation to start receiving Playnist health signals.";
+            detail.querySelector("[data-cue-environment-name]").textContent = telemetryEnvironment.dataset.name;
+            detail.querySelector("[data-cue-environment-summary]").textContent = connected ? "Telemetry is receiving Playnist health signals normally." : "Finish installation to start receiving Playnist health signals.";
             const status = detail.querySelector("[data-cue-environment-status]");
             status.textContent = connected ? "Connected" : "Setup incomplete";
             status.classList.toggle("green", connected);
-            detail.querySelector("[data-cue-environment-connection]").textContent = connected ? `Receiving signals · ${cueEnvironment.dataset.last}` : "Waiting for first signal";
-            detail.querySelector("[data-cue-environment-health]").textContent = connected ? `${cueEnvironment.dataset.health} · ${cueEnvironment.dataset.url}` : "Available after connection";
+            detail.querySelector("[data-cue-environment-connection]").textContent = connected ? `Receiving signals · ${telemetryEnvironment.dataset.last}` : "Waiting for first signal";
+            detail.querySelector("[data-cue-environment-health]").textContent = connected ? `${telemetryEnvironment.dataset.health} · ${telemetryEnvironment.dataset.url}` : "Available after connection";
             detail.querySelector("[data-cue-environment-collection]").textContent = connected ? "Enabled" : "Not started";
           }
           return;
@@ -6025,18 +6025,18 @@
           return;
         }
         if (event.target.closest("[data-cue-refresh]")) {
-          showToast("NoxCue signals refreshed.");
+          showToast("Telemetry signals refreshed.");
           return;
         }
         if (event.target.closest("[data-cue-add-source]")) {
           showToast("New environment setup started.");
           return;
         }
-        const cueMetric = event.target.closest("[data-cue-metric]");
-        if (cueMetric) {
+        const telemetryMetric = event.target.closest("[data-cue-metric]");
+        if (telemetryMetric) {
           const select = document.querySelector("[data-cue-chart-select]");
           if (select) {
-            select.value = cueMetric.dataset.cueMetric;
+            select.value = telemetryMetric.dataset.telemetryMetric;
             select.dispatchEvent(new Event("change", { bubbles: true }));
           }
           document.querySelector("[data-cue-chart-title]")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -6572,7 +6572,7 @@
         }
         const appDownload = event.target.closest("[data-download-app]");
         if (appDownload) {
-          showToast(`${appDownload.dataset.downloadProduct || "NoxFeed"} for ${appDownload.dataset.downloadApp} — download started.`);
+          showToast(`${appDownload.dataset.downloadProduct || "Activity"} for ${appDownload.dataset.downloadApp} — download started.`);
           return;
         }
         const currentToggle = event.target.closest("[data-nf-current='people']");

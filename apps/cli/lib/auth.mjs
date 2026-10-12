@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { platform } from "node:os";
 
-export const NATIVE_CLIENT = "noxconnect-cli";
+export const NATIVE_CLIENT = "noxhere-cli";
 export const DEFAULT_API_BASE = "https://app.noxhere.com";
 
 function endpoint(base, path) {
@@ -58,7 +58,7 @@ export async function revokeSession(refreshToken, { baseURL = DEFAULT_API_BASE, 
 export function normalizedSession(result, previous = {}) {
   if (typeof result?.access_token !== "string" || !result.access_token.startsWith("nox_at_")
       || typeof result?.refresh_token !== "string" || !result.refresh_token.startsWith("nox_rt_")) {
-    throw new Error("Authentication completed without valid NoxConnect session credentials.");
+    throw new Error("Authentication completed without valid NoxHere session credentials.");
   }
   const expiresIn = Number(result.expires_in) || 900;
   return {

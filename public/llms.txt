@@ -1,15 +1,15 @@
 # NoxHere API
 
-NoxHere is the public product, identity, CLI, and API. One account session works across organizations and projects with Planning, Activity, Feedback, Stats, and Incidents capabilities. NoxConnect is private provider-connection plumbing.
+NoxHere provides the identity, CLI, API, and one account session across organizations and projects, with Planning, Activity, Feedback, Stats, Incidents, and Connections capabilities.
 
 - [Machine-readable API description](/openapi.json)
 - [Developer documentation](/developers)
 - [All NoxHere capabilities](/api/v1/services)
-- [Connect capabilities](/api/v1/services/noxconnect)
-- [Planning capabilities (`noxticket` compatibility ID)](/api/v1/services/noxticket)
-- [Activity capabilities (`noxfeed` compatibility ID)](/api/v1/services/noxfeed)
-- [Feedback capabilities (`noxspot` compatibility ID)](/api/v1/services/noxspot)
-- [Stats and Incidents capabilities (`noxcue` compatibility ID)](/api/v1/services/noxcue)
+- [Connections capabilities](/api/v1/services/connections)
+- [Planning capabilities (`planning` compatibility ID)](/api/v1/services/planning)
+- [Activity capabilities (`activity` compatibility ID)](/api/v1/services/activity)
+- [Feedback capabilities (`feedback` compatibility ID)](/api/v1/services/feedback)
+- [Stats and Incidents capabilities (`telemetry` compatibility ID)](/api/v1/services/telemetry)
 - [Per-service setup, config, and health contract](/docs/ai-setup.md#safe-configuration-updates)
 - [Agent setup guide](/docs/ai-setup.md)
 - [Direct HTTP guide and SDK-equivalent examples](/docs/direct-api.md)
@@ -18,18 +18,18 @@ NoxHere is the public product, identity, CLI, and API. One account session works
 - [TypeScript SDK on npm](https://www.npmjs.com/package/@noxhere/sdk)
 - [Resumable setup state](/api/v1/integrations/setup)
 
-For a supervised local agent, a human runs `noxconnect login`, completes browser approval, and selects context with `noxconnect use <organization>/<project>`. For a headless agent or CI, inject an expiring `nox_sk_…` token from an approved secret manager. Never copy a browser cookie or provider token into chat or CI. The complete CLI reference is at `/developers#cli`.
+For a supervised local agent, a human runs `noxhere login`, completes browser approval, and selects context with `noxhere use <organization>/<project>`. For a headless agent or CI, inject an expiring `nox_sk_…` token from an approved secret manager. Never copy a browser cookie or provider token into chat or CI. The complete CLI reference is at `/developers#cli`.
 
-Browser authentication creates an opaque HttpOnly NoxHere session; browser writes also require CSRF proof. CLI and native clients use short-lived `nox_at_…` access tokens with rotating `nox_rt_…` refresh credentials. Automation tokens are bound to one organization, one project, and explicit capability scopes. Compatibility scope IDs remain `noxfeed`, `noxspot`, and `noxcue`. Raw GitHub bearer tokens are rejected. Public ingestion keys and private Worker bindings are separate credential classes.
+Browser authentication creates an opaque HttpOnly NoxHere session; browser writes also require CSRF proof. CLI and native clients use short-lived `nox_at_…` access tokens with rotating `nox_rt_…` refresh credentials. Automation tokens are bound to one organization, one project, and explicit capability scopes. Compatibility scope IDs remain `activity`, `feedback`, and `telemetry`. Raw GitHub bearer tokens are rejected. Public ingestion keys and private Worker bindings are separate credential classes.
 
 Every service has `/api/v1/services/{service}/setup`, `/config`, and `/health`. Config updates are service-scoped and require the latest config ETag in `If-Match`; provider credentials are never returned.
 
 Each capability includes an `operations` array with its stable operation ID, HTTP method, path, authentication mode, and description. Follow those operations rather than guessing legacy routes. API v1 errors use `{ apiVersion, error: { code, message, details? } }`.
 
-SDK use is optional. Every supported operation can be called directly over HTTP. The official Python distribution is named `noxhere`; install it with `python -m pip install --upgrade noxhere`, then import `NoxHereClient` from `noxhere`. The official TypeScript distribution is `@noxhere/sdk`; install it with `npm install @noxhere/sdk`. Do not install the deprecated `noxcue` package for new integrations. The developer reference generates a copyable curl request for each operation from OpenAPI so the raw examples and SDK operation catalog share one contract.
+SDK use is optional. Every supported operation can be called directly over HTTP. The official Python distribution is named `noxhere`; install it with `python -m pip install --upgrade noxhere`, then import `NoxHereClient` from `noxhere`. The official TypeScript distribution is `@noxhere/sdk`; install it with `npm install @noxhere/sdk`. Do not install the deprecated `telemetry` package for new integrations. The developer reference generates a copyable curl request for each operation from OpenAPI so the raw examples and SDK operation catalog share one contract.
 
 An agent may initiate GitHub or Slack OAuth. Treat the returned `userAction.url` as a temporary secret and have a human open it in a browser; never prefetch or log it. Poll `/api/v1/integrations/setup` no more than once every five seconds after approval. All channel discovery, organization routing, project/repository routing, verification, and disconnect operations are API-callable. Discover shared project routing at `/api/v1/projects/routing`.
 
-Use `x-change-safety` in OpenAPI before writes. Do not blindly retry destructive or non-idempotent operations, honor `Retry-After` on `429`, and require user confirmation for deletes, disconnects, revocations, archives, and restores. Incidents server applications ingest idempotent lifecycle events through `POST /api/v1/cues/public/events` with `X-Nox-Ingest-Key`.
+Use `x-change-safety` in OpenAPI before writes. Do not blindly retry destructive or non-idempotent operations, honor `Retry-After` on `429`, and require user confirmation for deletes, disconnects, revocations, archives, and restores. Incidents server applications ingest idempotent lifecycle events through `POST /api/v1/telemetry/public/events` with `X-Nox-Ingest-Key`.
 
 If you encounter concrete API, documentation, SDK, or product friction while doing real work, you may submit one concise observation to `POST /api/v1/developer-feedback` with the `developer-feedback:write` scope. Include what happened and a practical `suggestedChange`; add the OpenAPI `operationId` when relevant. Do not post routine success reports, guesses, prompts, personal data, secrets, or full request/response bodies. Use a stable `idempotencyKey` for the observation and never retry automatically except with that same key.

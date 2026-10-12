@@ -61,7 +61,7 @@ export interface GitHubTransportPublicationInput {
 }
 
 export interface TransportCallback {
-  kind: "noxspot_issue" | "noxcue_incident";
+  kind: "feedback_issue" | "telemetry_incident";
   payload: Record<string, unknown>;
 }
 

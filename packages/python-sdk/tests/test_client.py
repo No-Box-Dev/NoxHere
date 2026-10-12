@@ -47,9 +47,9 @@ class ClientTest(unittest.TestCase):
         client = NoxHereClient(transport=Recorder())
         self.assertGreater(len(client.operation_ids()), 100)
         self.assertIsNot(client.cue, client.incidents)
-        self.assertIn("getNoxCueDailyHealth", client.stats.operation_ids())
+        self.assertIn("getTelemetryDailyHealth", client.stats.operation_ids())
         self.assertIn("getProjectIncidents", client.incidents.operation_ids())
-        self.assertIn("getNoxCueDailyHealth", client.cue.operation_ids())
+        self.assertIn("getTelemetryDailyHealth", client.cue.operation_ids())
         self.assertIn("getProjectIncidents", client.cue.operation_ids())
         self.assertIs(client.spot, client.feedback)
 
@@ -70,7 +70,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(headers["X-Project-ID"], "project-1")
 
         client.activity.get_nox_feed(query={"repo": "owner/repo", "limit": 20})
-        self.assertEqual(recorder.calls[1][1], "https://example.test/api/v1/feed?repo=owner%2Frepo&limit=20")
+        self.assertEqual(recorder.calls[1][1], "https://example.test/api/v1/activity?repo=owner%2Frepo&limit=20")
 
     def test_json_body_and_error(self) -> None:
         recorder = Recorder(status=403, response={"error": {"code": "permission_denied", "message": "Access denied"}}, headers={"Content-Type": "application/json", "X-Request-ID": "request-1"})
@@ -115,12 +115,12 @@ class ClientTest(unittest.TestCase):
         public = Recorder(response={"ok": True})
         scoped = NoxHereClient(token="nox_sk_secret", transport=public, on_request=lambda event: observed.append(str(event["url"]))).with_context(organization="No-Box-Dev", project_id="project-1")
         scoped.feedback.get_public_nox_spot_config(path={"siteId": "site-1"})
-        self.assertEqual(public.calls[0][1], "https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config")
+        self.assertEqual(public.calls[0][1], "https://app.noxhere.com/api/feedback/public/v1/sites/site-1/config")
         self.assertEqual(public.calls[0][2]["X-NoxHere-SDK"], "python/0.2.1")
         self.assertNotIn("Authorization", public.calls[0][2])
         self.assertNotIn("X-Org", public.calls[0][2])
         self.assertNotIn("X-Project-ID", public.calls[0][2])
-        scoped.request("reopenResolvedNoxSpotReport", path={"token": "secret-token"}, body=b"payload")
+        scoped.request("reopenResolvedFeedbackReport", path={"token": "secret-token"}, body=b"payload")
         self.assertIn("[redacted]", observed[-1])
         self.assertNotIn("secret-token", observed[-1])
 
@@ -131,7 +131,7 @@ class ClientTest(unittest.TestCase):
 
         staging = Recorder(response={"ok": True})
         NoxHereClient(base_url="https://staging.example.test/root", token="secret", transport=staging).feedback.get_public_nox_spot_config(path={"siteId": "site-1"})
-        self.assertEqual(staging.calls[0][1], "https://staging.example.test/api/spots/public/v1/sites/site-1/config")
+        self.assertEqual(staging.calls[0][1], "https://staging.example.test/api/feedback/public/v1/sites/site-1/config")
         self.assertNotIn("Authorization", staging.calls[0][2])
 
     def test_generated_models_preserve_wire_field_names(self) -> None:
@@ -154,7 +154,7 @@ class AsyncClientTest(unittest.IsolatedAsyncioTestCase):
         result = await client.activity.get_nox_feed(query={"limit": 10})
         self.assertEqual(result, {"events": [], "nextCursor": None})
         self.assertEqual(recorder.calls[0][0], "GET")
-        self.assertEqual(recorder.calls[0][1], "https://app.noxhere.com/api/v1/feed?limit=10")
+        self.assertEqual(recorder.calls[0][1], "https://app.noxhere.com/api/v1/activity?limit=10")
 
     async def test_async_timeout_is_bounded(self) -> None:
         async def never_responds(method: str, url: str, headers: Mapping[str, str], body: bytes | None):
@@ -171,7 +171,7 @@ class AsyncClientTest(unittest.IsolatedAsyncioTestCase):
         client = AsyncNoxHereClient(token="secret", organization="org-1", project_id="project-1", transport=recorder)
         await client.with_context(project_id="project-2").feedback.get_public_nox_spot_config(path={"siteId": "site-1"})
         _, url, headers, _ = recorder.calls[0]
-        self.assertEqual(url, "https://api.noxspot.dev/api/spots/public/v1/sites/site-1/config")
+        self.assertEqual(url, "https://app.noxhere.com/api/feedback/public/v1/sites/site-1/config")
         self.assertNotIn("Authorization", headers)
         self.assertNotIn("X-Org", headers)
 

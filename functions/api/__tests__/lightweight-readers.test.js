@@ -59,7 +59,7 @@ describe("GET /api/bootstrap-status", () => {
 describe("GET /api/me", () => {
   const memberAccess = {
     accessLevel: "member",
-    allowedServices: ["noxticket", "noxfeed", "noxspot", "noxcue"],
+    allowedServices: ["planning", "activity", "feedback", "telemetry"],
   };
 
   it("returns login, org, and isAdmin from context", async () => {
@@ -80,9 +80,9 @@ describe("GET /api/me", () => {
   it("returns only the selected project's invited tools for a guest", async () => {
     const res = await meGet(makeCtx({ data: {
       userLogin: "guest@example.com", orgLogin: "acme", isAdmin: false, projectId: "project-1",
-      auth: { accessLevel: "guest", guestAccess: { organizationWide: false, projects: { "project-1": ["noxspot"] } } },
+      auth: { accessLevel: "guest", guestAccess: { organizationWide: false, projects: { "project-1": ["feedback"] } } },
     } }));
-    expect(await res.json()).toMatchObject({ accessLevel: "guest", allowedServices: ["noxspot"] });
+    expect(await res.json()).toMatchObject({ accessLevel: "guest", allowedServices: ["feedback"] });
   });
 });
 

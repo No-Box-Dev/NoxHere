@@ -1,4 +1,4 @@
-// NoxConnect reconciliation cron.
+// NoxHere reconciliation cron.
 //
 // Fires every 30 min. Walks every org with an active GitHub App
 // installation and reconciles D1 against GitHub. Webhooks handle the
@@ -17,22 +17,22 @@ import { getInstallationToken } from "../../../functions/lib/github-app.js";
 import { recordFailure } from "../../../functions/lib/op-failures.js";
 import { runNextStatsAudit } from "./stats-audit.js";
 import { runDatabaseRecoveryStep } from "./database-recovery.js";
-import { createNoxSpotGitHubIssue, finalizeNoxSpotGitHubIssue } from "../../../functions/lib/noxspot.js";
+import { createFeedbackGitHubIssue, finalizeFeedbackGitHubIssue } from "../../../functions/lib/feedback.js";
 import {
-  deliverNoxSpotResolutionEmail,
-  prepareNoxSpotResolutionEmail,
-  recoverNoxSpotResolutionPreparations,
-  recoverNoxSpotResolutionEmails,
-} from "../../../functions/lib/noxspot-resolution.js";
+  deliverFeedbackResolutionEmail,
+  prepareFeedbackResolutionEmail,
+  recoverFeedbackResolutionPreparations,
+  recoverFeedbackResolutionEmails,
+} from "../../../functions/lib/feedback-resolution.js";
 import { deliverSlackOutbox, markOutboxFailed, recoverOutboxDeliveries, requeueBlockedForOrg } from "../../../functions/lib/delivery-outbox.js";
 import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
-import { runNoxCueDigests } from "./noxcue-digests.js";
-import { runNoxSpotDailyDigests } from "./noxspot-digests.js";
-import { runNoxFeedDailySummaries } from "./noxfeed-daily-summaries.js";
-import { createOrUpdateNoxCueGitHubIssue, finalizeNoxCueGitHubIssue, recoverNoxCueGithubIncidents } from "../../../functions/lib/noxcue-github.js";
+import { runTelemetryDigests } from "./telemetry-digests.js";
+import { runFeedbackDailyDigests } from "./feedback-digests.js";
+import { runActivityDailySummaries } from "./activity-daily-summaries.js";
+import { createOrUpdateTelemetryGitHubIssue, finalizeTelemetryGitHubIssue, recoverTelemetryGithubIncidents } from "../../../functions/lib/telemetry-github.js";
 import { runOperationalAlerts } from "./operational-alerts.js";
 import { recordHeartbeatAttempt, recordHeartbeatFailure, recordHeartbeatSuccess } from "../../../functions/lib/service-heartbeats.js";
-import { isTenantConfigurationFailure, reportNoxCueRuntimeFailure } from "./noxcue-runtime.js";
+import { isTenantConfigurationFailure, reportTelemetryRuntimeFailure } from "./telemetry-runtime.js";
 import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands } from "../../../functions/lib/transport-outbox.ts";
 import { deliverSlackTransport } from "../../../functions/lib/transports/slack.ts";
 import { deliverGitHubTransport } from "../../../functions/lib/transports/github.ts";
@@ -75,7 +75,7 @@ export default {
           await handleTask(env, msg.body);
           msg.ack();
         } catch (err) {
-          console.error(`[noxconnect-cron] task ${msg.body?.type} failed (attempt ${msg.attempts}):`, err?.message ?? err);
+          console.error(`[noxhere-cron] task ${msg.body?.type} failed (attempt ${msg.attempts}):`, err?.message ?? err);
           if (msg.attempts >= MAX_DELIVERIES) {
             // Out of retries — record to the admin-visible op_failures table and
             // ack so it doesn't loop forever (the DLQ is the backstop in config).
@@ -88,9 +88,9 @@ export default {
             if (msg.body?.type === TASK.DELIVER_SLACK && msg.body?.outboxId) {
               await markOutboxFailed(env.DB, msg.body.outboxId, err);
             }
-            await reportNoxCueRuntimeFailure(env, err, {
+            await reportTelemetryRuntimeFailure(env, err, {
               operation: `queue.${msg.body?.type ?? "unknown"}`,
-              title: `NoxConnect background task exhausted its retries`,
+              title: `NoxHere background task exhausted its retries`,
               message: "A durable background task failed on every delivery attempt.",
             });
             msg.ack();
@@ -102,7 +102,7 @@ export default {
       await recordHeartbeatSuccess(env.DB, "queue.consumer", env.CF_VERSION_METADATA?.id);
     } catch (err) {
       await recordHeartbeatFailure(env.DB, "queue.consumer", err, env.CF_VERSION_METADATA?.id);
-      await reportNoxCueRuntimeFailure(env, err, { operation: "queue.consumer" });
+      await reportTelemetryRuntimeFailure(env, err, { operation: "queue.consumer" });
       throw err;
     }
   },
@@ -142,7 +142,7 @@ async function runScheduledTick(env, nowMs) {
     await runTick(env, nowMs, false);
   } catch (err) {
     await recordHeartbeatFailure(env.DB, "scheduled.cron", err, env.CF_VERSION_METADATA?.id);
-    await reportNoxCueRuntimeFailure(env, err, { operation: "scheduled.cron" });
+    await reportTelemetryRuntimeFailure(env, err, { operation: "scheduled.cron" });
     throw err;
   }
 }
@@ -153,15 +153,15 @@ async function runArchive(env, nowMs) {
     await archiveOldEvents(env, nowMs);
     await recordHeartbeatSuccess(env.DB, "scheduled.archive", env.CF_VERSION_METADATA?.id);
   } catch (err) {
-    console.error("[noxconnect-cron] event archival failed:", err?.message ?? err);
+    console.error("[noxhere-cron] event archival failed:", err?.message ?? err);
     await recordHeartbeatFailure(env.DB, "scheduled.archive", err, env.CF_VERSION_METADATA?.id);
-    await reportNoxCueRuntimeFailure(env, err, { operation: "scheduled.archive" });
+    await reportTelemetryRuntimeFailure(env, err, { operation: "scheduled.archive" });
   }
 }
 
 async function reportScheduledComponentFailure(env, operation, error) {
   await recordHeartbeatFailure(env.DB, "scheduled.cron", error, env.CF_VERSION_METADATA?.id);
-  await reportNoxCueRuntimeFailure(env, error, { operation });
+  await reportTelemetryRuntimeFailure(env, error, { operation });
 }
 
 // Dispatch a queued task to the same helpers the webhook used to call inline.
@@ -180,13 +180,13 @@ async function handleTask(env, body) {
       return syncRepo(env.DB, token, body.orgId, body.accountLogin, body.repo, true);
     }
     case TASK.SPOT_CREATE_GITHUB_ISSUE:
-      return createNoxSpotGitHubIssue(env, body);
+      return createFeedbackGitHubIssue(env, body);
     case TASK.SPOT_PREPARE_RESOLUTION_EMAIL:
-      return prepareNoxSpotResolutionEmail(env, body.reportId);
+      return prepareFeedbackResolutionEmail(env, body.reportId);
     case TASK.SPOT_SEND_RESOLUTION_EMAIL:
-      return deliverNoxSpotResolutionEmail(env, body.reportId);
-    case TASK.NOXCUE_GITHUB_ISSUE:
-      return createOrUpdateNoxCueGitHubIssue(env, body);
+      return deliverFeedbackResolutionEmail(env, body.reportId);
+    case TASK.TELEMETRY_GITHUB_ISSUE:
+      return createOrUpdateTelemetryGitHubIssue(env, body);
     case TASK.DELIVER_SLACK:
       return deliverSlackOutbox(env, body.outboxId);
     case TASK.DELIVER_TRANSPORT:
@@ -196,8 +196,8 @@ async function handleTask(env, body) {
       });
     case TASK.FINALIZE_TRANSPORT:
       return executeTransportCallback(env.DB, body.outboxId, {
-        noxspot_issue: (input) => finalizeNoxSpotGitHubIssue(env, input),
-        noxcue_incident: (input) => finalizeNoxCueGitHubIssue(env, input),
+        feedback_issue: (input) => finalizeFeedbackGitHubIssue(env, input),
+        telemetry_incident: (input) => finalizeTelemetryGitHubIssue(env, input),
       });
     case TASK.PROJECT_PLATFORM_EVENT:
       return projectPlatformEvent(env.DB, body.eventId);
@@ -209,18 +209,18 @@ async function handleTask(env, body) {
 async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
   const db = env.DB;
 
-  await recoverNoxSpotResolutionPreparations(env);
+  await recoverFeedbackResolutionPreparations(env);
   await recoverOutboxDeliveries(env);
   await recoverTransportCommands(env);
   await recoverTransportCallbacks(env);
   await recoverPlatformEventProjections(env);
   await recoverTransportDeliveryEvents(env);
-  await recoverNoxSpotResolutionEmails(env);
+  await recoverFeedbackResolutionEmails(env);
   try {
-    await recoverNoxCueGithubIncidents(env);
+    await recoverTelemetryGithubIncidents(env);
   } catch (err) {
-    console.error("[noxconnect-cron] NoxCue GitHub issue recovery failed:", err?.message ?? err);
-    await reportScheduledComponentFailure(env, "noxcue.github-recovery", err);
+    console.error("[noxhere-cron] Telemetry GitHub issue recovery failed:", err?.message ?? err);
+    await reportScheduledComponentFailure(env, "telemetry.github-recovery", err);
   }
   await runSlackHealthSweep(env);
   try {
@@ -242,14 +242,14 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
   try {
     await runNextStatsAudit(env);
   } catch (err) {
-    console.error("[noxconnect-cron] stats audit failed:", err?.message ?? err);
+    console.error("[noxhere-cron] stats audit failed:", err?.message ?? err);
     await reportScheduledComponentFailure(env, "stats.audit", err);
   }
 
   try {
     await runDatabaseRecoveryStep(env);
   } catch (err) {
-    console.error("[noxconnect-cron] database recovery step failed:", err?.message ?? err);
+    console.error("[noxhere-cron] database recovery step failed:", err?.message ?? err);
     await reportScheduledComponentFailure(env, "database.recovery", err);
   }
 
@@ -269,7 +269,7 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
       await reconcileOrg(env, db, org.id, org.github_login, org.installation_id);
     } catch (err) {
       console.error(
-        `[noxconnect-cron] org=${org.github_login} reconcile failed:`,
+        `[noxhere-cron] org=${org.github_login} reconcile failed:`,
         err?.message ?? err,
       );
       if (!isTenantConfigurationFailure(err)) {
@@ -281,14 +281,14 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
 
 async function runReportSchedules(env, nowMs) {
   for (const [operation, label, run] of [
-    ["noxcue.digest-sweep", "NoxCue digest", runNoxCueDigests],
-    ["noxspot.digest-sweep", "NoxSpot daily digest", runNoxSpotDailyDigests],
-    ["noxfeed.summary-sweep", "NoxFeed daily summary", runNoxFeedDailySummaries],
+    ["telemetry.digest-sweep", "Telemetry digest", runTelemetryDigests],
+    ["feedback.digest-sweep", "Feedback daily digest", runFeedbackDailyDigests],
+    ["activity.summary-sweep", "Activity daily summary", runActivityDailySummaries],
   ]) {
     try {
       await run(env, nowMs);
     } catch (err) {
-      console.error(`[noxconnect-cron] ${label} sweep failed:`, err?.message ?? err);
+      console.error(`[noxhere-cron] ${label} sweep failed:`, err?.message ?? err);
       await reportScheduledComponentFailure(env, operation, err);
     }
   }
@@ -338,6 +338,6 @@ async function healOrgInstallationLinks(db) {
     .run();
   const changed = res?.meta?.changes ?? 0;
   if (changed > 0) {
-    console.log(`[noxconnect-cron] healed ${changed} org→installation link(s)`);
+    console.log(`[noxhere-cron] healed ${changed} org→installation link(s)`);
   }
 }

@@ -1,7 +1,7 @@
 # Scheduler service
 
 - **Product area:** platform operations
-- **Runtime:** `noxconnect-orchestrator`
+- **Runtime:** `noxhere-orchestrator`
 - **Owns:** queue consumption, reconciliation, recovery, projection work,
   retention, and scheduled digests.
 - **Does not own:** capability presentation policy; it asks the owning service

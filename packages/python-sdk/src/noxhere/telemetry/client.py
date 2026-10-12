@@ -189,7 +189,7 @@ def _classify(feature: Feature, value: object) -> tuple[Outcome, Reason | None]:
 
 
 class FeatureAPI:
-    def __init__(self, client: NoxCueClient) -> None:
+    def __init__(self, client: TelemetryClient) -> None:
         self._client = client
 
     def result(
@@ -326,7 +326,7 @@ class AuthAPI:
 
 
 class UserAPI:
-    def __init__(self, client: NoxCueClient) -> None:
+    def __init__(self, client: TelemetryClient) -> None:
         self._client = client
 
     def registered(
@@ -355,7 +355,7 @@ class UserAPI:
 class EventsAPI:
     """Typed names for the built-in product metrics; call sites stay explicit."""
 
-    def __init__(self, client: NoxCueClient) -> None:
+    def __init__(self, client: TelemetryClient) -> None:
         self._client = client
 
     def report_generated(self, user_id: str, report_id: str | None = None, **options: Any) -> DeliveryResult:
@@ -376,7 +376,7 @@ class EventsAPI:
         return self._client.track("subscription.cancelled", user_id=user_id, **options)
 
 
-class NoxCueClient:
+class TelemetryClient:
     """Thread-safe server client matching the TypeScript server SDK's wire behavior."""
 
     def __init__(
@@ -423,7 +423,7 @@ class NoxCueClient:
             and _valid_endpoint(self.endpoint)
             )
         )
-        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="noxcue")
+        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="telemetry")
         self._pending: set[Future[DeliveryResult]] = set()
         self.feature = FeatureAPI(self)
         self.auth = AuthAPI(self.feature)
@@ -432,7 +432,7 @@ class NoxCueClient:
         if flush_at_exit:
             atexit.register(self.close)
 
-    def __enter__(self) -> NoxCueClient:
+    def __enter__(self) -> TelemetryClient:
         return self
 
     def __exit__(self, *_: object) -> None:
@@ -461,9 +461,9 @@ class NoxCueClient:
         except Exception:
             return self._identified_user_id
 
-    def for_user(self, user_id: str) -> NoxCueClient:
+    def for_user(self, user_id: str) -> TelemetryClient:
         """Create a concurrency-safe client view scoped to one opaque user id."""
-        return NoxCueClient(
+        return TelemetryClient(
             key=self.key,
             identity_hash_key=self.identity_hash_key,
             identity_key_id=self.identity_key_id,
@@ -842,15 +842,15 @@ class NoxCueClient:
         )
 
 
-def create_noxcue(**options: Any) -> NoxCueClient:
+def create_telemetry(**options: Any) -> TelemetryClient:
     """Create one process client, reading standard environment variables by default."""
     configured = dict(options)
-    configured.setdefault("key", os.environ.get("NOXHERE_INGEST_KEY") or os.environ.get("NOXCUE_INGEST_KEY") or "")
+    configured.setdefault("key", os.environ.get("NOXHERE_INGEST_KEY") or os.environ.get("TELEMETRY_INGEST_KEY") or "")
     configured.setdefault("identity_hash_key", os.environ.get("NOXHERE_IDENTITY_HASH_KEY"))
     configured.setdefault("identity_key_id", os.environ.get("NOXHERE_IDENTITY_KEY_ID"))
-    configured.setdefault("environment", os.environ.get("NOXHERE_ENVIRONMENT") or os.environ.get("NOXCUE_ENVIRONMENT"))
+    configured.setdefault("environment", os.environ.get("NOXHERE_ENVIRONMENT") or os.environ.get("TELEMETRY_ENVIRONMENT"))
     configured.setdefault("release", os.environ.get("NOXHERE_RELEASE") or os.environ.get("GITHUB_SHA"))
     configured.setdefault("endpoint", os.environ.get("NOXHERE_INGEST_ENDPOINT") or DEFAULT_ENDPOINT)
     configured.setdefault("enabled", (os.environ.get("NOXHERE_TELEMETRY_ENABLED", "true").lower() not in {"0", "false", "off"}))
     configured.setdefault("dry_run", (os.environ.get("NOXHERE_TELEMETRY_MODE", "").lower() in {"dry-run", "memory", "test"}))
-    return NoxCueClient(**configured)
+    return TelemetryClient(**configured)

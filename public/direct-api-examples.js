@@ -60,12 +60,12 @@ function authenticationHeaders(security) {
   if (!Array.isArray(security) || security.length === 0) return [];
   const choice = security.find((entry) => entry.noxApiToken)
     ?? security.find((entry) => entry.nativeSession)
-    ?? security.find((entry) => entry.noxCueKey)
+    ?? security.find((entry) => entry.telemetryKey)
     ?? security[0];
   const headers = [];
   if (choice.noxApiToken) headers.push("Authorization: Bearer $NOXHERE_API_TOKEN");
   else if (choice.nativeSession) headers.push("Authorization: Bearer $NOXHERE_ACCESS_TOKEN");
-  else if (choice.noxCueKey) headers.push("X-Nox-Ingest-Key: $NOXHERE_INGEST_KEY");
+  else if (choice.telemetryKey) headers.push("X-Nox-Ingest-Key: $NOXHERE_INGEST_KEY");
   else if (choice.browserSession) headers.push("Cookie: __Host-nox_session=$NOXHERE_SESSION");
   if (choice.organization && !choice.noxApiToken) headers.push("X-Org: $NOXHERE_ORG");
   if (choice.csrfProof) headers.push("X-CSRF-Token: $NOXHERE_CSRF_TOKEN");

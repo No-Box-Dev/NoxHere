@@ -4,7 +4,7 @@ export default class FakeConnectionCapability extends WorkerEntrypoint {
   execute(command: { commandId: string; idempotencyKey: string; capability: string }) {
     if (command.capability !== "ai.complete") throw new Error("Unexpected capability");
     return {
-      contract: "noxconnect.connection-receipt",
+      contract: "noxhere.connection-receipt",
       version: 1,
       commandId: command.commandId,
       idempotencyKey: command.idempotencyKey,

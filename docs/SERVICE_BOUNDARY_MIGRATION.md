@@ -3,19 +3,19 @@
 > **Historical implementation record.** This plan records the former
 > multi-product split and its repository/deployment names. Those repository
 > boundaries have since been retired: the current product is NoxHere, with
-> Feed, Ticket, Spot, Cue, and Connect as capability services in this
+> Feed, Ticket, Spot, Telemetry, and Connect as capability services in this
 > monorepo. See `SERVICE_BOUNDARIES.md` for current guidance.
 
 ## Objective
 
-Make NoxHere the single public platform/API, NoxConnect the only
-holder/executor of GitHub, Slack, and managed-AI credentials, and NoxTicket,
-NoxFeed, NoxSpot, and NoxCue the owners of their product rules, product data,
+Make NoxHere the single public platform/API, NoxHere the only
+holder/executor of GitHub, Slack, and managed-AI credentials, and Planning,
+Activity, Feedback, and Telemetry the owners of their product rules, product data,
 configuration validation, and provider-neutral output intents.
 
 The public API remains under `https://app.noxhere.com/api/v1` during the split
 and may later gain the equivalent `https://api.noxhere.com/v1` hostname without
-changing its contract. NoxConnect and product Workers are called through private
+changing its contract. NoxHere and product Workers are called through private
 Cloudflare service bindings; they are not exposed as additional authenticated
 public APIs.
 
@@ -24,11 +24,11 @@ public APIs.
 | Repository / deployable | Responsibility | Public exposure | Persistent state |
 |---|---|---|---|
 | `noxhere` | Web app, public API gateway, sessions, API tokens, tenant/project authorization, service enablement, OpenAPI | `app.noxhere.com` | NoxHere identity/control D1 only |
-| `noxconnect` | GitHub/Slack OAuth and webhooks, provider credentials, provider-neutral capability execution, routes, outbox and delivery | Only provider callback/webhook paths forwarded by NoxHere | NoxConnect connection/delivery D1 and queue/DLQ |
-| `noxticket` | Features, workflow, specifications and attachments | Private service binding | NoxTicket D1 and R2 |
-| `noxfeed` | Feed projections, narration, release notes and summaries | Private service binding | NoxFeed D1 and queue/DLQ |
-| `noxcue` | Sources, event ingestion, metrics, incidents and digests | NoxHere-forwarded ingest route plus private RPC | NoxCue D1, queue/DLQ and chart storage |
-| `noxspot` | Sites, capture, screenshots, reports and digests | NoxHere-forwarded capture routes plus private RPC | NoxSpot D1, queue/DLQ and screenshot R2 |
+| `noxhere` | GitHub/Slack OAuth and webhooks, provider credentials, provider-neutral capability execution, routes, outbox and delivery | Only provider callback/webhook paths forwarded by NoxHere | NoxHere connection/delivery D1 and queue/DLQ |
+| `planning` | Features, workflow, specifications and attachments | Private service binding | Planning D1 and R2 |
+| `activity` | Feed projections, narration, release notes and summaries | Private service binding | Activity D1 and queue/DLQ |
+| `telemetry` | Sources, event ingestion, metrics, incidents and digests | NoxHere-forwarded ingest route plus private RPC | Telemetry D1, queue/DLQ and chart storage |
+| `feedback` | Sites, capture, screenshots, reports and digests | NoxHere-forwarded capture routes plus private RPC | Feedback D1, queue/DLQ and screenshot R2 |
 
 Repository separation is an ownership boundary, not a reason to use public
 service-to-service HTTP. All internal calls use versioned service-binding RPC.
@@ -44,7 +44,7 @@ NoxHere owns:
 - the public API contract, OpenAPI, developer documentation, and gateway;
 - authentication and authorization before any internal RPC call.
 
-NoxConnect owns:
+NoxHere owns:
 
 - GitHub and Slack OAuth, token storage, refresh, and provider clients;
 - managed-AI credentials and provider invocation;
@@ -58,7 +58,7 @@ Each product service owns:
 - prompts, copy, labels, templates, deduplication keys, and workflow policy;
 - provider-neutral commands (for example a GitHub issue intent or Slack
   message), never provider credentials;
-- processing provider receipts returned by NoxConnect.
+- processing provider receipts returned by NoxHere.
 
 ## Health scorecard
 
@@ -81,19 +81,19 @@ dimension must include a written reason; it is not silently counted as green.
 ## Forward-port status — 2026-09-10
 
 The previously certified boundary work has been forward-ported to current main
-on `feat/clean-service-split`. This establishes the private NoxConnect
-capability executor, service-owned manifests, NoxTicket RPC adapters, standard
+on `feat/clean-service-split`. This establishes the private NoxHere
+capability executor, service-owned manifests, Planning RPC adapters, standard
 service errors, and provider-credential boundary checks without regressing the
 current public API.
 
 | Deployable | Repository boundary | Credential boundary | Storage boundary | Current state |
 |---|---|---|---|---|
 | NoxHere | Private `No-Box-Dev/NoxHere` repository and production Worker | Browser/native sessions, project tokens, tenant/project authorization, and service enablement execute in the gateway | Dedicated production and staging control D1s | Enforced in production; GitHub callback and sessions are NoxHere-owned |
-| NoxConnect | Private capability Worker implemented | GitHub OAuth/device approval returns identity claims plus opaque connection IDs; encrypted provider credentials stay here | Identity connection/device tables added alongside connection/outbox state | Signed NoxHere assertions and defense-in-depth project checks implemented; deployment pending |
-| NoxTicket | Private `No-Box-Dev/NoxTicket` repository created | No provider credentials or clients | Dedicated `noxticket` D1 and `noxticket-spec-attachments` R2 provisioned with owned migration | Storage PR ready; traffic not cut over |
-| NoxFeed | Service branch published | No provider credentials or clients in the product Worker | Demo storage only; feed projections still live in legacy NoxConnect D1 | Policy boundary ready; data/job extraction pending |
-| NoxCue | Current upstream forward-ported with private AI RPC | Direct managed-AI credential removed | Still bound to legacy NoxConnect D1/queue | Policy boundary ready; schema/queue extraction pending |
-| NoxSpot | Capture service branch published and NoxHere callback fixed | No provider credentials or clients in capture Worker | Still bound to legacy NoxConnect D1/queue; R2 is already product-specific | Runtime boundary ready; config/queue extraction pending |
+| NoxHere | Private capability Worker implemented | GitHub OAuth/device approval returns identity claims plus opaque connection IDs; encrypted provider credentials stay here | Identity connection/device tables added alongside connection/outbox state | Signed NoxHere assertions and defense-in-depth project checks implemented; deployment pending |
+| Planning | Owned by the unified NoxHere repository | No provider credentials or clients | Dedicated `noxhere-planning` D1 and `noxhere-planning-spec-attachments` R2 provisioned with owned migration | Unified runtime configuration ready for cutover |
+| Activity | Service branch published | No provider credentials or clients in the product Worker | Demo storage only; feed projections still live in legacy NoxHere D1 | Policy boundary ready; data/job extraction pending |
+| Telemetry | Current upstream forward-ported with private AI RPC | Direct managed-AI credential removed | Still bound to legacy NoxHere D1/queue | Policy boundary ready; schema/queue extraction pending |
+| Feedback | Capture service branch published and NoxHere callback fixed | No provider credentials or clients in capture Worker | Still bound to legacy NoxHere D1/queue; R2 is already product-specific | Runtime boundary ready; config/queue extraction pending |
 
 No production route is switched merely because a repository exists. Cutover is
 allowed only after owned schemas are populated, dual-read parity is measured,
@@ -101,11 +101,11 @@ and the product-specific queue/DLQ has processed a real staging request.
 
 ## Milestone 0 — Baseline and isolated worktrees
 
-1. Preserve the user's dirty NoxConnect, NoxCue, and NoxFeed checkouts.
-2. Use the existing clean `feat/api-standardization` NoxConnect worktree.
-3. Create clean worktrees from current remote heads for NoxCue, NoxFeed, and
-   NoxSpot.
-4. Confirm that no independent NoxTicket repository exists; create a local
+1. Preserve the user's dirty NoxHere, Telemetry, and Activity checkouts.
+2. Use the existing clean `feat/api-standardization` NoxHere worktree.
+3. Create clean worktrees from current remote heads for Telemetry, Activity, and
+   Feedback.
+4. Confirm that no independent Planning repository exists; create a local
    service repository during Milestone 3.
 5. Run and record each repository's current tests, typecheck, and build.
 
@@ -115,19 +115,19 @@ Gate: all pre-existing failures are recorded before migration code is changed.
 
 | Repository | Result |
 |---|---|
-| NoxConnect | Healthy: 172 test files / 1,328 tests, Functions typecheck, and production frontend build passed. |
-| NoxCue | Healthy after required `wrangler types`: 10 test files / 67 tests, typecheck, and dry-run Worker bundle passed. A fresh worktree cannot typecheck until generated bindings exist. |
-| NoxFeed service | Healthy: 2 test files / 13 tests and dry-run Worker bundle passed. |
-| NoxSpot API | Functional baseline healthy: 23 test files / 180 tests passed. Dependency audit is pre-existing red: 1 critical, 5 high, and 1 low vulnerability. |
-| NoxSpot widget | Healthy: 16 test files / 153 tests and loader/core/standalone/package builds passed. |
-| NoxTicket | No independent repository or Worker exists; creation is part of Milestone 3. |
+| NoxHere | Healthy: 172 test files / 1,328 tests, Functions typecheck, and production frontend build passed. |
+| Telemetry | Healthy after required `wrangler types`: 10 test files / 67 tests, typecheck, and dry-run Worker bundle passed. A fresh worktree cannot typecheck until generated bindings exist. |
+| Activity service | Healthy: 2 test files / 13 tests and dry-run Worker bundle passed. |
+| Feedback API | Functional baseline healthy: 23 test files / 180 tests passed. Dependency audit is pre-existing red: 1 critical, 5 high, and 1 low vulnerability. |
+| Feedback widget | Healthy: 16 test files / 153 tests and loader/core/standalone/package builds passed. |
+| Planning | No independent repository or Worker exists; creation is part of Milestone 3. |
 
 Isolation worktrees:
 
-- NoxConnect: `feat/api-standardization` at `ed7ebac`;
-- NoxCue: `feat/service-boundaries-noxcue` from `origin/main`;
-- NoxFeed: `feat/service-boundaries-noxfeed` from `origin/initial`;
-- NoxSpot: `feat/service-boundaries-noxspot` from `origin/main`.
+- NoxHere: `feat/api-standardization` at `ed7ebac`;
+- Telemetry: `feat/service-boundaries-telemetry` from `origin/main`;
+- Activity: `feat/service-boundaries-activity` from `origin/initial`;
+- Feedback: `feat/service-boundaries-feedback` from `origin/main`.
 
 ## Milestone 1 — Bounded connection capabilities
 
@@ -137,7 +137,7 @@ Isolation worktrees:
    - managed-AI structured completion.
 2. Require organization and project scope plus an idempotency key on every
    mutating command.
-3. Add NoxConnect executors that resolve credentials internally and return only
+3. Add NoxHere executors that resolve credentials internally and return only
    bounded receipts such as provider ID, URL, state, and timestamps.
 4. Reject token-, authorization-, cookie-, and secret-shaped fields at the
    service boundary.
@@ -158,17 +158,17 @@ executor tests, typecheck, and a local RPC smoke call all pass.
 | Async | Green: repeated identical commands return the stored receipt and do not repeat the provider call; Slack uses the existing durable outbox. |
 | Runtime | Green: Functions typecheck and production build passed. |
 | Regression | Green: 173 test files / 1,336 tests and OpenAPI normalization check passed. |
-| Service call | Deferred to Milestone 2 because Milestone 1 defines the NoxConnect executor boundary; product RPC producers are introduced next. |
+| Service call | Deferred to Milestone 2 because Milestone 1 defines the NoxHere executor boundary; product RPC producers are introduced next. |
 
 ## Milestone 2 — Service-owned discovery and configuration
 
 1. Add a versioned `describe()` RPC to each product service with its identity,
    focus, capabilities, required connections, operations, and config metadata.
 2. Add service-owned configuration parse/validate/project methods.
-3. Make NoxConnect aggregate manifests and expose the existing discovery API.
+3. Make NoxHere aggregate manifests and expose the existing discovery API.
 4. Retain a pinned manifest snapshot so disabled or temporarily unavailable
    services remain discoverable with an explicit state.
-5. Keep enablement and connection readiness in NoxConnect; combine those states
+5. Keep enablement and connection readiness in NoxHere; combine those states
    with the service-provided manifest.
 
 Gate: discovery/config API snapshots remain compatible, config revisions still
@@ -180,24 +180,24 @@ and unavailable-binding tests return a bounded degraded state.
 | Dimension | Result |
 |---|---|
 | Contract | Green: strict version-1 service-manifest and config-validation envelopes reject unknown fields, invalid capability references, and service identity mismatches. |
-| Ownership | Green: NoxCue, NoxFeed, and NoxSpot now publish their own manifests; NoxFeed owns validation and normalization of its writable config. NoxTicket follows in Milestone 3 because no Worker exists yet. |
-| Runtime state | Green: NoxConnect uses bound manifests when reachable and pinned snapshots only for discovery fallback. Snapshot-backed services are `unavailable`; setup and capabilities are blocked rather than falsely ready. |
-| Config safety | Green: service validation composes with NoxConnect's revision/`If-Match` compare-and-swap and safely falls back to the pinned validator during migration. |
-| Service call | Green for active extracted services: real local workerd service-binding RPC calls returned NoxCue (5 capabilities) and NoxFeed (4 capabilities) manifests. NoxSpot's retired Worker cannot boot independently because it still requires NoxCue; that dependency is resolved in Milestone 6. |
-| Runtime | Green: NoxConnect Functions typecheck, NoxCue typecheck/dry-run bundle, and NoxFeed dry-run bundle passed. NoxSpot's unit runtime passed; its deployable replacement is a Milestone 6 deliverable. |
-| Regression | Green: NoxConnect discovery/config/OpenAPI tests, NoxCue tests, NoxFeed tests, and NoxSpot tests passed. Full repository gates are recorded in the milestone commits. |
+| Ownership | Green: Telemetry, Activity, and Feedback now publish their own manifests; Activity owns validation and normalization of its writable config. Planning follows in Milestone 3 because no Worker exists yet. |
+| Runtime state | Green: NoxHere uses bound manifests when reachable and pinned snapshots only for discovery fallback. Snapshot-backed services are `unavailable`; setup and capabilities are blocked rather than falsely ready. |
+| Config safety | Green: service validation composes with NoxHere's revision/`If-Match` compare-and-swap and safely falls back to the pinned validator during migration. |
+| Service call | Green for active extracted services: real local workerd service-binding RPC calls returned Telemetry (5 capabilities) and Activity (4 capabilities) manifests. Feedback's retired Worker cannot boot independently because it still requires Telemetry; that dependency is resolved in Milestone 6. |
+| Runtime | Green: NoxHere Functions typecheck, Telemetry typecheck/dry-run bundle, and Activity dry-run bundle passed. Feedback's unit runtime passed; its deployable replacement is a Milestone 6 deliverable. |
+| Regression | Green: NoxHere discovery/config/OpenAPI tests, Telemetry tests, Activity tests, and Feedback tests passed. Full repository gates are recorded in the milestone commits. |
 
-## Milestone 3 — NoxTicket service extraction
+## Milestone 3 — Planning service extraction
 
-1. Create the local `noxticket-service` Worker repository with generated types,
+1. Create the local `planning-service` Worker repository with generated types,
    observability, tests, and a private RPC entrypoint.
 2. Move board stages, feature metadata, spec linking, spec lifecycle, attachment
-   policy, and Slack presentation into NoxTicket.
-3. Have NoxTicket prepare GitHub issue intents; have NoxConnect execute them and
-   return receipts; have NoxTicket commit the product projection.
-4. Convert `/api/features`, `/api/specs`, and NoxTicket config routes into thin
+   policy, and Slack presentation into Planning.
+3. Have Planning prepare GitHub issue intents; have NoxHere execute them and
+   return receipts; have Planning commit the product projection.
+4. Convert `/api/features`, `/api/specs`, and Planning config routes into thin
    authenticated/scoped adapters.
-5. Keep raw GitHub credentials and Slack routing entirely in NoxConnect.
+5. Keep raw GitHub credentials and Slack routing entirely in NoxHere.
 
 Gate: create/update/close feature, create/update/archive/restore spec, attachment
 authorization, workflow config, duplicate receipt, and Slack test flows succeed
@@ -207,26 +207,26 @@ through the local public façade and service binding.
 
 | Dimension | Result |
 |---|---|
-| Service | Green: a new `noxticket-service` Worker owns its manifest, workflow-config validation, feature intents/projections, spec lifecycle, attachment policy/storage, and Slack message presentation. |
-| Connection isolation | Green: the Worker declares only D1 and R2. GitHub mutations are provider-neutral issue intents; NoxConnect resolves the scoped project, executes with its GitHub App credential, and returns a bounded receipt. |
-| Public façade | Green with reversible fallback: existing feature/spec/attachment URLs delegate after NoxConnect authentication; old in-process handlers remain only as one-release rollback paths. |
+| Service | Green: a new `planning-service` Worker owns its manifest, workflow-config validation, feature intents/projections, spec lifecycle, attachment policy/storage, and Slack message presentation. |
+| Connection isolation | Green: the Worker declares only D1 and R2. GitHub mutations are provider-neutral issue intents; NoxHere resolves the scoped project, executes with its GitHub App credential, and returns a bounded receipt. |
+| Public façade | Green with reversible fallback: existing feature/spec/attachment URLs delegate after NoxHere authentication; old in-process handlers remain only as one-release rollback paths. |
 | Scope | Green: every Worker call requires organization/user scope; D1 queries include organization ownership, attachment R2 keys include organization/spec IDs, and a real cross-organization read returned 404. |
 | Data | Green: real local workerd RPC exercised spec create/read/update/archive/list, attachment put/get/delete in R2, feature intent preparation, receipt commit, and feature projection. |
 | Async/idempotency | Green at the connection boundary: feature commands use the Milestone 1 command ledger and accept `Idempotency-Key`; GitHub create also embeds a lookup marker. No remote GitHub mutation was made during this local-only milestone. |
 | Runtime | Green: generated Worker types, strict typecheck, tests, and dry-run bundle passed. |
-| Regression | Green: NoxConnect 173 files / 1,338 tests, Functions typecheck, production build, and OpenAPI check passed. |
+| Regression | Green: NoxHere 173 files / 1,338 tests, Functions typecheck, production build, and OpenAPI check passed. |
 
-## Milestone 4 — NoxCue service extraction
+## Milestone 4 — Telemetry service extraction
 
 1. Move source config, ingest-key lifecycle, custom metrics, feature catalog,
    project metric selection, digest calculation, dashboard projection, and
-   retention policy into NoxCue.
-2. Preserve NoxCue's existing incident keying and atomic occurrence deduplication.
-3. Move incident title/body/labels and incident state transitions into NoxCue.
-   NoxConnect executes the returned GitHub intent and returns a receipt.
-4. Remove `ANTHROPIC_API_KEY` from NoxCue. NoxCue prepares a bounded AI request;
-   NoxConnect executes it and returns structured output.
-5. Convert NoxCue public/admin routes and cron work into façade/RPC calls.
+   retention policy into Telemetry.
+2. Preserve Telemetry's existing incident keying and atomic occurrence deduplication.
+3. Move incident title/body/labels and incident state transitions into Telemetry.
+   NoxHere executes the returned GitHub intent and returns a receipt.
+4. Remove `ANTHROPIC_API_KEY` from Telemetry. Telemetry prepares a bounded AI request;
+   NoxHere executes it and returns structured output.
+5. Convert Telemetry public/admin routes and cron work into façade/RPC calls.
 
 Gate: event ingestion, idempotency, error-group deduplication, incident repeat,
 GitHub receipt processing, metrics, dashboard auth/projection, endpoint health,
@@ -236,18 +236,18 @@ digest, and no-secret checks all pass locally.
 
 | Dimension | Result |
 |---|---|
-| Product ownership | Green: NoxCue already owns event validation, incident keying, atomic occurrence deduplication, monitoring, charting, and digest rendering. Incident title/body/labels/repeat copy now also live in NoxCue. |
-| Credential isolation | Green: direct Anthropic code and configuration were removed. NoxCue sends a bounded, project-scoped completion command to the private NoxConnect capability Worker. |
-| Service call | Green: a real multi-Worker workerd test exercised NoxCue → NoxConnect-capability RPC and rendered the returned text. |
-| Provider execution | Green: GitHub lookup/write and managed-AI invocation remain in NoxConnect; NoxCue receives neither credential. |
+| Product ownership | Green: Telemetry already owns event validation, incident keying, atomic occurrence deduplication, monitoring, charting, and digest rendering. Incident title/body/labels/repeat copy now also live in Telemetry. |
+| Credential isolation | Green: direct Anthropic code and configuration were removed. Telemetry sends a bounded, project-scoped completion command to the private NoxHere capability Worker. |
+| Service call | Green: a real multi-Worker workerd test exercised Telemetry → NoxHere-capability RPC and rendered the returned text. |
+| Provider execution | Green: GitHub lookup/write and managed-AI invocation remain in NoxHere; Telemetry receives neither credential. |
 | Runtime/regression | Green: 12 test files / 69 tests, typecheck, dry-run bundle, incident orchestration tests, connector bundle, and credential scan passed. |
 
-## Milestone 5 — NoxFeed service extraction
+## Milestone 5 — Activity service extraction
 
 1. Move current-work/feed projection, narration gating/deduplication, release
-   metadata, fallback summaries, and daily-summary selection into NoxFeed.
-2. Keep all prompt and Slack presentation policy in NoxFeed.
-3. Route bounded AI requests and Slack message intents through NoxConnect.
+   metadata, fallback summaries, and daily-summary selection into Activity.
+2. Keep all prompt and Slack presentation policy in Activity.
+3. Route bounded AI requests and Slack message intents through NoxHere.
 4. Convert feed, narration triggers, daily cron, and Slack tests into façade/RPC
    orchestration.
 
@@ -258,20 +258,20 @@ daily summary, fallback, duplicate webhook, and separate Slack route flows pass.
 
 | Dimension | Result |
 |---|---|
-| Product policy | Green: NoxFeed owns actor/release prompts, mandatory output rules, Slack presentation, test messages, and config validation. |
-| Connection isolation | Green: the NoxFeed Worker has no GitHub, Slack, or managed-AI provider client or credential binding. NoxConnect owns completion, outbox, Slack routing, and retry. |
-| Service call | Green: real workerd RPC generated a NoxFeed prompt and Slack response and returned no credential-shaped data. |
-| Runtime/regression | Green: 3 test files / 15 tests and dry-run bundle passed; NoxConnect narrator/outbox regression remains part of the final gate. |
+| Product policy | Green: Activity owns actor/release prompts, mandatory output rules, Slack presentation, test messages, and config validation. |
+| Connection isolation | Green: the Activity Worker has no GitHub, Slack, or managed-AI provider client or credential binding. NoxHere owns completion, outbox, Slack routing, and retry. |
+| Service call | Green: real workerd RPC generated a Activity prompt and Slack response and returned no credential-shaped data. |
+| Runtime/regression | Green: 3 test files / 15 tests and dry-run bundle passed; NoxHere narrator/outbox regression remains part of the final gate. |
 
-## Milestone 6 — NoxSpot service extraction
+## Milestone 6 — Feedback service extraction
 
-1. Move the embedded `services/spot` runtime into the NoxSpot
+1. Move the embedded `services/feedback` runtime into the Feedback
    repository without changing its public capture URLs.
 2. Move site configuration, report validation, screenshot retention, telemetry,
    digest aggregation, resolution summaries, share projection, and product audit
-   policy into NoxSpot.
-3. Keep GitHub and Slack execution in NoxConnect using command/receipt contracts.
-4. Keep the private NoxSpot-to-NoxCue telemetry binding; it is an internal
+   policy into Feedback.
+3. Keep GitHub and Slack execution in NoxHere using command/receipt contracts.
+4. Keep the private Feedback-to-Telemetry telemetry binding; it is an internal
    service capability and carries only a source-scoped ingest credential.
 5. Remove the embedded Worker after parity tests prove the relocated service.
 
@@ -283,11 +283,11 @@ and project isolation flows pass.
 
 | Dimension | Result |
 |---|---|
-| Relocation | Green: the production `noxspot-api` capture Worker was split from NoxConnect with its Git subtree history and added under the NoxSpot repository's `capture/` package. |
-| Ownership | Green: health identifies NoxSpot as runtime owner and the Worker publishes the NoxSpot manifest through private RPC. |
+| Relocation | Green: the production `noxhere-feedback` capture Worker was split from NoxHere with its Git subtree history and added under the Feedback repository's `capture/` package. |
+| Ownership | Green: health identifies Feedback as runtime owner and the Worker publishes the Feedback manifest through private RPC. |
 | Isolation | Green for the production capture Worker: no provider client or credential binding. The old `api/` implementation remains explicitly retired and is not a deployment target; it is retained only for migration history. |
-| Runtime/service call | Green: 4 test files / 24 tests, dry-run bundle, and a real local manifest/health RPC passed with the private NoxCue dependency wired. |
-| Rollback | The embedded NoxConnect copy is intentionally retained until deployment parity; removal is a post-deployment rollback decision, not part of local certification. |
+| Runtime/service call | Green: 4 test files / 24 tests, dry-run bundle, and a real local manifest/health RPC passed with the private Telemetry dependency wired. |
+| Rollback | The embedded NoxHere copy is intentionally retained until deployment parity; removal is a post-deployment rollback decision, not part of local certification. |
 
 ## Milestone 7 — Public façade and documentation compatibility
 
@@ -318,7 +318,7 @@ tests pass.
 
 ## Milestone 8 — End-to-end certification
 
-1. Start the local product Workers and NoxConnect façade with persistent local
+1. Start the local product Workers and NoxHere façade with persistent local
    D1/R2/Queue state and service bindings.
 2. Seed two organizations and multiple projects to test tenant and project
    isolation.
@@ -337,51 +337,51 @@ local migration.
 
 | Dimension | Result |
 |---|---|
-| Full local stack | Green: NoxConnect, its private capability Worker, all four product Workers, RPC proxy, and cron started together. All 90 HTTP/RPC checks passed. |
+| Full local stack | Green: NoxHere, its private capability Worker, all four product Workers, RPC proxy, and cron started together. All 90 HTTP/RPC checks passed. |
 | Authentication | Green: browser sessions, native access/refresh rotation, sign-out revocation, CSRF rejection, automation-token creation/rotation/revocation, and secret non-disclosure passed. |
 | Authorization | Green: organization administration and project tokens remain distinct; cross-project reads, writes, configuration access, and token administration were denied. |
 | Service state | Updated in 2026-09: live manifests serve setup/health/config; every capability is available, while an unavailable runtime remains a distinct `503 service_unavailable`. |
-| Data and ingestion | Green: NoxTicket D1/R2 lifecycles, NoxCue ingestion/idempotency/metrics, NoxSpot report capture, and correctly signed versus invalid GitHub webhooks passed through real local calls. |
+| Data and ingestion | Green: Planning D1/R2 lifecycles, Telemetry ingestion/idempotency/metrics, Feedback report capture, and correctly signed versus invalid GitHub webhooks passed through real local calls. |
 | Configuration | Green: revision reads, mandatory `If-Match`, stale-write rejection, compare-and-swap update, restoration, and project discovery passed. |
-| Product boundaries | Green: all eight production product source/config roots passed the provider-client and credential-binding scan. Dependency-aware RPC probes passed for NoxTicket, NoxCue, NoxFeed, and NoxSpot. |
-| NoxConnect regression | Green: 173 test files / 1,338 tests, Functions typecheck, production frontend build, OpenAPI normalization, and the private capability Worker dry-run bundle passed. |
-| Product regression | Green: NoxCue 12 files / 69 tests; NoxFeed 3 / 15; NoxTicket 1 / 3; NoxSpot capture 4 / 24; NoxSpot legacy API 24 / 181; NoxSpot widget 16 / 153. Applicable typechecks and production/dry-run builds passed. |
+| Product boundaries | Green: all eight production product source/config roots passed the provider-client and credential-binding scan. Dependency-aware RPC probes passed for Planning, Telemetry, Activity, and Feedback. |
+| NoxHere regression | Green: 173 test files / 1,338 tests, Functions typecheck, production frontend build, OpenAPI normalization, and the private capability Worker dry-run bundle passed. |
+| Product regression | Green: Telemetry 12 files / 69 tests; Activity 3 / 15; Planning 1 / 3; Feedback capture 4 / 24; Feedback legacy API 24 / 181; Feedback widget 16 / 153. Applicable typechecks and production/dry-run builds passed. |
 | Remote providers | Intentionally not run: GitHub installation mutations, Slack delivery, and managed-AI completion require disposable sandbox credentials. Local tests used real boundaries and fake provider executors, never production credentials. |
 
 ### Deployment order and rollback
 
-1. Create the NoxTicket remote repository and provision product-owned D1/R2.
-2. Deploy the private NoxConnect capability Worker and configure only its
+1. Create the Planning remote repository and provision product-owned D1/R2.
+2. Deploy the private NoxHere capability Worker and configure only its
    GitHub, Slack, and managed-AI secrets.
-3. Deploy NoxTicket, NoxCue, NoxFeed, and the relocated NoxSpot capture Worker.
-4. Add their private service bindings to NoxConnect and run the same health
+3. Deploy Planning, Telemetry, Activity, and the relocated Feedback capture Worker.
+4. Add their private service bindings to NoxHere and run the same health
    probes against a disposable staging project.
-5. Deploy the NoxConnect public façade and cron consumers, then verify the
+5. Deploy the NoxHere public façade and cron consumers, then verify the
    public discovery, setup, health, and configuration contracts.
-6. After one healthy release, remove the in-process NoxTicket fallback and the
-   embedded NoxSpot capture copy. Until then, either adapter is a rollback point.
+6. After one healthy release, remove the in-process Planning fallback and the
+   embedded Feedback capture copy. Until then, either adapter is a rollback point.
 
 Product Workers need no GitHub, Slack, or managed-AI secrets. Existing provider
-secrets must be present only on NoxConnect/the private capability Worker; any
+secrets must be present only on NoxHere/the private capability Worker; any
 copies in active product Worker environments should be removed after staging
 parity succeeds.
 
 ### Known transitional items
 
-- NoxHere is the only public authenticated façade. NoxConnect accepts user and
+- NoxHere is the only public authenticated façade. NoxHere accepts user and
   automation authorization only as short-lived, signed NoxHere assertions over
   its private binding. Its callback and credential-lifecycle handlers have
   been removed.
 - NoxHere owns browser/native sessions, hashed API-token rows,
   organization/project authorization, and service enablement in its dedicated
   D1. There is no shadow-mode or legacy-auth fallback.
-- The retired NoxSpot `api/` tree still contains its historical provider code;
+- The retired Feedback `api/` tree still contains its historical provider code;
   it is not an active deployment target. The production `capture/` Worker is
   credential-free.
-- The NoxSpot legacy API dependency audit remains at its pre-existing baseline:
+- The Feedback legacy API dependency audit remains at its pre-existing baseline:
   1 critical, 5 high, and 1 low vulnerability. This is not introduced by the
   boundary migration, but should be resolved before reactivating that package.
-- NoxTicket now has the private `No-Box-Dev/NoxTicket` repository, a dedicated
+- Planning now has the private `No-Box-Dev/Planning` repository, a dedicated
   D1 database and attachment bucket, and an initial storage PR. Production
   traffic remains on the compatibility adapter pending staging parity.
 

@@ -22,7 +22,7 @@ describe('updateTrigger', () => {
     createTrigger(() => {}, { color: '#FE795D', text: 'Report issue' });
     updateTrigger({ text: 'Send feedback' });
     const btn = getTrigger();
-    expect(btn.querySelector('.noxspot-trigger-text').textContent).toBe('Send feedback');
+    expect(btn.querySelector('.feedback-trigger-text').textContent).toBe('Send feedback');
     expect(btn.getAttribute('aria-label')).toBe('Send feedback');
   });
 

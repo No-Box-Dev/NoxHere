@@ -18,10 +18,10 @@ const text = table
   .replaceAll("&amp;", "&")
   .replace(/\s+/g, " ");
 for (const { usage } of CLI_COMMANDS) {
-  if (!text.includes(`noxconnect ${usage}`)) fail(`Developer docs are missing exact CLI usage: noxconnect ${usage}`);
+  if (!text.includes(`noxhere ${usage}`)) fail(`Developer docs are missing exact CLI usage: noxhere ${usage}`);
 }
 
-console.log(`Developer docs cover all ${CLI_COMMANDS.length} NoxConnect CLI commands.`);
+console.log(`Developer docs cover all ${CLI_COMMANDS.length} NoxHere CLI commands.`);
 
 function fail(message) {
   console.error(message);

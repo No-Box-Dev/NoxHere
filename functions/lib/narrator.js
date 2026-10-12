@@ -8,13 +8,13 @@
 //   - narrateEvent carries the opened post and its three-part summary forward
 //     into the Merged feed. For legacy PRs without opened copy it generates a
 //     conversational fallback at merge time.
-//   - narrateReleaseNotes ALWAYS asks NoxFeed to generate its structured note.
+//   - narrateReleaseNotes ALWAYS asks Activity to generate its structured note.
 //     Reuse was attempted here too, but the chat-style opened voice looked
 //     like a Post inside the Release-notes feed (missing the "Change
 //     Summary / Breaking Changes / Affected Areas" structure). One extra
 //     LLM call per merge is worth the format guarantee.
 //
-// NoxConnect applies the organization's AI enable/disable setting; NoxFeed
+// NoxHere applies the organization's AI enable/disable setting; Activity
 // owns provider access, prompting, parsing, and output validation. Runs at
 // every trigger point: webhook, cron queue handler, reconcile loop —
 // see the trigger-point list in CLAUDE.md ("Narration" / "Live Activity events").
@@ -23,8 +23,8 @@ import { resolveAiMode } from "./llm-config";
 import { recordFailure } from "./op-failures";
 import { publishSlackTransport } from "./transport-outbox";
 import { isAppEnabledForOwner } from "./apps.js";
-import { generateNoxFeedContent, getNoxFeedSlackResponse } from "./noxfeed-response.js";
-import { resolveNoxFeedDestination } from "./noxfeed-routing.js";
+import { generateActivityContent, getActivitySlackResponse } from "./activity-response.js";
+import { resolveActivityDestination } from "./activity-routing.js";
 
 // Merge-time narration gate — narrateEvent + narrateReleaseNotes. Keep this
 // list aligned with the canonical event contract.
@@ -42,7 +42,7 @@ export async function narrateEvent(env, eventId) {
   if (!row) return;
   if (!NARRATABLE_TYPES.includes(row.type)) return;
   if (!row.actor_id || !row.project_id || !row.owner_id) return;
-  if (!(await isAppEnabledForOwner(env.DB, row.owner_id, "noxfeed", row.project_id))) return;
+  if (!(await isAppEnabledForOwner(env.DB, row.owner_id, "activity", row.project_id))) return;
 
   const project = await env.DB.prepare(
     "SELECT name, narrator_enabled FROM projects WHERE id = ? AND owner_id = ?"
@@ -102,7 +102,7 @@ export async function narrateEvent(env, eventId) {
   } else {
     const aiMode = await resolveAiMode(env, orgId, row.project_id);
     const generation = aiMode.status === "enabled"
-      ? await generateNoxFeedContent(env, "actor", input)
+      ? await generateActivityContent(env, "actor", input)
       : unavailableGeneration(aiMode);
     if (generation.status === "generated") {
       summary = generation.output.summary;
@@ -126,7 +126,7 @@ export async function narrateEvent(env, eventId) {
           ownerId: row.owner_id,
           op: "narrateEvent",
           deliveryId: `event-${row.id}`,
-          error: `NoxFeed generation unavailable (${generation.errorCode})`,
+          error: `Activity generation unavailable (${generation.errorCode})`,
         });
       }
     }
@@ -181,7 +181,7 @@ export async function narrateReleaseNotes(env, eventId) {
   if (!row) return;
   if (!NARRATABLE_TYPES.includes(row.type)) return;
   if (!row.actor_id || !row.project_id || !row.owner_id) return;
-  if (!(await isAppEnabledForOwner(env.DB, row.owner_id, "noxfeed", row.project_id))) return;
+  if (!(await isAppEnabledForOwner(env.DB, row.owner_id, "activity", row.project_id))) return;
 
   const project = await env.DB.prepare(
     "SELECT name, narrator_enabled FROM projects WHERE id = ? AND owner_id = ?"
@@ -209,7 +209,7 @@ export async function narrateReleaseNotes(env, eventId) {
   ).bind(row.owner_id, row.repo, prNumber).first();
   if (existing) return;
 
-  // Release notes ALWAYS ask NoxFeed for a structured generation — no
+  // Release notes ALWAYS ask Activity for a structured generation — no
   // reuse of the pr_narrative row. Reusing that row inside the
   // Release-notes feed produced chat-style entries that looked like Posts,
   // not release notes (see the header comment). The 1 extra LLM call per
@@ -242,7 +242,7 @@ export async function narrateReleaseNotes(env, eventId) {
       resolveReleaseNotesPrompt(env.DB, orgId, row.project_id),
     ]);
     const generation = aiMode.status === "enabled"
-      ? await generateNoxFeedContent(env, "release_notes", promptInput, systemOverride)
+      ? await generateActivityContent(env, "release_notes", promptInput, systemOverride)
       : unavailableGeneration(aiMode);
 
     if (generation.status === "generated") {
@@ -257,7 +257,7 @@ export async function narrateReleaseNotes(env, eventId) {
           ownerId: row.owner_id,
           op: "narrateReleaseNotes",
           deliveryId: `event-${row.id}`,
-          error: `NoxFeed generation unavailable (${generation.errorCode})`,
+          error: `Activity generation unavailable (${generation.errorCode})`,
         });
       }
     }
@@ -327,7 +327,7 @@ export async function narratePrOpened(env, eventId) {
   if (!row) return;
   if (!NARRATABLE_TYPES_OPENED.includes(row.type)) return;
   if (!row.actor_id || !row.project_id || !row.owner_id) return;
-  if (!(await isAppEnabledForOwner(env.DB, row.owner_id, "noxfeed", row.project_id))) return;
+  if (!(await isAppEnabledForOwner(env.DB, row.owner_id, "activity", row.project_id))) return;
 
   const project = await env.DB.prepare(
     "SELECT name, narrator_enabled FROM projects WHERE id = ? AND owner_id = ?"
@@ -376,7 +376,7 @@ export async function narratePrOpened(env, eventId) {
   const orgId = await resolveOrgId(env.DB, row.owner_id);
   const aiMode = await resolveAiMode(env, orgId, row.project_id);
   const generation = aiMode.status === "enabled"
-    ? await generateNoxFeedContent(env, "pr_opened", input)
+    ? await generateActivityContent(env, "pr_opened", input)
     : unavailableGeneration(aiMode);
 
   let summary;
@@ -400,7 +400,7 @@ export async function narratePrOpened(env, eventId) {
         ownerId: row.owner_id,
         op: "narratePrOpened",
         deliveryId: `event-${row.id}`,
-        error: `NoxFeed generation unavailable (${generation.errorCode})`,
+        error: `Activity generation unavailable (${generation.errorCode})`,
       });
     }
   }
@@ -527,7 +527,7 @@ function releaseEnvironment(explicit, baseRef) {
 async function maybePostToSlack(env, args) {
   const { kind, orgId, ownerId, triggerEventId, actor, project, summary, postSummary, postTechnicalSummary, rawEvent } = args;
   try {
-    const projectDestination = await resolveNoxFeedDestination(env.DB, orgId, rawEvent.repo, kind);
+    const projectDestination = await resolveActivityDestination(env.DB, orgId, rawEvent.repo, kind);
     // An explicitly empty project route is an intentional opt-out. A missing
     // organization default is different: stage it as blocked so saving a
     // channel later can recover the release instead of losing it forever.
@@ -542,7 +542,7 @@ async function maybePostToSlack(env, args) {
     let response;
     if (kind === "release_notes") {
       const avatarUrl = await fetchActorAvatar(env.DB, actor.id, ownerId);
-      response = await getNoxFeedSlackResponse(env, "release_notes", {
+      response = await getActivitySlackResponse(env, "release_notes", {
         projectName: projectDestination?.projectName ?? project?.name ?? rawEvent.repo,
         summary,
         post: {
@@ -557,7 +557,7 @@ async function maybePostToSlack(env, args) {
       });
     } else {
       const avatarUrl = await fetchActorAvatar(env.DB, actor.id, ownerId);
-      response = await getNoxFeedSlackResponse(env, "posts", {
+      response = await getActivitySlackResponse(env, "posts", {
         actorName: actor.name,
         avatarUrl,
         projectName: projectDestination?.projectName ?? project?.name ?? rawEvent.repo,
@@ -570,7 +570,7 @@ async function maybePostToSlack(env, args) {
       orgId,
       projectId: rawEvent.project_id,
       route: kind === "release_notes" ? "activity_release" : "activity",
-      idempotencyKey: `noxfeed:${triggerEventId}:${kind}`,
+      idempotencyKey: `activity:${triggerEventId}:${kind}`,
       message: response.message,
     });
   } catch (err) {
@@ -597,7 +597,7 @@ async function fetchActorAvatar(db, actorId, ownerId) {
 }
 
 // Per-org override of the release-notes system prompt, stored in
-// config.settings.releaseNotesPrompt. A null response tells the NoxFeed
+// config.settings.releaseNotesPrompt. A null response tells the Activity
 // response service to use its product-owned default prompt.
 async function resolveReleaseNotesPrompt(db, orgId, projectId) {
   if (!db || !orgId || !projectId) return null;

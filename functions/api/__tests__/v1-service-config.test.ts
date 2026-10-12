@@ -38,10 +38,10 @@ interface ContextOptions {
   projectFound?: boolean;
   projectId?: string | null;
   orgRaw?: string | null;
-  noxFeedService?: { validateConfigPatch(current: unknown, patch: unknown): Promise<unknown> };
+  activityService?: { validateConfigPatch(current: unknown, patch: unknown): Promise<unknown> };
 }
 
-function context({ service = "noxticket", raw = null, method = "GET", body, etag, isAdmin = true, changes = 1, projectFound = true, projectId = "project-1", orgRaw, noxFeedService }: ContextOptions = {}) {
+function context({ service = "planning", raw = null, method = "GET", body, etag, isAdmin = true, changes = 1, projectFound = true, projectId = "project-1", orgRaw, activityService }: ContextOptions = {}) {
   const db = makeDb(raw, changes, projectFound, orgRaw);
   const headers = new Headers();
   if (body !== undefined) headers.set("Content-Type", "application/json");
@@ -49,7 +49,7 @@ function context({ service = "noxticket", raw = null, method = "GET", body, etag
   return {
     db,
     ctx: {
-      env: { DB: db, ...(noxFeedService ? { NOXFEED_RESPONSE: noxFeedService } : {}) },
+      env: { DB: db, ...(activityService ? { ACTIVITY_RESPONSE: activityService } : {}) },
       data: { orgId: 7, orgLogin: "acme", userLogin: "alice", isAdmin, projectId },
       params: { service },
       request: new Request(`https://app.noxhere.com/api/v1/services/${service}/config`, {
@@ -63,7 +63,7 @@ function context({ service = "noxticket", raw = null, method = "GET", body, etag
 
 describe("service-scoped configuration API", () => {
   it("reads and writes organization defaults when no project is selected", async () => {
-    const raw = JSON.stringify({ noxTicketRepo: "old" });
+    const raw = JSON.stringify({ planningRepo: "old" });
     const initial = context({ raw, projectId: null });
     const getResponse = await onRequestGet(initial.ctx as never);
     const getBody = await getResponse.json() as any;
@@ -91,11 +91,11 @@ describe("service-scoped configuration API", () => {
     expect(body).toMatchObject({
       apiVersion: 1,
       organization: { login: "acme" },
-      service: "noxticket",
+      service: "planning",
       schemaVersion: 1,
       configuration: { mode: "service", writable: true, writableFields: ["featureRepository", "workflow.stages"] },
-      config: { featureRepository: "noxconnect", workflow: { stages: expect.any(Array) } },
-      links: { setup: "/api/v1/services/noxticket/setup" },
+      config: { featureRepository: "noxhere", workflow: { stages: expect.any(Array) } },
+      links: { setup: "/api/v1/services/planning/setup" },
     });
   });
 
@@ -122,11 +122,11 @@ describe("service-scoped configuration API", () => {
     // whenever it compresses the JSON, and the browser echoes that back
     // verbatim.
     const raw = JSON.stringify({ newRepoDefault: "include" });
-    const initial = context({ service: "noxconnect", raw });
+    const initial = context({ service: "noxhere", raw });
     const etag = (await onRequestGet(initial.ctx as never)).headers.get("ETag")!;
 
     const update = context({
-      service: "noxconnect",
+      service: "noxhere",
       raw,
       method: "PATCH",
       body: { newRepositoryPolicy: "exclude" },
@@ -138,7 +138,7 @@ describe("service-scoped configuration API", () => {
   });
 
   it("patches only fields owned by the selected service using compare-and-swap", async () => {
-    const raw = JSON.stringify({ noxTicketRepo: "old", releaseNotesPrompt: "keep me", custom: { retained: true } });
+    const raw = JSON.stringify({ planningRepo: "old", releaseNotesPrompt: "keep me", custom: { retained: true } });
     const initial = context({ raw });
     const getResponse = await onRequestGet(initial.ctx as never);
     const etag = getResponse.headers.get("ETag")!;
@@ -149,12 +149,12 @@ describe("service-scoped configuration API", () => {
     expect(response.status).toBe(200);
     expect(body.config.featureRepository).toBe("product");
     const written = JSON.parse(String(update.db.calls.runs[0].binds[0]));
-    expect(written).toMatchObject({ noxTicketRepo: "product", releaseNotesPrompt: "keep me", custom: { retained: true } });
+    expect(written).toMatchObject({ planningRepo: "product", releaseNotesPrompt: "keep me", custom: { retained: true } });
     expect(update.db.calls.runs[0].sql).toContain("AND data = ?");
   });
 
   it("maps a compare-and-swap race after validation to the standard 412 response", async () => {
-    const raw = JSON.stringify({ noxTicketRepo: "old" });
+    const raw = JSON.stringify({ planningRepo: "old" });
     const initial = context({ raw });
     const etag = (await onRequestGet(initial.ctx as never)).headers.get("ETag")!;
     const raced = context({ raw, method: "PATCH", body: { featureRepository: "product" }, etag, changes: 0 });
@@ -171,13 +171,13 @@ describe("service-scoped configuration API", () => {
 
   it("inherits organization settings when the project has no settings row of its own", async () => {
     const orgRaw = JSON.stringify({ newRepoDefault: "exclude" });
-    const initial = context({ service: "noxconnect", raw: null, orgRaw });
+    const initial = context({ service: "noxhere", raw: null, orgRaw });
     const getResponse = await onRequestGet(initial.ctx as never);
     const getBody = await getResponse.json() as any;
     expect(getBody.config.newRepositoryPolicy).toBe("exclude");
 
     const update = context({
-      service: "noxconnect",
+      service: "noxhere",
       raw: null,
       orgRaw,
       method: "PATCH",
@@ -197,16 +197,16 @@ describe("service-scoped configuration API", () => {
   it("ignores organization settings once the project owns a settings row", async () => {
     const orgRaw = JSON.stringify({ newRepoDefault: "exclude" });
     const raw = JSON.stringify({ newRepoDefault: "include" });
-    const initial = context({ service: "noxconnect", raw, orgRaw });
+    const initial = context({ service: "noxhere", raw, orgRaw });
     const getBody = await (await onRequestGet(initial.ctx as never)).json() as any;
     expect(getBody.config.newRepositoryPolicy).toBe("include");
   });
 
-  it("rejects the removed nested NoxFeed project selector", async () => {
-    const initial = context({ service: "noxfeed" });
+  it("rejects the removed nested Activity project selector", async () => {
+    const initial = context({ service: "activity" });
     const etag = (await onRequestGet(initial.ctx as never)).headers.get("ETag")!;
     const invalid = context({
-      service: "noxfeed",
+      service: "activity",
       method: "PATCH",
       body: { projectScope: "all" },
       etag,
@@ -221,10 +221,10 @@ describe("service-scoped configuration API", () => {
   });
 
   it("directs resource-owned service config to its resource API", async () => {
-    const initial = context({ service: "noxspot" });
+    const initial = context({ service: "feedback" });
     const getResponse = await onRequestGet(initial.ctx as never);
     const etag = getResponse.headers.get("ETag")!;
-    const update = context({ service: "noxspot", method: "PATCH", body: {}, etag });
+    const update = context({ service: "feedback", method: "PATCH", body: {}, etag });
     const response = await onRequestPatch(update.ctx as never);
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({
@@ -234,7 +234,7 @@ describe("service-scoped configuration API", () => {
     expect(update.db.calls.runs).toHaveLength(0);
   });
 
-  it("delegates NoxFeed config validation to the service binding", async () => {
+  it("delegates Activity config validation to the service binding", async () => {
     const validator = {
       validateConfigPatch: async (current: unknown, patch: unknown) => ({
         contract: "nox.service-config-validation",
@@ -244,14 +244,14 @@ describe("service-scoped configuration API", () => {
         config: { ...(current as object), ...(patch as object), releaseNotesPrompt: "normalized by service" },
       }),
     };
-    const initial = context({ service: "noxfeed" });
+    const initial = context({ service: "activity" });
     const etag = (await onRequestGet(initial.ctx as never)).headers.get("ETag")!;
     const update = context({
-      service: "noxfeed",
+      service: "activity",
       method: "PATCH",
       body: { releaseNotesPrompt: "raw" },
       etag,
-      noxFeedService: validator,
+      activityService: validator,
     });
     const response = await onRequestPatch(update.ctx as never);
     expect(response.status).toBe(200);

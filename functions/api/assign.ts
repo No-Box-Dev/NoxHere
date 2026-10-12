@@ -62,7 +62,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
-        "User-Agent": "NoxConnect",
+        "User-Agent": "NoxHere",
         Accept: "application/vnd.github+json",
         "Content-Type": "application/json",
       },

@@ -3,7 +3,7 @@
 CONTRACT_VERSION = 1
 SDK_VERSION = '0.2.1'
 __version__ = '0.2.1'
-DEFAULT_ENDPOINT = 'https://app.noxhere.com/api/v1/cues/public/events'
+DEFAULT_ENDPOINT = 'https://app.noxhere.com/api/v1/telemetry/public/events'
 AUTH_FEATURES = ('auth.signup', 'auth.login', 'auth.password_reset', 'auth.email_verification', 'auth.oauth', 'auth.mfa', 'auth.session_refresh', 'auth.logout')
 ENVIRONMENTS = ('production', 'staging', 'development', 'preview', 'test', 'local')
 OUTCOMES = ('success', 'rejected', 'failure')

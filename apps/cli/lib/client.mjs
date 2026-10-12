@@ -21,21 +21,21 @@ export function resolveProject(projects, reference) {
 const CAPABILITIES = new Set(["activity", "incidents", "issues", "feedback"]);
 
 export function projectCapabilityPath(session, capability) {
-  if (!CAPABILITIES.has(capability)) throw new Error(`Unknown NoxConnect capability '${capability}'.`);
+  if (!CAPABILITIES.has(capability)) throw new Error(`Unknown NoxHere capability '${capability}'.`);
   const project = session.context?.project;
-  if (!project) throw new Error("Choose a project with `noxconnect use <organization>/<project>`.");
+  if (!project) throw new Error("Choose a project with `noxhere use <organization>/<project>`.");
   return `/api/v1/projects/${encodeURIComponent(project)}/${capability}`;
 }
 
 export async function ensureAccess(session, save, options = {}) {
   const expiresAt = Date.parse(session.accessExpiresAt || "");
   if (session.accessToken && Number.isFinite(expiresAt) && expiresAt > Date.now() + 30_000) return session;
-  if (!session.refreshToken) throw new Error("Your NoxConnect session expired. Run `noxconnect login` again.");
+  if (!session.refreshToken) throw new Error("Your NoxHere session expired. Run `noxhere login` again.");
   const refresh = async () => {
     const latest = await options.load?.() || session;
     const latestExpiry = Date.parse(latest.accessExpiresAt || "");
     if (latest.accessToken && Number.isFinite(latestExpiry) && latestExpiry > Date.now() + 30_000) return latest;
-    if (!latest.refreshToken) throw new Error("Your NoxConnect session expired. Run `noxconnect login` again.");
+    if (!latest.refreshToken) throw new Error("Your NoxHere session expired. Run `noxhere login` again.");
     const result = await refreshSession(latest.refreshToken, {
       baseURL: latest.apiBase || DEFAULT_API_BASE,
       fetchImpl: options.fetchImpl,
@@ -57,7 +57,7 @@ export async function apiRequest(session, path, {
 } = {}) {
   const active = await ensureAccess(session, save, { fetchImpl, load, withRefreshLock });
   const org = active.context?.organization;
-  if (!org) throw new Error("Choose an organization with `noxconnect use <organization>`.");
+  if (!org) throw new Error("Choose an organization with `noxhere use <organization>`.");
   const url = new URL(path, active.apiBase || DEFAULT_API_BASE);
   const headers = new Headers({
     Accept: "application/json",
@@ -84,7 +84,7 @@ export async function apiRequest(session, path, {
 
 export function selectContext(session, selection) {
   const [organization, ...projectParts] = selection.split("/").filter(Boolean);
-  if (!organization) throw new Error("Use `noxconnect use <organization>` or `noxconnect use <organization>/<project>`.");
+  if (!organization) throw new Error("Use `noxhere use <organization>` or `noxhere use <organization>/<project>`.");
   const known = organizationLogins(session);
   const canonical = known.find((value) => value.toLowerCase() === organization.toLowerCase());
   if (!canonical) throw new Error(`Organization '${organization}' is not available to this login.`);

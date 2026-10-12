@@ -1,0 +1,26 @@
+name = "noxhere-activity"
+main = "src/index.js"
+compatibility_date = "2026-09-09"
+
+[observability]
+enabled = true
+
+# Required production secret: `wrangler secret put ANTHROPIC_API_KEY`.
+# Activity owns its generation provider; callers only receive validated output.
+
+[[d1_databases]]
+binding = "DEMO_DB"
+database_name = "noxhere-activity-demo"
+database_id = "86e5f900-5f92-469d-bd10-2b05e9e7a9a7"
+migrations_dir = "migrations"
+
+[env.staging]
+name = "noxhere-activity-staging"
+
+[[env.staging.d1_databases]]
+binding = "DEMO_DB"
+database_name = "noxhere-activity-demo-staging"
+# Resolved to the dedicated database by scripts/prepare-staging-activity-database.mjs
+# before any remote staging migration or deploy.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

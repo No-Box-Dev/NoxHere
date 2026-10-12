@@ -3,9 +3,9 @@ import { getCtx, jsonResponse, errorResponse } from "../../lib/db";
 import { validate } from "../../lib/validate";
 import { sanitizeSpecLinks } from "../../lib/spec-links";
 import { specRowToDto, type SpecRow } from "../../lib/spec-dto";
-import { callNoxTicket, type NoxTicketEnvironment } from "../../lib/noxticket-service";
+import { callPlanning, type PlanningEnvironment } from "../../lib/planning-service";
 
-interface Env extends NoxTicketEnvironment {
+interface Env extends PlanningEnvironment {
   DB: D1Database;
 }
 
@@ -62,7 +62,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     binds.push(n);
   }
 
-  const delegated = projectId ? await callNoxTicket(context.env, (service) => service.listSpecs(
+  const delegated = projectId ? await callPlanning(context.env, (service) => service.listSpecs(
     { orgId, projectId, userLogin: context.data.userLogin },
     {
       includeArchived,
@@ -100,7 +100,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   } catch {
     return errorResponse("Invalid JSON body", 400);
   }
-  const delegated = projectId ? await callNoxTicket(context.env, (service) => service.createSpec(
+  const delegated = projectId ? await callPlanning(context.env, (service) => service.createSpec(
     { orgId, projectId, userLogin },
     rawBody,
   )) : null;

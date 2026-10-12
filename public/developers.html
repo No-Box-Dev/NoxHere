@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NoxHere API — Developer documentation</title>
-  <meta name="description" content="Build on NoxHere through one public API backed by NoxConnect and focused product services.">
+  <meta name="description" content="Build on NoxHere through one public API backed by NoxHere and focused product services.">
   <meta name="theme-color" content="#FAFAF8">
   <link rel="canonical" href="https://app.noxhere.com/developers">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -35,12 +35,12 @@
         <a href="#overview">Overview</a>
         <a href="#quickstart">Quickstart</a>
         <a href="#authentication">Authentication</a>
-        <a href="#noxspot-identity">NoxSpot identity</a>
+        <a href="#feedback-identity">Feedback identity</a>
       </div>
       <div class="nav-group">
         <p class="nav-label">Platform</p>
         <a href="#services">Services</a>
-        <a href="#noxcue-sdk">Telemetry SDK</a>
+        <a href="#telemetry-sdk">Telemetry SDK</a>
         <a href="/docs/data-governance.md">Data governance</a>
         <a href="#control-plane">Control plane</a>
         <a href="#configuration">Configuration</a>
@@ -58,7 +58,7 @@
       <section class="hero" aria-labelledby="page-title">
         <div class="eyebrow">API version 1 · Capability contract</div>
         <h1 id="page-title">One API. Clear <span class="gradient-word">capabilities.</span></h1>
-        <p class="lede">NoxHere is one product with Planning, Activity, Feedback, Stats, and Incidents capabilities. NoxConnect is its private provider-connection layer. The API authenticates and scopes every request without exposing provider credentials.</p>
+        <p class="lede">NoxHere is one product with Planning, Activity, Feedback, Stats, and Incidents capabilities. NoxHere is its private provider-connection layer. The API authenticates and scopes every request without exposing provider credentials.</p>
         <div class="hero-actions">
           <a class="button accent" href="#quickstart">Make your first request →</a>
           <a class="button" href="/openapi.json">Download OpenAPI</a>
@@ -78,7 +78,7 @@
         <div class="principle">
           <div class="principle-mark" aria-hidden="true">↳</div>
           <div>
-            <h3>Credentials stay behind NoxConnect</h3>
+            <h3>Credentials stay behind NoxHere</h3>
             <p>GitHub, Slack, and customer credentials are never returned by discovery, setup, configuration, or health APIs. Product services receive only the bounded capability they need.</p>
           </div>
         </div>
@@ -163,7 +163,7 @@ catalog = nox.workspace.list_nox_services()</code></pre>
   <span class="token-key">"canConfigure"</span>: true,
   <span class="token-key">"services"</span>: [
     {
-      <span class="token-key">"id"</span>: <span class="token-string">"noxfeed"</span>,
+      <span class="token-key">"id"</span>: <span class="token-string">"activity"</span>,
       <span class="token-key">"runtime"</span>: { <span class="token-key">"state"</span>: <span class="token-string">"ready"</span>, <span class="token-key">"source"</span>: <span class="token-string">"binding"</span> },
       <span class="token-key">"setup"</span>: { <span class="token-key">"state"</span>: <span class="token-string">"ready"</span> },
       <span class="token-key">"capabilities"</span>: [<span class="token-comment">/* operations live here */</span>]
@@ -176,13 +176,13 @@ catalog = nox.workspace.list_nox_services()</code></pre>
       <section class="section" id="cli">
         <p class="section-kicker">CLI connection</p>
         <h2>Connect a supervised agent once</h2>
-        <p class="section-intro">A human runs <code>noxconnect login</code>, completes browser approval, and selects a project. Local agents then share that operating-system user's NoxHere session without seeing provider credentials.</p>
+        <p class="section-intro">A human runs <code>noxhere login</code>, completes browser approval, and selects a project. Local agents then share that operating-system user's NoxHere session without seeing provider credentials.</p>
         <div class="code-block">
           <div class="code-head"><span>terminal · connect and select context</span><button class="copy-button" type="button" data-copy="cli-connect">Copy</button></div>
-          <pre id="cli-connect"><code>npm install --global noxconnect
-noxconnect login
-noxconnect use YOUR_ORGANIZATION/YOUR_PROJECT
-noxconnect whoami</code></pre>
+          <pre id="cli-connect"><code>npm install --global noxhere
+noxhere login
+noxhere use YOUR_ORGANIZATION/YOUR_PROJECT
+noxhere whoami</code></pre>
         </div>
         <div class="callouts">
           <article class="callout safe"><h3>Supervised local agent</h3><p>Use the shared CLI session. Login is once per computer user; <code>use</code> changes context without issuing another credential.</p></article>
@@ -192,17 +192,17 @@ noxconnect whoami</code></pre>
           <table id="cli-command-reference">
             <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
             <tbody>
-              <tr data-cli-command="login"><td><code>noxconnect login [--no-open]</code></td><td>Sign in once through GitHub with a human approval step.</td></tr>
-              <tr data-cli-command="logout"><td><code>noxconnect logout</code></td><td>Revoke the shared NoxHere session.</td></tr>
-              <tr data-cli-command="whoami"><td><code>noxconnect whoami</code></td><td>Show the account and active organization/project context.</td></tr>
-              <tr data-cli-command="use"><td><code>noxconnect use &lt;organization&gt;[/&lt;project&gt;]</code></td><td>Change context without signing in again.</td></tr>
-              <tr data-cli-command="projects"><td><code>noxconnect projects</code></td><td>List projects in the active organization.</td></tr>
-              <tr data-cli-command="activity"><td><code>noxconnect activity</code></td><td>Read activity for the active project.</td></tr>
-              <tr data-cli-command="incidents"><td><code>noxconnect incidents [resolve|acknowledge|reopen] [incident-id]</code></td><td>Read incidents or change one incident by its fixed ID.</td></tr>
-              <tr data-cli-command="issues"><td><code>noxconnect issues</code></td><td>Read issues for the active project.</td></tr>
-              <tr data-cli-command="feedback"><td><code>noxconnect feedback</code></td><td>Read feedback for the active project.</td></tr>
-              <tr data-cli-command="api"><td><code>noxconnect api &lt;path&gt; [-X METHOD] [-d JSON]</code></td><td>Call any NoxHere API with the active session.</td></tr>
-              <tr data-cli-command="help"><td><code>noxconnect help</code></td><td>Show commands, environment variables, and credential storage.</td></tr>
+              <tr data-cli-command="login"><td><code>noxhere login [--no-open]</code></td><td>Sign in once through GitHub with a human approval step.</td></tr>
+              <tr data-cli-command="logout"><td><code>noxhere logout</code></td><td>Revoke the shared NoxHere session.</td></tr>
+              <tr data-cli-command="whoami"><td><code>noxhere whoami</code></td><td>Show the account and active organization/project context.</td></tr>
+              <tr data-cli-command="use"><td><code>noxhere use &lt;organization&gt;[/&lt;project&gt;]</code></td><td>Change context without signing in again.</td></tr>
+              <tr data-cli-command="projects"><td><code>noxhere projects</code></td><td>List projects in the active organization.</td></tr>
+              <tr data-cli-command="activity"><td><code>noxhere activity</code></td><td>Read activity for the active project.</td></tr>
+              <tr data-cli-command="incidents"><td><code>noxhere incidents [resolve|acknowledge|reopen] [incident-id]</code></td><td>Read incidents or change one incident by its fixed ID.</td></tr>
+              <tr data-cli-command="issues"><td><code>noxhere issues</code></td><td>Read issues for the active project.</td></tr>
+              <tr data-cli-command="feedback"><td><code>noxhere feedback</code></td><td>Read feedback for the active project.</td></tr>
+              <tr data-cli-command="api"><td><code>noxhere api &lt;path&gt; [-X METHOD] [-d JSON]</code></td><td>Call any NoxHere API with the active session.</td></tr>
+              <tr data-cli-command="help"><td><code>noxhere help</code></td><td>Show commands, environment variables, and credential storage.</td></tr>
             </tbody>
           </table>
         </div>
@@ -214,23 +214,23 @@ noxconnect whoami</code></pre>
         <div class="callouts">
           <article class="callout">
             <h3>Browser session</h3>
-            <p>GitHub OAuth establishes an opaque <code>Secure</code>, <code>HttpOnly</code>, <code>SameSite=Lax</code> NoxHere session cookie. Unsafe requests also require the matching <code>X-CSRF-Token</code>. GitHub credentials stay encrypted behind NoxConnect.</p>
+            <p>GitHub OAuth establishes an opaque <code>Secure</code>, <code>HttpOnly</code>, <code>SameSite=Lax</code> NoxHere session cookie. Unsafe requests also require the matching <code>X-CSRF-Token</code>. GitHub credentials stay encrypted behind NoxHere.</p>
           </article>
           <article class="callout">
             <h3>Native session</h3>
-            <p>NoxHere brokers GitHub device approval and gives first-party apps a 15-minute <code>nox_at_…</code> access token plus a rotating <code>nox_rt_…</code> refresh token. Provider credentials remain encrypted in NoxConnect.</p>
+            <p>NoxHere brokers GitHub device approval and gives first-party apps a 15-minute <code>nox_at_…</code> access token plus a rotating <code>nox_rt_…</code> refresh token. Provider credentials remain encrypted in NoxHere.</p>
           </article>
           <article class="callout">
             <h3>Automation token</h3>
             <p><code>Authorization: Bearer nox_sk_…</code> carries one organization, one project, environment, expiry, and explicit service read/write scopes. Values are shown once, stored only as hashes, and can be rotated or revoked.</p>
           </article>
         </div>
-        <p class="section-intro auth-note">Operations advertise <code>member</code>, <code>admin</code>, <code>native_session</code>, <code>native_refresh</code>, <code>public</code>, or <code>ingest_key</code> authentication. Browser and native requests may omit <code>X-Project-ID</code> for organization-wide data or supply it to narrow results. Automation scopes use <code>noxfeed</code>, <code>noxspot</code>, or <code>noxcue</code> with <code>:read</code> or <code>:write</code>, plus <code>services:read</code> for discovery and <code>developer-feedback:write</code> for product observations; every automation token remains bound to one project. A resource outside that project returns <code>resource_not_found</code>. NoxTicket and organization-level control-plane operations currently require a browser or native user session.</p>
-        <p class="field-note">A NoxHere <code>nox_sk_…</code> automation token authenticates API calls. It is separate from secrets stored or shared through NoxKey, and separate from the source keys used by public NoxCue/NoxSpot ingestion.</p>
-        <p class="field-note">A raw GitHub token is not a NoxConnect API credential. Unsupported bearer formats return <code>unsupported_credential</code> without being sent to GitHub.</p>
+        <p class="section-intro auth-note">Operations advertise <code>member</code>, <code>admin</code>, <code>native_session</code>, <code>native_refresh</code>, <code>public</code>, or <code>ingest_key</code> authentication. Browser and native requests may omit <code>X-Project-ID</code> for organization-wide data or supply it to narrow results. Automation scopes use <code>activity</code>, <code>feedback</code>, or <code>telemetry</code> with <code>:read</code> or <code>:write</code>, plus <code>services:read</code> for discovery and <code>developer-feedback:write</code> for product observations; every automation token remains bound to one project. A resource outside that project returns <code>resource_not_found</code>. Planning and organization-level control-plane operations currently require a browser or native user session.</p>
+        <p class="field-note">A NoxHere <code>nox_sk_…</code> automation token authenticates API calls. It is separate from secrets stored or shared through NoxKey, and separate from the source keys used by public Telemetry/Feedback ingestion.</p>
+        <p class="field-note">A raw GitHub token is not a NoxHere API credential. Unsupported bearer formats return <code>unsupported_credential</code> without being sent to GitHub.</p>
         <div class="callouts">
           <article class="callout"><h3>Lifecycle and audit</h3><p>Automation tokens expire within 1–365 days, are shown once, and expose only a prefix afterward. Create, rotate, and revoke actions are audited. Browser provider-token refresh occurs only on the server.</p></article>
-          <article class="callout"><h3>API hosts</h3><p>Management and NoxCue ingest use <code>https://app.noxhere.com</code>. Origin-bound NoxSpot widget capture uses <code>https://api.noxspot.dev</code>; its operations declare that server in OpenAPI.</p></article>
+          <article class="callout"><h3>API hosts</h3><p>Management and Telemetry ingest use <code>https://app.noxhere.com</code>. Origin-bound Feedback widget capture uses <code>https://app.noxhere.com</code>; its operations declare that server in OpenAPI.</p></article>
         </div>
         <div class="table-wrap">
           <table>
@@ -252,30 +252,30 @@ noxconnect whoami</code></pre>
           <table>
             <thead><tr><th>Client or service</th><th>Connection to NoxHere</th><th>Credential boundary</th></tr></thead>
             <tbody>
-              <tr><td>NoxHere and NoxTicket web UI</td><td>Same-origin <code>/api/v1</code></td><td>HttpOnly browser session; CSRF proof on writes</td></tr>
-              <tr><td>NoxFeed for macOS</td><td><code>https://app.noxhere.com/api/v1</code></td><td>Short-lived <code>nox_at_…</code> plus rotating <code>nox_rt_…</code>; no GitHub token in the app</td></tr>
-              <tr><td>NoxCue SDK</td><td><code>POST /api/v1/cues/public/events</code></td><td>Source-scoped <code>X-Nox-Ingest-Key</code></td></tr>
-              <tr><td>NoxSpot widget</td><td><code>https://api.noxspot.dev/api/spots/public/v1</code></td><td>Origin-bound site identity; no organization credential in the browser</td></tr>
-              <tr><td>NoxSpot, NoxCue, and NoxFeed Workers</td><td>Private Cloudflare service bindings</td><td>No public bearer token and no provider credential between Workers</td></tr>
+              <tr><td>NoxHere and Planning web UI</td><td>Same-origin <code>/api/v1</code></td><td>HttpOnly browser session; CSRF proof on writes</td></tr>
+              <tr><td>Activity for macOS</td><td><code>https://app.noxhere.com/api/v1</code></td><td>Short-lived <code>nox_at_…</code> plus rotating <code>nox_rt_…</code>; no GitHub token in the app</td></tr>
+              <tr><td>Telemetry SDK</td><td><code>POST /api/v1/telemetry/public/events</code></td><td>Source-scoped <code>X-Nox-Ingest-Key</code></td></tr>
+              <tr><td>Feedback widget</td><td><code>https://app.noxhere.com/api/feedback/public/v1</code></td><td>Origin-bound site identity; no organization credential in the browser</td></tr>
+              <tr><td>Feedback, Telemetry, and Activity Workers</td><td>Private Cloudflare service bindings</td><td>No public bearer token and no provider credential between Workers</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <section class="section" id="noxspot-identity">
-        <p class="section-kicker">NoxSpot widget identity</p>
+      <section class="section" id="feedback-identity">
+        <p class="section-kicker">Feedback widget identity</p>
         <h2>Pass signed-in users explicitly</h2>
-        <p class="section-intro">NoxSpot cannot read a host website's login session, cookies, or signup database. The website owner must pass the current user's name, email, and optional profile-picture URL after the widget has loaded and repeat the call when the signed-in account changes.</p>
+        <p class="section-intro">Feedback cannot read a host website's login session, cookies, or signup database. The website owner must pass the current user's name, email, and optional profile-picture URL after the widget has loaded and repeat the call when the signed-in account changes.</p>
         <div class="callout caution standalone-callout">
           <h3>The install snippet is anonymous by default</h3>
-          <p>Adding a NoxSpot site and pasting its one-line snippet does not expose user identity. Without the integration below, the widget still works and reporters enter their own details.</p>
+          <p>Adding a Feedback site and pasting its one-line snippet does not expose user identity. Without the integration below, the widget still works and reporters enter their own details.</p>
         </div>
         <div class="code-block">
-          <div class="code-head"><span>browser · site-specific embed</span><button class="copy-button" type="button" data-copy="noxspot-identify">Copy</button></div>
-          <pre id="noxspot-identify"><code><span class="token-comment">// The site-specific script auto-initializes NoxSpot.</span>
+          <div class="code-head"><span>browser · site-specific embed</span><button class="copy-button" type="button" data-copy="feedback-identify">Copy</button></div>
+          <pre id="feedback-identify"><code><span class="token-comment">// The site-specific script auto-initializes Feedback.</span>
 <span class="token-comment">// Run this after it loads and whenever the signed-in user changes.</span>
-NoxSpot.identify({
-  <span class="token-key">id</span>: currentUser.id, <span class="token-comment">// Used only by the host; NoxSpot does not submit it</span>
+Feedback.identify({
+  <span class="token-key">id</span>: currentUser.id, <span class="token-comment">// Used only by the host; Feedback does not submit it</span>
   <span class="token-key">name</span>: currentUser.name,
   <span class="token-key">email</span>: currentUser.email,
   <span class="token-key">avatarUrl</span>: currentUser.avatarUrl, <span class="token-comment">// Optional HTTPS URL</span>
@@ -284,24 +284,24 @@ NoxSpot.identify({
 });
 
 <span class="token-comment">// Clear cached identity on sign-out.</span>
-NoxSpot.identify(null);</code></pre>
+Feedback.identify(null);</code></pre>
         </div>
         <div class="code-block">
-          <div class="code-head"><span>browser · manual initialization</span><button class="copy-button" type="button" data-copy="noxspot-get-reporter">Copy</button></div>
-          <pre id="noxspot-get-reporter"><code>const getUser = () =&gt; ({
+          <div class="code-head"><span>browser · manual initialization</span><button class="copy-button" type="button" data-copy="feedback-get-reporter">Copy</button></div>
+          <pre id="feedback-get-reporter"><code>const getUser = () =&gt; ({
   <span class="token-key">id</span>: currentUser.id,
   <span class="token-key">name</span>: currentUser.name,
   <span class="token-key">email</span>: currentUser.email,
   <span class="token-key">avatarUrl</span>: currentUser.avatarUrl,
 });
 
-NoxSpot.init({
+Feedback.init({
   <span class="token-key">siteId</span>: <span class="token-string">"your-site-id"</span>,
   <span class="token-key">getUser</span>,
 });</code></pre>
         </div>
         <div class="callouts">
-          <article class="callout"><h3>Privacy boundary</h3><p>NoxSpot discards the supplied <code>id</code>. The reporter email and profile-picture URL are never copied into GitHub. NoxConnect encrypts and retains the email only when <code>notifyOnResolution</code> is true; the optional HTTPS avatar is visible only in authenticated NoxSpot views. Telemetry identity is configured separately in the server SDK and is HMAC-protected before transmission.</p></article>
+          <article class="callout"><h3>Privacy boundary</h3><p>Feedback discards the supplied <code>id</code>. The reporter email and profile-picture URL are never copied into GitHub. NoxHere encrypts and retains the email only when <code>notifyOnResolution</code> is true; the optional HTTPS avatar is visible only in authenticated Feedback views. Telemetry identity is configured separately in the server SDK and is HMAC-protected before transmission.</p></article>
           <article class="callout"><h3>Consent boundary</h3><p>Omit <code>notifyOnResolution</code> to leave the widget checkbox under the reporter's control. A host may set it to true only when it has already obtained permission for that transactional update.</p></article>
         </div>
       </section>
@@ -309,10 +309,10 @@ NoxSpot.init({
       <section class="section" id="services">
         <p class="section-kicker">Service catalog</p>
         <h2>One platform, clean service ownership</h2>
-        <p class="section-intro">NoxHere is the public platform. NoxConnect is private connection plumbing. Each product service owns the behavior and data unique to its job.</p>
+        <p class="section-intro">NoxHere is the public platform. NoxHere is private connection plumbing. Each product service owns the behavior and data unique to its job.</p>
         <div class="principle">
           <div class="principle-mark" aria-hidden="true">↳</div>
-          <div><h3>Public façade, private Workers</h3><p>Clients call only <code>app.noxhere.com</code>. NoxHere authenticates and scopes the request, then calls NoxConnect or product Workers through private service bindings. Product Workers return provider-neutral commands; only NoxConnect can use GitHub, Slack, or managed-AI credentials.</p></div>
+          <div><h3>Public façade, private Workers</h3><p>Clients call only <code>app.noxhere.com</code>. NoxHere authenticates and scopes the request, then calls NoxHere or product Workers through private service bindings. Product Workers return provider-neutral commands; only NoxHere can use GitHub, Slack, or managed-AI credentials.</p></div>
         </div>
         <div class="service-grid">
           <article class="service-card platform">
@@ -321,7 +321,7 @@ NoxSpot.init({
             <div class="pills"><span class="pill">Public API</span><span class="pill">Authentication</span><span class="pill">Authorization</span><span class="pill">Discovery</span><span class="pill">OpenAPI</span></div>
           </article>
           <article class="service-card foundation">
-            <div class="service-top"><h3>NoxConnect</h3><span class="service-type">Connector</span></div>
+            <div class="service-top"><h3>NoxHere</h3><span class="service-type">Connector</span></div>
             <p>Private connection and delivery plumbing. It owns GitHub and Slack OAuth, encrypted provider credentials, repository identity mapping, provider calls, routing, the delivery outbox, retries, and receipts.</p>
             <div class="pills"><span class="pill">OAuth</span><span class="pill">Provider capabilities</span><span class="pill">Routing</span><span class="pill">Outbox + retries</span><span class="pill provider">Only service with provider secrets</span></div>
           </article>
@@ -357,90 +357,90 @@ NoxSpot.init({
             <thead><tr><th>Component</th><th>Called through</th><th>Owns</th><th>Does not receive</th><th>Owned state</th></tr></thead>
             <tbody>
               <tr><td>NoxHere</td><td><code>app.noxhere.com/api/v1</code></td><td>Identity, scope, enablement and API contract</td><td>Product policy</td><td>Control-plane D1</td></tr>
-              <tr><td>NoxConnect</td><td>Private RPC; forwarded OAuth/webhooks</td><td>Connections, provider execution and delivery</td><td>Product decisions</td><td>Connection/outbox D1 + queue/DLQ</td></tr>
-              <tr><td>NoxTicket</td><td>Private service binding</td><td>Features, workflow, specs and attachments</td><td>GitHub or Slack credentials</td><td>NoxTicket D1 + attachment R2</td></tr>
-              <tr><td>NoxFeed</td><td>Private service binding</td><td>Feed projections, narration and release notes</td><td>GitHub, Slack or AI credentials</td><td>NoxFeed D1 + queue/DLQ</td></tr>
-              <tr><td>NoxSpot</td><td>Private RPC; forwarded capture routes</td><td>Sites, widget capture, reports and screenshots</td><td>GitHub or Slack credentials</td><td>NoxSpot D1 + queue/DLQ + screenshot R2</td></tr>
-              <tr><td>NoxCue</td><td>Private RPC; forwarded ingest route</td><td>Sources, events, metrics, incidents and digests</td><td>GitHub, Slack or AI credentials</td><td>NoxCue D1 + queue/DLQ + chart storage</td></tr>
+              <tr><td>NoxHere</td><td>Private RPC; forwarded OAuth/webhooks</td><td>Connections, provider execution and delivery</td><td>Product decisions</td><td>Connection/outbox D1 + queue/DLQ</td></tr>
+              <tr><td>Planning</td><td>Private service binding</td><td>Features, workflow, specs and attachments</td><td>GitHub or Slack credentials</td><td>Planning D1 + attachment R2</td></tr>
+              <tr><td>Activity</td><td>Private service binding</td><td>Feed projections, narration and release notes</td><td>GitHub, Slack or AI credentials</td><td>Activity D1 + queue/DLQ</td></tr>
+              <tr><td>Feedback</td><td>Private RPC; forwarded capture routes</td><td>Sites, widget capture, reports and screenshots</td><td>GitHub or Slack credentials</td><td>Feedback D1 + queue/DLQ + screenshot R2</td></tr>
+              <tr><td>Telemetry</td><td>Private RPC; forwarded ingest route</td><td>Sources, events, metrics, incidents and digests</td><td>GitHub, Slack or AI credentials</td><td>Telemetry D1 + queue/DLQ + chart storage</td></tr>
             </tbody>
           </table>
         </div>
         <div class="callout caution split-status">
           <h3>Service split rollout</h3>
-          <p>The public URL and API shape do not change. Private service contracts and repositories are separated, and NoxTicket now has dedicated storage. NoxConnect, NoxFeed, NoxSpot, and NoxCue data and queue cutovers remain staged behind compatibility adapters until parity checks pass; clients should continue using <code>app.noxhere.com/api/v1</code>.</p>
+          <p>The public URL and API shape do not change. Private service contracts and repositories are separated, and Planning now has dedicated storage. NoxHere, Activity, Feedback, and Telemetry data and queue cutovers remain staged behind compatibility adapters until parity checks pass; clients should continue using <code>app.noxhere.com/api/v1</code>.</p>
         </div>
         <p class="field-note"><code>runtime.source: binding</code> means the product Worker answered discovery. <code>runtime.source: snapshot</code> keeps its contract visible during an outage, but setup and capabilities are blocked until the binding is healthy.</p>
       </section>
 
-      <section class="section" id="noxcue-sdk">
+      <section class="section" id="telemetry-sdk">
         <p class="section-kicker">Telemetry SDK</p>
         <h2>Know when the product experience breaks</h2>
-        <p class="section-intro">NoxCue turns a few meaningful app outcomes into immediate, actionable alerts and a completed-day product pulse. It detects and preserves evidence; it never retries a user action, changes application state, or tries to replace logs, traces, and observability.</p>
+        <p class="section-intro">Telemetry turns a few meaningful app outcomes into immediate, actionable alerts and a completed-day product pulse. It detects and preserves evidence; it never retries a user action, changes application state, or tries to replace logs, traces, and observability.</p>
 
-        <ol class="flow" aria-label="NoxCue setup flow">
+        <ol class="flow" aria-label="Telemetry setup flow">
           <li class="flow-step"><span class="flow-number">01</span><strong>Create a source</strong><span>In NoxHere, open Stats and create one source for each app environment. Link it to a project when the organization has more than one project.</span></li>
           <li class="flow-step"><span class="flow-number">02</span><strong>Choose delivery</strong><span>Select the Slack workspace and channels for daily statistics and immediate alerts. Optionally connect a GitHub repository for deduplicated incident issues.</span></li>
           <li class="flow-step"><span class="flow-number">03</span><strong>Create the right key</strong><span>Use an origin-restricted <code>nox_pub_…</code> publishable key in browsers or mobile clients. Keep a <code>nox_secret_…</code> key in the server's secret store for trusted user and activity facts.</span></li>
           <li class="flow-step"><span class="flow-number">04</span><strong>Add outcome calls</strong><span>Wrap critical user journeys such as sign-up, login, password reset, and email verification. Send registration and meaningful activity facts from the trusted server.</span></li>
-          <li class="flow-step"><span class="flow-number">05</span><strong>Verify end to end</strong><span>Run <code>noxcue.test()</code> from the app. Setup becomes live only after NoxCue stores the event and Slack confirms delivery.</span></li>
+          <li class="flow-step"><span class="flow-number">05</span><strong>Verify end to end</strong><span>Run <code>telemetry.test()</code> from the app. Setup becomes live only after Telemetry stores the event and Slack confirms delivery.</span></li>
         </ol>
 
         <div class="code-block">
-          <div class="code-head"><span>terminal · install</span><button class="copy-button" type="button" data-copy="noxcue-install">Copy</button></div>
-          <pre id="noxcue-install"><code>npm install @noxhere/sdk</code></pre>
+          <div class="code-head"><span>terminal · install</span><button class="copy-button" type="button" data-copy="telemetry-install">Copy</button></div>
+          <pre id="telemetry-install"><code>npm install @noxhere/sdk</code></pre>
         </div>
-        <p class="field-note">NoxCue telemetry is included in the unified <a href="https://www.npmjs.com/package/@noxhere/sdk" rel="external">@noxhere/sdk package on npm</a>. Install without a version to receive the latest compatible release.</p>
+        <p class="field-note">Telemetry telemetry is included in the unified <a href="https://www.npmjs.com/package/@noxhere/sdk" rel="external">@noxhere/sdk package on npm</a>. Install without a version to receive the latest compatible release.</p>
 
         <div class="callouts">
           <article class="callout">
             <h3>Browser outcomes</h3>
             <p>Use a publishable key restricted to the exact production or staging origins. The wrapper returns the original result and rethrows the original application error unchanged.</p>
             <div class="code-block compact-code">
-              <div class="code-head"><span>typescript · browser</span><button class="copy-button" type="button" data-copy="noxcue-browser">Copy</button></div>
-              <pre id="noxcue-browser"><code>import { createNoxCue } from <span class="token-string">"@noxhere/sdk/telemetry/browser"</span>;
+              <div class="code-head"><span>typescript · browser</span><button class="copy-button" type="button" data-copy="telemetry-browser">Copy</button></div>
+              <pre id="telemetry-browser"><code>import { createTelemetry } from <span class="token-string">"@noxhere/sdk/telemetry/browser"</span>;
 
-const noxcue = createNoxCue({
-  key: import.meta.env.PUBLIC_NOXCUE_KEY,
+const telemetry = createTelemetry({
+  key: import.meta.env.PUBLIC_TELEMETRY_KEY,
   environment: <span class="token-string">"production"</span>,
   release: APP_VERSION,
 });
 
 <span class="token-comment">// Browser activity is count-only: no user ID, cookies, or fingerprint.</span>
-await noxcue.auth.signup(() =&gt; auth.signUp(input));</code></pre>
+await telemetry.auth.signup(() =&gt; auth.signUp(input));</code></pre>
             </div>
           </article>
           <article class="callout">
             <h3>Trusted product facts</h3>
             <p>Use a secret key and a separate identity key on the server. The SDK HMAC-protects user identifiers before serialization or transmission; NoxHere never receives the original identifier.</p>
             <div class="code-block compact-code">
-              <div class="code-head"><span>typescript · server</span><button class="copy-button" type="button" data-copy="noxcue-server">Copy</button></div>
-              <pre id="noxcue-server"><code>import { createNoxCue } from <span class="token-string">"@noxhere/sdk/telemetry/server"</span>;
+              <div class="code-head"><span>typescript · server</span><button class="copy-button" type="button" data-copy="telemetry-server">Copy</button></div>
+              <pre id="telemetry-server"><code>import { createTelemetry } from <span class="token-string">"@noxhere/sdk/telemetry/server"</span>;
 
-const noxcue = createNoxCue({
+const telemetry = createTelemetry({
   key: process.env.NOXHERE_TELEMETRY_KEY!,
   identityHashKey: process.env.NOXHERE_IDENTITY_HASH_KEY!,
   environment: <span class="token-string">"production"</span>,
   release: process.env.APP_RELEASE,
 });
 
-const userCue = noxcue.forUser(user.id);
-await userCue.user.registered(user.id);</code></pre>
+const userTelemetry = telemetry.forUser(user.id);
+await userTelemetry.user.registered(user.id);</code></pre>
             </div>
           </article>
         </div>
 
         <div class="code-block">
-          <div class="code-head"><span>typescript · common outcomes</span><button class="copy-button" type="button" data-copy="noxcue-outcomes">Copy</button></div>
-          <pre id="noxcue-outcomes"><code><span class="token-comment">// Wrap important journeys; the original result or error is preserved.</span>
-await noxcue.auth.login(() =&gt; auth.logIn(input));
-await noxcue.auth.passwordReset(() =&gt; auth.sendReset(email));
+          <div class="code-head"><span>typescript · common outcomes</span><button class="copy-button" type="button" data-copy="telemetry-outcomes">Copy</button></div>
+          <pre id="telemetry-outcomes"><code><span class="token-comment">// Wrap important journeys; the original result or error is preserved.</span>
+await telemetry.auth.login(() =&gt; auth.logIn(input));
+await telemetry.auth.passwordReset(() =&gt; auth.sendReset(email));
 
 <span class="token-comment">// Report safe errors and registered product activity.</span>
-await noxcue.error(error, { component: <span class="token-string">"checkout"</span> });
-await noxcue.activity(<span class="token-string">"custom.journals.added"</span>, user.id);
+await telemetry.error(error, { component: <span class="token-string">"checkout"</span> });
+await telemetry.activity(<span class="token-string">"custom.journals.added"</span>, user.id);
 
 <span class="token-comment">// Wait for queued feature reports in tests or long-running processes.</span>
-await noxcue.flush();</code></pre>
+await telemetry.flush();</code></pre>
         </div>
 
         <div class="principle">
@@ -453,8 +453,8 @@ await noxcue.flush();</code></pre>
 
         <div class="callouts">
           <article class="callout safe"><h3>Standard features</h3><p>Sign up, log in, password reset, and email verification work without inventing event names. A user rejection is recorded separately from a system failure, so invalid credentials do not become incidents.</p></article>
-          <article class="callout"><h3>Custom features and metrics</h3><p>Register every <code>custom.*</code> feature or activity name in NoxConnect first. Unknown names become one bounded configuration error instead of silently creating ungoverned telemetry.</p></article>
-          <article class="callout caution"><h3>Detection, not diagnosis theatre</h3><p>NoxCue groups equivalent failures under a readable fingerprint, keeps the original message and technical error, and provides possible causes and fixes for a developer to investigate. A later successful user action does not automatically close an incident.</p></article>
+          <article class="callout"><h3>Custom features and metrics</h3><p>Register every <code>custom.*</code> feature or activity name in NoxHere first. Unknown names become one bounded configuration error instead of silently creating ungoverned telemetry.</p></article>
+          <article class="callout caution"><h3>Detection, not diagnosis theatre</h3><p>Telemetry groups equivalent failures under a readable fingerprint, keeps the original message and technical error, and provides possible causes and fixes for a developer to investigate. A later successful user action does not automatically close an incident.</p></article>
           <article class="callout"><h3>Separate environments</h3><p>Production, staging, preview, development, and test each have their own source and key. Collection, daily digests, and alerts can be enabled independently, preventing staging noise from reaching production channels.</p></article>
         </div>
 
@@ -464,7 +464,7 @@ await noxcue.flush();</code></pre>
       <section class="section" id="control-plane">
         <p class="section-kicker">Control plane</p>
         <h2>The same shape for every service</h2>
-        <p class="section-intro">Replace <code>{service}</code> with <code>noxconnect</code>, <code>noxticket</code>, <code>noxfeed</code>, <code>noxspot</code>, or <code>noxcue</code>.</p>
+        <p class="section-intro">Replace <code>{service}</code> with <code>noxhere</code>, <code>planning</code>, <code>activity</code>, <code>feedback</code>, or <code>telemetry</code>.</p>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Method and path</th><th>Purpose</th><th>Access</th></tr></thead>
@@ -487,22 +487,22 @@ await noxcue.flush();</code></pre>
         <div class="code-block">
           <div class="code-head"><span>terminal · compare-and-swap update</span><button class="copy-button" type="button" data-copy="curl-config">Copy</button></div>
           <pre id="curl-config"><code><span class="token-comment"># 1. Read the current config and response ETag</span>
-curl -i https://app.noxhere.com/api/v1/services/noxfeed/config \
+curl -i https://app.noxhere.com/api/v1/services/activity/config \
   -H <span class="token-string">"Authorization: Bearer $NOXHERE_ACCESS_TOKEN"</span> \
   -H <span class="token-string">"X-Org: $NOX_ORG"</span>
 
 <span class="token-comment"># 2. Patch only owned fields using that revision</span>
-curl -X PATCH https://app.noxhere.com/api/v1/services/noxfeed/config \
+curl -X PATCH https://app.noxhere.com/api/v1/services/activity/config \
   -H <span class="token-string">"Authorization: Bearer $NOXHERE_ACCESS_TOKEN"</span> \
   -H <span class="token-string">"X-Org: $NOX_ORG"</span> \
   -H <span class="token-string">'If-Match: "current-revision"'</span> \
   -H <span class="token-string">"Content-Type: application/json"</span> \
   --data <span class="token-string">'{"releaseNotesPrompt":"Keep release notes concise."}'</span></code></pre>
         </div>
-        <p class="field-note">Project selection is request context, not NoxFeed configuration. Omit <code>X-Project-ID</code> for organization-wide data or supply an active project ID to narrow a browser or native request.</p>
+        <p class="field-note">Project selection is request context, not Activity configuration. Omit <code>X-Project-ID</code> for organization-wide data or supply an active project ID to narrow a browser or native request.</p>
         <div class="callouts">
-          <article class="callout safe"><h3>Service-scoped</h3><p>NoxConnect, NoxTicket, and NoxFeed expose strict writable fields in their service config response.</p></article>
-          <article class="callout caution"><h3>Resource-scoped</h3><p>NoxSpot sites and NoxCue sources remain authoritative. Their service config is read-only and links to the correct child resources.</p></article>
+          <article class="callout safe"><h3>Service-scoped</h3><p>NoxHere, Planning, and Activity expose strict writable fields in their service config response.</p></article>
+          <article class="callout caution"><h3>Resource-scoped</h3><p>Feedback sites and Telemetry sources remain authoritative. Their service config is read-only and links to the correct child resources.</p></article>
         </div>
       </section>
 
@@ -533,7 +533,7 @@ curl -X PATCH https://app.noxhere.com/api/v1/services/noxfeed/config \
           <pre id="operation-shape"><code>{
   <span class="token-key">"id"</span>: <span class="token-string">"patch_feed_config"</span>,
   <span class="token-key">"method"</span>: <span class="token-string">"PATCH"</span>,
-  <span class="token-key">"path"</span>: <span class="token-string">"/api/v1/services/noxfeed/config"</span>,
+  <span class="token-key">"path"</span>: <span class="token-string">"/api/v1/services/activity/config"</span>,
   <span class="token-key">"authentication"</span>: <span class="token-string">"admin"</span>,
   <span class="token-key">"description"</span>: <span class="token-string">"Update the release-notes prompt with If-Match."</span>
 }</code></pre>
@@ -590,7 +590,7 @@ curl -X PATCH https://app.noxhere.com/api/v1/services/noxfeed/config \
           <article class="callout caution"><h3>Writes are not automatically retry-safe</h3><p>Retry reads freely. Retry configuration only after reading the latest revision. Do not retry other writes unless the operation documents idempotency or you can confirm the first attempt failed before processing.</p></article>
           <article class="callout caution"><h3>Destructive operations need confirmation</h3><p>Disconnect, delete, archive, close, and revoke operations are marked destructive. Confirm the target and organization immediately before calling them.</p></article>
           <article class="callout"><h3>Respect rate limits</h3><p>On <code>429</code>, wait for <code>Retry-After</code> when present and add jitter. Never poll setup more often than once every five seconds.</p></article>
-          <article class="callout"><h3>Capture one-time keys</h3><p>A new NoxCue ingest key is returned once. Move it directly into an approved secret manager, never log it, and revoke it if delivery to storage is uncertain.</p></article>
+          <article class="callout"><h3>Capture one-time keys</h3><p>A new Telemetry ingest key is returned once. Move it directly into an approved secret manager, never log it, and revoke it if delivery to storage is uncertain.</p></article>
         </div>
       </section>
 

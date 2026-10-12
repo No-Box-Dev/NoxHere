@@ -57,7 +57,7 @@ export function generateSelector(element) {
   // Try tag + classes
   if (element.classList.length > 0) {
     const classes = Array.from(element.classList)
-      .filter(c => !c.startsWith('noxspot-')) // Ignore our own classes
+      .filter(c => !c.startsWith('feedback-')) // Ignore our own classes
       .map(c => `.${escapeSelector(c)}`)
       .join('');
 
@@ -148,9 +148,9 @@ export function extractElementInfo(element) {
     info.id = element.id;
   }
 
-  // Add classes (excluding noxspot classes)
+  // Add classes (excluding feedback classes)
   const classes = Array.from(element.classList)
-    .filter(c => !c.startsWith('noxspot-'));
+    .filter(c => !c.startsWith('feedback-'));
   if (classes.length > 0) {
     info.classes = classes;
   }

@@ -44,7 +44,7 @@ describe("Slack release-note interactions", () => {
       type: "block_actions",
       team: { id: "T123456" },
       trigger_id: "trigger-1",
-      actions: [{ action_id: "noxfeed_release_note_menu", selected_option: { value: "release_note:731868" } }],
+      actions: [{ action_id: "activity_release_note_menu", selected_option: { value: "release_note:731868" } }],
     });
     const response = await onRequestPost(ctx.value);
     expect(response.status).toBe(200);
