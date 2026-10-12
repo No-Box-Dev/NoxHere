@@ -121,6 +121,7 @@ describe('init', () => {
     expect(btn.style.background).toBeTruthy();
     expect(fetch).toHaveBeenCalledWith(
       'https://api.noxspot.dev/api/spots/public/v1/sites/test-site/members',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     expect(fetch).toHaveBeenCalledWith(
       'https://api.noxspot.dev/api/spots/public/v1/sites/test-site/config',
@@ -144,12 +145,52 @@ describe('init', () => {
   });
 
   it('passes an explicitly initialized reporter into the capture form', async () => {
+    global.fetch = vi.fn((url) => Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(url.includes('/members') ? { members: [] } : { environments: [], blocks: [] }),
+    }));
     const open = vi.fn();
     window.__NoxSpotCore = { open, cleanup: vi.fn() };
     init({ siteId: 'test-site', reporter: { name: 'Ada', email: 'ada@example.com', notifyOnResolution: true } });
     document.querySelector('.noxspot-trigger').click();
     await vi.waitFor(() => expect(open).toHaveBeenCalled());
     expect(open.mock.calls[0][0].callbacks.reporter).toEqual({ name: 'Ada', email: 'ada@example.com', avatarUrl: '', notifyOnResolution: true });
+    delete window.__NoxSpotCore;
+  });
+
+  it('waits for config and members before opening a fast-clicked widget', async () => {
+    const pending = {};
+    global.fetch = vi.fn((url) => new Promise((resolve) => {
+      pending[url.includes('/members') ? 'members' : 'config'] = resolve;
+    }));
+    const open = vi.fn();
+    window.__NoxSpotCore = { open, cleanup: vi.fn() };
+
+    init({ siteId: 'test-site' });
+    document.querySelector('.noxspot-trigger').click();
+    await Promise.resolve();
+    expect(open).not.toHaveBeenCalled();
+
+    pending.config({
+      ok: true,
+      json: () => Promise.resolve({
+        environments: [],
+        blocks: [{ id: 'context', type: 'custom_text', label: 'Context' }],
+      }),
+    });
+    await Promise.resolve();
+    expect(open).not.toHaveBeenCalled();
+
+    pending.members({
+      ok: true,
+      json: () => Promise.resolve({ members: [{ login: 'JasperNoBoxDev' }] }),
+    });
+    await vi.waitFor(() => expect(open).toHaveBeenCalledTimes(1));
+    expect(open.mock.calls[0][0].callbacks.members).toEqual([{ login: 'JasperNoBoxDev' }]);
+    expect(open.mock.calls[0][0].callbacks.blocks).toEqual([
+      { id: 'context', type: 'custom_text', label: 'Context' },
+      { id: 'capture-element-picker', type: 'element_picker', required: false },
+    ]);
     delete window.__NoxSpotCore;
   });
 });

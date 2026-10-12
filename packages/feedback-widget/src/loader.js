@@ -66,6 +66,8 @@ let autoErrorCleanup = null;
 let shortcutCleanup = null;
 let coreLoadPromise = null;
 let coreUrl = null;
+let bootstrapGeneration = 0;
+let bootstrapPromise = Promise.resolve(true);
 
 // document.currentScript is only reliable at top-level script execution. Capture
 // the loader's src now so later callers (idle prefetch, click handlers) don't
@@ -225,8 +227,12 @@ export function init(options = {}) {
 
   shortcutCleanup = attachShortcutListener();
 
-  fetchConfig();
-  fetchMembers();
+  const generation = ++bootstrapGeneration;
+  const siteId = config.siteId;
+  bootstrapPromise = Promise.all([
+    fetchConfig(siteId, generation),
+    fetchMembers(siteId, generation),
+  ]).then(([available]) => available && generation === bootstrapGeneration);
 
   scheduleCorePrefetch();
 
@@ -234,6 +240,8 @@ export function init(options = {}) {
 }
 
 export function destroy() {
+  bootstrapGeneration += 1;
+  bootstrapPromise = Promise.resolve(false);
   stopConsoleCapture();
   if (autoErrorCleanup) {
     autoErrorCleanup();
@@ -257,6 +265,10 @@ export function destroy() {
   config.reporter = null;
   config.shortcut = DEFAULT_SHORTCUT;
   config.autoErrorLogging = false;
+  config.captureMode = 'dom';
+  config.environment = null;
+  config.members = [];
+  config.categories = [];
   config.blocks = DEFAULT_BLOCKS;
 }
 
@@ -304,27 +316,38 @@ function scheduleCorePrefetch() {
   }
 }
 
-async function fetchMembers() {
+async function fetchMembers(siteId, generation) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CONFIG_TIMEOUT_MS);
   try {
-    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${config.siteId}/members`);
+    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${siteId}/members`, { signal: controller.signal });
     if (!response.ok) return;
     const data = await response.json();
-    if (Array.isArray(data?.members)) config.members = data.members;
+    if (generation === bootstrapGeneration && Array.isArray(data?.members)) config.members = data.members;
   } catch (e) {
     debugLog('[NoxSpot] Members fetch failed:', e?.message || e);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-async function fetchConfig() {
+async function fetchConfig(siteId, generation) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CONFIG_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${config.siteId}/config`, { signal: controller.signal });
+    const response = await fetch(`${API_URL}/api/spots/public/v1/sites/${siteId}/config`, { signal: controller.signal });
     clearTimeout(timer);
-    if (!response.ok) return;
+    if (!response.ok) {
+      if (response.status === 403 || response.status === 404) {
+        destroyTrigger();
+        return false;
+      }
+      return true;
+    }
 
     const data = await response.json();
+    if (generation !== bootstrapGeneration) return false;
     config.autoErrorLogging = !!data.autoErrorLogging;
     config.captureMode = data.captureMode === 'screenshot' ? 'screenshot' : 'dom';
     const rawCategories = Array.isArray(data.categories) ? data.categories : [];
@@ -337,12 +360,12 @@ async function fetchConfig() {
       if (!matched) {
         debugLog('[NoxSpot] No environment matches current host, widget hidden');
         destroyTrigger();
-        return;
+        return false;
       }
       if (matched.enabled === false) {
         debugLog('[NoxSpot] Environment is disabled, widget hidden:', matched.name);
         destroyTrigger();
-        return;
+        return false;
       }
       matchedEnvName = matched.name;
       config.environment = matched.name;
@@ -366,11 +389,13 @@ async function fetchConfig() {
       : effectiveBlocks.filter((block) => block?.type !== 'element_picker');
 
     if (config.autoErrorLogging) {
-      autoErrorCleanup = autoReportErrors(config.siteId, API_URL);
+      autoErrorCleanup = autoReportErrors(siteId, API_URL);
     }
+    return true;
   } catch (e) {
     clearTimeout(timer);
     debugLog('[NoxSpot] Config fetch failed, using defaults:', e?.message || e);
+    return generation === bootstrapGeneration;
   }
 }
 
@@ -400,7 +425,8 @@ async function handleTrigger() {
   hideTrigger();
 
   try {
-    await loadCore();
+    const [available] = await Promise.all([bootstrapPromise, loadCore()]);
+    if (!available) return;
   } catch (error) {
     console.error('[NoxSpot]', error);
     showToast({ message: 'Widget failed to load', variant: 'error', durationMs: 4000 });
@@ -433,7 +459,11 @@ async function handleShortcut() {
   showToast({ message: 'Capturing…', variant: 'success', durationMs: 10000 });
 
   try {
-    await loadCore();
+    const [available] = await Promise.all([bootstrapPromise, loadCore()]);
+    if (!available) {
+      dismissToast();
+      return;
+    }
   } catch (error) {
     console.error('[NoxSpot]', error);
     showToast({ message: 'Widget failed to load', variant: 'error', durationMs: 4000 });
