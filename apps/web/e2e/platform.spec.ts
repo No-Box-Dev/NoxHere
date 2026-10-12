@@ -22,7 +22,7 @@ test("keeps administration in Settings and NoxHere last", async ({ page }) => {
 });
 
 test("collapses the capability sidebar and remembers the preference", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/feed/current");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/activity/current");
   const nav = page.locator(".service-nav");
   await expect(nav.locator("a").last()).toHaveAccessibleName("NoxHere");
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
@@ -61,20 +61,21 @@ test("keeps the empty Planning board usable", async ({ page }) => {
 });
 
 const serviceRoutes = [
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/board", "Features"],
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/backlog", "Backlog"],
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/completed", "Completed"],
-  ["/no-box-dev/proj_no-box-dev_playnist/ticket/settings", "Settings"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/current", "Current"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/opened", "Opened"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/merged", "Merged"],
-  ["/no-box-dev/proj_no-box-dev_playnist/feed/issues", "Issues"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/issues", "Open"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/resolved", "Resolved"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/widgets", "Widgets"],
-  ["/no-box-dev/proj_no-box-dev_playnist/spot/messaging", "Messaging"],
-  ["/no-box-dev/proj_no-box-dev_playnist/telemetry/stats", "Stats"],
-  ["/no-box-dev/proj_no-box-dev_playnist/telemetry/alerts", "Alerts"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/board", "Features"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/backlog", "Backlog"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/completed", "Completed"],
+  ["/no-box-dev/proj_no-box-dev_playnist/planning/settings", "Settings"],
+  ["/no-box-dev/proj_no-box-dev_playnist/activity/current", "Current"],
+  ["/no-box-dev/proj_no-box-dev_playnist/activity/opened", "Opened"],
+  ["/no-box-dev/proj_no-box-dev_playnist/activity/merged", "Merged"],
+  ["/no-box-dev/proj_no-box-dev_playnist/incidents/issues", "Issues"],
+  ["/no-box-dev/proj_no-box-dev_playnist/incidents/alerts", "Incidents"],
+  ["/no-box-dev/proj_no-box-dev_playnist/incidents/rules", "Rules"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/issues", "Open"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/resolved", "Resolved"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/widgets", "Widgets"],
+  ["/no-box-dev/proj_no-box-dev_playnist/feedback/messaging", "Messaging"],
+  ["/no-box-dev/proj_no-box-dev_playnist/stats/overview", "Overview"],
 ] as const;
 
 test("opens every service tab without a page failure", async ({ page }) => {
@@ -107,8 +108,8 @@ test("opens each NoxHere section and project settings controls", async ({ page }
   await expect(capabilities.getByText("Planning", { exact: true })).toBeVisible();
   await expect(capabilities.getByText("Activity", { exact: true })).toBeVisible();
   await expect(capabilities.getByText("Feedback", { exact: true })).toBeVisible();
-  await expect(capabilities.getByText("Incidents", { exact: true })).toBeVisible();
-  await expect(capabilities.getByText("Available", { exact: true })).toHaveCount(4);
+  await expect(capabilities.getByText("Issues and Incidents", { exact: true })).toBeVisible();
+  await expect(capabilities.getByText("Available", { exact: true })).toHaveCount(5);
 
   await page.getByRole("link", { name: /settings/i }).click();
   await expect(page.getByText("Members", { exact: true })).toBeVisible();
@@ -117,7 +118,7 @@ test("opens each NoxHere section and project settings controls", async ({ page }
 });
 
 test("shows Playnist merged work with its real release notes", async ({ page }) => {
-  await page.goto("/no-box-dev/proj_no-box-dev_playnist/feed/merged");
+  await page.goto("/no-box-dev/proj_no-box-dev_playnist/activity/merged");
   const latest = page.locator(".feed-post-card").first();
   await expect(latest).toContainText("Refine collection previews and review cards", { timeout: 30_000 });
   await expect(latest.locator(".feed-post-author > b")).toHaveText("JasperNoBoxDev");

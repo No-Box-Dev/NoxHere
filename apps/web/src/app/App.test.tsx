@@ -275,7 +275,7 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByRole("link", { name: "Activity" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feedback" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Stats" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxHere" })).toBeInTheDocument();
   });
@@ -1031,14 +1031,34 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByText("↑ 25.0% vs previous 7 days")).toBeInTheDocument();
   });
 
-  it("keeps Stats and Incidents separate while redirecting former Telemetry links", async () => {
+  it("moves repository issues into Issues and Incidents", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/issues?state=open&page_size=100") return json({ data: [{ id: 42, repo: "playnist", number: 42, title: "Move this issue", state: "open", html_url: "https://github.com/No-Box-Dev/playnist/issues/42" }] });
+      return baseFetch(input, init);
+    });
+
+    const moved = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/activity/issues`);
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/incidents/issues`));
+    expect(await screen.findByText("Move this issue")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toHaveClass("active");
+    expect(screen.queryByRole("link", { name: /^Issues$/ })).toBeInTheDocument();
+    moved.unmount();
+
+    renderApp(<App />, `/no-box-dev/${project.id}/activity/current`);
+    expect(await screen.findByRole("navigation", { name: "Service views" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Issues$/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps Stats and Issues and Incidents separate while redirecting former Telemetry links", async () => {
     const stats = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/stats/overview`);
     expect(await screen.findByRole("navigation", { name: "Stats views" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Incident views" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Incidents$/ })).not.toBeInTheDocument();
     stats.unmount();
 
     const incidents = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/incidents/alerts`);
-    expect(await screen.findByRole("tablist", { name: "Alert views" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /^Incidents$/ })).toHaveClass("active");
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toHaveClass("active");
     expect(screen.queryByRole("navigation", { name: "Stats views" })).not.toBeInTheDocument();
     incidents.unmount();
 
@@ -1174,7 +1194,7 @@ describe("NoxHere API-backed platform", () => {
     });
     renderApp(<App />, `/no-box-dev/${project.id}/stats/overview`);
     expect(await screen.findByRole("link", { name: "Stats" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Planning" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
   });

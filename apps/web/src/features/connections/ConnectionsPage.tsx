@@ -9,7 +9,7 @@ import { ProjectRepositories } from "../../components/ProjectRepositories";
 import type { PlatformOutletContext } from "../../app/platform-context";
 
 type ConnectionsSection = "services" | "connections" | "people" | "repositories";
-const serviceRows = [["planning", "P", "Planning", "Planning and delivery"], ["activity", "A", "Activity", "Engineering activity and releases"], ["feedback", "F", "Feedback", "Reports and reporter messaging"], ["stats", "S", "Stats", "Product metrics and telemetry sources"], ["incidents", "I", "Incidents", "Product health and alerts"]] as const;
+const serviceRows = [["planning", "P", "Planning", "Planning and delivery"], ["activity", "A", "Activity", "Engineering activity and releases"], ["feedback", "F", "Feedback", "Reports and reporter messaging"], ["stats", "S", "Stats", "Product metrics and telemetry sources"], ["incidents", "I", "Issues and Incidents", "Repository issues, product health and alerts"]] as const;
 
 export default function ConnectionsPage() {
   const { organizationId = "", projectId = "", view = "overview" } = useParams();

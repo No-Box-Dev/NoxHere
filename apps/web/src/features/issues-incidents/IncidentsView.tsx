@@ -1,28 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
 import { platformApi } from "../../api/platform";
 import { AsyncState } from "../../components/AsyncState";
 import { ListRow } from "../../components/ListRow";
-import { SegmentedControl } from "../../components/SegmentedControl";
 import { StatusTag } from "../../components/StatusTag";
 
-type IncidentsViewProps = { organizationId: string; projectId: string };
-type AlertsSubview = "log" | "rules";
+type IncidentsViewProps = { organizationId: string; projectId: string; view?: "alerts" | "rules" };
 
-const segments = [
-  { id: "log", label: "Alert log", description: "Triggered and resolved" },
-  { id: "rules", label: "Alert rules", description: "What is being watched" },
-] as const;
-
-export function IncidentsView({ organizationId, projectId }: IncidentsViewProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const selected = searchParams.get("view") === "rules" ? "rules" : "log";
-  const select = (view: AlertsSubview) => setSearchParams(view === "log" ? {} : { view });
-
+export function IncidentsView({ organizationId, projectId, view = "alerts" }: IncidentsViewProps) {
   return (
     <div className="workspace-view">
-      <SegmentedControl label="Alert views" value={selected} segments={segments} onChange={select} />
-      {selected === "log" ? <AlertLog organizationId={organizationId} projectId={projectId} /> : <AlertRules organizationId={organizationId} projectId={projectId} />}
+      {view === "alerts" ? <AlertLog organizationId={organizationId} projectId={projectId} /> : <AlertRules organizationId={organizationId} projectId={projectId} />}
     </div>
   );
 }

@@ -75,7 +75,7 @@ export function PlatformShell() {
                 {item.externalHref ? <a href={item.externalHref} target="_blank" rel="noreferrer" aria-label={item.name} title={sidebarCollapsed ? item.name : `${item.name} — opens App Store`}>
                   <ServiceIcon service={item} />
                   <span>{item.name}</span>
-                </a> : <NavLink to={`/${bootstrap.data.organization.id}/${projectId}/${item.id}/${item.defaultView}`} className={({ isActive }) => isActive ? "active" : ""} aria-label={item.name} title={sidebarCollapsed ? item.name : undefined}>
+                </a> : <NavLink to={`/${bootstrap.data.organization.id}/${projectId}/${item.id}/${item.defaultView}`} className={item.id === routeSegment ? "active" : ""} aria-label={item.name} title={sidebarCollapsed ? item.name : undefined}>
                   <ServiceIcon service={item} />
                   <span>{item.name}</span>
                 </NavLink>}
