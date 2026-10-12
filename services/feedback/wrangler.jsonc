@@ -98,7 +98,7 @@
       ],
       "services": [
         { "binding": "NOXHERE", "service": "noxhere-connections-staging" },
-        { "binding": "TELEMETRY_INGEST", "service": "telemetry-staging" }
+        { "binding": "TELEMETRY_INGEST", "service": "noxhere-telemetry-staging" }
       ],
       "durable_objects": {
         "bindings": [

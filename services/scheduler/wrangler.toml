@@ -132,11 +132,11 @@ service = "noxhere-connections-staging"
 
 [[env.staging.services]]
 binding = "TELEMETRY_RESPONSE"
-service = "telemetry-staging"
+service = "noxhere-telemetry-staging"
 
 [[env.staging.services]]
 binding = "TELEMETRY_INGEST"
-service = "telemetry-staging"
+service = "noxhere-telemetry-staging"
 
 [[env.staging.services]]
 binding = "ACTIVITY_RESPONSE"
