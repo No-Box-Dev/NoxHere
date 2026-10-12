@@ -82,7 +82,7 @@ jobs:
       - name: Verify NoxHere gateway
         run: npm --prefix services/gateway test && npm --prefix services/gateway run typecheck && npm --prefix services/gateway run build
 
-  ticket:
+  planning:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -99,7 +99,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
 
-  feed:
+  activity:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -177,7 +177,7 @@ jobs:
       - run: python3 -m pip install build && python3 -m build packages/python-sdk
       - run: swift test --package-path packages/swift-sdk
 
-  cue:
+  telemetry:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -196,10 +196,10 @@ jobs:
           python-version: "3.10"
       - name: Install shared contract dependencies
         run: npm ci --prefix ../..
-      - name: Build unified SDK for compatibility packages
+      - name: Build unified SDK for Telemetry packages
         run: npm ci --prefix ../../packages/sdk && npm --prefix ../../packages/sdk run build
       - run: npm ci
-      - name: Install unified Python SDK for compatibility tests
+      - name: Install unified Python SDK for Telemetry tests
         run: python3 -m pip install -e ../../packages/python-sdk
       - name: Enforce active Telemetry telemetry milestone
         working-directory: ${{ github.workspace }}
