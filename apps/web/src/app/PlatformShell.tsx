@@ -75,12 +75,16 @@ export function PlatformShell() {
                 {item.externalHref ? <a href={item.externalHref} target="_blank" rel="noreferrer" aria-label={item.name} title={sidebarCollapsed ? item.name : `${item.name} — opens App Store`}>
                   <ServiceIcon service={item} />
                   <span>{item.name}</span>
-                </a> : <NavLink to={`/${bootstrap.data.organization.id}/${projectId}/${item.id}/${item.defaultView}`} className={({ isActive }) => isActive ? "active" : ""} aria-label={item.name} title={sidebarCollapsed ? item.name : undefined}>
+                </a> : <NavLink to={`/${bootstrap.data.organization.id}/${projectId}/${item.id}/${item.defaultView}`} className={item.id === routeSegment ? "active" : ""} aria-label={item.name} title={sidebarCollapsed ? item.name : undefined}>
                   <ServiceIcon service={item} />
                   <span>{item.name}</span>
                 </NavLink>}
               </div>)}
             </nav>
+            {!isGuest ? <NavLink className={`sidebar-settings ${routeSegment === "settings" ? "active" : ""}`} to={`/${bootstrap.data.organization.id}/${projectId}/settings/project`} aria-label="Settings">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.25A3.25 3.25 0 1 0 12 8.75a3.25 3.25 0 0 0 0 6.5Z" /><path d="M19.1 13.2a7.7 7.7 0 0 0 .05-1.2 7.7 7.7 0 0 0-.05-1.2l2-1.55-2-3.46-2.47 1a9.2 9.2 0 0 0-2.08-1.2L14.2 3h-4l-.36 2.59c-.74.3-1.44.7-2.07 1.2l-2.48-1-2 3.46 2 1.55a7.7 7.7 0 0 0-.04 1.2c0 .4.01.8.05 1.2l-2 1.55 2 3.46 2.47-1c.63.5 1.33.9 2.07 1.2L10.2 21h4l.36-2.59c.74-.3 1.44-.7 2.08-1.2l2.47 1 2-3.46-2-1.55Z" /></svg>
+              <span>Settings</span>
+            </NavLink> : null}
             <Link className="sidebar-account" to="/?choose=1" aria-label="Switch personal or organization workspace"><span>{bootstrap.data.actor.initials}</span><small>{bootstrap.data.organization.name}</small><b>⌄</b></Link>
           </aside>
           <main className="main-canvas">
@@ -92,17 +96,6 @@ export function PlatformShell() {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13H6z" /><path d="M14 4v4h4M9 12h6M9 16h6" /></svg>
                 <span>API docs</span>
               </a>
-              {!isGuest ? <Link
-                className="topbar-settings"
-                to={`/${bootstrap.data.organization.id}/${projectId}/settings`}
-                aria-label={`Open ${selectedProject?.name ?? "project"} settings`}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 15.25A3.25 3.25 0 1 0 12 8.75a3.25 3.25 0 0 0 0 6.5Z" />
-                  <path d="M19.1 13.2a7.7 7.7 0 0 0 .05-1.2 7.7 7.7 0 0 0-.05-1.2l2-1.55-2-3.46-2.47 1a9.2 9.2 0 0 0-2.08-1.2L14.2 3h-4l-.36 2.59c-.74.3-1.44.7-2.07 1.2l-2.48-1-2 3.46 2 1.55a7.7 7.7 0 0 0-.04 1.2c0 .4.01.8.05 1.2l-2 1.55 2 3.46 2.47-1c.63.5 1.33.9 2.07 1.2L10.2 21h4l.36-2.59c.74-.3 1.44-.7 2.08-1.2l2.47 1 2-3.46-2-1.55Z" />
-                </svg>
-                <span>Settings</span>
-              </Link> : null}
               </div>
             </header>
             <div className="page-canvas">

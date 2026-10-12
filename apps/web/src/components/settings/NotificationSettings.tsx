@@ -11,7 +11,7 @@ const ROUTES = [
 
 type FeedConfig = { revision: string; config: { releaseNotesPrompt?: string | null } };
 
-export function ActivitySettings({ organizationId, projectId, isAdmin }: { organizationId: string; projectId: string; isAdmin: boolean }) {
+export function NotificationSettings({ organizationId, projectId, isAdmin }: { organizationId: string; projectId: string; isAdmin: boolean }) {
   const scope = { organizationId, projectId };
   const queryClient = useQueryClient();
   const [days, setDays] = useState(30);

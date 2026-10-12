@@ -35,6 +35,6 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Publish loader
-        run: npx wrangler r2 object put noxhere-feedback-assets/feedback.min.js --file dist/feedback.min.js --remote --force --content-type application/javascript --cache-control 'public, max-age=300'
+        run: npx wrangler r2 object put feedback-assets/feedback.min.js --file dist/feedback.min.js --remote --force --content-type application/javascript --cache-control 'public, max-age=300'
       - name: Publish widget core
-        run: npx wrangler r2 object put noxhere-feedback-assets/feedback-core.min.js --file dist/feedback-core.min.js --remote --force --content-type application/javascript --cache-control 'public, max-age=300'
+        run: npx wrangler r2 object put feedback-assets/feedback-core.min.js --file dist/feedback-core.min.js --remote --force --content-type application/javascript --cache-control 'public, max-age=300'

@@ -1,23 +1,21 @@
 import { useCallback, useMemo } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useOutletContext, useParams } from "react-router-dom";
+import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
 import type { GithubMember, PlanningFeatureRecord } from "../../api/contracts";
 import { getRawJson } from "../../api/http";
 import { platformApi } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
-import { ActivitySettings } from "./ActivitySettings";
 import type { PlatformOutletContext } from "../../app/platform-context";
 
-const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"], ["issues", "Issues"], ["settings", "Settings"]] as const;
+const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"]] as const;
 type WorkItem = { id: number; repo: string; number: number; title: string; state: string; author?: string; author_avatar?: string; assignees?: Array<{ login: string; avatar_url?: string }>; html_url?: string; updated_at?: string; draft?: boolean };
-type PageResult = { data?: WorkItem[] };
 type CurrentResult = { prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[]; members: GithubMember[]; excludedMembers: string[]; planningEnabled: boolean };
 type CurrentSummary = { prs: WorkItem[]; issues: WorkItem[]; members: GithubMember[]; excludedMembers: string[] };
 type FeedEvent = { id: string; type: string; createdAt: string; repo: string; summary: string; technicalSummary: string; actor: { login: string; name: string | null; avatarUrl: string | null }; pr: { number: number; title: string; url: string } | null };
 type FeedResult = { events?: FeedEvent[]; releaseNotes?: FeedEvent[]; nextCursor?: string | null };
-type QuickView = "opened" | "merged" | "issues";
+type QuickView = "opened" | "merged";
 
 export default function ActivityPage() {
   const { organizationId = "", projectId = "", view = "current", person } = useParams();
@@ -31,7 +29,6 @@ export default function ActivityPage() {
   const query = useQuery({
     queryKey: ["activity", organizationId, projectId, view, planningEnabled],
     queryFn: async ({ signal }) => {
-      if (view === "issues") return getRawJson("/api/v1/issues?state=open&page_size=100", signal, scope) as Promise<PageResult>;
       const [summary, featureRecords] = await Promise.all([
         getRawJson("/api/v1/activity/current-summary", signal, scope) as Promise<CurrentSummary>,
         planningEnabled ? platformApi.planningFeatures(organizationId, projectId, signal) : Promise.resolve([]),
@@ -61,15 +58,8 @@ export default function ActivityPage() {
     enabled: view === "merged",
   });
   const prefetchView = useCallback((nextView: string) => {
-    if (nextView !== "opened" && nextView !== "merged" && nextView !== "issues") return;
+    if (nextView !== "opened" && nextView !== "merged") return;
     const quickView = nextView as QuickView;
-    if (quickView === "issues") {
-      void queryClient.prefetchQuery({
-        queryKey: ["activity", organizationId, projectId, quickView, planningEnabled],
-        queryFn: ({ signal }) => getRawJson("/api/v1/issues?state=open&page_size=100", signal, { organizationId, projectId }) as Promise<PageResult>,
-      });
-      return;
-    }
     void queryClient.prefetchInfiniteQuery({
       queryKey: ["feed-stream", organizationId, projectId, quickView],
       initialPageParam: "",
@@ -82,17 +72,16 @@ export default function ActivityPage() {
         queryFn: ({ signal }) => getRawJson("/api/v1/activity?mode=release-notes", signal, { organizationId, projectId }) as Promise<FeedResult>,
       });
     }
-  }, [organizationId, projectId, queryClient, planningEnabled]);
+  }, [organizationId, projectId, queryClient]);
 
   const base = `/${organizationId}/${projectId}/activity`;
+  if (isSettings) return <Navigate replace to={`/${organizationId}/${projectId}/settings/notifications`} />;
   const streamEvents = stream.data?.pages.flatMap((page) => page.events ?? []) ?? [];
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
     {(!isFeedStream && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}
     {(!isFeedStream && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Activity is unavailable" detail="The project activity API could not be reached. No placeholder activity is being shown." /> : null}
     {query.data && view === "current" ? <Current data={{ ...(query.data as CurrentResult), members }} base={base} person={person} /> : null}
     {stream.data && isFeedStream ? <Events events={streamEvents} releaseNotes={releaseNotes.data?.events ?? []} label={view} hasNextPage={stream.hasNextPage} loadingMore={stream.isFetchingNextPage} onLoadMore={() => void stream.fetchNextPage()} /> : null}
-    {query.data && view === "issues" ? <Issues items={(query.data as PageResult).data ?? []} /> : null}
-    {isSettings ? <ActivitySettings organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}
   </div></section>;
 }
 
@@ -161,4 +150,3 @@ function PlainEnglishSummary({ text }: { text: string }) {
   if (!items.length) return null;
   return <section className="feed-plain-summary" aria-label="Plain-English summary"><span>Plain-English summary</span><ol>{items.map((item, index) => <li key={`${item.label}-${index}`}><b>{item.label}</b><p>{item.detail}</p></li>)}</ol></section>;
 }
-function Issues({ items }: { items: WorkItem[] }) { return items.length ? <div className="list-surface">{items.map((item) => <WorkRow key={item.id} item={item} kind="Issue" />)}</div> : <Empty title="No open issues" detail="Issues returned by NoxHere will appear here." />; }

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { deleteRawJson, getRawJson, postRawJson, putRawJson } from "../../api/http";
-import { useConfirmDialog } from "../../components/ConfirmDialog";
+import { useConfirmDialog } from "../ConfirmDialog";
 
 type TelemetryKey = { id: string; name: string; kind: "publishable" | "secret"; prefix: string; lastUsedAt: string | null; revokedAt: string | null };
 type TelemetrySource = {
@@ -15,7 +15,7 @@ type TelemetrySource = {
 type SourcesResponse = { sources?: TelemetrySource[] };
 type KeyResponse = { key: TelemetryKey & { value: string }; warning: string };
 
-export function StatsSources({ organizationId, projectId, isAdmin }: { organizationId: string; projectId: string; isAdmin: boolean }) {
+export function TelemetrySources({ organizationId, projectId, isAdmin }: { organizationId: string; projectId: string; isAdmin: boolean }) {
   const { confirm, confirmation } = useConfirmDialog();
   const scope = { organizationId, projectId };
   const queryClient = useQueryClient();

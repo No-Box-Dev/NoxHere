@@ -147,10 +147,10 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/slack");
 
-    await user.click(await screen.findByRole("button", { name: "Toggle Send to Slack" }));
-    await user.click(screen.getByRole("button", { name: "Send to Slack" }));
+    await screen.findByRole("heading", { name: "Slack" });
+    await user.click(await screen.findByRole("button", { name: "Send to Slack" }));
     expect(await screen.findByText("Choose a Slack channel before sending the message.")).toHaveAttribute("role", "alert");
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Slack channel" }), "C-FEATURES");
@@ -180,9 +180,9 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/slack");
 
-    await user.click(await screen.findByRole("button", { name: "Toggle Slack connections" }));
+    await screen.findByRole("heading", { name: "Slack" });
     expect(await screen.findByText(/Opened by jasper/)).toBeInTheDocument();
     expect(screen.getByText(/Last used/)).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: "Connection name for No Box Dev" }), "Product alerts");
@@ -290,7 +290,7 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByRole("link", { name: "Activity" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feedback" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Stats" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Connections" })).toBeInTheDocument();
   });
@@ -510,10 +510,8 @@ describe("NoxHere API-backed platform", () => {
   });
 
   it("loads one shared member directory for the shell and Settings", async () => {
-    const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/people");
 
-    await user.click(await screen.findByRole("button", { name: "Toggle Members" }));
     expect(await screen.findByText("JasperNoBoxDev")).toBeInTheDocument();
     expect(vi.mocked(fetch).mock.calls.filter(([input]) => String(input) === "/api/v1/members")).toHaveLength(1);
   });
@@ -1069,14 +1067,34 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByText("↑ 25.0% vs previous 7 days")).toBeInTheDocument();
   });
 
-  it("keeps Stats and Incidents as separate unified capabilities", async () => {
+  it("moves repository issues into Issues and Incidents", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/issues?state=open&page_size=100") return json({ data: [{ id: 42, repo: "playnist", number: 42, title: "Move this issue", state: "open", html_url: "https://github.com/No-Box-Dev/playnist/issues/42" }] });
+      return baseFetch(input, init);
+    });
+
+    const moved = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/activity/issues`);
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/incidents/issues`));
+    expect(await screen.findByText("Move this issue")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toHaveClass("active");
+    expect(screen.queryByRole("link", { name: /^Issues$/ })).toBeInTheDocument();
+    moved.unmount();
+
+    renderApp(<App />, `/no-box-dev/${project.id}/activity/current`);
+    expect(await screen.findByRole("navigation", { name: "Service views" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Issues$/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps Stats and Issues and Incidents as separate unified capabilities", async () => {
     const stats = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/stats/overview`);
-    expect(await screen.findByRole("navigation", { name: "Stats views" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Incident views" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: /Dashboard/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Incidents$/ })).not.toBeInTheDocument();
     stats.unmount();
 
     const incidents = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/incidents/alerts`);
-    expect(await screen.findByRole("tablist", { name: "Alert views" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /^Incidents$/ })).toHaveClass("active");
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toHaveClass("active");
     expect(screen.queryByRole("navigation", { name: "Stats views" })).not.toBeInTheDocument();
     incidents.unmount();
   });
@@ -1127,7 +1145,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("edits the central project repository scope from Project Settings", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/github");
 
     await user.click(await screen.findByRole("checkbox", { name: /^api/ }));
     expect(fetch).toHaveBeenCalledWith("/api/v1/projects/routing", expect.objectContaining({
@@ -1163,7 +1181,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/github");
 
     expect(await screen.findByText("Repository routing is temporarily unavailable.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
@@ -1209,7 +1227,7 @@ describe("NoxHere API-backed platform", () => {
     });
     renderApp(<App />, `/no-box-dev/${project.id}/stats/overview`);
     expect(await screen.findByRole("link", { name: "Stats" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Issues and Incidents" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Planning" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
   });
@@ -1227,7 +1245,7 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    const settingsView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    const settingsView = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/people");
     expect(await screen.findByText("GitHub members can access every capability.", { exact: false })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Track JasperNoBoxDev" })).toBeChecked();
     const memeTracking = screen.getByRole("switch", { name: "Track memenoboxdev" });
@@ -1241,7 +1259,7 @@ describe("NoxHere API-backed platform", () => {
     await waitFor(() => expect(savedSettings).toMatchObject({ excludedMembers: [], boardStages }));
     settingsView.unmount();
 
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/people");
     expect(await screen.findByRole("switch", { name: "Track memenoboxdev" })).toBeChecked();
   });
 

@@ -11,5 +11,6 @@ export function serviceForApiPath(input) {
       || /^\/api\/github\/(comments|details)$/.test(pathname)) return "activity";
   if (/^\/api\/projects\/[^/]+\/feedback(?:\/|$)/.test(pathname) || /^\/api\/feedback(?:\/|$)/.test(pathname)) return "feedback";
   if (/^\/api\/projects\/[^/]+\/(telemetry|incidents)(?:\/|$)/.test(pathname) || /^\/api\/telemetry(?:\/|$)/.test(pathname)) return "telemetry";
+  if (/^\/api\/config(?:\/|$)/.test(pathname)) return "noxhere";
   return null;
 }
