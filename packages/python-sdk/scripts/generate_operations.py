@@ -19,6 +19,13 @@ document = json.loads(CONTRACT.read_text())
 operations = document["x-sdk-operations"]
 components = document.get("components", {})
 
+# The runtime keeps these pre-unification names as aliases. Emit them in the
+# typing surface as well so existing consumers remain valid under Pyright.
+LEGACY_OPERATION_ALIASES = {
+    "getNoxFeed": "getActivity",
+    "getPublicNoxSpotConfig": "getPublicFeedbackConfig",
+}
+
 
 def snake(value: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower().replace("-", "_")
@@ -207,6 +214,8 @@ operation_details = [
     for operation in operations
 ]
 
+operation_details_by_id = {details[0]["id"]: details for details in operation_details}
+
 
 def render_method(operation: dict[str, Any], groups: dict[str, tuple[str, bool]], body: tuple[str, bool] | None, response: str, *, asynchronous: bool = False) -> str:
     arguments: list[str] = []
@@ -227,6 +236,9 @@ def render_client_stub() -> str:
     grouped = {namespace: [] for namespace in ("workspace", "activity", "planning", "feedback", "stats", "incidents")}
     for details in operation_details:
         grouped[details[0]["namespace"]].append(details)
+    for alias, operation_id in LEGACY_OPERATION_ALIASES.items():
+        operation, groups, body, response = operation_details_by_id[operation_id]
+        grouped[operation["namespace"]].append(({**operation, "id": alias}, groups, body, response))
     lines = [
         "# Generated public typing surface. Runtime implementation lives in client.py.",
         "from __future__ import annotations",
