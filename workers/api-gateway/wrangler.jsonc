@@ -62,9 +62,9 @@
       "services": [
         { "binding": "FEEDBACK_RESPONSE", "service": "noxhere-feedback-staging" },
         { "binding": "NOXHERE_EMAIL", "service": "noxhere-connections-staging" },
-        { "binding": "PLANNING_SERVICE", "service": "planning-staging" },
-        { "binding": "TELEMETRY_RESPONSE", "service": "telemetry-staging" },
-        { "binding": "TELEMETRY_INGEST", "service": "telemetry-staging" },
+        { "binding": "PLANNING_SERVICE", "service": "noxhere-planning-staging" },
+        { "binding": "TELEMETRY_RESPONSE", "service": "noxhere-telemetry-staging" },
+        { "binding": "TELEMETRY_INGEST", "service": "noxhere-telemetry-staging" },
         { "binding": "ACTIVITY_RESPONSE", "service": "noxhere-activity-staging" }
       ],
       "d1_databases": [
