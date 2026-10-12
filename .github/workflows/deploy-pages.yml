@@ -69,6 +69,13 @@ jobs:
         run: npx wrangler deploy --config services/planning/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging Feedback capability
         run: npx wrangler deploy --config services/feedback/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+      - name: Synchronize staging internal authorization secret
+        env:
+          NOXHERE_INTERNAL_SECRET: ${{ secrets.NOXHERE_INTERNAL_SECRET }}
+        run: |
+          test -n "$NOXHERE_INTERNAL_SECRET"
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config workers/api-gateway/wrangler.jsonc --env staging
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env staging
       - name: Deploy staging private API
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging scheduler
@@ -96,6 +103,13 @@ jobs:
         run: npx wrangler deploy --config services/planning/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production Feedback capability
         run: npx wrangler deploy --config services/feedback/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+      - name: Synchronize production internal authorization secret
+        env:
+          NOXHERE_INTERNAL_SECRET: ${{ secrets.NOXHERE_INTERNAL_SECRET }}
+        run: |
+          test -n "$NOXHERE_INTERNAL_SECRET"
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config workers/api-gateway/wrangler.jsonc --env=""
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env=""
       - name: Deploy production private API
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production scheduler
