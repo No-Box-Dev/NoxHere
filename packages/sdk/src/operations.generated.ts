@@ -1549,6 +1549,36 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "listOrganizationAuditLog",
+    "method": "GET",
+    "path": "/api/v1/audit-log",
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listOrganizationMemberships",
+    "method": "GET",
+    "path": "/api/v1/memberships",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "listPlanningTasks",
     "method": "GET",
     "path": "/api/v1/tasks",
@@ -1860,6 +1890,23 @@ export const operationDefinitions = [
         "url": "https://api.noxspot.dev"
       }
     ]
+  },
+  {
+    "id": "resendGuestInvitation",
+    "method": "POST",
+    "path": "/api/v1/guests/invites/{inviteId}/resend",
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
   },
   {
     "id": "restoreProject",
@@ -2341,6 +2388,40 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "updateGuestGrantScope",
+    "method": "PATCH",
+    "path": "/api/v1/guests/grants/{grantId}",
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateGuestInvitationScope",
+    "method": "PATCH",
+    "path": "/api/v1/guests/invites/{inviteId}",
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "updateNoxCueCards",
     "method": "PUT",
     "path": "/api/v1/cues/sources/{sourceId}/cards",
@@ -2483,6 +2564,23 @@ export const operationDefinitions = [
     "namespace": "feedback",
     "authentication": "admin",
     "automationScope": "noxspot:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateOrganizationMemberRole",
+    "method": "PATCH",
+    "path": "/api/v1/memberships/{principalId}",
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [

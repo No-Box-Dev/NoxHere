@@ -620,8 +620,12 @@ const clientRouteContracts = [
   ["/api/v1/github/rate-limit", [["get", "getGitHubRateLimit", "Read the connected GitHub installation rate limit", "member"]]],
   ["/api/v1/guests", [["get", "listGuestAccess", "List guest invitations and active grants", "admin"]]],
   ["/api/v1/guests/invites", [["post", "createGuestInvitation", "Invite a guest to an organization, project, or capability", "admin"]]],
-  ["/api/v1/guests/invites/{inviteId}", [["delete", "revokeGuestInvitation", "Revoke a pending guest invitation", "admin"]]],
-  ["/api/v1/guests/grants/{grantId}", [["delete", "revokeGuestGrant", "Revoke active guest access", "admin"]]],
+  ["/api/v1/guests/invites/{inviteId}", [["patch", "updateGuestInvitationScope", "Change a pending guest invitation scope", "admin"], ["delete", "revokeGuestInvitation", "Revoke a pending guest invitation", "admin"]]],
+  ["/api/v1/guests/invites/{inviteId}/resend", [["post", "resendGuestInvitation", "Resend a pending guest invitation with a fresh expiry", "admin"]]],
+  ["/api/v1/guests/grants/{grantId}", [["patch", "updateGuestGrantScope", "Change active guest access scope", "admin"], ["delete", "revokeGuestGrant", "Revoke active guest access", "admin"]]],
+  ["/api/v1/memberships", [["get", "listOrganizationMemberships", "List organization members and effective roles", "member"]]],
+  ["/api/v1/memberships/{principalId}", [["patch", "updateOrganizationMemberRole", "Assign an Admin, Member, or Viewer role", "admin"]]],
+  ["/api/v1/audit-log", [["get", "listOrganizationAuditLog", "List recent access and administration changes", "admin"]]],
   ["/api/v1/integrations/status", [["get", "getIntegrationStatus", "Read credential-free integration readiness", "member"]]],
   ["/api/v1/issue-state", [["post", "setIssueState", "Open or close a tracked GitHub issue", "member"]]],
   ["/api/v1/me", [["get", "getCurrentMember", "Read membership and NoxConnect role for the current organization", "member"]]],
@@ -663,6 +667,9 @@ for (const [path, methods] of clientRouteContracts) {
 }
 document.paths["/api/v1/cues/project-overview"].get["x-guest-access"] = "read";
 document.paths["/api/v1/spots/project-overview"].get["x-guest-access"] = "read";
+for (const path of ["/api/v1/tasks", "/api/v1/task-workflows", "/api/v1/projects/{projectId}/cue/dashboard"]) {
+  if (document.paths[path]?.get) document.paths[path].get["x-guest-access"] = "read";
+}
 document.paths["/api/v1/auth/logout"].post["x-browser-session-only"] = true;
 document.paths["/api/v1/projects"].post.requestBody.required = true;
 document.paths["/api/v1/projects"].post.responses["201"] ??= document.paths["/api/v1/projects"].post.responses["200"];

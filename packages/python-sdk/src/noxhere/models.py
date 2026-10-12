@@ -914,6 +914,9 @@ class RefreshNativeSessionBody(TypedDict, total=False):
 class ReopenResolvedNoxSpotReportPath(TypedDict, total=False):
     token: Required[str]
 
+class ResendGuestInvitationPath(TypedDict, total=False):
+    inviteId: Required[str]
+
 class RestoreProjectPath(TypedDict, total=False):
     projectId: Required[str]
 
@@ -976,6 +979,12 @@ class UpdateCueProjectActionsPath(TypedDict, total=False):
 class UpdateFeaturePath(TypedDict, total=False):
     number: Required[int]
 
+class UpdateGuestGrantScopePath(TypedDict, total=False):
+    grantId: Required[str]
+
+class UpdateGuestInvitationScopePath(TypedDict, total=False):
+    inviteId: Required[str]
+
 class UpdateNoxCueCardsPath(TypedDict, total=False):
     sourceId: Required[str]
 
@@ -1017,6 +1026,9 @@ class UpdateNoxSpotResolutionTemplateBody(TypedDict, total=False):
 
 class UpdateNoxSpotSitePath(TypedDict, total=False):
     siteId: Required[str]
+
+class UpdateOrganizationMemberRolePath(TypedDict, total=False):
+    principalId: Required[str]
 
 class UpdatePlanningTaskPath(TypedDict, total=False):
     id: Required[str]

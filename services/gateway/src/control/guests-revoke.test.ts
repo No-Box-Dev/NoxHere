@@ -18,6 +18,7 @@ const admin: AuthContext = {
   credentialType: "session", credentialId: "session", principalId: "github:1",
   userLogin: "admin", userId: 1, orgId: 7, orgLogin: "acme", isAdmin: true,
   projectId: null, scopes: [], connectionId: "noxic_one", accessLevel: "member", guestAccess: null,
+  role: "owner", capabilities: ["members.manage", "guests.manage"], membershipVerifiedAt: new Date().toISOString(),
 };
 
 function database() {

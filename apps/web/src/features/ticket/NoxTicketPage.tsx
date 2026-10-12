@@ -36,6 +36,7 @@ export default function NoxTicketPage() {
   const settingsQuery = useQuery({
     queryKey: settingsKey,
     queryFn: ({ signal }) => platformApi.projectSettings(organizationId, projectId, signal),
+    enabled: !isGuest,
   });
   const featureQuery = useQuery({
     queryKey: ["ticket", organizationId, projectId, "features"],
@@ -69,7 +70,8 @@ export default function NoxTicketPage() {
     mutationFn: (id: string) => platformApi.deletePlanningTask(organizationId, projectId, id),
     onSuccess: (_result, id) => queryClient.setQueryData<PlanningTask[]>(tasksKey, (current = []) => current.filter((item) => item.id !== id)),
   });
-  const featureReady = !featureQuery.isLoading && !featureQuery.isError && !taskQuery.isLoading && !taskQuery.isError && !settingsQuery.isLoading && !settingsQuery.isError;
+  const settingsReady = isGuest || (!settingsQuery.isLoading && !settingsQuery.isError);
+  const featureReady = !featureQuery.isLoading && !featureQuery.isError && !taskQuery.isLoading && !taskQuery.isError && settingsReady;
   /* Query results become an editable local board snapshot. Project changes must replace that snapshot. */
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -148,8 +150,8 @@ export default function NoxTicketPage() {
   return <section>
     <ServiceTabs base={base} active={view} tabs={visibleTabs} />
     <div className="workspace-view ticket-workspace">
-      {(view !== "settings" && (featureQuery.isLoading || taskQuery.isLoading)) || settingsQuery.isLoading ? <DataNotice title="Loading planning" detail="Reading this project's planning data…" /> : null}
-      {(view !== "settings" && (featureQuery.isError || taskQuery.isError)) || settingsQuery.isError ? <DataNotice title="Planning is unavailable" detail="The dashboard could not reach the planning API. No placeholder tickets are being shown." /> : null}
+      {(view !== "settings" && (featureQuery.isLoading || taskQuery.isLoading)) || (!isGuest && settingsQuery.isLoading) ? <DataNotice title="Loading planning" detail="Reading this project's planning data…" /> : null}
+      {(view !== "settings" && (featureQuery.isError || taskQuery.isError)) || (!isGuest && settingsQuery.isError) ? <DataNotice title="Planning is unavailable" detail="The dashboard could not reach the planning API. No placeholder tickets are being shown." /> : null}
       {featureReady && view === "tasks" ? <TasksBoard key={projectId} organizationId={organizationId} projectId={projectId} features={features} tasks={taskQuery.data ?? []} actor={bootstrap.actor.id} members={members} createTask={(input) => createTaskMutation.mutate(input)} updateTask={(id, patch) => updateTaskMutation.mutate({ id, patch })} deleteTask={(id) => deleteTaskMutation.mutate(id)} saving={createTaskMutation.isPending || updateTaskMutation.isPending || deleteTaskMutation.isPending} /> : null}
       {featureReady && (view === "board" || view === "backlog" || view === "completed") ? <FeaturesWorkspace key={projectId} organizationId={organizationId} projectId={projectId} mode={view} stages={stages} features={features} actor={bootstrap.actor.id} members={members} createFeature={createFeature} saveFeature={saveFeature} deleteFeature={deleteFeature} saving={updateFeature.isPending || createFeatureMutation.isPending} /> : null}
       {view === "settings" && !settingsQuery.isLoading && !settingsQuery.isError ? <TicketSettings organizationId={organizationId} projectId={projectId} repository={project?.connections.find((connection) => connection.provider === "github")?.label ?? null} stages={stages} setStages={setStages} saveStages={persistStages} savingStages={saveStages.isPending} stageSaveError={saveStages.error} /> : null}
