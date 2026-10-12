@@ -12,7 +12,7 @@ if (!telemetryConfig) {
   ] });
   try {
     await server.listen();
-    const telemetry = await server.getWorker("telemetry").getExport();
+    const telemetry = await server.getWorker("noxhere-telemetry").getExport();
     const response = await telemetry.buildDigestResponse(
       "Playnist", "2026-09-05",
       { "users.new": 12 },

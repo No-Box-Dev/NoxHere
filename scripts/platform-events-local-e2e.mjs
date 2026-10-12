@@ -62,6 +62,7 @@ async function main() {
     db.exec(migration("0101_transport_outbox.sql"));
     db.exec(migration("0103_transport_callbacks.sql"));
     db.exec(migration("0104_platform_event_projections.sql"));
+    db.exec(migration("0110_unify_transport_callback_kinds.sql"));
 
     const queued = [];
     const env = { DB: db, TASK_QUEUE: { send: async (message) => { queued.push(message); } } };
