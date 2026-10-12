@@ -51,7 +51,7 @@ final class NoxHereTests: XCTestCase {
     func testPublicOperationsDoNotReceivePlatformCredentials() throws {
         let client = NoxHereClient(token: "nox_sk_test", organization: "org-1", projectID: "project-1")
         let request = try client.makeRequest(operationID: "getPublicFeedbackConfig", path: ["siteId": "site-1"])
-        XCTAssertEqual(request.url?.host, "api.feedback.dev")
+        XCTAssertEqual(request.url?.host, "app.noxhere.com")
         XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
         XCTAssertNil(request.value(forHTTPHeaderField: "X-Org"))
         XCTAssertNil(request.value(forHTTPHeaderField: "X-Project-ID"))
