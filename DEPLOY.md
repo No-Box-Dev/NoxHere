@@ -44,7 +44,7 @@ npx wrangler queues create noxhere-tasks-dlq
 npx wrangler r2 bucket create noxhere-events-archive
 
 # R2 bucket for immutable Feedback widget assets and temporary screenshots
-npx wrangler r2 bucket create noxhere-feedback-assets
+npx wrangler r2 bucket create feedback-assets
 ```
 
 Apply migrations to the remote DB:
@@ -190,7 +190,7 @@ and deploys both Workers on a green `main`. It needs repo secrets
 `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
 The Feedback capture Worker has no application secrets. It uses direct bindings
-to the shared D1 database, `noxhere-tasks` Queue, `noxhere-feedback-assets` R2 bucket,
+to the shared D1 database, `noxhere-tasks` Queue, `feedback-assets` R2 bucket,
 and its sharded rate-limit Durable Object. Public capture is served through the
 unified NoxHere gateway. Customer installations use only the project-specific
 `/widget/{project-id}.js` route; the tested deployment

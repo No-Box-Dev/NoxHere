@@ -14,7 +14,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "noxhere-planning",
+      "database_name": "planning",
       "database_id": "b2506cb3-c7e5-4178-8f9d-f828c1791851",
       "migrations_dir": "migrations"
     }
@@ -22,7 +22,7 @@
   "r2_buckets": [
     {
       "binding": "SPEC_ATTACHMENTS",
-      "bucket_name": "noxhere-planning-spec-attachments"
+      "bucket_name": "planning-spec-attachments"
     }
   ],
   "env": {
@@ -32,7 +32,7 @@
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "noxhere-planning-staging",
+          "database_name": "planning-staging",
           "database_id": "6bcdb912-5d76-4099-824a-6cf4277ab2f9",
           "migrations_dir": "migrations"
         }
@@ -40,7 +40,7 @@
       "r2_buckets": [
         {
           "binding": "SPEC_ATTACHMENTS",
-          "bucket_name": "noxhere-planning-spec-attachments-staging"
+          "bucket_name": "planning-spec-attachments-staging"
         }
       ]
     }

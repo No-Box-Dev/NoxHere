@@ -10,9 +10,9 @@ describe("staging Feed database preparation", () => {
   it("selects exactly the dedicated staging database", () => {
     expect(databaseIdFromList([
       { name: "noxhere-staging", uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" },
-      { name: "noxhere-activity-demo-staging", uuid: id },
+      { name: "activity-demo-staging", uuid: id },
     ])).toBe(id);
-    expect(databaseIdFromList([], "noxhere-activity-demo-staging")).toBeNull();
+    expect(databaseIdFromList([], "activity-demo-staging")).toBeNull();
   });
 
   it("updates only the staging Feed binding", () => {
@@ -29,7 +29,7 @@ migrations_dir = "migrations"
 `;
     const updated = configureStagingDatabase(config, id);
     expect(updated).toContain('database_id = "production-id"');
-    expect(updated).toContain('database_name = "noxhere-activity-demo-staging"');
+    expect(updated).toContain('database_name = "activity-demo-staging"');
     expect(updated).toContain(`database_id = "${id}"`);
     expect(configureStagingDatabase(updated, id)).toBe(updated);
   });

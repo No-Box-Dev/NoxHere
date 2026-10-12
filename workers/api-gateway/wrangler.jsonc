@@ -46,7 +46,7 @@
   ],
   "r2_buckets": [
     { "binding": "SPEC_ATTACHMENTS", "bucket_name": "noxhere-spec-attachments" },
-    { "binding": "FEEDBACK_ASSETS", "bucket_name": "noxhere-feedback-assets" }
+    { "binding": "FEEDBACK_ASSETS", "bucket_name": "feedback-assets" }
   ],
   "env": {
     "staging": {
@@ -82,7 +82,7 @@
       },
       "r2_buckets": [
         { "binding": "SPEC_ATTACHMENTS", "bucket_name": "noxhere-spec-attachments-staging" },
-        { "binding": "FEEDBACK_ASSETS", "bucket_name": "noxhere-feedback-assets-staging" }
+        { "binding": "FEEDBACK_ASSETS", "bucket_name": "feedback-assets-staging" }
       ]
     }
   }

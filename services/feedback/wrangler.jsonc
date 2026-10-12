@@ -43,7 +43,7 @@
   "r2_buckets": [
     {
       "binding": "ASSETS",
-      "bucket_name": "noxhere-feedback-assets"
+      "bucket_name": "feedback-assets"
     }
   ],
   "services": [
@@ -94,7 +94,7 @@
         ]
       },
       "r2_buckets": [
-        { "binding": "ASSETS", "bucket_name": "noxhere-feedback-assets-staging" }
+        { "binding": "ASSETS", "bucket_name": "feedback-assets-staging" }
       ],
       "services": [
         { "binding": "NOXHERE", "service": "noxhere-connections-staging" },

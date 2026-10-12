@@ -3,7 +3,7 @@
 This package owns the independently built browser capture client for NoxHere's
 Feedback capability. The public browser API remains named `Feedback` for embed
 compatibility. The production service loads `feedback.min.js` and
-`feedback-core.min.js` from the `noxhere-feedback-assets` R2 bucket.
+`feedback-core.min.js` from the `feedback-assets` R2 bucket.
 
 Run `npm test` and `npm run build` before publishing the two generated files.
 

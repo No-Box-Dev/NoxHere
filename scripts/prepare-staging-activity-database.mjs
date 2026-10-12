@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const databaseName = "noxhere-activity-demo-staging";
+const databaseName = "activity-demo-staging";
 const configUrl = new URL("../services/activity/wrangler.toml", import.meta.url);
 const databaseIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
