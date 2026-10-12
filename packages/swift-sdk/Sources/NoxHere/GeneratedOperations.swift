@@ -29,7 +29,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 163
+    public static let operationCount = 169
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -125,6 +125,8 @@ public enum NoxHereOperations {
         "listMembers": .init(id: "listMembers", method: "GET", path: "/api/v1/members", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listNoxServices": .init(id: "listNoxServices", method: "GET", path: "/api/v1/services", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listOperationFailures": .init(id: "listOperationFailures", method: "GET", path: "/api/v1/op-failures", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "listOrganizationAuditLog": .init(id: "listOrganizationAuditLog", method: "GET", path: "/api/v1/audit-log", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "listOrganizationMemberships": .init(id: "listOrganizationMemberships", method: "GET", path: "/api/v1/memberships", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listPlanningTasks": .init(id: "listPlanningTasks", method: "GET", path: "/api/v1/tasks", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listProjects": .init(id: "listProjects", method: "GET", path: "/api/v1/projects", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listPullRequests": .init(id: "listPullRequests", method: "GET", path: "/api/v1/prs", resource: .activity, changeSafety: .safeRead, servers: []),
@@ -150,6 +152,7 @@ public enum NoxHereOperations {
         "recoverRepositoryHistory": .init(id: "recoverRepositoryHistory", method: "POST", path: "/api/v1/recover-repo-history", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "refreshNativeSession": .init(id: "refreshNativeSession", method: "POST", path: "/api/v1/auth/native/refresh", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "reopenResolvedFeedbackReport": .init(id: "reopenResolvedFeedbackReport", method: "POST", path: "/api/feedback/public/v1/resolution-responses/{token}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: ["https://app.noxhere.com"]),
+        "resendGuestInvitation": .init(id: "resendGuestInvitation", method: "POST", path: "/api/v1/guests/invites/{inviteId}/resend", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "restoreProject": .init(id: "restoreProject", method: "DELETE", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
         "restoreSpec": .init(id: "restoreSpec", method: "DELETE", path: "/api/v1/specs/{specId}/archive", resource: .planning, changeSafety: .destructive, servers: []),
         "retrieveProject": .init(id: "retrieveProject", method: "GET", path: "/api/v1/projects/{projectId}/retrieval", resource: .workspace, changeSafety: .safeRead, servers: []),
@@ -181,6 +184,9 @@ public enum NoxHereOperations {
         "updateFeedbackReport": .init(id: "updateFeedbackReport", method: "PATCH", path: "/api/v1/feedback/reports/{reportId}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateFeedbackResolutionTemplate": .init(id: "updateFeedbackResolutionTemplate", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}/resolution-template", resource: .feedback, changeSafety: .conditionalWrite, servers: []),
         "updateFeedbackSite": .init(id: "updateFeedbackSite", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateGuestGrantScope": .init(id: "updateGuestGrantScope", method: "PATCH", path: "/api/v1/guests/grants/{grantId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateGuestInvitationScope": .init(id: "updateGuestInvitationScope", method: "PATCH", path: "/api/v1/guests/invites/{inviteId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateOrganizationMemberRole": .init(id: "updateOrganizationMemberRole", method: "PATCH", path: "/api/v1/memberships/{principalId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updatePlanningTask": .init(id: "updatePlanningTask", method: "PATCH", path: "/api/v1/tasks/{id}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateProjectIncident": .init(id: "updateProjectIncident", method: "PATCH", path: "/api/v1/projects/{projectId}/incidents/{incidentId}", resource: .incidents, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateProjectRouting": .init(id: "updateProjectRouting", method: "PUT", path: "/api/v1/projects/{projectId}/routing", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),

@@ -202,7 +202,7 @@ describe("NoxHere API-backed platform", () => {
     expect(await screen.findByRole("combobox", { name: "Project" })).toHaveValue(project.id);
     expect(screen.getByTestId("current-route")).toHaveTextContent("/");
     await user.click(screen.getByRole("button", { name: "Open project" }));
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connections/overview`));
     expect(vi.mocked(fetch).mock.calls.some(([, init]) => new Headers(init?.headers).get("X-Project-ID") === "select")).toBe(false);
   });
 
@@ -210,7 +210,7 @@ describe("NoxHere API-backed platform", () => {
     localStorage.setItem("noxhere.last-project.jaspernoboxdev", JSON.stringify({ organizationId: "no-box-dev", projectId: project.id }));
     renderApp(<><App /><CurrentRoute /></>, "/");
 
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connect/overview`));
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/connections/overview`));
     expect(screen.queryByRole("heading", { name: "Choose a project" })).not.toBeInTheDocument();
   });
 

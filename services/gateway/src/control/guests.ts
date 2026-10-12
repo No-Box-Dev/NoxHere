@@ -7,6 +7,7 @@ import {
 import { randomToken, sha256 } from "./crypto";
 import { isGuestService, type GuestScopeType } from "./guest-access";
 import { apiError, apiResponse, boundedJson } from "./http";
+import { audit, freshAdmin } from "./memberships";
 
 const INVITE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const LOGIN_MAX_AGE_MS = 15 * 60 * 1000;
@@ -66,29 +67,91 @@ export async function handleGuestControl(
   }
   if (url.pathname === "/api/v1/guests/invites" && request.method === "POST") {
     if (!auth.isAdmin) return apiError("admin_required", "Organization admin access is required", 403);
+    if (!freshAdmin(auth)) return apiError("membership_refresh_required", "Refresh your verified GitHub membership before changing access", 403);
     return createInvite(request, db, env, auth);
   }
+  const resendInviteId = url.pathname.match(/^\/api\/v1\/guests\/invites\/([^/]+)\/resend$/)?.[1];
+  if (resendInviteId && request.method === "POST") {
+    if (!auth.isAdmin) return apiError("admin_required", "Organization admin access is required", 403);
+    if (!freshAdmin(auth)) return apiError("membership_refresh_required", "Refresh your verified GitHub membership before changing access", 403);
+    return resendInvite(db, env, auth, decodeURIComponent(resendInviteId));
+  }
   const inviteId = url.pathname.match(/^\/api\/v1\/guests\/invites\/([^/]+)$/)?.[1];
+  if (inviteId && request.method === "PATCH") {
+    if (!auth.isAdmin) return apiError("admin_required", "Organization admin access is required", 403);
+    if (!freshAdmin(auth)) return apiError("membership_refresh_required", "Refresh your verified GitHub membership before changing access", 403);
+    return updateGuestScope(request, db, auth, "guest_invitations", decodeURIComponent(inviteId));
+  }
   if (inviteId && request.method === "DELETE") {
     if (!auth.isAdmin) return apiError("admin_required", "Organization admin access is required", 403);
+    if (!freshAdmin(auth)) return apiError("membership_refresh_required", "Refresh your verified GitHub membership before changing access", 403);
     await db.prepare(
       `UPDATE guest_invitations
           SET revoked_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE id = ? AND org_id = ? AND accepted_at IS NULL AND revoked_at IS NULL`,
     ).bind(decodeURIComponent(inviteId), auth.orgId).run();
+    await audit(db, auth, "guest.invitation_revoked", decodeURIComponent(inviteId)).run();
     return apiResponse({ revoked: true });
   }
   const grantId = url.pathname.match(/^\/api\/v1\/guests\/grants\/([^/]+)$/)?.[1];
+  if (grantId && request.method === "PATCH") {
+    if (!auth.isAdmin) return apiError("admin_required", "Organization admin access is required", 403);
+    if (!freshAdmin(auth)) return apiError("membership_refresh_required", "Refresh your verified GitHub membership before changing access", 403);
+    return updateGuestScope(request, db, auth, "guest_access_grants", decodeURIComponent(grantId));
+  }
   if (grantId && request.method === "DELETE") {
     if (!auth.isAdmin) return apiError("admin_required", "Organization admin access is required", 403);
+    if (!freshAdmin(auth)) return apiError("membership_refresh_required", "Refresh your verified GitHub membership before changing access", 403);
     await db.prepare(
       `UPDATE guest_access_grants
           SET revoked_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE id = ? AND org_id = ? AND revoked_at IS NULL`,
     ).bind(decodeURIComponent(grantId), auth.orgId).run();
+    await audit(db, auth, "guest.access_revoked", decodeURIComponent(grantId)).run();
     return apiResponse({ revoked: true });
   }
   return null;
+}
+
+async function updateGuestScope(request: Request, db: D1Database, auth: AuthContext, table: "guest_invitations" | "guest_access_grants", id: string): Promise<Response> {
+  let body: InviteInput;
+  try { body = await boundedJson(request, 8 * 1024); }
+  catch { return apiError("invalid_request", "Choose a valid guest scope", 400); }
+  const projectId = typeof body.projectId === "string" && body.projectId.trim() ? body.projectId.trim() : null;
+  const service = isGuestService(body.service) ? body.service : null;
+  if (!validScope(body.scopeType, projectId, service)) return apiError("invalid_scope", "Choose an organization, project, or project capability scope", 400);
+  if (projectId) {
+    const project = await db.prepare("SELECT id FROM projects WHERE id = ? AND org_id = ? AND enabled = 1 AND archived = 0")
+      .bind(projectId, auth.orgId).first();
+    if (!project) return apiError("project_not_found", "The project is unavailable", 404);
+  }
+  const active = table === "guest_invitations" ? "accepted_at IS NULL AND revoked_at IS NULL" : "revoked_at IS NULL";
+  const result = await db.prepare(`UPDATE ${table} SET scope_type = ?, project_id = ?, service = ? WHERE id = ? AND org_id = ? AND ${active}`)
+    .bind(body.scopeType, projectId, service, id, auth.orgId).run();
+  if (!result.meta.changes) return apiError("guest_access_not_found", "The guest access entry is unavailable", 404);
+  await audit(db, auth, "guest.scope_changed", id, { scopeType: body.scopeType, projectId, service }).run();
+  return apiResponse({ updated: true, id, scopeType: body.scopeType, projectId, service });
+}
+
+async function resendInvite(db: D1Database, env: GuestEnv, auth: AuthContext, id: string): Promise<Response> {
+  const invite = await db.prepare(
+    `SELECT invite.email, invite.scope_type, invite.project_id, invite.service, project.name AS project_name
+       FROM guest_invitations invite LEFT JOIN projects project ON project.id = invite.project_id
+      WHERE invite.id = ? AND invite.org_id = ? AND invite.accepted_at IS NULL AND invite.revoked_at IS NULL`,
+  ).bind(id, auth.orgId).first<{ email: string; scope_type: GuestScopeType; project_id: string | null; service: string | null; project_name: string | null }>();
+  if (!invite) return apiError("invitation_not_found", "The pending invitation is unavailable", 404);
+  const token = randomToken();
+  const expiresAt = new Date(Date.now() + INVITE_MAX_AGE_MS).toISOString();
+  await db.prepare("UPDATE guest_invitations SET token_hash = ?, expires_at = ? WHERE id = ? AND org_id = ?")
+    .bind(await sha256(token), expiresAt, id, auth.orgId).run();
+  try {
+    await sendEmail(env, `guest-invitation-resend:${id}:${expiresAt}`, invite.email, `You are invited to ${auth.orgLogin} on Nox`, `Join ${auth.orgLogin} on Nox`, callbackUrl(env, token, "invite"), `You will receive read-only access to ${invitationScopeLabel(invite.scope_type, invite.project_name, invite.service)}. This invitation expires in 7 days.`);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "guest_email_failed", kind: "resend", inviteId: id, error: errorMessage(error) }));
+    return apiError("email_unavailable", "The invitation could not be delivered", 502);
+  }
+  await audit(db, auth, "guest.invitation_resent", id, { expiresAt }).run();
+  return apiResponse({ resent: true, id, expiresAt });
 }
 
 export async function requestEmailLogin(
@@ -191,6 +254,7 @@ async function createInvite(
          (id, org_id, email, scope_type, project_id, service, token_hash, invited_by, expires_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(id, auth.orgId, email, scopeType, projectId, service, await sha256(token), auth.userLogin, expiresAt),
+    audit(db, auth, "guest.invited", id, { email, scopeType, projectId, service, expiresAt }),
   ]);
 
   const scopeLabel = invitationScopeLabel(scopeType, projectName, service);

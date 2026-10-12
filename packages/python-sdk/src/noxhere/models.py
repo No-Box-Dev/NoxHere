@@ -938,6 +938,9 @@ class RefreshNativeSessionBody(TypedDict, total=False):
 class ReopenResolvedFeedbackReportPath(TypedDict, total=False):
     token: Required[str]
 
+class ResendGuestInvitationPath(TypedDict, total=False):
+    inviteId: Required[str]
+
 class RestoreProjectPath(TypedDict, total=False):
     projectId: Required[str]
 
@@ -1014,6 +1017,15 @@ class UpdateFeedbackResolutionTemplateBody(TypedDict, total=False):
 
 class UpdateFeedbackSitePath(TypedDict, total=False):
     siteId: Required[str]
+
+class UpdateGuestGrantScopePath(TypedDict, total=False):
+    grantId: Required[str]
+
+class UpdateGuestInvitationScopePath(TypedDict, total=False):
+    inviteId: Required[str]
+
+class UpdateOrganizationMemberRolePath(TypedDict, total=False):
+    principalId: Required[str]
 
 class UpdatePlanningTaskPath(TypedDict, total=False):
     id: Required[str]

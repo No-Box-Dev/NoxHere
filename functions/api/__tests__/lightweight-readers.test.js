@@ -60,11 +60,13 @@ describe("GET /api/me", () => {
   const memberAccess = {
     accessLevel: "member",
     allowedServices: ["planning", "activity", "feedback", "telemetry"],
+    role: "member",
+    capabilities: ["content.read", "content.write"],
   };
 
   it("returns login, org, and isAdmin from context", async () => {
     const res = await meGet(makeCtx({ data: { userLogin: "alice", orgLogin: "acme", isAdmin: true } }));
-    expect(await res.json()).toEqual({ login: "alice", org: "acme", isAdmin: true, isPlatformOperator: false, ...memberAccess });
+    expect(await res.json()).toEqual({ login: "alice", org: "acme", isAdmin: true, isPlatformOperator: false, ...memberAccess, role: "admin", capabilities: ["organization.manage"] });
   });
 
   it("coerces isAdmin to boolean", async () => {

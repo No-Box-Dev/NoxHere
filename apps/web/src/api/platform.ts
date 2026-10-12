@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { bootstrapSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
-import type { Bootstrap, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
+import { bootstrapSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, organizationMembersSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
+import type { Bootstrap, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, OrganizationMember, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
@@ -32,6 +32,12 @@ export interface PlatformApi {
   retrieve(projectId: string, query: string, signal?: AbortSignal): Promise<RetrievalResult[]>;
   guestAccess(organizationId: string, signal?: AbortSignal): Promise<GuestAccess>;
   inviteGuest(organizationId: string, projectId: string, email: string, serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry"): Promise<GuestInvite>;
+  revokeGuest(organizationId: string, kind: "invites" | "grants", id: string): Promise<void>;
+  resendGuestInvite(organizationId: string, id: string): Promise<void>;
+  setGuestScope(organizationId: string, projectId: string, kind: "invites" | "grants", id: string, serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry"): Promise<void>;
+  organizationMembers(organizationId: string, signal?: AbortSignal): Promise<OrganizationMember[]>;
+  setMemberRole(organizationId: string, principalId: string, role: "admin" | "member" | "viewer"): Promise<void>;
+  auditLog(organizationId: string, signal?: AbortSignal): Promise<Array<{ id: number; actorType: string; actorId: string; action: string; targetId: string | null; createdAt: string }>>;
   members(organizationId: string, projectId: string, signal?: AbortSignal): Promise<GithubMember[]>;
   projectSettings(organizationId: string, projectId: string, signal?: AbortSignal): Promise<ProjectSettings>;
   setProjectSettings(organizationId: string, projectId: string, settings: ProjectSettings): Promise<ProjectSettings>;
@@ -53,7 +59,7 @@ export const platformApi: PlatformApi = {
       getRawJson("/api/v1/projects?view=bootstrap", signal, scope),
       getRawJson("/api/v1/integrations/connections?view=bootstrap", signal, scope).catch(() => null),
     ]);
-    const profile = profileRaw as { login?: string; org?: string; accessLevel?: "member" | "guest"; isAdmin?: boolean; allowedServices?: string[] };
+    const profile = profileRaw as { login?: string; org?: string; accessLevel?: "member" | "guest"; role?: "owner" | "admin" | "member" | "viewer" | "guest"; capabilities?: string[]; isAdmin?: boolean; allowedServices?: string[] };
     const projectRows = (projectsRaw as { projects?: Array<{ id: string; name: string; org?: string | null; repo?: string | null; repositories?: string[]; description?: string | null; archived?: number; routing_enabled?: number }> }).projects ?? [];
     const integration = connectionsRaw as { github?: { connected?: boolean }; slack?: { connected?: boolean; teamName?: string | null } } | null;
     const guestServices = profile.accessLevel === "guest" ? new Set((profile.allowedServices ?? []).flatMap((id) => {
@@ -74,7 +80,7 @@ export const platformApi: PlatformApi = {
     });
     const login = profile.login ?? "Member";
     return bootstrapSchema.parse({
-      actor: { id: login, name: login, initials: login.slice(0, 2).toUpperCase(), accessLevel: profile.accessLevel ?? "member", isAdmin: Boolean(profile.isAdmin), allowedServiceIds: guestServices ? [...guestServices] : [] },
+      actor: { id: login, name: login, initials: login.slice(0, 2).toUpperCase(), accessLevel: profile.accessLevel ?? "member", role: profile.role ?? (profile.accessLevel === "guest" ? "guest" : profile.isAdmin ? "admin" : "member"), capabilities: profile.capabilities ?? (profile.isAdmin ? ["organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "stats.configure", "planning.configure"] : ["content.read", "content.write"]), isAdmin: Boolean(profile.isAdmin), allowedServiceIds: guestServices ? [...guestServices] : [] },
       organization: { id: organizationId, name: profile.org ?? organizationId },
       projects,
     });
@@ -130,6 +136,26 @@ export const platformApi: PlatformApi = {
     const service = serviceId === "all" ? null : serviceId;
     const response = await postJson("/api/v1/guests/invites", { email, scopeType: service ? "tool" : "project", projectId, service }, guestInviteResponseSchema, { organizationId });
     return response.invitation;
+  },
+  revokeGuest: async (organizationId, kind, id) => {
+    const path = kind === "invites" ? `/api/v1/guests/invites/${encodeURIComponent(id)}` : `/api/v1/guests/grants/${encodeURIComponent(id)}`;
+    await deleteJson(path, z.object({ revoked: z.literal(true) }), { organizationId });
+  },
+  resendGuestInvite: async (organizationId, id) => {
+    await postJson(`/api/v1/guests/invites/${encodeURIComponent(id)}/resend`, {}, z.object({ resent: z.literal(true) }).loose(), { organizationId });
+  },
+  setGuestScope: async (organizationId, projectId, kind, id, serviceId) => {
+    const service = serviceId === "all" ? null : serviceId;
+    const path = kind === "invites" ? `/api/v1/guests/invites/${encodeURIComponent(id)}` : `/api/v1/guests/grants/${encodeURIComponent(id)}`;
+    await patchJson(path, { scopeType: service ? "tool" : "project", projectId, service }, z.object({ updated: z.literal(true) }).loose(), { organizationId });
+  },
+  organizationMembers: async (organizationId, signal) => (await getJson("/api/v1/memberships", organizationMembersSchema, signal, { organizationId })).members,
+  setMemberRole: async (organizationId, principalId, role) => {
+    await patchJson(`/api/v1/memberships/${encodeURIComponent(principalId)}`, { role }, z.object({ updated: z.literal(true) }).loose(), { organizationId });
+  },
+  auditLog: async (organizationId, signal) => {
+    const result = await getJson("/api/v1/audit-log", z.object({ events: z.array(z.object({ id: z.number(), actorType: z.string(), actorId: z.string(), action: z.string(), targetId: z.string().nullable(), createdAt: z.string() }).loose()) }), signal, { organizationId });
+    return result.events;
   },
   members: (organizationId, projectId, signal) => getJson("/api/v1/members", githubMemberSchema.array(), signal, { organizationId, projectId }),
   projectSettings: async (organizationId, projectId, signal) => (await getJson("/api/v1/config/settings", projectSettingsSchema, signal, { organizationId, projectId })) ?? {},
