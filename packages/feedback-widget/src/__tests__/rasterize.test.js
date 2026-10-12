@@ -2,12 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { captureViewport } from '../rasterize.js';
 
 const originalImage = globalThis.Image;
+const originalFetch = globalThis.fetch;
 const originalRect = Element.prototype.getBoundingClientRect;
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
 
 afterEach(() => {
   globalThis.Image = originalImage;
+  globalThis.fetch = originalFetch;
   Element.prototype.getBoundingClientRect = originalRect;
   HTMLCanvasElement.prototype.getContext = originalGetContext;
   HTMLCanvasElement.prototype.toDataURL = originalToDataURL;
@@ -16,6 +18,45 @@ afterEach(() => {
 });
 
 describe('viewport-bounded rasterization', () => {
+  it('does not fetch media that is outside the captured viewport', async () => {
+    const visible = document.createElement('img');
+    visible.src = 'https://images.example/visible.png';
+    visible.dataset.position = 'visible';
+    const offscreen = document.createElement('img');
+    offscreen.src = 'https://images.example/offscreen.png';
+    offscreen.dataset.position = 'offscreen';
+    document.body.append(visible, offscreen);
+
+    Element.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const top = this.dataset.position === 'offscreen' ? 5_000 : 20;
+      return { top, bottom: top + 100, left: 20, right: 120, width: 100, height: 100, x: 20, y: top, toJSON() {} };
+    };
+    globalThis.fetch = vi.fn(async () => ({
+      ok: false,
+      status: 404,
+      blob: async () => new Blob(),
+    }));
+    class LoadedImage {
+      set src(_value) { queueMicrotask(() => this.onload?.()); }
+    }
+    globalThis.Image = LoadedImage;
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+      scale: vi.fn(), fillRect: vi.fn(), drawImage: vi.fn(), set fillStyle(_value) {},
+    }));
+    HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/jpeg;base64,ok');
+
+    await captureViewport();
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://images.example/visible.png',
+      expect.objectContaining({ mode: 'cors', credentials: 'omit' }),
+    );
+    expect(fetch).not.toHaveBeenCalledWith(
+      'https://images.example/offscreen.png',
+      expect.anything(),
+    );
+  });
+
   it('collapses off-screen table rows before cloning and styling their cells', async () => {
     const table = document.createElement('table');
     const body = document.createElement('tbody');
