@@ -419,14 +419,18 @@ function overlayCallbacks() {
 }
 
 async function handleTrigger() {
-  debugLog('[NoxSpot] Starting capture mode (optimistic)...');
+  debugLog('[NoxSpot] Starting capture mode...');
 
   releaseInputZoom();
   hideTrigger();
+  showToast({ message: 'Capturing…', variant: 'success', durationMs: 10000 });
 
   try {
     const [available] = await Promise.all([bootstrapPromise, loadCore()]);
-    if (!available) return;
+    if (!available) {
+      dismissToast();
+      return;
+    }
   } catch (error) {
     console.error('[NoxSpot]', error);
     showToast({ message: 'Widget failed to load', variant: 'error', durationMs: 4000 });
@@ -437,6 +441,12 @@ async function handleTrigger() {
   window.__NoxSpotCore.open({
     mode: 'click',
     callbacks: overlayCallbacks(),
+    onCaptureReady: () => dismissToast(),
+    onCaptureFailed: (error) => {
+      console.error('[NoxSpot] Capture failed:', error);
+      showToast({ message: 'Screenshot capture failed', variant: 'error', durationMs: 4000 });
+      showTrigger();
+    },
   });
 }
 

@@ -5,6 +5,7 @@
 
 import { debugLog } from './debug.js';
 import { captureViewport } from './rasterize.js';
+import { waitForHostDomStable } from './stability.js';
 
 const ELEMENT_MAP_NODE_LIMIT = 5_000;
 const ELEMENT_MAP_ENTRY_LIMIT = 750;
@@ -33,29 +34,34 @@ export async function captureScreenshot(options = {}) {
   const trigger = document.querySelector('.noxspot-trigger');
   if (trigger) trigger.style.visibility = 'hidden';
 
-  let elementMap = [];
   try {
-    // Capture element positions BEFORE rasterizing so coordinates match the
-    // exact layout the screenshot captures.
-    if (options.includeElementMap !== false) elementMap = captureElementMap();
-
-    const { dataUrl, viewport } = await captureViewport({
-      filter: (node) => {
-        if (!node.classList) return true;
-        return !(
-          node.classList.contains('noxspot-overlay') ||
-          node.classList.contains('noxspot-trigger') ||
-          node.classList.contains('noxspot-toast')
-        );
-      },
+    let hostChanged = false;
+    const observer = typeof MutationObserver === 'undefined' ? null : new MutationObserver((records) => {
+      if (records.some(isHostMutation)) hostChanged = true;
     });
+    observer?.observe(document.body, { attributes: true, characterData: true, childList: true, subtree: true });
+
+    let result = await captureOnce(options);
+    // Yield through a short macrotask window before reading the flag. Network
+    // callbacks and framework commits are often queued behind our synchronous
+    // DOM clone; a microtask-only yield would let the capture resolve first
+    // and preserve the stale application shell.
+    await waitForHostDomStable({ minWaitMs: 150, quietMs: 150, maxWaitMs: 500 });
+    observer?.disconnect();
+
+    if (hostChanged) {
+      debugLog('[NoxSpot] Host DOM changed during capture; retrying once');
+      await waitForHostDomStable({ minWaitMs: 0, quietMs: 200, maxWaitMs: 750 });
+      result = await captureOnce(options);
+    }
 
     debugLog('[NoxSpot] Screenshot captured', {
-      size: Math.round(dataUrl.length / 1024) + 'kb',
-      elements: elementMap.length,
+      size: Math.round(result.dataUrl.length / 1024) + 'kb',
+      elements: result.elementMap.length,
+      retried: hostChanged,
     });
 
-    return { dataUrl, elementMap, viewport };
+    return result;
   } catch (error) {
     // Capture is an enhancement to the report, never a prerequisite for it.
     // Returning a bounded fallback keeps the feedback form usable on pages
@@ -74,6 +80,34 @@ export async function captureScreenshot(options = {}) {
   } finally {
     if (trigger) trigger.style.visibility = 'visible';
   }
+}
+
+function isWidgetNode(node) {
+  if (!(node instanceof Element)) return false;
+  return Boolean(node.closest('.noxspot-overlay, .noxspot-trigger, .noxspot-toast'));
+}
+
+function isHostMutation(record) {
+  if (record.type !== 'childList') return !isWidgetNode(record.target);
+  const changedNodes = [...record.addedNodes, ...record.removedNodes];
+  return changedNodes.some((node) => !isWidgetNode(node));
+}
+
+async function captureOnce(options) {
+  // Capture element positions BEFORE rasterizing so coordinates match the
+  // exact layout the screenshot captures.
+  const elementMap = options.includeElementMap === false ? [] : captureElementMap();
+  const { dataUrl, viewport } = await captureViewport({
+    filter: (node) => {
+      if (!node.classList) return true;
+      return !(
+        node.classList.contains('noxspot-overlay') ||
+        node.classList.contains('noxspot-trigger') ||
+        node.classList.contains('noxspot-toast')
+      );
+    },
+  });
+  return { dataUrl, elementMap, viewport };
 }
 
 /**
