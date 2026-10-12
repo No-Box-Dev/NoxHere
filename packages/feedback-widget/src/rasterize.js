@@ -109,7 +109,11 @@ const IMAGE_FETCH_TIMEOUT_MS = 3000;
 const RASTERIZE_TIMEOUT_MS = 10_000;
 const CAPTURE_NODE_LIMIT = 8_000;
 const CAPTURE_SYNC_TIME_LIMIT_MS = 1_500;
-const CAPTURE_SERIALIZED_BYTE_LIMIT = 8_000_000;
+// This is a final memory-safety ceiling after off-screen media has been
+// stripped. Rich but valid profile/dashboard viewports commonly serialize to
+// 8–12 MB once visible images and fonts are embedded. Node and synchronous-time
+// budgets above remain the first line of defense against pathological pages.
+const CAPTURE_SERIALIZED_BYTE_LIMIT = 16_000_000;
 const VIEWPORT_OVERSCAN_PX = 200;
 
 function captureNow() {
@@ -118,9 +122,10 @@ function captureNow() {
     : Date.now();
 }
 
-function captureLimit(message) {
+function captureLimit(message, details = {}) {
   const error = new Error(message);
   error.code = 'capture_limit_exceeded';
+  error.details = details;
   return error;
 }
 
@@ -177,7 +182,7 @@ export async function captureViewport(options = {}) {
   wrapper.appendChild(bodyClone);
 
   const [, fontCss] = await Promise.all([
-    inlineExternalResources(pairs),
+    inlineExternalResources(pairs, width, height),
     collectInlinedFontCss(),
   ]);
   // Web fonts: foreignObject inherits the page's @font-face *bindings* but
@@ -198,7 +203,16 @@ export async function captureViewport(options = {}) {
 
   const svgString = buildSvg(wrapper, width, height);
   if (svgString.length > CAPTURE_SERIALIZED_BYTE_LIMIT) {
-    throw captureLimit('Page capture exceeded the serialized size limit');
+    const details = {
+      serializedCharacters: svgString.length,
+      limit: CAPTURE_SERIALIZED_BYTE_LIMIT,
+      nodes: pairs.length,
+      viewport: { width, height },
+    };
+    throw captureLimit(
+      `Page capture exceeded the serialized size limit (${formatMegabytes(svgString.length)} MB > ${formatMegabytes(CAPTURE_SERIALIZED_BYTE_LIMIT)} MB; ${pairs.length} nodes)`,
+      details,
+    );
   }
   const dataUrl = await rasterizeSvg(svgString, width, height, background);
 
@@ -223,11 +237,22 @@ function resolveBackground() {
 
 function assertWithinCaptureBudget(budget) {
   if (budget.nodes > CAPTURE_NODE_LIMIT) {
-    throw captureLimit('Page capture exceeded the node limit');
+    throw captureLimit('Page capture exceeded the node limit', {
+      nodes: budget.nodes,
+      limit: CAPTURE_NODE_LIMIT,
+    });
   }
   if (captureNow() - budget.startedAt > CAPTURE_SYNC_TIME_LIMIT_MS) {
-    throw captureLimit('Page capture exceeded the synchronous time limit');
+    throw captureLimit('Page capture exceeded the synchronous time limit', {
+      elapsedMs: Math.round(captureNow() - budget.startedAt),
+      limitMs: CAPTURE_SYNC_TIME_LIMIT_MS,
+      nodes: budget.nodes,
+    });
   }
+}
+
+function formatMegabytes(characters) {
+  return (characters / 1_000_000).toFixed(1);
 }
 
 function cloneNode(source, filter, pairs, budget) {
@@ -486,14 +511,52 @@ function getImageSource(source) {
   );
 }
 
-async function inlineExternalResources(pairs) {
+function isOutsideCaptureArea(source, width, height) {
+  let rect;
+  try { rect = source.getBoundingClientRect(); } catch { return false; }
+  if (!rect || (!rect.width && !rect.height)) return false;
+  return (
+    rect.bottom < -VIEWPORT_OVERSCAN_PX ||
+    rect.top > height + VIEWPORT_OVERSCAN_PX ||
+    rect.right < -VIEWPORT_OVERSCAN_PX ||
+    rect.left > width + VIEWPORT_OVERSCAN_PX
+  );
+}
+
+function stripOffscreenResources(source, clone) {
+  const tag = source.tagName;
+  const isSvgNs = source.namespaceURI === SVG_NS;
+  if (tag === 'IMG' || (tag === 'INPUT' && (source.type || '').toLowerCase() === 'image')) {
+    clone.removeAttribute('src');
+    IMAGE_ATTRS_TO_STRIP.forEach((attr) => clone.removeAttribute(attr));
+  }
+  if (isSvgNs && ['image', 'feImage', 'use', 'pattern', 'textPath'].includes(source.localName)) {
+    clone.removeAttribute('href');
+    clone.removeAttribute('xlink:href');
+  }
+  if (!clone.style) return;
+  for (const prop of CSS_URL_PROPS) {
+    const value = clone.style.getPropertyValue(prop);
+    if (!value || !extractCssUrls(value).some(isInlinable)) continue;
+    const neutral = prop === 'cursor' ? 'auto' : prop === 'content' ? 'normal' : 'none';
+    clone.style.setProperty(prop, neutral, clone.style.getPropertyPriority(prop));
+  }
+}
+
+async function inlineExternalResources(pairs, width, height) {
   const imgJobs = [];
   const svgImageJobs = [];
   const svgUseJobs = [];
   const styleJobs = [];
   const urls = new Set();
+  let offscreen = 0;
 
   for (const [source, clone] of pairs) {
+    if (isOutsideCaptureArea(source, width, height)) {
+      stripOffscreenResources(source, clone);
+      offscreen += 1;
+      continue;
+    }
     const tag = source.tagName;
     const isSvgNs = source.namespaceURI === SVG_NS;
 
@@ -587,7 +650,7 @@ async function inlineExternalResources(pairs) {
     }
   }
 
-  debugLog('[NoxSpot] External resources resolved', { inlined, dropped, unique: urls.size });
+  debugLog('[NoxSpot] External resources resolved', { inlined, dropped, offscreen, unique: urls.size });
 }
 
 // Block-comment regex tolerant of nested url(...) parens; spans the whole
