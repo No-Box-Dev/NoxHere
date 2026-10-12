@@ -196,14 +196,16 @@ unified NoxHere gateway. Customer installations use only the project-specific
 `/widget/{project-id}.js` route; the tested deployment
 workflow publishes its loader and matching immutable core artifact.
 
-Pages and the cron Worker require three private, versioned response bindings:
+The API and orchestrator Workers require private, versioned service bindings:
 `FEEDBACK_RESPONSE` targets `noxhere-feedback`, `TELEMETRY_RESPONSE` targets
-`telemetry`, and `ACTIVITY_RESPONSE` targets `noxhere-activity`. Deploy compatible
-product Workers before deploying Pages or cron. The renderers receive only
+`noxhere-telemetry`, `ACTIVITY_RESPONSE` targets `noxhere-activity`,
+`PLANNING_SERVICE` targets `noxhere-planning`, and provider execution targets
+`noxhere-connections`. Deploy compatible capability Workers before the API,
+public gateway, or orchestrator. The services receive only
 bounded product data and public references; GitHub credentials, Slack tokens,
 connection IDs, and delivery state never cross these bindings. Activity's
-response Worker is built from the Activity repository's `service/` directory.
-Set its provider secret before deploying the compatible Worker:
+response Worker is built from `services/activity`. Set its provider secret
+before deploying the compatible Worker:
 
 ```bash
 npx wrangler secret put ANTHROPIC_API_KEY --name noxhere-activity
@@ -212,10 +214,11 @@ npx wrangler secret put ANTHROPIC_API_KEY --name noxhere-activity
 The secret does not cross the service binding. NoxHere sends bounded event
 facts and receives only validated content or a typed unavailable result.
 
-The safe manual order is Feedback API, Telemetry, Activity response, Pages, then
-cron. See `docs/SERVICE_BOUNDARIES.md` for the ownership and contract rules.
+The safe manual order is Connections, Planning, Feedback, Telemetry, Activity,
+API, public Gateway, then Orchestrator. See `docs/SERVICE_BOUNDARIES.md` for the
+ownership and contract rules.
 Public Telemetry clients use the stable Pages gateway
-`https://app.noxhere.com/api/v1/cues/public/events`. It forwards through the
+`https://app.noxhere.com/api/v1/telemetry/public/events`. It forwards through the
 private `TELEMETRY_RESPONSE` service binding, so copyable snippets do not expose or
 depend on the product Worker's deployment hostname. Keep the direct Worker URL
 for operator diagnostics only; it is not part of the public contract.

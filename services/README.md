@@ -9,12 +9,12 @@ implementation.
 | Service | Product area | Responsibility |
 | --- | --- | --- |
 | `gateway` | Public platform | Authentication, authorization, control plane, and private routing |
-| `connect` | Connections | Provider identity, credentials, email, GitHub and Slack execution |
-| `feed` | Activity | Activity projections, summaries, narration, and release notes |
-| `ticket` | Planning | Features, specifications, priority, links, and attachments |
-| `cue` | Incidents | Telemetry, feature health, incidents, metrics, and SDKs |
+| `connections` | Connections | Provider identity, credentials, email, GitHub and Slack execution |
+| `activity` | Activity | Activity projections, summaries, narration, and release notes |
+| `planning` | Planning | Features, specifications, priority, links, and attachments |
+| `telemetry` | Stats and Incidents | Telemetry, feature health, incidents, metrics, and SDKs |
 | `scheduler` | Platform operations | Queue consumption, reconciliation, recovery, and scheduled jobs |
-| `spot` | Feedback | Public capture, screenshots, feedback rendering, and resolution responses |
+| `feedback` | Feedback | Public capture, screenshots, feedback rendering, and resolution responses |
 
-Provider credentials remain exclusive to Connect and the platform transport
+Provider credentials remain exclusive to Connections and the platform transport
 executors.
