@@ -5,6 +5,7 @@ type BoundService = {
 export interface PlatformServices {
   assets: BoundService;
   connector: BoundService;
+  provider?: BoundService;
   feedback?: BoundService;
   control?: {
     db: D1Database;
@@ -20,6 +21,7 @@ const API_PREFIX = "/api/";
 const HEALTH_PATH = "/__noxhere/health";
 const PRIVATE_BOUNDARY_HEALTH_PATH = "/__noxhere/health/private-boundary";
 const IDENTITY_BOUNDARY_HEALTH_PATH = "/__noxhere/health/identity-boundary";
+const PROVIDER_INGRESS_HEALTH_PATH = "/__noxhere/health/provider-ingress";
 
 function gatewayResponse(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -86,6 +88,16 @@ export async function handleRequest(
     return identityBoundaryHealth(services);
   }
 
+  if (url.pathname === PROVIDER_INGRESS_HEALTH_PATH) {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+    if (!services.provider) return unavailableResponse();
+    const target = new URL("/__noxhere/provider-ingress/ready", request.url);
+    target.search = url.search;
+    return gatewayResponse(await services.provider.fetch(new Request(target, request)));
+  }
+
   if (url.pathname === "/auth/github/callback") {
     const control = services.control;
     if (!control) return unavailableResponse();
@@ -124,6 +136,11 @@ export async function handleRequest(
       if (isPublicFeedbackPath(url.pathname)) {
         return services.feedback
           ? gatewayResponse(await services.feedback.fetch(request))
+          : unavailableResponse();
+      }
+      if (isProviderIngressPath(url.pathname)) {
+        return services.provider
+          ? gatewayResponse(await services.provider.fetch(request))
           : unavailableResponse();
       }
       const publicConnectorPath = isPublicConnectorPath(url.pathname, request);
@@ -227,7 +244,10 @@ export async function handleRequest(
       const { signedAssertionHeaders } = await import("./control/assertion");
       const headers = await signedAssertionHeaders(request, auth, control.assertionSecret);
       const relayed = new Request(request, { headers });
-      const response = await services.connector.fetch(relayed);
+      const providerRequest = isAuthenticatedProviderPath(url.pathname);
+      if (providerRequest && !services.provider) return unavailableResponse();
+      const destination = providerRequest ? services.provider! : services.connector;
+      const response = await destination.fetch(relayed);
       if (!response.ok) {
         const error = await boundedErrorCode(response);
         console.error(JSON.stringify({
@@ -355,15 +375,24 @@ function isApiTokenRequest(request: Request): boolean {
 function isPublicConnectorPath(pathname: string, request: Request): boolean {
   return pathname === "/api/health/live"
     || pathname === "/api/health/ready"
-    || pathname === "/api/webhook"
+    || pathname.startsWith("/api/public/")
+    || ((pathname === "/api/telemetry/public/v1/events"
+      || pathname === "/api/v1/telemetry/public/events") && !isApiTokenRequest(request));
+}
+
+function isProviderIngressPath(pathname: string): boolean {
+  return pathname === "/api/webhook"
     || pathname === "/api/postmark/webhook"
     || pathname === "/api/slack/oauth/callback"
     || pathname === "/api/slack/oauth/handoff"
     || pathname === "/api/slack/events"
-    || pathname === "/api/slack/interactions"
-    || pathname.startsWith("/api/public/")
-    || ((pathname === "/api/telemetry/public/v1/events"
-      || pathname === "/api/v1/telemetry/public/events") && !isApiTokenRequest(request));
+    || pathname === "/api/slack/interactions";
+}
+
+function isAuthenticatedProviderPath(pathname: string): boolean {
+  return pathname.startsWith("/api/slack/")
+    || pathname.startsWith("/api/v1/slack/")
+    || /^\/api\/(?:v1\/)?integrations\/connections\/[^/]+\/start$/.test(pathname);
 }
 
 function isPublicFeedbackPath(pathname: string): boolean {
@@ -395,6 +424,7 @@ export default {
     return handleRequest(request, {
       assets: env.ASSETS,
       connector: env.NOXHERE,
+      provider: capabilities,
       feedback: env.FEEDBACK,
       control: {
         db: env.CONTROL_DB,

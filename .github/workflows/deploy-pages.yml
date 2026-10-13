@@ -59,6 +59,11 @@ jobs:
         run: npx wrangler d1 migrations apply DB --config services/planning/wrangler.jsonc --env staging --remote
       - name: Migrate staging gateway database
         run: npx wrangler d1 migrations apply CONTROL_DB --config services/gateway/wrangler.jsonc --env staging --remote
+      - name: Verify required staging provider-ingress secrets
+        run: >-
+          node scripts/check-worker-secrets.mjs services/connections/wrangler.jsonc staging
+          GITHUB_WEBHOOK_SECRET POSTMARK_WEBHOOK_SECRET SLACK_CLIENT_ID
+          SLACK_CLIENT_SECRET SLACK_SIGNING_SECRET
       - name: Deploy staging Connections capability
         run: npx wrangler deploy --config services/connections/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
       - name: Deploy staging Telemetry capability
@@ -76,6 +81,7 @@ jobs:
           test -n "$NOXHERE_INTERNAL_SECRET"
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config workers/api-gateway/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env staging
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/connections/wrangler.jsonc --env staging
       - name: Deploy staging private API
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional staging background-worker secrets
@@ -104,6 +110,11 @@ jobs:
         run: npx wrangler d1 migrations apply DB --config services/planning/wrangler.jsonc --env="" --remote
       - name: Migrate production gateway database
         run: npx wrangler d1 migrations apply CONTROL_DB --config services/gateway/wrangler.jsonc --env="" --remote
+      - name: Verify required production provider-ingress secrets
+        run: >-
+          node scripts/check-worker-secrets.mjs services/connections/wrangler.jsonc default
+          GITHUB_WEBHOOK_SECRET POSTMARK_WEBHOOK_SECRET SLACK_CLIENT_ID
+          SLACK_CLIENT_SECRET SLACK_SIGNING_SECRET
       - name: Deploy production Connections capability
         run: npx wrangler deploy --config services/connections/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
       - name: Deploy production Telemetry capability
@@ -121,6 +132,7 @@ jobs:
           test -n "$NOXHERE_INTERNAL_SECRET"
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config workers/api-gateway/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env=""
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/connections/wrangler.jsonc --env=""
       - name: Deploy production private API
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional production background-worker secrets
