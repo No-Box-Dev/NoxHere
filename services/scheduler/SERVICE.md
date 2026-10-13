@@ -17,15 +17,20 @@ and risk two consumers during cutover, so its runtime identifier stays stable.
 
 - Queue events perform durable, retried asynchronous work.
 - The one-minute trigger dispatches configured reports and digests.
+- The one-minute trigger also closes and requeues reconciliations that outlive
+  Cloudflare's 15-minute Queue consumer wall-time limit.
 - The 30-minute production trigger runs bounded recovery and health sweeps and
   publishes one durable reconciliation message per organization. Queue
   consumers process organizations independently with retries and a five-minute
-  CPU allowance. Staging uses five minutes to exercise recovery.
+  CPU allowance. A partial unique D1 index enforces one unfinished
+  reconciliation per organization. Staging uses five minutes to exercise
+  recovery.
 - The 03:00 UTC maintenance ticks drain the bounded event-archive backlog.
 
 Each path has a separate `service_heartbeats` component:
 `background.queue`, `background.schedule`, `background.reports`,
-`background.maintenance`, and `background.archive`. The public readiness API
+`background.reconciliation-recovery`, `background.maintenance`, and
+`background.archive`. The public readiness API
 returns HTTP 200 with `status: "degraded"` when only `backgroundWorker` is
 unhealthy. Database, durable-delivery backlog, or required capability failures
 still return HTTP 503 with `status: "not_ready"`.

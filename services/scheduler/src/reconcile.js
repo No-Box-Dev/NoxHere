@@ -32,10 +32,6 @@ import { reconcileFeedbackReportsForRepo } from "../../../functions/lib/feedback
 // re-scan ancient history every tick.
 const EVENT_RECONCILE_LOOKBACK_HOURS = 48;
 
-// If an unfinished run started within this window, the worker skips the org
-// to avoid two ticks racing. Picked just under the 30-minute interval.
-const LOCK_WINDOW_MIN = 25;
-
 // An installation is flagged 'silent' if no webhook event arrived within
 // this window AND reconcile saw nothing new on this tick.
 const SILENT_THRESHOLD_HOURS = 24;
@@ -129,43 +125,28 @@ export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
   }
 }
 
-// Insert a reconcile_runs row with finished_at = NULL. Returns the row id
-// (the lock token). Returns null if a prior unfinished run started within
-// the last LOCK_WINDOW_MIN minutes — caller should skip the tick.
+// Insert a reconcile_runs row with finished_at = NULL. A partial unique index
+// enforces one unfinished row per organization, so concurrent Queue deliveries
+// cannot both acquire the lease. Returns null when another run owns it.
 async function acquireLock(db, orgId) {
-  // Platform cancellations cannot run a finally block. Close abandoned claims
-  // before looking for a live one so operational history is accurate and the
-  // table does not accumulate rows that appear perpetually in flight.
-  await db.prepare(
-    `UPDATE reconcile_runs
-        SET finished_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'),
-            duration_ms = CAST((julianday('now') - julianday(started_at)) * 86400000 AS INTEGER),
-            error = 'reconcile_abandoned'
-      WHERE org_id = ? AND finished_at IS NULL
-        AND started_at <= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', ?)`,
-  ).bind(orgId, `-${LOCK_WINDOW_MIN} minutes`).run();
-
-  const recent = await db
-    .prepare(
-      `SELECT id FROM reconcile_runs
-        WHERE org_id = ?
-          AND finished_at IS NULL
-          AND started_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now', ?)
-        LIMIT 1`,
-    )
-    .bind(orgId, `-${LOCK_WINDOW_MIN} minutes`)
-    .first();
-  if (recent) return null;
-
-  const inserted = await db
-    .prepare(
-      `INSERT INTO reconcile_runs (org_id, started_at)
-       VALUES (?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-       RETURNING id`,
-    )
-    .bind(orgId)
-    .first();
-  return inserted?.id ?? null;
+  try {
+    const inserted = await db
+      .prepare(
+        `INSERT INTO reconcile_runs (org_id, started_at)
+         VALUES (?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+         RETURNING id`,
+      )
+      .bind(orgId)
+      .first();
+    return inserted?.id ?? null;
+  } catch (error) {
+    const message = String(error?.message ?? error);
+    if (message.includes("UNIQUE constraint failed: reconcile_runs.org_id")
+        || message.includes("idx_reconcile_runs_one_active_org")) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 async function sinceCursor(db, orgId, resource) {

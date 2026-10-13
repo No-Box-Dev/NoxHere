@@ -54,7 +54,8 @@ function makeDb({
   members = [],          // logins (strings) currently in D1
   repos = [],            // names (strings) currently in D1
   syncCursors = {},      // resource → last_synced
-  recentUnfinishedRun = false,
+  activeLockConflict = false,
+  lockInsertError = null,
   lastEventAt = null,    // orgs.last_event_at
   reconcileInsertId = 99,
 } = {}) {
@@ -66,10 +67,11 @@ function makeDb({
       _binds: [],
       bind(...binds) { this._binds = binds; return this; },
       async first() {
-        if (sql.includes("FROM reconcile_runs") && sql.includes("finished_at IS NULL")) {
-          return recentUnfinishedRun ? { id: 1 } : null;
-        }
         if (sql.includes("INSERT INTO reconcile_runs") && sql.includes("RETURNING id")) {
+          if (lockInsertError) throw lockInsertError;
+          if (activeLockConflict) {
+            throw new Error("D1_ERROR: UNIQUE constraint failed: reconcile_runs.org_id");
+          }
           calls.runs.push({ kind: "insert", binds: this._binds });
           return { id: reconcileInsertId };
         }
@@ -178,19 +180,24 @@ describe("reconcileOrg", () => {
     });
   });
 
-  it("skips the tick when a prior unfinished run is recent", async () => {
+  it("skips the tick when the database-enforced active lease is held", async () => {
     syncMembers.mockResolvedValue([]);
     syncRepos.mockResolvedValue([]);
-    const db = makeDb({ recentUnfinishedRun: true });
+    const db = makeDb({ activeLockConflict: true });
 
     await reconcileOrg(env, db, 1, "acme", 99);
 
     expect(syncMembers).not.toHaveBeenCalled();
     expect(syncRepos).not.toHaveBeenCalled();
     expect(syncFeatures).not.toHaveBeenCalled();
-    expect(db._calls.runs).toEqual([
-      expect.objectContaining({ kind: "update", sql: expect.stringContaining("reconcile_abandoned") }),
-    ]);
+    expect(db._calls.runs).toEqual([]);
+  });
+
+  it("does not hide database failures while acquiring the lease", async () => {
+    const db = makeDb({ lockInsertError: new Error("D1 unavailable") });
+
+    await expect(reconcileOrg(env, db, 1, "acme", 99)).rejects.toThrow("D1 unavailable");
+    expect(syncMembers).not.toHaveBeenCalled();
   });
 
   it("flags installation as silent when last_event_at is older than 24h", async () => {
