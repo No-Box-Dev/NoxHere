@@ -224,13 +224,13 @@ function makeRpcSmokeWorker() {
   }, null, 2), { mode: 0o600 });
   writeFileSync(join(rpcDir, "index.js"), `export default {
   async fetch(_request, env) {
-    const [spot, cue, feed, ticket] = await Promise.all([
+    const [feedback, telemetry, activity, planning] = await Promise.all([
       env.FEEDBACK.describe(),
       env.TELEMETRY.describe(),
       env.ACTIVITY.describe(),
       env.PLANNING.describe(),
     ]);
-    return Response.json({ spot, cue, feed, ticket });
+    return Response.json({ feedback, telemetry, activity, planning });
   }
 };\n`, { mode: 0o600 });
 }

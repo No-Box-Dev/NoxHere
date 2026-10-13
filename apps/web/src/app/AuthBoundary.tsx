@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
-import { AUTH_REQUIRED_EVENT } from "../api/http";
+import { AUTH_REQUIRED_EVENT, postRawJson } from "../api/http";
 import { platformApi } from "../api/platform";
 import { WorkspaceProjectSelector, type WorkspaceProfile } from "./WorkspaceProjectSelector";
 import { readLastProject } from "./last-project";
@@ -20,13 +20,6 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (initialScope.organizationId && initialScope.projectId) {
-      void queryClient.prefetchQuery({
-        queryKey: ["platform", "bootstrap", initialScope.organizationId, initialScope.projectId],
-        queryFn: ({ signal }) => platformApi.bootstrap(initialScope.organizationId, initialScope.projectId, signal),
-        staleTime: 5 * 60_000,
-      });
-    }
     fetch("/api/auth/profile", { credentials: "same-origin" })
       .then(async (response) => {
         if (response.status === 401) return null;
@@ -36,7 +29,16 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
       .then(setProfile)
       .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not verify your Nox session"))
       .finally(() => setLoading(false));
-  }, [initialScope, queryClient]);
+  }, []);
+
+  useEffect(() => {
+    if (!profile || !initialScope.organizationId || !initialScope.projectId) return;
+    void queryClient.prefetchQuery({
+      queryKey: ["platform", "bootstrap", initialScope.organizationId, initialScope.projectId],
+      queryFn: ({ signal }) => platformApi.bootstrap(initialScope.organizationId, initialScope.projectId, signal),
+      staleTime: 5 * 60_000,
+    });
+  }, [initialScope, profile, queryClient]);
 
   useEffect(() => {
     const requireAuthentication = () => {
@@ -54,11 +56,7 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     // ingest key or identity hashing key, and a telemetry failure cannot block
     // opening the app. The endpoint de-duplicates activity to one fact per user
     // per day.
-    void fetch("/api/v1/app-activity", {
-      method: "POST",
-      credentials: "same-origin",
-      keepalive: true,
-    }).catch(() => undefined);
+    void postRawJson("/api/v1/app-activity", {}).catch(() => undefined);
   }, [profile?.user.login]);
 
   if (loading) return <div className="state-message" role="status"><span className="spinner" />Loading…</div>;

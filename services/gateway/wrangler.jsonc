@@ -11,7 +11,17 @@
     "directory": "../../apps/web/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/auth/github/callback", "/auth/email/*", "/__noxhere/*"]
+    "run_worker_first": [
+      "/api/*",
+      "/auth/github/callback",
+      "/auth/email/*",
+      "/__noxhere/*",
+      "/widget/*",
+      "/r2/*",
+      "/responses/*",
+      "/feedback.min.js",
+      "/feedback-core.min.js"
+    ]
   },
   "services": [
     {
@@ -21,6 +31,10 @@
     {
       "binding": "NOXHERE_IDENTITY",
       "service": "noxhere-connections"
+    },
+    {
+      "binding": "FEEDBACK",
+      "service": "noxhere-feedback"
     }
   ],
   "d1_databases": [
@@ -62,6 +76,10 @@
         {
           "binding": "NOXHERE_IDENTITY",
           "service": "noxhere-connections-staging"
+        },
+        {
+          "binding": "FEEDBACK",
+          "service": "noxhere-feedback-staging"
         }
       ],
       "d1_databases": [

@@ -84,7 +84,7 @@ describe("Feedback resolution template API", () => {
     const changedTemplate = { ...DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE, tone: "formal" as const };
     const response = await onRequestPatch(context({ db: racedDb, method: "PATCH", etag: await currentEtag(), body: { template: changedTemplate } }).ctx as never);
     expect(response.status).toBe(412);
-    expect(racedDb.runs.filter((run) => run.sql.includes("feedback_config_audit"))).toHaveLength(0);
+    expect(racedDb.runs.filter((run) => run.sql.includes("noxspot_config_audit"))).toHaveLength(0);
   });
 
   it("confirms a persisted update when D1 reports an unreliable change count", async () => {
@@ -93,7 +93,7 @@ describe("Feedback resolution template API", () => {
     const custom = { ...DEFAULT_FEEDBACK_RESOLUTION_TEMPLATE, buttonLabel: "Reopen the ticket" };
     const response = await onRequestPatch(context({ db, method: "PATCH", etag, body: { template: custom } }).ctx as never);
     expect(response.status).toBe(200);
-    expect(db.runs.filter((run) => run.sql.includes("feedback_config_audit"))).toHaveLength(1);
+    expect(db.runs.filter((run) => run.sql.includes("noxspot_config_audit"))).toHaveLength(1);
   });
 
   it("previews substitutions and sends a test through the private email capability", async () => {
