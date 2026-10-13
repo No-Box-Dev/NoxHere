@@ -19,6 +19,7 @@ export interface PlatformServices {
 const API_PREFIX = "/api/";
 const HEALTH_PATH = "/__noxhere/health";
 const PRIVATE_BOUNDARY_HEALTH_PATH = "/__noxhere/health/private-boundary";
+const IDENTITY_BOUNDARY_HEALTH_PATH = "/__noxhere/health/identity-boundary";
 
 function gatewayResponse(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -76,6 +77,13 @@ export async function handleRequest(
       return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
     }
     return privateBoundaryHealth(request, services);
+  }
+
+  if (url.pathname === IDENTITY_BOUNDARY_HEALTH_PATH) {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+    return identityBoundaryHealth(services);
   }
 
   if (url.pathname === "/auth/github/callback") {
@@ -295,6 +303,33 @@ async function privateBoundaryHealth(request: Request, services: PlatformService
     downstreamStatus: downstream.status,
     ...(code ? { code } : {}),
   }, { status: downstream.ok ? 200 : 503, headers: { "Cache-Control": "no-store" } });
+}
+
+async function identityBoundaryHealth(services: PlatformServices): Promise<Response> {
+  const control = services.control;
+  if (!control?.identity.resolveGitHubIdentity) return unavailableResponse();
+  const principal = await control.db.prepare(
+    `SELECT github_login, github_connection_id AS connection_id
+       FROM principals
+      WHERE github_connection_id IS NOT NULL
+      ORDER BY updated_at DESC LIMIT 1`,
+  ).first<{ github_login: string; connection_id: string }>();
+  if (!principal) {
+    return Response.json({ service: "noxhere", status: "degraded", dependency: "connections", code: "no_identity_connection" }, { status: 503 });
+  }
+  try {
+    const identity = await control.identity.resolveGitHubIdentity(principal.connection_id);
+    const healthy = Boolean(identity && identity.user.login.toLowerCase() === principal.github_login.toLowerCase());
+    return Response.json({
+      service: "noxhere",
+      status: healthy ? "ok" : "degraded",
+      dependency: "connections",
+      ...(healthy ? {} : { code: "identity_connection_expired" }),
+    }, { status: healthy ? 200 : 503, headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error(JSON.stringify({ event: "identity_boundary_health_failed", error: error instanceof Error ? error.message : String(error) }));
+    return Response.json({ service: "noxhere", status: "degraded", dependency: "connections", code: "identity_service_unavailable" }, { status: 503 });
+  }
 }
 
 async function boundedErrorCode(response: Response): Promise<string> {
