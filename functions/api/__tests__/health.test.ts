@@ -26,7 +26,7 @@ function telemetryService(options: { ok?: boolean; buildSha?: string; rpc?: bool
 }
 
 function context(options: {
-  heartbeat?: { status: string; last_succeeded_at: string } | null;
+  heartbeat?: { status: string; last_succeeded_at: string; release?: string } | null;
   stale?: number;
   dbError?: boolean;
   serviceOk?: boolean;
@@ -34,7 +34,7 @@ function context(options: {
   telemetryRpc?: boolean | "hang";
 } = {}) {
   const heartbeat = options.heartbeat === undefined
-    ? { status: "healthy", last_succeeded_at: new Date().toISOString() }
+    ? { status: "healthy", last_succeeded_at: new Date().toISOString(), release: "connect-sha" }
     : options.heartbeat;
   const prepare = vi.fn((sql: string) => ({
     first: vi.fn(async () => {
@@ -68,7 +68,7 @@ describe("NoxHere health", () => {
       status: "ok",
       checks: { database: true, backgroundWorker: true, deliveryQueue: true, planning: true, feedback: true, telemetry: true, activity: true },
       service: "noxhere",
-      versions: { noxhere: "connect-sha", planning: "service-sha", feedback: "service-sha", telemetry: "connect-sha", activity: "service-sha" },
+      versions: { noxhere: "connect-sha", background: "connect-sha", planning: "service-sha", feedback: "service-sha", telemetry: "connect-sha", activity: "service-sha" },
     });
   });
 
@@ -76,6 +76,18 @@ describe("NoxHere health", () => {
     const response = await ready(context({ heartbeat: null }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ status: "degraded", checks: { backgroundWorker: false } });
+  });
+
+  it("reports degraded until the deployed background release has scheduled successfully", async () => {
+    const response = await ready(context({
+      heartbeat: { status: "healthy", last_succeeded_at: new Date().toISOString(), release: "older-sha" },
+    }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      status: "degraded",
+      checks: { backgroundWorker: false },
+      versions: { background: "older-sha" },
+    });
   });
 
   it("is not ready for a stuck durable delivery even when the background heartbeat is stale", async () => {
