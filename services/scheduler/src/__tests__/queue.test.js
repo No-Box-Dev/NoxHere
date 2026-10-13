@@ -26,6 +26,7 @@ vi.mock("../../../../functions/lib/delivery-outbox.js", () => ({
 }));
 
 import worker from "../index.js";
+import { reconcileOrg } from "../reconcile.js";
 import { narrateEvent } from "../../../../functions/lib/narrator.js";
 import { syncRepo } from "../../../../functions/lib/github-sync.js";
 import { getInstallationToken } from "../../../../functions/lib/github-app.js";
@@ -62,6 +63,14 @@ describe("background queue consumer", () => {
     await worker.queue({ messages: [m] }, env);
     expect(getInstallationToken).toHaveBeenCalledWith(env, 100);
     expect(syncRepo).toHaveBeenCalledWith(env.DB, "install-token", 1, "acme", "api", true);
+    expect(m.ack).toHaveBeenCalledOnce();
+  });
+
+  it("runs one organization reconciliation as a durable queue task", async () => {
+    const task = { type: "reconcile_org", orgId: 7, accountLogin: "acme", installationId: 100 };
+    const m = msg(task);
+    await worker.queue({ messages: [m] }, env);
+    expect(reconcileOrg).toHaveBeenCalledWith(env, env.DB, 7, "acme", 100);
     expect(m.ack).toHaveBeenCalledOnce();
   });
 

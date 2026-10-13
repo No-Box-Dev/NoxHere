@@ -71,7 +71,7 @@ describe("scheduled tick", () => {
     expect(reconcileOrg).not.toHaveBeenCalled();
   });
 
-  it("heals orgs missing installation_id/bootstrapped_at before dispatching reconcile", async () => {
+  it("heals orgs before publishing independent durable reconciliation tasks", async () => {
     vi.mocked(reconcileOrg).mockReset();
     const db = makeDb({
       orgs: [
@@ -84,16 +84,23 @@ describe("scheduled tick", () => {
       ],
     });
 
+    const queue = { sendBatch: vi.fn() };
     const { ctx, drain } = makeCtx();
-    await worker.fetch(new Request("https://x/__scheduled"), { DB: db, ENABLE_MANUAL_CRON: "true" }, ctx);
+    await worker.fetch(new Request("https://x/__scheduled"), { DB: db, TASK_QUEUE: queue, ENABLE_MANUAL_CRON: "true" }, ctx);
     await drain();
 
     expect(db._state.orgs[0].installation_id).toBe(111);
     expect(db._state.orgs[0].bootstrapped_at).not.toBeNull();
     expect(db._state.orgs[1].installation_id).toBe(222);
-    expect(reconcileOrg).toHaveBeenCalledTimes(2);
-    expect(reconcileOrg).toHaveBeenCalledWith(expect.anything(), db, 1, "acme", 111);
-    expect(reconcileOrg).toHaveBeenCalledWith(expect.anything(), db, 2, "n1", 222);
+    expect(reconcileOrg).not.toHaveBeenCalled();
+    expect(queue.sendBatch).toHaveBeenCalledWith([
+      { body: expect.objectContaining({
+        type: "reconcile_org", orgId: 1, accountLogin: "acme", installationId: 111,
+      }) },
+      { body: expect.objectContaining({
+        type: "reconcile_org", orgId: 2, accountLogin: "n1", installationId: 222,
+      }) },
+    ]);
   });
 
   it("leaves orgs without a matching installation alone (no reconcile, no heal)", async () => {
@@ -105,13 +112,15 @@ describe("scheduled tick", () => {
       installations: [],
     });
 
+    const queue = { sendBatch: vi.fn() };
     const { ctx, drain } = makeCtx();
-    await worker.fetch(new Request("https://x/__scheduled"), { DB: db, ENABLE_MANUAL_CRON: "true" }, ctx);
+    await worker.fetch(new Request("https://x/__scheduled"), { DB: db, TASK_QUEUE: queue, ENABLE_MANUAL_CRON: "true" }, ctx);
     await drain();
 
     expect(db._state.orgs[0].installation_id).toBeNull();
     expect(db._state.orgs[0].bootstrapped_at).toBeNull();
     expect(reconcileOrg).not.toHaveBeenCalled();
+    expect(queue.sendBatch).not.toHaveBeenCalled();
   });
 
   it("preserves an existing bootstrapped_at when only installation_id is missing", async () => {
@@ -124,8 +133,9 @@ describe("scheduled tick", () => {
       installations: [{ installation_id: 111, account_login: "acme" }],
     });
 
+    const queue = { sendBatch: vi.fn() };
     const { ctx, drain } = makeCtx();
-    await worker.fetch(new Request("https://x/__scheduled"), { DB: db, ENABLE_MANUAL_CRON: "true" }, ctx);
+    await worker.fetch(new Request("https://x/__scheduled"), { DB: db, TASK_QUEUE: queue, ENABLE_MANUAL_CRON: "true" }, ctx);
     await drain();
 
     expect(db._state.orgs[0].installation_id).toBe(111);
