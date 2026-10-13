@@ -16,7 +16,7 @@
     "resolveJsonModule": true
   },
   "include": [
-    "workers/api-gateway/worker-configuration.d.ts",
+    "services/core-api/worker-configuration.d.ts",
     "functions/**/*.ts",
     "services/scheduler/**/*.ts",
     "packages/contracts/**/*.ts"

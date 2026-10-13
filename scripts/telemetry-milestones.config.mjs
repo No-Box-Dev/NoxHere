@@ -110,7 +110,7 @@ export const milestones = [
       {
         name: "Apply migrations to fresh local D1",
         command: "npx",
-        args: ["wrangler", "d1", "migrations", "apply", "DB", "--local", "--persist-to", "{tempDir}/d1", "--config", "workers/api-gateway/wrangler.jsonc", "--env="],
+        args: ["wrangler", "d1", "migrations", "apply", "DB", "--local", "--persist-to", "{tempDir}/d1", "--config", "services/core-api/wrangler.jsonc", "--env="],
       },
       {
         name: "Source and report isolation",
@@ -149,7 +149,7 @@ export const milestones = [
       {
         name: "Apply migrations to fresh local D1",
         command: "npx",
-        args: ["wrangler", "d1", "migrations", "apply", "DB", "--local", "--persist-to", "{tempDir}/d1", "--config", "workers/api-gateway/wrangler.jsonc", "--env="],
+        args: ["wrangler", "d1", "migrations", "apply", "DB", "--local", "--persist-to", "{tempDir}/d1", "--config", "services/core-api/wrangler.jsonc", "--env="],
       },
       {
         name: "Data inventory and documentation drift",
@@ -174,7 +174,7 @@ export const milestones = [
       {
         name: "Apply migrations to fresh local D1",
         command: "npx",
-        args: ["wrangler", "d1", "migrations", "apply", "DB", "--local", "--persist-to", "{tempDir}/d1", "--config", "workers/api-gateway/wrangler.jsonc", "--env="],
+        args: ["wrangler", "d1", "migrations", "apply", "DB", "--local", "--persist-to", "{tempDir}/d1", "--config", "services/core-api/wrangler.jsonc", "--env="],
       },
       {
         name: "Key lifecycle and leakage tests",

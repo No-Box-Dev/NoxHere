@@ -18,7 +18,7 @@ Spot, Telemetry, and Connect are not separate products or browser applications.
 - `packages/sdk/` and `packages/python-sdk/` — generated unified public API clients.
 - `packages/feedback-widget/` — feedback capture widget source, tests, and R2 bundles; the shipped browser API remains `Feedback`.
 - `functions/` — compatibility and private API routes served by
-  `workers/api-gateway/`; these remain live while handlers move to capability
+  `services/core-api/`; these remain live while handlers move to capability
   services.
 - `migrations/` — append-only platform D1 migrations.
 The retired root `src/` frontend was removed. Do not recreate a second web

@@ -27,7 +27,9 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: node scripts/check-migration-immutability.mjs "$BASE_REF"
       - name: Apply migrations to a fresh database
-        run: npx wrangler d1 migrations apply DB --local --persist-to "$RUNNER_TEMP/noxhere-d1" --config workers/api-gateway/wrangler.jsonc --env=""
+        run: npx wrangler d1 migrations apply DB --local --persist-to "$RUNNER_TEMP/noxhere-d1" --config services/core-api/wrangler.jsonc --env=""
+      - name: Enforce service credential boundaries
+        run: npm run health:boundaries
       - run: npm run lint
 
   typecheck:

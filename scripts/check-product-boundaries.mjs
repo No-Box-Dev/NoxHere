@@ -6,6 +6,7 @@ const requestedRoots = process.argv.slice(2);
 const roots = (requestedRoots.length ? requestedRoots : [
   "functions/products/planning",
   "services/feedback/src",
+  "services/core-api",
 ]).map((root) => resolve(root));
 {
   const forbidden = [
@@ -21,7 +22,7 @@ const roots = (requestedRoots.length ? requestedRoots : [
     const info = await stat(path);
     if (info.isDirectory()) {
       for (const name of await readdir(path)) {
-        if (["node_modules", "dist", ".git"].includes(name)) continue;
+        if (["node_modules", "dist", ".git", ".generated"].includes(name)) continue;
         await visit(`${path}/${name}`);
       }
       return;

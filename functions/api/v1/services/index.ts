@@ -7,11 +7,6 @@ import { onRequestGet as getIntegrationStatus } from "../../integrations/status"
 
 export interface ServiceCatalogContext {
   env: NoxDatabaseEnv & ProductServiceEnvironment & {
-    GITHUB_APP_ID?: string;
-    GITHUB_APP_PRIVATE_KEY?: string;
-    SLACK_CLIENT_ID?: string;
-    SLACK_CLIENT_SECRET?: string;
-    SLACK_SIGNING_SECRET?: string;
     SLACK_APP_ID?: string;
   };
   data: { orgId: number; projectId?: string | null; orgLogin: string; isAdmin: boolean };

@@ -1,5 +1,4 @@
 import { getCtx, jsonResponse, errorResponse } from "../lib/db";
-import { getInstallationToken, signAppJwt } from "../lib/github-app";
 import { setInstallationRepos, upsertInstallation } from "../lib/gh-mirror";
 import { parseAppSettings } from "../lib/apps.js";
 
@@ -128,48 +127,11 @@ async function discoverInstallationViaApp(env, ownerId) {
   ).bind(ownerId).first();
   if (existing) return;
 
-  // Webhook + install paths throw on missing App credentials. This path used
-  // to silently no-op, which hid a real misconfiguration: users with no
-  // installations row saw `{projects: []}` instead of an error. Make it loud
-  // so the missing env vars get spotted (matches signAppJwt's behavior).
-  if (!env.GITHUB_APP_ID || !env.GITHUB_APP_PRIVATE_KEY) {
-    throw new Error("GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY are required for installation discovery");
+  if (!env.NOXHERE_EMAIL?.discoverGitHubInstallation) {
+    throw new Error("Connections service is required for GitHub installation discovery");
   }
-
-  let jwt;
-  try {
-    jwt = await signAppJwt(env);
-  } catch (err) {
-    console.error("[noxhere projects] signAppJwt failed:", err);
-    return;
-  }
-
-  const headers = {
-    Authorization: `Bearer ${jwt}`,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "NoxHere",
-  };
-
-  // Try org first, then user installation.
-  for (const path of [
-    `/orgs/${encodeURIComponent(ownerId)}/installation`,
-    `/users/${encodeURIComponent(ownerId)}/installation`,
-  ]) {
-    const res = await fetch(`https://api.github.com${path}`, { headers });
-    if (res.status === 404) continue;
-    if (!res.ok) {
-      console.error(`[noxhere projects] discover ${path} ${res.status}`);
-      return;
-    }
-    const data = await res.json();
-    if (!data?.id) return;
-    await upsertInstallation(env.DB, {
-      id: data.id,
-      account: data.account || { login: ownerId },
-    });
-    return;
-  }
+  const installation = await env.NOXHERE_EMAIL.discoverGitHubInstallation(ownerId);
+  if (installation?.id) await upsertInstallation(env.DB, installation);
 }
 
 // For each installation belonging to this owner, if repos_json is empty,
@@ -183,7 +145,10 @@ async function bootstrapReposIfEmpty(env, ownerId) {
   for (const inst of insts.results ?? []) {
     if (inst.repos_json && inst.repos_json !== "[]") continue;
     try {
-      const fullNames = await fetchInstallationRepos(env, inst.installation_id);
+      if (!env.NOXHERE_EMAIL?.listGitHubInstallationRepositories) {
+        throw new Error("Connections service is required for GitHub repository discovery");
+      }
+      const fullNames = await env.NOXHERE_EMAIL.listGitHubInstallationRepositories(inst.installation_id);
       await setInstallationRepos(env.DB, inst.installation_id, fullNames);
     } catch (err) {
       console.error("[noxhere projects] bootstrap fetch failed:", inst.installation_id, err);
@@ -191,36 +156,6 @@ async function bootstrapReposIfEmpty(env, ownerId) {
   }
 }
 
-async function fetchInstallationRepos(env, installationId) {
-  const token = await getInstallationToken(env, installationId);
-  const out = [];
-  let page = 1;
-  while (page <= 10) {
-    const res = await fetch(
-      `https://api.github.com/installation/repositories?per_page=100&page=${page}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          "User-Agent": "NoxHere",
-        },
-      }
-    );
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`installation/repositories ${res.status}: ${text.slice(0, 200)}`);
-    }
-    const data = await res.json();
-    const repos = Array.isArray(data?.repositories) ? data.repositories : [];
-    for (const r of repos) {
-      if (r?.full_name) out.push(r.full_name);
-    }
-    if (repos.length < 100) break;
-    page++;
-  }
-  return out;
-}
 
 async function syncProjectsFromInstallations(db, ownerId) {
   const insts = await db.prepare(

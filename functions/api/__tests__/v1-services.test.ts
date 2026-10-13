@@ -54,11 +54,9 @@ function context(service = "noxhere") {
     params: { service },
     env: {
       DB: { prepare: vi.fn((sql: string) => statementFor(sql)) },
-      GITHUB_APP_ID: "1",
-      GITHUB_APP_PRIVATE_KEY: "private",
-      SLACK_CLIENT_ID: "client",
-      SLACK_CLIENT_SECRET: "secret",
-      SLACK_SIGNING_SECRET: "signing-secret",
+      NOXHERE_EMAIL: {
+        getProviderConfiguration: vi.fn(async () => ({ github: true, slack: true, postmark: true })),
+      },
     },
     data: { orgId: 7, orgLogin: "acme", userLogin: "alice", isAdmin: true },
   };

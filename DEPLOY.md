@@ -24,9 +24,12 @@ npm ci
 cp .env.example .env.local
 ```
 
-Edit `wrangler.toml` and `services/scheduler/wrangler.toml`: replace `database_id` (and, if you like, the `*-noxhere*` resource names) with your own — the committed IDs point at the canonical hosted instance and you cannot deploy to them.
+Edit the configs under `services/`: replace each `database_id` and hosted
+resource name with your own. The core API config is
+`services/core-api/wrangler.jsonc`; provider credentials belong exclusively to
+`services/connections/wrangler.jsonc`.
 
-`PLATFORM_ADMIN_GITHUB_IDS` in `wrangler.toml` is a comma-separated allowlist
+`PLATFORM_ADMIN_GITHUB_IDS` in `services/core-api/wrangler.jsonc` is a comma-separated allowlist
 of verified numeric GitHub user ids. Those users can open the internal,
 read-only `/operator` business dashboard across organizations. Use ids from
 GitHub's `/user` response rather than mutable login names; remove the variable
@@ -35,7 +38,7 @@ entirely on self-hosted instances that do not need a platform operator.
 ## 2. Provision Cloudflare resources
 
 ```bash
-# D1 database — copy the printed database_id into BOTH wrangler.toml files
+# D1 database — copy the printed database_id into every service config that binds DB
 npx wrangler d1 create noxhere
 
 # Durable background-work queue + its dead-letter queue
@@ -76,21 +79,22 @@ Frontend build var (public) — set in `.env.local` for local builds and as a Pa
 VITE_GITHUB_APP_CLIENT_ID=<your app client id>
 ```
 
-Server-side secrets on the production **API Worker**. NoxHere owns the public
-`app.noxhere.com` route and forwards public provider callbacks to
-`noxhere-api` through a service binding:
+Provider credentials belong only to the private **Connections Worker**. The
+public Gateway forwards signed callbacks to Connections, and the core API uses
+its private `NOXHERE_EMAIL` service binding for provider operations:
 
 ```bash
-npx wrangler secret put GITHUB_APP_ID --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put GITHUB_APP_CLIENT_ID --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put GITHUB_APP_CLIENT_SECRET --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put GITHUB_APP_PRIVATE_KEY --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put GITHUB_WEBHOOK_SECRET --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put ENCRYPTION_KEY --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put ANTHROPIC_API_KEY --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put SLACK_CLIENT_ID --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put SLACK_CLIENT_SECRET --config workers/api-gateway/wrangler.jsonc
-npx wrangler secret put SLACK_SIGNING_SECRET --config workers/api-gateway/wrangler.jsonc
+npx wrangler secret put GITHUB_APP_CLIENT_SECRET --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put GITHUB_APP_PRIVATE_KEY --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put GITHUB_WEBHOOK_SECRET --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put ENCRYPTION_KEY --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put POSTMARK_SERVER_TOKEN --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put POSTMARK_WEBHOOK_SECRET --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put SLACK_CLIENT_ID --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put SLACK_CLIENT_SECRET --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put SLACK_SIGNING_SECRET --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/connections/wrangler.jsonc --env=""
+npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/core-api/wrangler.jsonc --env=""
 ```
 
 After changing `GITHUB_WEBHOOK_SECRET`, update the NoxHere GitHub App with
@@ -98,11 +102,10 @@ the same value and verify a `ping` delivery receives HTTP 200. Worker and
 GitHub values are write-only; rotate them together instead of attempting to
 compare them later.
 
-Generate `ENCRYPTION_KEY` with `openssl rand -hex 32`. `REVIEW_RUNNER_TOKEN` (generate the same way) authorizes the local noxreview runner against `/api/review/*` — keep it out of any client-visible config:
-
-```bash
-npx wrangler pages secret put REVIEW_RUNNER_TOKEN   --project-name noxhere
-```
+Generate `ENCRYPTION_KEY` and `NOXHERE_INTERNAL_SECRET` with
+`openssl rand -hex 32`. The internal secret must match on the Gateway, core API,
+Connections, and any capability Worker that verifies internal assertions; it
+must never be exposed to browsers.
 
 The **background Worker** only receives optional feature secrets. GitHub App
 authentication and encrypted provider credentials stay in Connections and are
@@ -130,7 +133,10 @@ SLACK_CONFIG_TOKEN=xoxe.xoxp-... npm run slack:validate
 SLACK_CONFIG_TOKEN=xoxe.xoxp-... npm run slack:create
 ```
 
-The create command prints the app ID and its three credentials. Put the credentials into the Pages secrets listed above, deploy the Pages app, then verify the Events API request URL from the Slack app's **App Manifest** page. Keep the app ID in NoxKey for later manifest updates:
+The create command prints the app ID and its three credentials. Put the
+credentials on Connections using the commands above, deploy Connections and
+the public Gateway, then verify the Events API request URL from the Slack app's
+**App Manifest** page. Keep the app ID in NoxKey for later manifest updates:
 
 ```bash
 SLACK_CONFIG_TOKEN=xoxe.xoxp-... SLACK_APP_ID=A0123456789 npm run slack:push
@@ -187,7 +193,9 @@ proved locally.
 
 ```bash
 npm run build
-npx wrangler pages deploy dist --project-name noxhere --branch main
+npm run deploy:connections
+npm run deploy:core-api
+npm run deploy:noxhere
 npx wrangler deploy --config services/scheduler/wrangler.toml --env=""
 cd services/feedback && npm ci && npm run types && npm test && npx wrangler deploy && cd ../..
 ```
