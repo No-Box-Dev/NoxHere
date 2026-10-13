@@ -96,7 +96,7 @@ jobs:
             printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/scheduler/wrangler.toml --env staging
           fi
       - name: Deploy staging background worker
-        run: npx wrangler deploy --config services/scheduler/wrangler.toml --env staging --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/scheduler/wrangler.toml --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging NoxHere gateway
         run: npx wrangler deploy --config services/gateway/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
       - name: Smoke staging release
@@ -147,7 +147,7 @@ jobs:
             printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/scheduler/wrangler.toml --env=""
           fi
       - name: Deploy production background worker
-        run: npx wrangler deploy --config services/scheduler/wrangler.toml --env="" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/scheduler/wrangler.toml --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production NoxHere gateway
         run: |
           GATEWAY_VERSION_TAG="${DEPLOY_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"

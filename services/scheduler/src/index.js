@@ -43,6 +43,11 @@ const MAX_RECONCILIATIONS_PER_TICK = 100;
 // 1-based). We record the terminal failure on the FINAL delivery, so this must
 // equal max_retries + 1 (max_retries is set in services/scheduler/wrangler.toml).
 const MAX_DELIVERIES = 5;
+
+function heartbeatRelease(env) {
+  return env.BUILD_SHA ?? env.CF_VERSION_METADATA?.id;
+}
+
 const HEARTBEAT = Object.freeze({
   schedule: "background.schedule",
   reports: "background.reports",
@@ -60,7 +65,7 @@ export default {
   // Durable background work, produced by functions/api/webhook.js. Replaces the
   // webhook's old context.waitUntil calls — these now get retries + a DLQ.
   async queue(batch, env) {
-    await recordHeartbeatAttempt(env.DB, HEARTBEAT.queue, env.CF_VERSION_METADATA?.id);
+    await recordHeartbeatAttempt(env.DB, HEARTBEAT.queue, heartbeatRelease(env));
     try {
       for (const msg of batch.messages) {
         try {
@@ -93,9 +98,9 @@ export default {
           }
         }
       }
-      await recordHeartbeatSuccess(env.DB, HEARTBEAT.queue, env.CF_VERSION_METADATA?.id);
+      await recordHeartbeatSuccess(env.DB, HEARTBEAT.queue, heartbeatRelease(env));
     } catch (err) {
-      await recordHeartbeatFailure(env.DB, HEARTBEAT.queue, err, env.CF_VERSION_METADATA?.id);
+      await recordHeartbeatFailure(env.DB, HEARTBEAT.queue, err, heartbeatRelease(env));
       await reportTelemetryRuntimeFailure(env, err, { operation: HEARTBEAT.queue });
       throw err;
     }
@@ -127,8 +132,8 @@ export default {
 async function runScheduledEvent(env, event) {
   // This heartbeat proves Cloudflare delivered a trigger. Job health is tracked
   // separately so a provider failure cannot make the HTTP API look unavailable.
-  await recordHeartbeatAttempt(env.DB, HEARTBEAT.schedule, env.CF_VERSION_METADATA?.id);
-  await recordHeartbeatSuccess(env.DB, HEARTBEAT.schedule, env.CF_VERSION_METADATA?.id);
+  await recordHeartbeatAttempt(env.DB, HEARTBEAT.schedule, heartbeatRelease(env));
+  await recordHeartbeatSuccess(env.DB, HEARTBEAT.schedule, heartbeatRelease(env));
 
   const reportScheduleTick = event.cron === "* * * * *";
   if (reportScheduleTick) {
@@ -156,24 +161,24 @@ async function runScheduledEvent(env, event) {
 }
 
 async function runTrackedJob(env, component, operation, run) {
-  await recordHeartbeatAttempt(env.DB, component, env.CF_VERSION_METADATA?.id);
+  await recordHeartbeatAttempt(env.DB, component, heartbeatRelease(env));
   try {
     await run();
-    await recordHeartbeatSuccess(env.DB, component, env.CF_VERSION_METADATA?.id);
+    await recordHeartbeatSuccess(env.DB, component, heartbeatRelease(env));
   } catch (err) {
-    await recordHeartbeatFailure(env.DB, component, err, env.CF_VERSION_METADATA?.id);
+    await recordHeartbeatFailure(env.DB, component, err, heartbeatRelease(env));
     await reportTelemetryRuntimeFailure(env, err, { operation });
   }
 }
 
 async function runArchive(env, nowMs) {
-  await recordHeartbeatAttempt(env.DB, HEARTBEAT.archive, env.CF_VERSION_METADATA?.id);
+  await recordHeartbeatAttempt(env.DB, HEARTBEAT.archive, heartbeatRelease(env));
   try {
     await archiveOldEvents(env, nowMs);
-    await recordHeartbeatSuccess(env.DB, HEARTBEAT.archive, env.CF_VERSION_METADATA?.id);
+    await recordHeartbeatSuccess(env.DB, HEARTBEAT.archive, heartbeatRelease(env));
   } catch (err) {
     console.error("[noxhere-background] event archival failed:", err?.message ?? err);
-    await recordHeartbeatFailure(env.DB, HEARTBEAT.archive, err, env.CF_VERSION_METADATA?.id);
+    await recordHeartbeatFailure(env.DB, HEARTBEAT.archive, err, heartbeatRelease(env));
     await reportTelemetryRuntimeFailure(env, err, { operation: "background.archive" });
   }
 }

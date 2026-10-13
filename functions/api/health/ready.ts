@@ -21,7 +21,7 @@ interface TelemetryService extends Fetcher {
 }
 
 interface Context { env: Env }
-interface HeartbeatRow { status: string; last_succeeded_at: string | null }
+interface HeartbeatRow { status: string; last_succeeded_at: string | null; release: string | null }
 interface CountRow { count: number }
 
 const BACKGROUND_HEARTBEAT_MAX_AGE_MS = 10 * 60 * 1000;
@@ -89,6 +89,7 @@ async function probeTelemetry(service: TelemetryService | undefined, expectedBui
 
 export async function onRequestGet(context: Context): Promise<Response> {
   const expectedBuildSha = context.env.BUILD_SHA ?? "development";
+  let backgroundRelease: string | undefined;
   const checks: Record<string, boolean> = {
     database: false,
     backgroundWorker: false,
@@ -101,7 +102,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
 
   try {
     const heartbeat = await context.env.DB.prepare(
-      "SELECT status, last_succeeded_at FROM service_heartbeats WHERE component = 'background.schedule'",
+      "SELECT status, last_succeeded_at, release FROM service_heartbeats WHERE component = 'background.schedule'",
     ).first<HeartbeatRow>();
     const staleOutbox = await context.env.DB.prepare(`
       SELECT COUNT(*) AS count
@@ -110,10 +111,12 @@ export async function onRequestGet(context: Context): Promise<Response> {
         AND created_at < strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-70 minutes')
     `).first<CountRow>();
     checks.database = true;
+    backgroundRelease = typeof heartbeat?.release === "string" ? heartbeat.release : undefined;
     const lastSuccessMs = heartbeat?.last_succeeded_at ? Date.parse(heartbeat.last_succeeded_at) : Number.NaN;
     checks.backgroundWorker = heartbeat?.status === "healthy"
       && Number.isFinite(lastSuccessMs)
-      && Date.now() - lastSuccessMs <= BACKGROUND_HEARTBEAT_MAX_AGE_MS;
+      && Date.now() - lastSuccessMs <= BACKGROUND_HEARTBEAT_MAX_AGE_MS
+      && backgroundRelease === expectedBuildSha;
     checks.deliveryQueue = Number(staleOutbox?.count ?? 0) === 0;
   } catch {
     // Public health responses expose component state, never internal errors.
@@ -131,6 +134,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
   checks.activity = feed.ok;
   const versions = {
     noxhere: expectedBuildSha,
+    ...(backgroundRelease ? { background: backgroundRelease } : {}),
     ...(ticket.buildSha ? { planning: ticket.buildSha } : {}),
     ...(spot.buildSha ? { feedback: spot.buildSha } : {}),
     ...(cue.buildSha ? { telemetry: cue.buildSha } : {}),

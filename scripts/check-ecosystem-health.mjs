@@ -41,6 +41,9 @@ async function check() {
   if (expectedSha && readiness?.versions?.telemetry !== expectedSha) {
     throw new Error(`telemetry is ${readiness?.versions?.telemetry ?? "unknown"}; expected ${expectedSha}`);
   }
+  if (expectedSha && readiness?.versions?.background !== expectedSha) {
+    throw new Error(`background is ${readiness?.versions?.background ?? "unknown"}; expected ${expectedSha}`);
+  }
 
   return { platform, readiness };
 }
