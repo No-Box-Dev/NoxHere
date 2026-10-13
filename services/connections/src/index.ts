@@ -15,8 +15,12 @@ import {
   deliverFeedbackResolutionEmail,
   prepareFeedbackResolutionEmail,
 } from "../../../functions/lib/feedback-resolution.js";
-import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
-import { deliverSlackTransport } from "../../../functions/lib/transports/slack.ts";
+import { checkSlackOrgHealth, getSlackChannel, resolveSlackInstall } from "../../../functions/lib/slack.js";
+import {
+  deliverResolvedSlackMessage,
+  deliverSlackTransport,
+  type SlackMessagePayload,
+} from "../../../functions/lib/transports/slack.ts";
 import { deliverGitHubTransport } from "../../../functions/lib/transports/github.ts";
 import { TransportExecutionError } from "../../../functions/lib/transport-outbox.ts";
 import {
@@ -105,6 +109,50 @@ export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
 
   checkSlackOrgHealth(orgId: number, connectionId: string) {
     return checkSlackOrgHealth(this.env, orgId, connectionId);
+  }
+
+  async sendSlackMessage(input: unknown) {
+    const candidate = input && typeof input === "object" && !Array.isArray(input)
+      ? input as Record<string, unknown>
+      : {};
+    const orgId = Number(candidate.orgId);
+    const projectId = typeof candidate.projectId === "string" ? candidate.projectId.trim() : "";
+    const connectionId = typeof candidate.connectionId === "string" ? candidate.connectionId.trim() : "";
+    const channelId = typeof candidate.channelId === "string" ? candidate.channelId.trim() : "";
+    const message = candidate.message && typeof candidate.message === "object" && !Array.isArray(candidate.message)
+      ? candidate.message as SlackMessagePayload
+      : null;
+    if (!Number.isSafeInteger(orgId) || orgId < 1 || !projectId || !connectionId || !channelId || !message) {
+      return { ok: false as const, error: { code: "invalid_request", message: "Slack delivery input is invalid" } };
+    }
+
+    const install = await resolveSlackInstall(this.env, orgId, connectionId);
+    if (!install) {
+      return { ok: false as const, error: { code: "slack_not_connected", message: "Slack is not connected or its credentials cannot be decrypted" } };
+    }
+    if (install.projectId && install.projectId !== projectId) {
+      return { ok: false as const, error: { code: "slack_workspace_project_mismatch", message: "The selected Slack workspace belongs to another project" } };
+    }
+
+    try {
+      const channel = await getSlackChannel(install.botToken, channelId);
+      if (!channel || channel.is_archived) {
+        return { ok: false as const, error: { code: "slack_channel_unavailable", message: "The Slack channel is archived or unavailable" } };
+      }
+      if (channel.is_private && !channel.is_member) {
+        return { ok: false as const, error: { code: "slack_channel_membership_required", message: "NoxHere is not a member of the private Slack channel" } };
+      }
+      const receipt = await deliverResolvedSlackMessage(this.env, { orgId, connectionId, channelId, message });
+      return { ok: true as const, result: { connectionId: install.id, ...receipt } };
+    } catch (error) {
+      return {
+        ok: false as const,
+        error: {
+          code: String((error as { code?: unknown })?.code ?? "slack_delivery_failed"),
+          message: error instanceof Error ? error.message : "Slack delivery failed",
+        },
+      };
+    }
   }
 
   async deliverTransport(input: unknown) {
