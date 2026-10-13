@@ -22,7 +22,7 @@ ORDER BY id`;
 function wrangler(sql) {
   const wranglerArgs = [
     "--no-install", "wrangler", "d1", "execute", "DB",
-    "--config", "workers/api-gateway/wrangler.jsonc",
+    "--config", "services/core-api/wrangler.jsonc",
     "--remote",
     ...(environment === "staging" ? ["--env", "staging"] : []),
     "--command", sql,

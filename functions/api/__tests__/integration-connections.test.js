@@ -40,6 +40,9 @@ function context({ provider, isAdmin = true } = {}) {
       SLACK_CLIENT_ID: "client",
       SLACK_CLIENT_SECRET: "secret",
       SLACK_SIGNING_SECRET: "signing-secret",
+      NOXHERE_EMAIL: {
+        getProviderConfiguration: vi.fn(async () => ({ github: true, slack: true, postmark: true })),
+      },
     },
     data: { orgId: 7, orgLogin: "acme", userLogin: "alice", isAdmin },
   };

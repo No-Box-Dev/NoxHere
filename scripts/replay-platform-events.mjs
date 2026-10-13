@@ -46,7 +46,7 @@ export function runReplay(argv, spawn = spawnSync) {
   const options = parseReplayArgs(argv);
   const sql = replaySql(options);
   if (!options.execute) return { dryRun: true, sql };
-  const args = ["wrangler", "d1", "execute", "DB", options.remote ? "--remote" : "--local", "--config", "workers/api-gateway/wrangler.jsonc", "--env=", "--command", sql];
+  const args = ["wrangler", "d1", "execute", "DB", options.remote ? "--remote" : "--local", "--config", "services/core-api/wrangler.jsonc", "--env=", "--command", sql];
   const result = spawn("npx", args, { stdio: "inherit" });
   if (result.status !== 0) throw new Error(`Replay command failed with status ${result.status}`);
   return { dryRun: false, sql };

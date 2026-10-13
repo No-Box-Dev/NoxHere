@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import worker from "../workers/api-gateway/.generated/index.js";
+import worker from "../services/core-api/.generated/index.js";
 
 const secret = "incident-router-test-secret";
 const incidentId = "inc_0123456789abcdef0123456789abcdef";

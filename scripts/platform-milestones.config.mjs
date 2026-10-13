@@ -82,7 +82,7 @@ export const milestones = [
           "--persist-to",
           "{tempDir}/d1",
           "--config",
-          "workers/api-gateway/wrangler.jsonc",
+          "services/core-api/wrangler.jsonc",
           "--env=",
         ],
       },
@@ -123,7 +123,7 @@ export const milestones = [
           "--persist-to",
           "{tempDir}/d1",
           "--config",
-          "workers/api-gateway/wrangler.jsonc",
+          "services/core-api/wrangler.jsonc",
           "--env=",
         ],
       },
@@ -194,7 +194,7 @@ export const milestones = [
         command: "npx",
         args: [
           "wrangler", "d1", "migrations", "apply", "DB", "--local",
-          "--persist-to", "{tempDir}/d1", "--config", "workers/api-gateway/wrangler.jsonc", "--env=",
+          "--persist-to", "{tempDir}/d1", "--config", "services/core-api/wrangler.jsonc", "--env=",
         ],
       },
       {
@@ -237,7 +237,7 @@ export const milestones = [
         command: "npx",
         args: [
           "wrangler", "d1", "migrations", "apply", "DB", "--local",
-          "--persist-to", "{tempDir}/d1", "--config", "workers/api-gateway/wrangler.jsonc", "--env=",
+          "--persist-to", "{tempDir}/d1", "--config", "services/core-api/wrangler.jsonc", "--env=",
         ],
       },
       {

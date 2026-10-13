@@ -20,12 +20,10 @@ describe("GET /api/integrations/status", () => {
     const context = {
       env: {
         DB: { prepare: vi.fn((sql: string) => statementFor(sql)) },
-        GITHUB_APP_ID: "1",
-        GITHUB_APP_PRIVATE_KEY: "private",
         SLACK_APP_ID: "A123",
-        SLACK_CLIENT_ID: "client",
-        SLACK_CLIENT_SECRET: "secret",
-        SLACK_SIGNING_SECRET: "signing-secret",
+        NOXHERE_EMAIL: {
+          getProviderConfiguration: vi.fn(async () => ({ github: true, slack: true, postmark: true })),
+        },
       },
       data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
     };
@@ -54,8 +52,9 @@ describe("GET /api/integrations/status", () => {
     const context = {
       env: {
         DB: { prepare },
-        GITHUB_APP_ID: "1",
-        GITHUB_APP_PRIVATE_KEY: "private",
+        NOXHERE_EMAIL: {
+          getProviderConfiguration: vi.fn(async () => ({ github: true, slack: false, postmark: true })),
+        },
       },
       data: { orgId: 7, orgLogin: "acme", isAdmin: true },
     };

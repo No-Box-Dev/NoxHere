@@ -15,6 +15,7 @@ const activityDir = resolve(process.env.ACTIVITY_SERVICE_DIR || join(root, "serv
 const feedbackDir = resolve(process.env.FEEDBACK_CAPTURE_DIR || join(root, "services/feedback"));
 const planningDir = resolve(process.env.PLANNING_SERVICE_DIR || join(root, "services/planning"));
 const capabilityDir = join(root, "services/connections");
+const coreApiConfig = join(root, "services/core-api/wrangler.jsonc");
 const wrangler = join(root, "node_modules/.bin/wrangler");
 const keepState = process.argv.includes("--keep-state");
 const allowAuthSkip = process.argv.includes("--allow-auth-skip");
@@ -59,6 +60,7 @@ function print(message) {
 function checkPrerequisites() {
   const required = [
     [wrangler, "Run npm install in NoxHere"],
+    [coreApiConfig, "Restore the core API Wrangler configuration"],
     [join(webDist, "index.html"), "Run npm run build:web in NoxHere"],
     [join(telemetryDir, "wrangler.jsonc"), "Run npm ci in services/telemetry"],
     [join(telemetryDir, "node_modules"), "Run npm ci in services/telemetry"],
@@ -240,7 +242,8 @@ async function main() {
   checkPrerequisites();
 
   run("apply all NoxHere migrations to a fresh local D1", wrangler, [
-    "d1", "migrations", "apply", "noxhere", "--local", "--persist-to", persistence,
+    "d1", "migrations", "apply", "DB", "--config", coreApiConfig,
+    "--env=", "--local", "--persist-to", persistence,
   ]);
   run("apply Ticket migrations to its fresh local D1", wrangler, [
     "d1", "migrations", "apply", "DB", "--local", "--persist-to", persistence,
@@ -258,11 +261,18 @@ async function main() {
     `INSERT INTO events (delivery_id, source, type, project_id, org, repo, summary, technical_summary, payload_json, owner_id) VALUES ('local-feed-denied', 'github', 'narrative', '${otherProjectId.replaceAll("'", "''")}', '${org.replaceAll("'", "''")}', '${otherRepo.replaceAll("'", "''")}', 'other project event', 'denied', '{"trigger_type":"github:pr:merged","pr":{"number":2,"title":"Denied","html_url":"https://example.test/denied","author":{"login":"local"}}}', '${org.replaceAll("'", "''")}');`,
   ].join(" ");
   run("seed a credential-free local organization and project", wrangler, [
-    "d1", "execute", "noxhere", "--local", "--persist-to", persistence, "--command", fixtureSql,
+    "d1", "execute", "DB", "--config", coreApiConfig,
+    "--env=", "--local", "--persist-to", persistence, "--command", fixtureSql,
   ]);
 
+  const encryptionKey = randomBytes(32).toString("hex");
+  const webhookSecret = randomBytes(32).toString("hex");
   const commonDev = ["--local", "--persist-to", persistence, "--log-level", "warn", "--show-interactive-dev-session=false"];
-  start("capabilities", capabilityDir, ["dev", "--name", serviceNames.capabilities, "--port", String(port(8796)), "--inspector-port", String(port(9236)), ...commonDev]);
+  start("capabilities", capabilityDir, [
+    "dev", "--name", serviceNames.capabilities, "--port", String(port(8796)),
+    "--inspector-port", String(port(9236)), "--var", `ENCRYPTION_KEY:${encryptionKey}`,
+    "--var", `GITHUB_WEBHOOK_SECRET:${webhookSecret}`, ...commonDev,
+  ]);
   await waitFor("capabilities", `http://127.0.0.1:${port(8796)}/`, { expected: 404 });
   start("telemetry", telemetryDir, ["dev", "--name", serviceNames.cue, "--port", String(port(8792)), "--inspector-port", String(port(9232)), ...commonDev]);
   await waitFor("telemetry", `http://127.0.0.1:${port(8792)}/health`);
@@ -277,11 +287,10 @@ async function main() {
   makeRpcSmokeWorker();
   start("rpc", rpcDir, ["dev", "-c", "wrangler.jsonc", "--port", String(port(8793)), "--inspector-port", String(port(9233)), ...commonDev]);
 
-  const encryptionKey = randomBytes(32).toString("hex");
-  const webhookSecret = randomBytes(32).toString("hex");
   start("noxhere", root, [
     "pages", "dev", webDist, "--port", String(port(8788)), "--inspector-port", String(port(9231)),
     "--persist-to", persistence, "--log-level", "warn", "--show-interactive-dev-session=false",
+    "--d1", "DB=c94084e6-d0be-423c-8de6-249e7cf8bf25",
     "--binding", `ENCRYPTION_KEY=${encryptionKey}`,
     "--binding", `GITHUB_WEBHOOK_SECRET=${webhookSecret}`,
     "--binding", `NOXHERE_INTERNAL_SECRET=${internalSecret}`,
@@ -290,6 +299,7 @@ async function main() {
     "--service", `TELEMETRY_INGEST=${serviceNames.cue}`,
     "--service", `ACTIVITY_RESPONSE=${serviceNames.feed}`,
     "--service", `PLANNING_SERVICE=${serviceNames.ticket}`,
+    "--service", `NOXHERE_EMAIL=${serviceNames.capabilities}`,
   ]);
   await waitFor("noxhere", `${base}/developers`);
   await waitFor("rpc", `http://127.0.0.1:${port(8793)}/`);
@@ -326,7 +336,8 @@ async function main() {
     `INSERT INTO identity_connections (id, github_user_id, github_login, encrypted_access_token) VALUES ('${connectionId}', ${githubUserId}, '${githubLogin.replaceAll("'", "''")}', '${encryptedGitHubToken}');`,
   ].join(" ");
   run("seed a connector identity without creating a NoxHere login session", wrangler, [
-    "d1", "execute", "noxhere", "--local", "--persist-to", persistence, "--command", authFixtureSql,
+    "d1", "execute", "DB", "--config", coreApiConfig,
+    "--env=", "--local", "--persist-to", persistence, "--command", authFixtureSql,
   ]);
 
   const sessionAuth = {

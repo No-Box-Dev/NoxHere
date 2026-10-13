@@ -52,7 +52,7 @@ jobs:
       - name: Resolve dedicated staging Activity database
         run: node scripts/prepare-staging-activity-database.mjs
       - name: Migrate staging platform database
-        run: npx wrangler d1 migrations apply DB --config workers/api-gateway/wrangler.jsonc --env staging --remote
+        run: npx wrangler d1 migrations apply DB --config services/core-api/wrangler.jsonc --env staging --remote
       - name: Migrate staging Activity database
         run: npx wrangler d1 migrations apply DEMO_DB --config services/activity/wrangler.toml --env staging --remote
       - name: Migrate staging Planning database
@@ -79,11 +79,11 @@ jobs:
           NOXHERE_INTERNAL_SECRET: ${{ secrets.NOXHERE_INTERNAL_SECRET }}
         run: |
           test -n "$NOXHERE_INTERNAL_SECRET"
-          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config workers/api-gateway/wrangler.jsonc --env staging
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/core-api/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/connections/wrangler.jsonc --env staging
       - name: Deploy staging private API
-        run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional staging background-worker secrets
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -103,7 +103,7 @@ jobs:
         run: node scripts/smoke-deployment.mjs https://noxhere-staging.jasper-414.workers.dev https://noxhere-feedback-staging.jasper-414.workers.dev "$DEPLOY_SHA"
 
       - name: Migrate production platform database
-        run: npx wrangler d1 migrations apply DB --config workers/api-gateway/wrangler.jsonc --env="" --remote
+        run: npx wrangler d1 migrations apply DB --config services/core-api/wrangler.jsonc --env="" --remote
       - name: Migrate production Activity database
         run: npx wrangler d1 migrations apply DEMO_DB --config services/activity/wrangler.toml --env="" --remote
       - name: Migrate production Planning database
@@ -130,11 +130,11 @@ jobs:
           NOXHERE_INTERNAL_SECRET: ${{ secrets.NOXHERE_INTERNAL_SECRET }}
         run: |
           test -n "$NOXHERE_INTERNAL_SECRET"
-          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config workers/api-gateway/wrangler.jsonc --env=""
+          printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/core-api/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/connections/wrangler.jsonc --env=""
       - name: Deploy production private API
-        run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional production background-worker secrets
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

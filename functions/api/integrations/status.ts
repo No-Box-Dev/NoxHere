@@ -5,11 +5,6 @@ import { GITHUB_INSTALL_URL, GITHUB_MANAGE_URL } from "../../lib/integration-con
 
 interface Ctx {
   env: NoxDatabaseEnv & {
-    GITHUB_APP_ID?: string;
-    GITHUB_APP_PRIVATE_KEY?: string;
-    SLACK_CLIENT_ID?: string;
-    SLACK_CLIENT_SECRET?: string;
-    SLACK_SIGNING_SECRET?: string;
     SLACK_APP_ID?: string;
     NOXHERE_EMAIL?: {
       getProviderConfiguration(): Promise<{ github: boolean; slack: boolean; postmark: boolean }>;
@@ -68,17 +63,12 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   ]);
 
   const installationId = installation?.installation_id ?? org?.installation_id ?? null;
-  const githubConfigured = providerConfiguration?.github
-    ?? Boolean(context.env.GITHUB_APP_ID && context.env.GITHUB_APP_PRIVATE_KEY);
+  const githubConfigured = Boolean(providerConfiguration?.github);
   const githubConnected = Boolean(installationId);
   const githubBootstrapping = Boolean(installationId && !org?.bootstrapped_at);
   const githubNeedsAttention = installation?.health_status === "silent";
   const githubReady = githubConfigured && githubConnected && !githubBootstrapping && !githubNeedsAttention;
-  const slackConfigured = providerConfiguration?.slack ?? Boolean(
-    context.env.SLACK_CLIENT_ID
-      && context.env.SLACK_CLIENT_SECRET
-      && context.env.SLACK_SIGNING_SECRET,
-  );
+  const slackConfigured = Boolean(providerConfiguration?.slack);
   const slackConnected = Boolean(slackInstall);
   const slackNeedsReconnect = slackInstallNeedsReconnect(context.env, slackInstall);
   const slackDegraded = slackMetadata?.health_status === "degraded";

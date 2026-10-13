@@ -69,7 +69,7 @@ head_sampling_rate = 0.05
 [limits]
 cpu_ms = 300_000
 
-# Durable background-work consumer. The Pages app (functions/api/webhook.js)
+# Durable background-work consumer. Connections (GitHub provider ingress)
 # produces narrate / PR-match / bootstrap / repo-sync tasks here; this Worker's
 # queue() handler runs them with retries + a dead-letter queue. PROVISION BEFORE
 # DEPLOY: `wrangler queues create noxhere-tasks` and

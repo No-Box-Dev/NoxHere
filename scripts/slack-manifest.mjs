@@ -70,7 +70,7 @@ async function main() {
     console.log(`SLACK_CLIENT_ID=${data.credentials?.client_id ?? "<open Slack Basic Information>"}`);
     console.log(`SLACK_CLIENT_SECRET=${data.credentials?.client_secret ?? "<open Slack Basic Information>"}`);
     console.log(`SLACK_SIGNING_SECRET=${data.credentials?.signing_secret ?? "<open Slack Basic Information>"}`);
-    console.log("Store these as Cloudflare Pages secrets; do not commit them.");
+    console.log("Store these as secrets on the NoxHere Connections Worker; do not commit them.");
     return;
   }
 

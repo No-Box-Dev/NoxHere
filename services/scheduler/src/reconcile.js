@@ -8,7 +8,7 @@
 // installed (those issues never get an `issues.labeled` event for
 // pre-existing labels).
 //
-// This module imports the same sync helpers the Pages app uses.
+// This module imports the same sync helpers the core API uses.
 // Wrangler bundles them via the relative path; no code is duplicated.
 
 import {

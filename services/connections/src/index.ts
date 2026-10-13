@@ -28,6 +28,10 @@ import {
   providerForOperation,
 } from "../../../packages/contracts/transport-commands";
 import { handleProviderIngress } from "./provider-ingress";
+import {
+  discoverGitHubInstallation,
+  listGitHubInstallationRepositories,
+} from "./github-installations";
 
 interface Env {
   DB: D1Database;
@@ -101,6 +105,14 @@ export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
       throw new Error("A valid GitHub installation ID is required");
     }
     return getInstallationToken(this.env, Number(installationId));
+  }
+
+  discoverGitHubInstallation(ownerId: unknown) {
+    return discoverGitHubInstallation(this.env, ownerId);
+  }
+
+  listGitHubInstallationRepositories(installationId: unknown) {
+    return listGitHubInstallationRepositories(this.env, installationId);
   }
 
   deliverSlackOutbox(deliveryId: string) {

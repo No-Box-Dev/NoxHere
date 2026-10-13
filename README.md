@@ -7,9 +7,9 @@ organization, project, and enabled capability.
 Activity, Planning, Feedback, Stats, Incidents, and Connections are capability
 areas inside NoxHere rather than separate products.
 
-The separate one-page product site for [noxhere.com](https://noxhere.com) lives
-in [`nox-site/`](./nox-site/) and deploys to its own static Cloudflare Pages
-project. It deliberately shares no application bindings or credentials.
+The separate product site for [noxhere.com](https://noxhere.com) lives in the
+[`noxhere-website`](https://github.com/JasperNoBoxDev/noxhere-website) repository.
+It deliberately shares no application bindings or credentials with this app.
 - **Connections** — GitHub, Slack, provider credentials, and delivery
 - **Activity** — current work, releases, and engineering activity
 - **Planning** — features, backlog, specifications, and board stages
