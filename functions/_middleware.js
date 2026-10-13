@@ -5,7 +5,6 @@ import {
   projectScopedApiTokenPathSupported,
 } from "./lib/api-auth.js";
 import { reportTelemetryHttpFailure } from "./lib/telemetry-client";
-import { resolveIdentityConnection } from "./lib/connection-identity";
 import { verifyNoxHereAssertion } from "./lib/noxhere-assertion";
 import {
   presentedProjectId,
@@ -193,7 +192,17 @@ export async function onRequest(context) {
 
   let providerToken = null;
   if (auth.connectionId) {
-    const identity = await resolveIdentityConnection(context.env, auth.connectionId);
+    let identity;
+    try {
+      identity = await context.env.NOXHERE_EMAIL?.resolveGitHubIdentity(auth.connectionId);
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: "identity_connection_resolution_failed",
+        connectionId: auth.connectionId,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      return apiError(url, "identity_service_unavailable", "Identity service is temporarily unavailable", 503);
+    }
     if (!identity || identity.user.login.toLowerCase() !== auth.userLogin.toLowerCase()) {
       return apiError(url, "identity_connection_expired", "Connection identity expired; sign in again", 401);
     }

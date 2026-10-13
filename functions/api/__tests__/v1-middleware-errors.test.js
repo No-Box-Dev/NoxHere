@@ -135,6 +135,47 @@ describe("v1 middleware errors", () => {
     expect(handlerProjectId).toBeNull();
   });
 
+  it("resolves provider identity through the Connections capability", async () => {
+    const signed = await signedRequest("/api/v1/me", { connectionId: "noxic_connection-1" });
+    const resolveGitHubIdentity = vi.fn(async () => ({
+      token: "provider-token",
+      user: { id: 42, login: "octocat" },
+    }));
+    const middlewareContext = {
+      request: signed.request,
+      env: {
+        NOXHERE_INTERNAL_SECRET: signed.secret,
+        NOXHERE_EMAIL: { resolveGitHubIdentity },
+        DB: { prepare: () => ({ bind: () => ({ first: async () => ({ id: 7, github_login: "acme", suspended_at: null }) }) }) },
+      },
+      data: {},
+      next() { return Response.json({ token: middlewareContext.data.token }); },
+    };
+
+    const response = await onRequest(middlewareContext);
+
+    expect(response.status).toBe(200);
+    expect(resolveGitHubIdentity).toHaveBeenCalledWith("noxic_connection-1");
+    await expect(response.json()).resolves.toEqual({ token: "provider-token" });
+  });
+
+  it("reports a Connections capability outage as unavailable instead of an expired session", async () => {
+    const signed = await signedRequest("/api/v1/me", { connectionId: "noxic_connection-1" });
+    const response = await onRequest({
+      request: signed.request,
+      env: {
+        NOXHERE_INTERNAL_SECRET: signed.secret,
+        NOXHERE_EMAIL: { resolveGitHubIdentity: vi.fn(async () => { throw new Error("rpc unavailable"); }) },
+        DB: { prepare: () => ({ bind: () => ({ first: async () => ({ id: 7, github_login: "acme", suspended_at: null }) }) }) },
+      },
+      data: {},
+      next() { throw new Error("handler should not run"); },
+    });
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: { code: "identity_service_unavailable" } });
+  });
+
   it("honors an optional project selector for integration status", async () => {
     const signed = await signedRequest(
       "/api/v1/integrations/status",
