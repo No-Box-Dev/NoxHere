@@ -46,7 +46,7 @@ function msg(body, attempts = 1) {
 
 beforeEach(() => vi.clearAllMocks());
 
-describe("cron queue consumer", () => {
+describe("background queue consumer", () => {
   it("dispatches a narrate task and acks", async () => {
     const m = msg({ type: "narrate", eventId: 7 });
     await worker.queue({ messages: [m] }, env);

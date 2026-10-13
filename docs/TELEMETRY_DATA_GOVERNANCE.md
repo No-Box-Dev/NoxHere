@@ -8,7 +8,7 @@ The authoritative inventory is `docs/telemetry-data-inventory.json`. Data is sco
 
 ## Retention and deletion
 
-Each source configures event retention from 7–730 days. The scheduler deletes expired active-user, activity, and tracked-event rows using that source's setting. Deleting a source cascades through event, configuration, key, usage, and audit tables. Aggregate metric history and registrations currently live until source deletion; customers needing a shorter policy must delete the source or request erasure. Backups follow the platform backup lifecycle and must not be used to restore data that has passed its approved retention except for disaster recovery.
+Each source configures event retention from 7–730 days. The background Worker deletes expired active-user, activity, and tracked-event rows using that source's setting. Deleting a source cascades through event, configuration, key, usage, and audit tables. Aggregate metric history and registrations currently live until source deletion; customers needing a shorter policy must delete the source or request erasure. Backups follow the platform backup lifecycle and must not be used to restore data that has passed its approved retention except for disaster recovery.
 
 ## Outputs
 

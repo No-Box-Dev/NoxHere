@@ -64,7 +64,7 @@ function makeCtx() {
 }
 
 describe("scheduled tick", () => {
-  it("does not expose manual cron controls without the local-only enable flag", async () => {
+  it("does not expose manual background controls without the local-only enable flag", async () => {
     const { ctx } = makeCtx();
     const response = await worker.fetch(new Request("https://x/__scheduled"), { DB: makeDb() }, ctx);
     expect(response.status).toBe(404);

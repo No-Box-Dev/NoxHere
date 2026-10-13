@@ -40,7 +40,7 @@ service = "noxhere-telemetry"
 binding = "ACTIVITY_RESPONSE"
 service = "noxhere-activity"
 
-# Same D1 database as the Pages app — the cron writes the same tables
+# Same D1 database as the API — the background Worker writes the same tables
 # (repos, issues, pull_requests, features, members, reconcile_runs).
 [[d1_databases]]
 binding = "DB"
@@ -48,8 +48,8 @@ database_name = "noxhere"
 database_id = "c94084e6-d0be-423c-8de6-249e7cf8bf25"
 migrations_dir = "../../migrations"
 
-# Reconciliation tick. Webhooks are the running source of truth; this
-# cron exists to catch the cases webhooks structurally miss: deletes
+# Background maintenance tick. Webhooks are the running source of truth; this
+# maintenance pass catches the cases webhooks structurally miss: deletes
 # (GitHub doesn't fire delete webhooks), missed deliveries during
 # deploys, and label changes on issues created before the App was
 # installed. 30 min is a reasonable RPO without being chatty.
@@ -77,7 +77,7 @@ max_batch_size = 10
 max_retries = 4
 dead_letter_queue = "noxhere-tasks-dlq"
 
-# The consumer stages follow-up outbox deliveries and the scheduled recovery
+# The consumer stages follow-up outbox deliveries and periodic recovery
 # sweep re-enqueues durable pending rows onto this same queue.
 [[queues.producers]]
 binding = "TASK_QUEUE"

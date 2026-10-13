@@ -13,7 +13,7 @@ implementation.
 | `activity` | Activity | Activity projections, summaries, narration, and release notes |
 | `planning` | Planning | Features, specifications, priority, links, and attachments |
 | `telemetry` | Stats and Incidents | Telemetry, feature health, incidents, metrics, and SDKs |
-| `scheduler` | Platform operations | Queue consumption, reconciliation, recovery, and scheduled jobs |
+| `scheduler` (background worker) | Platform operations | Queue consumption, reconciliation, recovery, and scheduled jobs |
 | `feedback` | Feedback | Public capture, screenshots, feedback rendering, and resolution responses |
 
 Provider credentials remain exclusive to Connections and the platform transport

@@ -61,30 +61,30 @@ describe("NoxHere health", () => {
     expect(await response.json()).toEqual({ service: "noxhere", status: "ok" });
   });
 
-  it("is ready when storage, cron, queue and product services are healthy", async () => {
+  it("is ready when storage, background work, queue and product services are healthy", async () => {
     const response = await ready(context());
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       status: "ok",
-      checks: { database: true, scheduledWorker: true, deliveryQueue: true, planning: true, feedback: true, telemetry: true, activity: true },
+      checks: { database: true, backgroundWorker: true, deliveryQueue: true, planning: true, feedback: true, telemetry: true, activity: true },
       service: "noxhere",
       versions: { noxhere: "connect-sha", planning: "service-sha", feedback: "service-sha", telemetry: "connect-sha", activity: "service-sha" },
     });
   });
 
-  it("is not ready before a real scheduled heartbeat exists", async () => {
+  it("reports degraded without failing HTTP readiness before a background heartbeat exists", async () => {
     const response = await ready(context({ heartbeat: null }));
-    expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ status: "not_ready", checks: { scheduledWorker: false } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ status: "degraded", checks: { backgroundWorker: false } });
   });
 
-  it("is not ready for a stale heartbeat or stuck durable delivery", async () => {
+  it("is not ready for a stuck durable delivery even when the background heartbeat is stale", async () => {
     const response = await ready(context({
       heartbeat: { status: "healthy", last_succeeded_at: new Date(Date.now() - 80 * 60 * 1000).toISOString() },
       stale: 1,
     }));
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ checks: { scheduledWorker: false, deliveryQueue: false } });
+    expect(await response.json()).toMatchObject({ status: "not_ready", checks: { backgroundWorker: false, deliveryQueue: false } });
   });
 
   it("fails closed without exposing database errors", async () => {

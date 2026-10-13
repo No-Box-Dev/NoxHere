@@ -38,7 +38,7 @@ const serviceNames = {
   spot: `feedback-e2e-${runId}`,
   feed: `activity-e2e-${runId}`,
   ticket: `planning-e2e-${runId}`,
-  cron: `noxhere-orchestrator-e2e-${runId}`,
+  background: `noxhere-orchestrator-e2e-${runId}`,
   rpc: `noxhere-rpc-e2e-${runId}`,
 };
 const persistence = join(stateRoot, "state");
@@ -273,7 +273,7 @@ async function main() {
   start("planning", planningDir, ["dev", "--name", serviceNames.ticket, "--port", String(port(8795)), "--inspector-port", String(port(9235)), ...commonDev]);
   await waitFor("planning", `http://127.0.0.1:${port(8795)}/health`);
 
-  start("cron", root, ["dev", "-c", "services/scheduler/wrangler.toml", "--name", serviceNames.cron, "--port", String(port(8794)), "--inspector-port", String(port(9234)), ...commonDev]);
+  start("background", root, ["dev", "-c", "services/scheduler/wrangler.toml", "--name", serviceNames.background, "--port", String(port(8794)), "--inspector-port", String(port(9234)), ...commonDev]);
   makeRpcSmokeWorker();
   start("rpc", rpcDir, ["dev", "-c", "wrangler.jsonc", "--port", String(port(8793)), "--inspector-port", String(port(9233)), ...commonDev]);
 
@@ -293,7 +293,7 @@ async function main() {
   ]);
   await waitFor("noxhere", `${base}/developers`);
   await waitFor("rpc", `http://127.0.0.1:${port(8793)}/`);
-  await waitFor("cron", `http://127.0.0.1:${port(8794)}/`, { expected: 404 });
+  await waitFor("background", `http://127.0.0.1:${port(8794)}/`, { expected: 404 });
 
   const docs = await request("developer documentation HTML", "/developers");
   if (!String(docs.body).includes("NoxHere API")) throw new Error("Developer documentation is missing its title");

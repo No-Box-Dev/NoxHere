@@ -24,7 +24,8 @@ interface Context { env: Env }
 interface HeartbeatRow { status: string; last_succeeded_at: string | null }
 interface CountRow { count: number }
 
-const HEARTBEAT_MAX_AGE_MS = 75 * 60 * 1000;
+const BACKGROUND_HEARTBEAT_MAX_AGE_MS = 10 * 60 * 1000;
+const REQUIRED_CHECKS = ["database", "deliveryQueue", "planning", "feedback", "telemetry", "activity"] as const;
 const SERVICE_TIMEOUT_MS = 2_000;
 interface ServiceProbe { ok: boolean; buildSha?: string }
 
@@ -90,7 +91,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
   const expectedBuildSha = context.env.BUILD_SHA ?? "development";
   const checks: Record<string, boolean> = {
     database: false,
-    scheduledWorker: false,
+    backgroundWorker: false,
     deliveryQueue: false,
     planning: false,
     feedback: false,
@@ -100,7 +101,7 @@ export async function onRequestGet(context: Context): Promise<Response> {
 
   try {
     const heartbeat = await context.env.DB.prepare(
-      "SELECT status, last_succeeded_at FROM service_heartbeats WHERE component = 'scheduled.cron'",
+      "SELECT status, last_succeeded_at FROM service_heartbeats WHERE component = 'background.schedule'",
     ).first<HeartbeatRow>();
     const staleOutbox = await context.env.DB.prepare(`
       SELECT COUNT(*) AS count
@@ -110,9 +111,9 @@ export async function onRequestGet(context: Context): Promise<Response> {
     `).first<CountRow>();
     checks.database = true;
     const lastSuccessMs = heartbeat?.last_succeeded_at ? Date.parse(heartbeat.last_succeeded_at) : Number.NaN;
-    checks.scheduledWorker = heartbeat?.status === "healthy"
+    checks.backgroundWorker = heartbeat?.status === "healthy"
       && Number.isFinite(lastSuccessMs)
-      && Date.now() - lastSuccessMs <= HEARTBEAT_MAX_AGE_MS;
+      && Date.now() - lastSuccessMs <= BACKGROUND_HEARTBEAT_MAX_AGE_MS;
     checks.deliveryQueue = Number(staleOutbox?.count ?? 0) === 0;
   } catch {
     // Public health responses expose component state, never internal errors.
@@ -136,9 +137,12 @@ export async function onRequestGet(context: Context): Promise<Response> {
     ...(feed.buildSha ? { activity: feed.buildSha } : {}),
   };
 
-  const ready = Object.values(checks).every(Boolean);
+  const ready = REQUIRED_CHECKS.every((check) => checks[check]);
+  const status = ready
+    ? (checks.backgroundWorker ? "ok" : "degraded")
+    : "not_ready";
   return Response.json(
-    { service: "noxhere", status: ready ? "ok" : "not_ready", checks, versions },
+    { service: "noxhere", status, checks, versions },
     { status: ready ? 200 : 503, headers: { "Cache-Control": "no-store" } },
   );
 }
