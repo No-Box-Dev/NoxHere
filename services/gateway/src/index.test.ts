@@ -144,6 +144,34 @@ describe("NoxHere gateway", () => {
     await expect(response.json()).resolves.toEqual({ service: "noxhere", status: "ok", dependency: "connections" });
   });
 
+  it("keeps an empty environment ready until its first identity connection exists", async () => {
+    const db = {
+      prepare() {
+        return { async first() { return null; } };
+      },
+    } as unknown as D1Database;
+    const identity = {
+      exchangeGitHubOAuth: vi.fn(),
+      startGitHubDeviceAuth: vi.fn(),
+      pollGitHubDeviceAuth: vi.fn(),
+      resolveGitHubIdentity: vi.fn(),
+    };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/__noxhere/health/identity-boundary"),
+      services({ control: { db, identity, assertionSecret: "integration-secret" } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(identity.resolveGitHubIdentity).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      service: "noxhere",
+      status: "ok",
+      dependency: "connections",
+      mode: "not_configured",
+    });
+  });
+
   it("fails identity readiness when the Connections capability is unavailable", async () => {
     const db = {
       prepare() {

@@ -23,17 +23,22 @@ async function spotReady() {
 
 async function publicRoutesReady() {
   const headers = { "Cache-Control": "no-cache" };
-  const privateBoundary = await fetch(new URL("/__noxhere/health/private-boundary", platformOrigin), { headers });
+  const smokeUrl = (path) => {
+    const url = new URL(path, platformOrigin);
+    url.searchParams.set("__noxhere_smoke", expectedSha);
+    return url;
+  };
+  const privateBoundary = await fetch(smokeUrl("/__noxhere/health/private-boundary"), { headers });
   const privateBoundaryBody = await privateBoundary.json().catch(() => null);
   if (!privateBoundary.ok
       || privateBoundaryBody?.status !== "ok"
       || privateBoundaryBody?.downstreamStatus !== 200) return false;
 
-  const identityBoundary = await fetch(new URL("/__noxhere/health/identity-boundary", platformOrigin), { headers });
+  const identityBoundary = await fetch(smokeUrl("/__noxhere/health/identity-boundary"), { headers });
   const identityBoundaryBody = await identityBoundary.json().catch(() => null);
   if (!identityBoundary.ok || identityBoundaryBody?.status !== "ok") return false;
 
-  const profile = await fetch(new URL("/api/auth/profile", platformOrigin), { headers });
+  const profile = await fetch(smokeUrl("/api/auth/profile"), { headers });
   const profileBody = await profile.json().catch(() => null);
   if (profile.status !== 401
       || !profile.headers.get("content-type")?.includes("application/json")
@@ -42,13 +47,13 @@ async function publicRoutesReady() {
   // A missing widget must still be answered by Feedback as JavaScript. The
   // SPA fallback previously returned index.html with HTTP 200, which then
   // failed in browsers as `Unexpected token '<'`.
-  const widget = await fetch(new URL("/widget/__noxhere_smoke_missing__.js", platformOrigin), { headers });
+  const widget = await fetch(smokeUrl("/widget/__noxhere_smoke_missing__.js"), { headers });
   const widgetBody = await widget.text();
   if (widget.status !== 404
       || !widget.headers.get("content-type")?.includes("javascript")
       || widgetBody.trimStart().startsWith("<")) return false;
 
-  const shell = await fetch(new URL("/", platformOrigin), { headers });
+  const shell = await fetch(smokeUrl("/"), { headers });
   const shellBody = await shell.text();
   const entryPath = shellBody.match(/<script[^>]+src="([^"]+\.js)"/)?.[1];
   if (!shell.ok || !entryPath) return false;
