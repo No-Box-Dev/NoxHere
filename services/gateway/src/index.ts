@@ -315,7 +315,12 @@ async function identityBoundaryHealth(services: PlatformServices): Promise<Respo
       ORDER BY updated_at DESC LIMIT 1`,
   ).first<{ github_login: string; connection_id: string }>();
   if (!principal) {
-    return Response.json({ service: "noxhere", status: "degraded", dependency: "connections", code: "no_identity_connection" }, { status: 503 });
+    return Response.json({
+      service: "noxhere",
+      status: "ok",
+      dependency: "connections",
+      mode: "not_configured",
+    }, { headers: { "Cache-Control": "no-store" } });
   }
   try {
     const identity = await control.identity.resolveGitHubIdentity(principal.connection_id);
