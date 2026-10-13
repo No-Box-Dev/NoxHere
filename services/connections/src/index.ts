@@ -8,6 +8,7 @@ import {
   startGitHubDeviceIdentity,
 } from "../../../functions/lib/connection-identity";
 import { sendTransactionalEmail } from "../../../functions/lib/transactional-email";
+import { getInstallationToken } from "../../../functions/lib/github-app.js";
 
 interface Env {
   DB: D1Database;
@@ -51,6 +52,13 @@ export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
 
   sendEmail(input: unknown) {
     return sendTransactionalEmail(this.env, input);
+  }
+
+  getGitHubInstallationToken(installationId: unknown) {
+    if (!Number.isInteger(installationId) || Number(installationId) <= 0) {
+      throw new Error("A valid GitHub installation ID is required");
+    }
+    return getInstallationToken(this.env, Number(installationId));
   }
 
   fetch(): Response {

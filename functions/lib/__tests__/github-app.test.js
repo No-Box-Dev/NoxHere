@@ -101,6 +101,15 @@ describe("getInstallationToken", () => {
     await expect(getInstallationToken(ENV, null)).rejects.toThrow(/installationId/);
   });
 
+  it("uses the private Connections binding when this Worker does not hold the GitHub App key", async () => {
+    const getGitHubInstallationToken = vi.fn(async () => "ghs_from_connections");
+    const { getInstallationToken } = await import("../github-app.js");
+
+    await expect(getInstallationToken({ NOXHERE: { getGitHubInstallationToken } }, 321)).resolves.toBe("ghs_from_connections");
+    expect(getGitHubInstallationToken).toHaveBeenCalledWith(321);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("POSTs to the installation access_tokens endpoint with a Bearer JWT", async () => {
     const { getInstallationToken } = await import("../github-app.js");
     fetch.mockResolvedValue({

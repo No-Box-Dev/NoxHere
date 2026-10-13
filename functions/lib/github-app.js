@@ -73,6 +73,16 @@ export async function signAppJwt(env) {
 export async function getInstallationToken(env, installationId) {
   if (!installationId) throw new Error("installationId required");
 
+  // GitHub App credentials are owned by the Connections capability. Other
+  // Workers obtain short-lived installation credentials over the private
+  // service binding instead of duplicating the long-lived private key.
+  if ((!env.GITHUB_APP_ID || !env.GITHUB_APP_PRIVATE_KEY)
+      && typeof env.NOXHERE?.getGitHubInstallationToken === "function") {
+    const token = await env.NOXHERE.getGitHubInstallationToken(installationId);
+    if (typeof token !== "string" || !token) throw new Error("Connections returned an invalid GitHub installation token");
+    return token;
+  }
+
   const cached = installationTokenCache.get(installationId);
   // Reuse if at least 5 min remain
   if (cached && cached.expiresAt - Date.now() > 5 * 60 * 1000) {

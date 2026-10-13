@@ -23,6 +23,12 @@ async function spotReady() {
 
 async function publicRoutesReady() {
   const headers = { "Cache-Control": "no-cache" };
+  const privateBoundary = await fetch(new URL("/__noxhere/health/private-boundary", platformOrigin), { headers });
+  const privateBoundaryBody = await privateBoundary.json().catch(() => null);
+  if (!privateBoundary.ok
+      || privateBoundaryBody?.status !== "ok"
+      || privateBoundaryBody?.downstreamStatus !== 200) return false;
+
   const profile = await fetch(new URL("/api/auth/profile", platformOrigin), { headers });
   const profileBody = await profile.json().catch(() => null);
   if (profile.status !== 401
