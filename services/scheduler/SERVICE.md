@@ -30,11 +30,11 @@ still return HTTP 503 with `status: "not_ready"`.
 
 ## Secrets
 
-`GITHUB_APP_PRIVATE_KEY` and `ENCRYPTION_KEY` are required in both production
-and staging. `ANTHROPIC_API_KEY` and `TELEMETRY_INGEST_KEY` are optional. The
-deployment workflow synchronizes configured GitHub repository secrets before
-every Worker deployment and stops before deployment when a required value is
-missing.
+`ANTHROPIC_API_KEY` and `TELEMETRY_INGEST_KEY` are optional. GitHub installation
+tokens and encrypted provider operations run through the private Connections
+binding, so neither `GITHUB_APP_PRIVATE_KEY` nor `ENCRYPTION_KEY` is copied to
+this Worker. The deployment workflow synchronizes configured optional secrets
+before every deployment.
 
 Validate with:
 

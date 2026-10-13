@@ -8,7 +8,6 @@ preview_urls = false
 binding = "CF_VERSION_METADATA"
 
 [vars]
-GITHUB_APP_ID = "3652510"
 NOXHERE_PUBLIC_URL = "https://app.noxhere.com"
 FEEDBACK_PUBLIC_URL = "https://app.noxhere.com/api/feedback/public/v1"
 
@@ -90,9 +89,6 @@ queue = "noxhere-tasks"
 binding = "EVENTS_ARCHIVE"
 bucket_name = "noxhere-events-archive"
 
-# Secrets required on this worker before the first run:
-#   GITHUB_APP_PRIVATE_KEY (reconcile + bootstrap/sync tasks; App ID is a public var)
-#   ENCRYPTION_KEY (Slack connection tokens and user-provided AI keys)
 # Optional feature secrets:
 #   ANTHROPIC_API_KEY (NoxHere-owned Telemetry/Feedback generation)
 #   TELEMETRY_INGEST_KEY (NoxHere-scoped background failure reporting)
@@ -114,7 +110,6 @@ binding = "CF_VERSION_METADATA"
 crons = ["* * * * *", "*/5 * * * *"]
 
 [env.staging.vars]
-GITHUB_APP_ID = "3652510"
 NOXHERE_PUBLIC_URL = "https://noxhere-staging.jasper-414.workers.dev"
 FEEDBACK_PUBLIC_URL = "https://noxhere-feedback-staging.jasper-414.workers.dev"
 

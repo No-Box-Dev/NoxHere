@@ -104,21 +104,19 @@ Generate `ENCRYPTION_KEY` with `openssl rand -hex 32`. `REVIEW_RUNNER_TOKEN` (ge
 npx wrangler pages secret put REVIEW_RUNNER_TOKEN   --project-name noxhere
 ```
 
-The **background Worker** needs its own copy of the secrets it uses. Its public
-GitHub App ID is already declared in `services/scheduler/wrangler.toml`; only
-secret values belong in Cloudflare secrets:
+The **background Worker** only receives optional feature secrets. GitHub App
+authentication and encrypted provider credentials stay in Connections and are
+used through its private service binding:
 
 ```bash
-npx wrangler secret put GITHUB_APP_PRIVATE_KEY --config services/scheduler/wrangler.toml --env=""
-npx wrangler secret put ENCRYPTION_KEY --config services/scheduler/wrangler.toml --env=""
 npx wrangler secret put ANTHROPIC_API_KEY --config services/scheduler/wrangler.toml --env=""
 npx wrangler secret put TELEMETRY_INGEST_KEY --config services/scheduler/wrangler.toml --env=""
 ```
 
-`GITHUB_APP_PRIVATE_KEY` and `ENCRYPTION_KEY` are required. The Anthropic and
-Telemetry ingestion keys are optional; omit them when those managed features
-are disabled. Use the same encryption key already used for the environment's
-stored provider credentials—changing it without rotating the encrypted data
+Both keys are optional; omit them when those managed features are disabled.
+`GITHUB_APP_PRIVATE_KEY` and `ENCRYPTION_KEY` belong only to
+`noxhere-connections`; the background Worker must not receive duplicate copies.
+Changing the Connections encryption key without rotating the encrypted data
 makes those credentials unreadable.
 
 > **LLM providers:** `ANTHROPIC_API_KEY` on NoxHere still powers shared Feedback and daily-summary tasks. Activity event posts and release notes use the key configured directly on `noxhere-activity`; clients never supply API credentials. The AI settings API reads Activity readiness through `ACTIVITY_RESPONSE` and reports each service separately; managed mode is ready only when both deployments are configured. An organization can disable AI in Settings, and unavailable generation fails closed to deterministic summaries.
@@ -197,12 +195,11 @@ cd services/feedback && npm ci && npm run types && npm test && npx wrangler depl
 Or wire up CI: `.github/workflows/ci.yml` runs lint/typecheck/tests for Pages and
 the capture Worker, and `deploy-pages.yml` deploys Pages, applies D1 migrations,
 and deploys the unified service set on a green `main`. It needs repository
-secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
-`NOXHERE_INTERNAL_SECRET`, `GITHUB_APP_PRIVATE_KEY`, and `ENCRYPTION_KEY`.
+secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and
+`NOXHERE_INTERNAL_SECRET`.
 `ANTHROPIC_API_KEY` and `TELEMETRY_INGEST_KEY` are synchronized when present.
-The workflow refuses to deploy the background Worker when either required
-secret is empty, preventing a healthy build from replacing a working runtime
-with incomplete credentials.
+Connections secrets remain attached to that Worker across deployments and are
+managed directly in Cloudflare.
 
 The Feedback capture Worker has no application secrets. It uses direct bindings
 to the shared D1 database, `noxhere-tasks` Queue, `feedback-assets` R2 bucket,

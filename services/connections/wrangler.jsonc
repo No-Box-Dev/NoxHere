@@ -15,6 +15,7 @@
     "GITHUB_APP_ID": "3652510",
     "GITHUB_APP_CLIENT_ID": "Iv23liSD7Nx3fmV1OQfr",
     "NOXHERE_OAUTH_CALLBACK_URL": "https://app.noxhere.com/auth/github/callback",
+    "FEEDBACK_PUBLIC_URL": "https://app.noxhere.com/api/feedback/public/v1",
     "PLATFORM_EMAIL_FROM": "invites@noxhere.com",
     "FEEDBACK_EMAIL_FROM": "updates@noxhere.com"
   },
@@ -33,6 +34,7 @@
         "GITHUB_APP_ID": "3652510",
         "GITHUB_APP_CLIENT_ID": "Iv23liSD7Nx3fmV1OQfr",
         "NOXHERE_OAUTH_CALLBACK_URL": "https://noxhere-staging.jasper-414.workers.dev/auth/github/callback",
+        "FEEDBACK_PUBLIC_URL": "https://noxhere-feedback-staging.jasper-414.workers.dev",
         "PLATFORM_EMAIL_FROM": "invites@noxhere.com",
         "FEEDBACK_EMAIL_FROM": "updates@noxhere.com"
       },

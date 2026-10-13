@@ -78,17 +78,11 @@ jobs:
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env staging
       - name: Deploy staging private API
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
-      - name: Synchronize staging background-worker secrets
+      - name: Synchronize optional staging background-worker secrets
         env:
-          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEMETRY_INGEST_KEY: ${{ secrets.TELEMETRY_INGEST_KEY }}
         run: |
-          test -n "$GITHUB_APP_PRIVATE_KEY"
-          test -n "$ENCRYPTION_KEY"
-          printf '%s' "$GITHUB_APP_PRIVATE_KEY" | npx wrangler secret put GITHUB_APP_PRIVATE_KEY --config services/scheduler/wrangler.toml --env staging
-          printf '%s' "$ENCRYPTION_KEY" | npx wrangler secret put ENCRYPTION_KEY --config services/scheduler/wrangler.toml --env staging
           if [ -n "$ANTHROPIC_API_KEY" ]; then
             printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY --config services/scheduler/wrangler.toml --env staging
           fi
@@ -129,17 +123,11 @@ jobs:
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env=""
       - name: Deploy production private API
         run: npx wrangler deploy --config workers/api-gateway/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
-      - name: Synchronize production background-worker secrets
+      - name: Synchronize optional production background-worker secrets
         env:
-          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEMETRY_INGEST_KEY: ${{ secrets.TELEMETRY_INGEST_KEY }}
         run: |
-          test -n "$GITHUB_APP_PRIVATE_KEY"
-          test -n "$ENCRYPTION_KEY"
-          printf '%s' "$GITHUB_APP_PRIVATE_KEY" | npx wrangler secret put GITHUB_APP_PRIVATE_KEY --config services/scheduler/wrangler.toml --env=""
-          printf '%s' "$ENCRYPTION_KEY" | npx wrangler secret put ENCRYPTION_KEY --config services/scheduler/wrangler.toml --env=""
           if [ -n "$ANTHROPIC_API_KEY" ]; then
             printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY --config services/scheduler/wrangler.toml --env=""
           fi

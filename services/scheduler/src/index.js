@@ -18,13 +18,10 @@ import { runNextStatsAudit } from "./stats-audit.js";
 import { runDatabaseRecoveryStep } from "./database-recovery.js";
 import { createFeedbackGitHubIssue, finalizeFeedbackGitHubIssue } from "../../../functions/lib/feedback.js";
 import {
-  deliverFeedbackResolutionEmail,
-  prepareFeedbackResolutionEmail,
   recoverFeedbackResolutionPreparations,
   recoverFeedbackResolutionEmails,
 } from "../../../functions/lib/feedback-resolution.js";
-import { deliverSlackOutbox, markOutboxFailed, recoverOutboxDeliveries, requeueBlockedForOrg } from "../../../functions/lib/delivery-outbox.js";
-import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
+import { markOutboxFailed, recoverOutboxDeliveries, requeueBlockedForOrg } from "../../../functions/lib/delivery-outbox.js";
 import { runTelemetryDigests } from "./telemetry-digests.js";
 import { runFeedbackDailyDigests } from "./feedback-digests.js";
 import { runActivityDailySummaries } from "./activity-daily-summaries.js";
@@ -32,9 +29,7 @@ import { createOrUpdateTelemetryGitHubIssue, finalizeTelemetryGitHubIssue, recov
 import { runOperationalAlerts } from "./operational-alerts.js";
 import { recordHeartbeatAttempt, recordHeartbeatFailure, recordHeartbeatSuccess } from "../../../functions/lib/service-heartbeats.js";
 import { isTenantConfigurationFailure, reportTelemetryRuntimeFailure } from "./telemetry-runtime.js";
-import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands } from "../../../functions/lib/transport-outbox.ts";
-import { deliverSlackTransport } from "../../../functions/lib/transports/slack.ts";
-import { deliverGitHubTransport } from "../../../functions/lib/transports/github.ts";
+import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands, TransportExecutionError } from "../../../functions/lib/transport-outbox.ts";
 import { projectPlatformEvent } from "../../../functions/lib/platform-event-projector.ts";
 import { recoverPlatformEventProjections } from "../../../functions/lib/platform-event-store.ts";
 import { recoverTransportDeliveryEvents } from "../../../functions/lib/transport-delivery-events.ts";
@@ -195,17 +190,17 @@ async function handleTask(env, body) {
     case TASK.SPOT_CREATE_GITHUB_ISSUE:
       return createFeedbackGitHubIssue(env, body);
     case TASK.SPOT_PREPARE_RESOLUTION_EMAIL:
-      return prepareFeedbackResolutionEmail(env, body.reportId);
+      return env.NOXHERE.prepareFeedbackResolutionEmail(body.reportId);
     case TASK.SPOT_SEND_RESOLUTION_EMAIL:
-      return deliverFeedbackResolutionEmail(env, body.reportId);
+      return env.NOXHERE.deliverFeedbackResolutionEmail(body.reportId);
     case TASK.TELEMETRY_GITHUB_ISSUE:
       return createOrUpdateTelemetryGitHubIssue(env, body);
     case TASK.DELIVER_SLACK:
-      return deliverSlackOutbox(env, body.outboxId);
+      return env.NOXHERE.deliverSlackOutbox(body.outboxId);
     case TASK.DELIVER_TRANSPORT:
       return executeTransportCommand(env, body.outboxId, {
-        slack: (command) => deliverSlackTransport(env, command),
-        github: (command) => deliverGitHubTransport(env, command),
+        slack: (command) => deliverTransport(env, command),
+        github: (command) => deliverTransport(env, command),
       });
     case TASK.FINALIZE_TRANSPORT:
       return executeTransportCallback(env.DB, body.outboxId, {
@@ -217,6 +212,16 @@ async function handleTask(env, body) {
     default:
       throw new Error(`unknown task type: ${body?.type}`);
   }
+}
+
+async function deliverTransport(env, command) {
+  const receipt = await env.NOXHERE.deliverTransport(command);
+  if (receipt?.ok) return receipt.result;
+  throw new TransportExecutionError(
+    receipt?.error?.message ?? "Connection transport failed",
+    receipt?.error?.code ?? "transport_failed",
+    receipt?.error?.disposition ?? "retryable",
+  );
 }
 
 async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
@@ -317,7 +322,7 @@ async function runSlackHealthSweep(env) {
   ).all();
   for (const row of results ?? []) {
     try {
-      const health = await checkSlackOrgHealth(env, row.org_id, row.id);
+      const health = await env.NOXHERE.checkSlackOrgHealth(row.org_id, row.id);
       if (health.recovered) {
         await Promise.all([
           requeueBlockedForOrg(env, row.org_id),

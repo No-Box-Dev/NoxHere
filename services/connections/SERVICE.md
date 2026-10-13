@@ -8,6 +8,11 @@
 - **Data:** shared NoxHere core D1 during the consolidation window.
 - **Contracts:** versioned commands and receipts from `packages/contracts/`.
 
+The background Worker invokes private RPC methods here for Slack health and
+delivery, transport delivery, and Feedback resolution email preparation and
+delivery. This keeps `ENCRYPTION_KEY` and encrypted provider credentials inside
+their owning service instead of duplicating secrets across runtimes.
+
 Validate with:
 
 ```sh
