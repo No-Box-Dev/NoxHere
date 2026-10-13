@@ -17,8 +17,10 @@ and risk two consumers during cutover, so its runtime identifier stays stable.
 
 - Queue events perform durable, retried asynchronous work.
 - The one-minute trigger dispatches configured reports and digests.
-- The 30-minute production trigger reconciles provider state and runs bounded
-  recovery and health sweeps. Staging uses five minutes to exercise recovery.
+- The 30-minute production trigger runs bounded recovery and health sweeps and
+  publishes one durable reconciliation message per organization. Queue
+  consumers process organizations independently with retries and a five-minute
+  CPU allowance. Staging uses five minutes to exercise recovery.
 - The 03:00 UTC maintenance ticks drain the bounded event-archive backlog.
 
 Each path has a separate `service_heartbeats` component:

@@ -14,6 +14,7 @@ export const TASK = {
   NARRATE_PR_OPENED: "narrate_pr_opened", // { eventId }        -> narratePrOpened(env, eventId)
   BOOTSTRAP: "bootstrap",             // { orgId, accountLogin, installationId }
   SYNC_REPO: "sync_repo",             // { orgId, accountLogin, installationId, repo }
+  RECONCILE_ORG: "reconcile_org",     // { orgId, accountLogin, installationId }
   SPOT_CREATE_GITHUB_ISSUE: "spot_create_github_issue", // transient capture → GitHub issue
   SPOT_PREPARE_RESOLUTION_EMAIL: "spot_prepare_resolution_email", // GitHub evidence → managed AI summary
   SPOT_SEND_RESOLUTION_EMAIL: "spot_send_resolution_email", // durable Feedback reporter notification

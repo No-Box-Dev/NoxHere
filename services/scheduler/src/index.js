@@ -34,9 +34,9 @@ import { projectPlatformEvent } from "../../../functions/lib/platform-event-proj
 import { recoverPlatformEventProjections } from "../../../functions/lib/platform-event-store.ts";
 import { recoverTransportDeliveryEvents } from "../../../functions/lib/transport-delivery-events.ts";
 
-// Cap concurrent orgs per tick to keep GitHub API consumption bounded.
-// Tune up once we measure real numbers.
-const MAX_ORGS_PER_TICK = 10;
+// Bound how many independent reconciliation messages a maintenance tick can
+// publish. Queue consumers process one organization per invocation.
+const MAX_RECONCILIATIONS_PER_TICK = 100;
 
 // Cloudflare delivers a message up to (1 + max_retries) times (msg.attempts is
 // 1-based). We record the terminal failure on the FINAL delivery, so this must
@@ -78,11 +78,13 @@ export default {
             if (msg.body?.type === TASK.DELIVER_SLACK && msg.body?.outboxId) {
               await markOutboxFailed(env.DB, msg.body.outboxId, err);
             }
-            await reportTelemetryRuntimeFailure(env, err, {
-              operation: `queue.${msg.body?.type ?? "unknown"}`,
-              title: `NoxHere background task exhausted its retries`,
-              message: "A durable background task failed on every delivery attempt.",
-            });
+            if (!(msg.body?.type === TASK.RECONCILE_ORG && isTenantConfigurationFailure(err))) {
+              await reportTelemetryRuntimeFailure(env, err, {
+                operation: `queue.${msg.body?.type ?? "unknown"}`,
+                title: `NoxHere background task exhausted its retries`,
+                message: "A durable background task failed on every delivery attempt.",
+              });
+            }
             msg.ack();
           } else {
             msg.retry();
@@ -187,6 +189,8 @@ async function handleTask(env, body) {
       const token = await getInstallationToken(env, body.installationId);
       return syncRepo(env.DB, token, body.orgId, body.accountLogin, body.repo, true);
     }
+    case TASK.RECONCILE_ORG:
+      return reconcileOrg(env, env.DB, body.orgId, body.accountLogin, body.installationId);
     case TASK.SPOT_CREATE_GITHUB_ISSUE:
       return createFeedbackGitHubIssue(env, body);
     case TASK.SPOT_PREPARE_RESOLUTION_EMAIL:
@@ -279,21 +283,21 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
        ORDER BY id
        LIMIT ?`
     )
-    .bind(MAX_ORGS_PER_TICK)
+    .bind(MAX_RECONCILIATIONS_PER_TICK)
     .all();
 
-  for (const org of orgs.results ?? []) {
-    try {
-      await reconcileOrg(env, db, org.id, org.github_login, org.installation_id);
-    } catch (err) {
-      console.error(
-        `[noxhere-background] org=${org.github_login} reconcile failed:`,
-        err?.message ?? err,
-      );
-      if (!isTenantConfigurationFailure(err)) {
-        await reportBackgroundComponentFailure(env, "github.reconcile", err);
-      }
-    }
+  const reconciliationTasks = (orgs.results ?? []).map((org) => ({
+    body: {
+      type: TASK.RECONCILE_ORG,
+      orgId: org.id,
+      accountLogin: org.github_login,
+      installationId: org.installation_id,
+      ownerId: org.github_login,
+      deliveryId: `reconcile:${org.id}:${nowMs}`,
+    },
+  }));
+  if (reconciliationTasks.length > 0) {
+    await env.TASK_QUEUE.sendBatch(reconciliationTasks);
   }
 }
 

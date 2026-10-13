@@ -133,6 +133,18 @@ export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
 // (the lock token). Returns null if a prior unfinished run started within
 // the last LOCK_WINDOW_MIN minutes — caller should skip the tick.
 async function acquireLock(db, orgId) {
+  // Platform cancellations cannot run a finally block. Close abandoned claims
+  // before looking for a live one so operational history is accurate and the
+  // table does not accumulate rows that appear perpetually in flight.
+  await db.prepare(
+    `UPDATE reconcile_runs
+        SET finished_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'),
+            duration_ms = CAST((julianday('now') - julianday(started_at)) * 86400000 AS INTEGER),
+            error = 'reconcile_abandoned'
+      WHERE org_id = ? AND finished_at IS NULL
+        AND started_at <= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', ?)`,
+  ).bind(orgId, `-${LOCK_WINDOW_MIN} minutes`).run();
+
   const recent = await db
     .prepare(
       `SELECT id FROM reconcile_runs

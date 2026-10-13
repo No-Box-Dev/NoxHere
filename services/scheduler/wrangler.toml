@@ -63,6 +63,12 @@ head_sampling_rate = 1
 enabled = true
 head_sampling_rate = 0.05
 
+# Reconciliation is isolated to one organization per queue invocation. Queue
+# consumers may use up to five minutes of CPU; sub-hour Cron Triggers retain
+# Cloudflare's fixed 30-second ceiling and only publish bounded work.
+[limits]
+cpu_ms = 300_000
+
 # Durable background-work consumer. The Pages app (functions/api/webhook.js)
 # produces narrate / PR-match / bootstrap / repo-sync tasks here; this Worker's
 # queue() handler runs them with retries + a dead-letter queue. PROVISION BEFORE
@@ -72,7 +78,7 @@ head_sampling_rate = 0.05
 # src/index.js must equal max_retries + 1 (currently 5).
 [[queues.consumers]]
 queue = "noxhere-tasks"
-max_batch_size = 10
+max_batch_size = 1
 max_retries = 4
 dead_letter_queue = "noxhere-tasks-dlq"
 
@@ -145,7 +151,7 @@ migrations_dir = "../../migrations"
 
 [[env.staging.queues.consumers]]
 queue = "noxhere-tasks-staging"
-max_batch_size = 10
+max_batch_size = 1
 max_retries = 4
 dead_letter_queue = "noxhere-tasks-staging-dlq"
 

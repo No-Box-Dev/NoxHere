@@ -188,7 +188,9 @@ describe("reconcileOrg", () => {
     expect(syncMembers).not.toHaveBeenCalled();
     expect(syncRepos).not.toHaveBeenCalled();
     expect(syncFeatures).not.toHaveBeenCalled();
-    expect(db._calls.runs).toHaveLength(0);
+    expect(db._calls.runs).toEqual([
+      expect.objectContaining({ kind: "update", sql: expect.stringContaining("reconcile_abandoned") }),
+    ]);
   });
 
   it("flags installation as silent when last_event_at is older than 24h", async () => {
