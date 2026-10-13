@@ -29,9 +29,11 @@ Required deployment secrets:
 
 `ENCRYPTION_KEY`, GitHub App credentials, and `POSTMARK_SERVER_TOKEN` remain
 required for the existing identity, encrypted-token, and outbound-email
-capabilities. The deployment workflow refuses to promote a release when any
-provider-ingress secret is absent, and the public readiness probe verifies all
-three provider boundaries without returning secret values.
+capabilities. Provider credentials live only as encrypted Worker secrets; they
+are not duplicated into GitHub Actions. The deployment workflow lists secret
+names through Wrangler and refuses to promote a release when any required name
+is absent. The public readiness probe then verifies all three provider
+boundaries without returning secret values.
 
 Validate with:
 
