@@ -77,9 +77,27 @@ describe("Slack message bridge", () => {
     expect(await response.json()).toMatchObject({ error: { code: "slack_channel_membership_required", message: expect.stringContaining("Invite @NoxHere") } });
   });
 
-  it("requires an administrator and an active Slack installation", async () => {
+  it("requires an administrator for interactive requests", async () => {
     const forbidden = await onRequestPost(context({ connectionId: "conn-1", channelId: "C123", message: { text: "Hello" } }, { isAdmin: false }));
     expect(forbidden.status).toBe(403);
+    expect(deliverResolvedSlackMessage).not.toHaveBeenCalled();
+  });
+
+  it("allows a project-scoped API token admitted by the slack:send gateway", async () => {
+    const response = await onRequestPost(context(
+      { connectionId: "conn-1", channelId: "C123", message: { text: "Nightly complete" } },
+      { isAdmin: false, auth: { type: "api_token" } },
+    ));
+
+    expect(response.status).toBe(201);
+    expect(deliverResolvedSlackMessage).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      orgId: 7,
+      connectionId: "conn-1",
+      channelId: "C123",
+    }));
+  });
+
+  it("requires an active Slack installation", async () => {
 
     vi.mocked(resolveSlackInstall).mockResolvedValueOnce(null);
     const disconnected = await onRequestPost(context({ connectionId: "conn-1", channelId: "C123", message: { text: "Hello" } }));

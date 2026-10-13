@@ -57,6 +57,7 @@ interface Ctx {
     projectId?: string | null;
     orgLogin?: string;
     isAdmin: boolean;
+    auth?: { type?: string };
   };
   request: Request;
 }
@@ -73,10 +74,15 @@ async function boundedJson(request: Request): Promise<unknown> {
 // The browser supplies only a connection id, channel id, and Slack message fields;
 // the bot token is resolved and used exclusively inside the Worker.
 export async function onRequestPost(context: Ctx): Promise<Response> {
-  const { orgId, projectId, isAdmin } = getCtx(context);
+  const { orgId, projectId, isAdmin, auth } = getCtx(context);
   if (!orgId) return v1Error("missing_org_context", "Missing organization context", 400);
   if (!projectId) return v1Error("project_required", "Select a project before sending a Slack message", 400);
-  if (!isAdmin) return v1Error("admin_required", "Only an organization admin can send Slack messages", 403);
+  // Interactive users must remain organization admins. Project-scoped API
+  // tokens have already passed the gateway's `slack:send`, lifecycle, route,
+  // organization, and project checks, so do not reinterpret them as users.
+  if (!isAdmin && auth?.type !== "api_token") {
+    return v1Error("admin_required", "Only an organization admin can send Slack messages", 403);
+  }
   if (!context.request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {
     return v1Error("unsupported_media_type", "Content-Type must be application/json", 415);
   }
