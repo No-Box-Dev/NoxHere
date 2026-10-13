@@ -62,8 +62,8 @@ npx wrangler d1 migrations apply noxhere --remote
 
 Create a GitHub App (Settings → Developer settings → GitHub Apps → New) with:
 
-- **Callback URL:** `https://<your-pages-domain>/auth/github/callback`
-- **Webhook URL:** `https://<your-pages-domain>/api/webhook`
+- **Callback URL:** `https://<your-app-domain>/auth/github/callback`
+- **Webhook URL:** `https://<your-app-domain>/api/webhook`
 - **Webhook secret:** generate a random string; you'll set it as `GITHUB_WEBHOOK_SECRET`
 - **Permissions:** Repository → Contents (read), Issues (read/write), Pull requests (read), Metadata (read); Organization → Members (read)
 - **Subscribe to events:** Issues, Pull request, Pull request review, Push, Release, Member
@@ -73,7 +73,8 @@ Note the **App ID**, **Client ID**, generate a **Client secret**, and download t
 
 ## 4. Set secrets
 
-Frontend build var (public) — set in `.env.local` for local builds and as a Pages env var/secret for CI:
+Frontend build variable (public) — set it in `.env.local` for local builds and
+as the `VITE_GITHUB_CLIENT_ID` GitHub Actions variable for CI:
 
 ```
 VITE_GITHUB_APP_CLIENT_ID=<your app client id>
