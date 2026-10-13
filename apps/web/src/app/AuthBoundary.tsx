@@ -12,12 +12,14 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<WorkspaceProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [initialScope] = useState(() => {
-    const parts = window.location.pathname.split("/").filter(Boolean);
-    return { organizationId: parts[0] ?? "", projectId: parts[1] === "select" ? "" : parts[1] ?? "" };
-  });
   const location = useLocation();
   const queryClient = useQueryClient();
+  const routeParts = location.pathname.split("/").filter(Boolean);
+  const routeOrganizationId = routeParts[0] ?? "";
+  const routeProjectId = routeParts[1] === "select" ? "" : routeParts[1] ?? "";
+  const scopedOrganization = profile?.orgs.find(
+    (organization) => organization.login.toLowerCase() === routeOrganizationId.toLowerCase(),
+  );
 
   useEffect(() => {
     fetch("/api/auth/profile", { credentials: "same-origin" })
@@ -32,13 +34,13 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!profile || !initialScope.organizationId || !initialScope.projectId) return;
+    if (!scopedOrganization || !routeProjectId) return;
     void queryClient.prefetchQuery({
-      queryKey: ["platform", "bootstrap", initialScope.organizationId, initialScope.projectId],
-      queryFn: ({ signal }) => platformApi.bootstrap(initialScope.organizationId, initialScope.projectId, signal),
+      queryKey: ["platform", "bootstrap", scopedOrganization.login, routeProjectId],
+      queryFn: ({ signal }) => platformApi.bootstrap(scopedOrganization.login, routeProjectId, signal),
       staleTime: 5 * 60_000,
     });
-  }, [initialScope, profile, queryClient]);
+  }, [queryClient, routeProjectId, scopedOrganization]);
 
   useEffect(() => {
     const requireAuthentication = () => {
@@ -52,17 +54,20 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!profile?.user.login) return;
+    const organizationId = scopedOrganization?.login ?? profile.orgs[0]?.login;
+    if (!organizationId) return;
     // Product telemetry is deliberately server-side: the browser never sees an
     // ingest key or identity hashing key, and a telemetry failure cannot block
     // opening the app. The endpoint de-duplicates activity to one fact per user
     // per day.
-    void postRawJson("/api/v1/app-activity", {}).catch(() => undefined);
-  }, [profile?.user.login]);
+    void postRawJson("/api/v1/app-activity", {}, { organizationId }).catch(() => undefined);
+  }, [profile, scopedOrganization]);
 
   if (loading) return <div className="state-message" role="status"><span className="spinner" />Loading…</div>;
   if (error) return <div className="state-message error" role="alert"><b>Could not open Nox</b><span>{error}</span><button className="button secondary" onClick={() => window.location.reload()}>Retry</button></div>;
   if (!profile) return <Login />;
   if (!profile.orgs.length) return <div className="state-message"><b>No workspace access</b><span>Ask an administrator to invite this email or add your GitHub account.</span></div>;
+  if (location.pathname !== "/" && routeOrganizationId && !scopedOrganization) return <Navigate replace to="/" />;
   if (location.pathname === "/") {
     const chooseProject = new URLSearchParams(location.search).get("choose") === "1";
     const lastProject = chooseProject ? null : readLastProject(profile.user.login);

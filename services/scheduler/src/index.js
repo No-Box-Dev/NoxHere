@@ -280,6 +280,8 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
 }
 
 async function runReportSchedules(env, nowMs) {
+  await recordHeartbeatAttempt(env.DB, "scheduled.cron", env.CF_VERSION_METADATA?.id);
+  let firstFailure = null;
   for (const [operation, label, run] of [
     ["telemetry.digest-sweep", "Telemetry digest", runTelemetryDigests],
     ["feedback.digest-sweep", "Feedback daily digest", runFeedbackDailyDigests],
@@ -289,8 +291,14 @@ async function runReportSchedules(env, nowMs) {
       await run(env, nowMs);
     } catch (err) {
       console.error(`[noxhere-cron] ${label} sweep failed:`, err?.message ?? err);
-      await reportScheduledComponentFailure(env, operation, err);
+      firstFailure ??= err;
+      await reportTelemetryRuntimeFailure(env, err, { operation });
     }
+  }
+  if (firstFailure) {
+    await recordHeartbeatFailure(env.DB, "scheduled.cron", firstFailure, env.CF_VERSION_METADATA?.id);
+  } else {
+    await recordHeartbeatSuccess(env.DB, "scheduled.cron", env.CF_VERSION_METADATA?.id);
   }
 }
 

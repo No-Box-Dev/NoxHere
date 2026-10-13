@@ -159,6 +159,18 @@ describe("NoxHere API-backed platform", () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/app-activity", expect.objectContaining({ method: "POST" })));
     const request = vi.mocked(fetch).mock.calls.find(([input, init]) => String(input) === "/api/v1/app-activity" && init?.method === "POST")?.[1];
     expect(new Headers(request?.headers).get("X-CSRF-Token")).toBe("test-csrf-token");
+    expect(new Headers(request?.headers).get("X-Org")).toBe("No-Box-Dev");
+  });
+
+  it("does not bootstrap a workspace that is absent from the verified profile", async () => {
+    renderApp(<><App /><CurrentRoute /></>, "/removed-workspace/project-a/planning/board");
+
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/"));
+    expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
+    expect(vi.mocked(fetch).mock.calls.some(([input, init]) => (
+      String(input) === "/api/v1/me"
+      && new Headers(init?.headers).get("X-Org") === "removed-workspace"
+    ))).toBe(false);
   });
 
   it("sends a text and image message through the selected Slack connection", async () => {
