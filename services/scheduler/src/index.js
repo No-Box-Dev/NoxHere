@@ -33,6 +33,7 @@ import { executeTransportCallback, executeTransportCommand, recoverTransportCall
 import { projectPlatformEvent } from "../../../functions/lib/platform-event-projector.ts";
 import { recoverPlatformEventProjections } from "../../../functions/lib/platform-event-store.ts";
 import { recoverTransportDeliveryEvents } from "../../../functions/lib/transport-delivery-events.ts";
+import { recoverAbandonedReconciliations } from "./reconciliation-recovery.js";
 
 // Bound how many independent reconciliation messages a maintenance tick can
 // publish. Queue consumers process one organization per invocation.
@@ -46,6 +47,7 @@ const HEARTBEAT = Object.freeze({
   schedule: "background.schedule",
   reports: "background.reports",
   maintenance: "background.maintenance",
+  reconciliationRecovery: "background.reconciliation-recovery",
   archive: "background.archive",
   queue: "background.queue",
 });
@@ -130,6 +132,12 @@ async function runScheduledEvent(env, event) {
 
   const reportScheduleTick = event.cron === "* * * * *";
   if (reportScheduleTick) {
+    await runTrackedJob(
+      env,
+      HEARTBEAT.reconciliationRecovery,
+      "background.reconciliation-recovery",
+      () => recoverAbandonedReconciliations(env, event.scheduledTime),
+    );
     await runTrackedJob(env, HEARTBEAT.reports, "background.reports", () => (
       runReportSchedules(env, event.scheduledTime)
     ));

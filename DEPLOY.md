@@ -237,6 +237,16 @@ for operator diagnostics only; it is not part of the public contract.
 
 > **Migrations run before code** — the deploy workflow applies D1 migrations before `pages deploy` for this reason. If you deploy manually, run `d1 migrations apply` first.
 
+### Rollback boundaries
+
+Database migrations and secret-ownership moves are forward-only deployment
+boundaries. Do not use a partial Cloudflare version rollback across one of
+those boundaries: an older background Worker can expect provider secrets that
+now belong only to Connections, and older API code can expect tables that a
+newer migration renamed. Prefer a forward fix. If an incident requires an
+older release, restore the matching schema and secret ownership as one reviewed
+roll-forward deployment rather than rolling back a single Worker in isolation.
+
 ## 6. Install the App and bootstrap
 
 1. Install your GitHub App on your org (`https://github.com/apps/<your-app>/installations/new`).
