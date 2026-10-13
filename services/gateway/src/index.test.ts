@@ -35,9 +35,11 @@ function controlDb(options: { apiToken?: Record<string, unknown>; nativeSession?
 function controlledServices(
   connector: PlatformServices["connector"],
   db = controlDb(),
+  provider?: PlatformServices["provider"],
 ): PlatformServices {
   return services({
     connector,
+    provider,
     control: {
       db,
       identity: {
@@ -207,7 +209,8 @@ describe("NoxHere gateway", () => {
 
   it("relays Postmark feedback unchanged without requiring a user session", async () => {
     const connector = { fetch: vi.fn(async () => Response.json({ accepted: true })) };
-    const bindings = services({ connector });
+    const provider = { fetch: vi.fn(async () => Response.json({ accepted: true })) };
+    const bindings = services({ connector, provider });
     const request = new Request("https://app.noxhere.com/api/postmark/webhook", {
       method: "POST",
       headers: { Authorization: "Basic provider-credential" },
@@ -216,9 +219,46 @@ describe("NoxHere gateway", () => {
 
     const response = await handleRequest(request, bindings);
 
-    expect(connector.fetch).toHaveBeenCalledWith(request);
+    expect(provider.fetch).toHaveBeenCalledWith(request);
+    expect(connector.fetch).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     expect(response.headers.get("X-NoxHere-Gateway")).toBe("1");
+  });
+
+  it("probes provider ingress through Connections without exposing secrets", async () => {
+    const provider = { fetch: vi.fn(async (request: Request) => Response.json({
+      status: "ok",
+      path: new URL(request.url).pathname,
+    }, { headers: { "Cache-Control": "no-store" } })) };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/__noxhere/health/provider-ingress?release=123"),
+      services({ provider }),
+    );
+
+    expect(provider.fetch).toHaveBeenCalledOnce();
+    const relayed = provider.fetch.mock.calls[0][0];
+    expect(new URL(relayed.url).pathname).toBe("/__noxhere/provider-ingress/ready");
+    expect(new URL(relayed.url).searchParams.get("release")).toBe("123");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-NoxHere-Gateway")).toBe("1");
+  });
+
+  it("sends authenticated Slack operations to Connections with a signed assertion", async () => {
+    const connector = { fetch: vi.fn(async () => Response.json({ wrong: true })) };
+    const provider = { fetch: vi.fn(async (request: Request) => Response.json({
+      configured: Boolean(request.headers.get("X-NoxHere-Internal-Assertion")),
+    })) };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/api/v1/slack/status", {
+        headers: { Cookie: "__Host-nox_session=opaque", "X-Org": "acme" },
+      }),
+      controlledServices(connector, controlDb(), provider),
+    );
+
+    expect(response.status).toBe(200);
+    expect(provider.fetch).toHaveBeenCalledOnce();
+    expect(connector.fetch).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({ configured: true });
   });
 
   it("relays reporter resolution links without requiring a user session", async () => {

@@ -34,12 +34,13 @@ export async function onRequestPost(context) {
   const timestamp = request.headers.get("X-Slack-Request-Timestamp") ?? "";
   const signature = request.headers.get("X-Slack-Signature") ?? "";
 
-  // The signing secret gates every request — without it, silently return
-  // 200 so Slack's setup UI can still see the endpoint respond, but never
-  // actually process an event. In practice this branch means the deploy
-  // is misconfigured, not that Slack is malicious.
+  // Missing verification material is a deployment failure. A 2xx response
+  // would make Slack discard a real event that we never authenticated.
   if (!env.SLACK_SIGNING_SECRET) {
-    return new Response("ok", { status: 200 });
+    return Response.json({ error: "provider_ingress_not_configured" }, {
+      status: 503,
+      headers: { "Cache-Control": "no-store", "Retry-After": "60" },
+    });
   }
 
   const valid = await verifySlackSignature({

@@ -38,6 +38,14 @@ async function publicRoutesReady() {
   const identityBoundaryBody = await identityBoundary.json().catch(() => null);
   if (!identityBoundary.ok || identityBoundaryBody?.status !== "ok") return false;
 
+  const providerIngress = await fetch(smokeUrl("/__noxhere/health/provider-ingress"), { headers });
+  const providerIngressBody = await providerIngress.json().catch(() => null);
+  if (!providerIngress.ok
+      || providerIngressBody?.status !== "ok"
+      || providerIngressBody?.checks?.github !== true
+      || providerIngressBody?.checks?.slack !== true
+      || providerIngressBody?.checks?.postmark !== true) return false;
+
   const profile = await fetch(smokeUrl("/api/auth/profile"), { headers });
   const profileBody = await profile.json().catch(() => null);
   if (profile.status !== 401

@@ -11,7 +11,12 @@ import {
 export async function onRequestPost(context) {
   const { request, env } = context;
   const rawBody = await request.text();
-  if (!env.SLACK_SIGNING_SECRET) return new Response("ok");
+  if (!env.SLACK_SIGNING_SECRET) {
+    return Response.json({ error: "provider_ingress_not_configured" }, {
+      status: 503,
+      headers: { "Cache-Control": "no-store", "Retry-After": "60" },
+    });
+  }
 
   const valid = await verifySlackSignature({
     signingSecret: env.SLACK_SIGNING_SECRET,

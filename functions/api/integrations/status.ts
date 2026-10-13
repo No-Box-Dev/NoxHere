@@ -11,6 +11,9 @@ interface Ctx {
     SLACK_CLIENT_SECRET?: string;
     SLACK_SIGNING_SECRET?: string;
     SLACK_APP_ID?: string;
+    NOXHERE_EMAIL?: {
+      getProviderConfiguration(): Promise<{ github: boolean; slack: boolean; postmark: boolean }>;
+    };
   };
   data: { orgId: number; orgLogin: string; projectId?: string | null; isAdmin: boolean };
 }
@@ -46,7 +49,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
        )`,
     ).bind(orgId, orgId);
 
-  const [org, installation, slackInstall, slackChannels, slackMetadata, slackDeliveries] = await Promise.all([
+  const [org, installation, slackInstall, slackChannels, slackMetadata, slackDeliveries, providerConfiguration] = await Promise.all([
     db.prepare(
       "SELECT installation_id, bootstrapped_at, last_event_at FROM orgs WHERE id = ?",
     ).bind(orgId).first<Record<string, unknown>>(),
@@ -61,18 +64,20 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
         WHERE org_id = ? ORDER BY is_default DESC, installed_at LIMIT 1`,
     ).bind(orgId).first<Record<string, unknown>>(),
     slackDeliveriesStatement.first<Record<string, unknown>>(),
+    context.env.NOXHERE_EMAIL?.getProviderConfiguration().catch(() => null) ?? Promise.resolve(null),
   ]);
 
   const installationId = installation?.installation_id ?? org?.installation_id ?? null;
-  const githubConfigured = Boolean(context.env.GITHUB_APP_ID && context.env.GITHUB_APP_PRIVATE_KEY);
+  const githubConfigured = providerConfiguration?.github
+    ?? Boolean(context.env.GITHUB_APP_ID && context.env.GITHUB_APP_PRIVATE_KEY);
   const githubConnected = Boolean(installationId);
   const githubBootstrapping = Boolean(installationId && !org?.bootstrapped_at);
   const githubNeedsAttention = installation?.health_status === "silent";
   const githubReady = githubConfigured && githubConnected && !githubBootstrapping && !githubNeedsAttention;
-  const slackConfigured = Boolean(
+  const slackConfigured = providerConfiguration?.slack ?? Boolean(
     context.env.SLACK_CLIENT_ID
-    && context.env.SLACK_CLIENT_SECRET
-    && context.env.SLACK_SIGNING_SECRET,
+      && context.env.SLACK_CLIENT_SECRET
+      && context.env.SLACK_SIGNING_SECRET,
   );
   const slackConnected = Boolean(slackInstall);
   const slackNeedsReconnect = slackInstallNeedsReconnect(context.env, slackInstall);

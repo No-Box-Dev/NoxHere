@@ -23,6 +23,7 @@ import {
   parseTransportCommand,
   providerForOperation,
 } from "../../../packages/contracts/transport-commands";
+import { handleProviderIngress } from "./provider-ingress";
 
 interface Env {
   DB: D1Database;
@@ -38,6 +39,11 @@ interface Env {
   PLATFORM_EMAIL_FROM?: string;
   FEEDBACK_EMAIL_FROM?: string;
   FEEDBACK_PUBLIC_URL?: string;
+  GITHUB_WEBHOOK_SECRET?: string;
+  POSTMARK_WEBHOOK_SECRET?: string;
+  SLACK_CLIENT_ID?: string;
+  SLACK_CLIENT_SECRET?: string;
+  SLACK_SIGNING_SECRET?: string;
 }
 
 export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
@@ -72,6 +78,14 @@ export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
       throw new Error("invalid_identity_connection");
     }
     return resolveIdentityConnection(this.env, connectionId);
+  }
+
+  getProviderConfiguration() {
+    return {
+      github: Boolean(this.env.GITHUB_APP_ID && this.env.GITHUB_APP_PRIVATE_KEY && this.env.GITHUB_WEBHOOK_SECRET),
+      slack: Boolean(this.env.ENCRYPTION_KEY && this.env.SLACK_CLIENT_ID && this.env.SLACK_CLIENT_SECRET && this.env.SLACK_SIGNING_SECRET),
+      postmark: Boolean(this.env.POSTMARK_SERVER_TOKEN && this.env.POSTMARK_WEBHOOK_SECRET),
+    };
   }
 
   sendEmail(input: unknown) {
@@ -136,7 +150,11 @@ export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
     }, reportId);
   }
 
-  fetch(): Response {
-    return Response.json({ error: "private_service" }, { status: 404 });
+  fetch(request: Request): Promise<Response> {
+    return handleProviderIngress({
+      request,
+      env: this.env,
+      waitUntil: (work) => this.ctx.waitUntil(work),
+    });
   }
 }

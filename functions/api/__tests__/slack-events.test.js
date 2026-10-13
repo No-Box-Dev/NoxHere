@@ -71,12 +71,13 @@ describe("parseNoxHereUrl", () => {
 });
 
 describe("onRequestPost — signature gating", () => {
-  it("returns 200 no-op when SLACK_SIGNING_SECRET is missing (misconfig)", async () => {
+  it("fails closed when SLACK_SIGNING_SECRET is missing", async () => {
     const ts = String(Math.floor(Date.now() / 1000));
     const body = JSON.stringify({ type: "url_verification", challenge: "x" });
     const ctx = makeCtx({ body, timestamp: ts, signature: "v0=deadbeef", env: {} });
     const res = await onRequestPost(ctx);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(503);
+    expect(res.headers.get("Retry-After")).toBe("60");
   });
 
   it("rejects a request with a bad signature", async () => {
