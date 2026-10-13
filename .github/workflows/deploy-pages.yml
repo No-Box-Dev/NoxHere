@@ -137,7 +137,9 @@ jobs:
       - name: Deploy production background worker
         run: npx wrangler deploy --config services/scheduler/wrangler.toml --env="" --message "$DEPLOY_SHA"
       - name: Deploy production NoxHere gateway
-        run: npx wrangler deploy --config services/gateway/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
+        run: |
+          npx wrangler versions upload --config services/gateway/wrangler.jsonc --env="" --tag "$DEPLOY_SHA" --message "$DEPLOY_SHA"
+          npx wrangler versions deploy --config services/gateway/wrangler.jsonc --env="" --version-tag "$DEPLOY_SHA" --message "$DEPLOY_SHA" --yes
       - name: Smoke production release
         run: node scripts/smoke-deployment.mjs https://app.noxhere.com https://app.noxhere.com "$DEPLOY_SHA"
       - name: Verify production ecosystem
