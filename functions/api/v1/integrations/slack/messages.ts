@@ -1,11 +1,7 @@
 import { z } from "zod";
 import { getCtx } from "../../../../lib/db";
 import { v1Error, v1Response } from "../../../../lib/api-v1";
-import { actionableSlackError, getSlackChannel, resolveSlackInstall } from "../../../../lib/slack.js";
-import {
-  deliverResolvedSlackMessage,
-  type SlackMessagePayload,
-} from "../../../../lib/transports/slack";
+import { actionableSlackError } from "../../../../lib/slack.js";
 
 const MAX_REQUEST_BYTES = 64 * 1024;
 const JsonObject = z.record(z.string(), z.unknown());
@@ -51,7 +47,15 @@ const SlackMessageRequest = z.object({
 }).strict();
 
 interface Ctx {
-  env: Env;
+  env: Env & {
+    NOXHERE_EMAIL?: {
+      sendSlackMessage(input: unknown): Promise<{
+        ok: boolean;
+        result?: { connectionId: string; channelId: string; messageId: string };
+        error?: { code: string; message: string };
+      }>;
+    };
+  };
   data: {
     orgId: number;
     projectId?: string | null;
@@ -116,45 +120,45 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     });
   }
 
-  const install = await resolveSlackInstall(context.env, orgId, parsed.data.connectionId);
-  if (!install) {
-    return v1Error(
-      "slack_not_connected",
-      "The selected Slack workspace is not connected or its authorization cannot be read. Reconnect it, then try again.",
-      409,
-    );
-  }
-  if (install.projectId && install.projectId !== projectId) {
-    return v1Error(
-      "slack_workspace_project_mismatch",
-      "The selected Slack workspace belongs to another project. Choose a workspace assigned to this project.",
-      409,
-    );
+  if (!context.env.NOXHERE_EMAIL?.sendSlackMessage) {
+    return v1Error("slack_service_unavailable", "Slack delivery is temporarily unavailable", 503);
   }
 
   try {
-    const channel = await getSlackChannel(install.botToken, parsed.data.channelId);
-    if (!channel || channel.is_archived) {
-      return v1Error("slack_channel_unavailable", "This Slack channel is archived or unavailable. Choose an active channel, then try again.", 409);
-    }
-    if (channel.is_private && !channel.is_member) {
-      return v1Error("slack_channel_membership_required", "NoxHere is not in this private channel. Invite @NoxHere in Slack, then try again.", 409);
-    }
-
-    const message: SlackMessagePayload = parsed.data.message;
-    const receipt = await deliverResolvedSlackMessage(context.env, {
+    const delivery = await context.env.NOXHERE_EMAIL.sendSlackMessage({
       orgId,
+      projectId,
       connectionId: parsed.data.connectionId,
       channelId: parsed.data.channelId,
-      message,
+      message: parsed.data.message,
     });
+    if (!delivery.ok || !delivery.result) {
+      const code = delivery.error?.code ?? "slack_delivery_failed";
+      const status = code === "rate_limited" ? 429
+        : code === "slack_not_connected" || code === "slack_workspace_project_mismatch"
+          || code === "slack_channel_unavailable" || code === "slack_channel_membership_required" ? 409 : 502;
+      const fallback = code === "slack_channel_membership_required"
+        ? "NoxHere is not in this private channel. Invite @NoxHere in Slack, then try again."
+        : code === "slack_channel_unavailable"
+          ? "This Slack channel is archived or unavailable. Choose an active channel, then try again."
+          : code === "slack_workspace_project_mismatch"
+            ? "The selected Slack workspace belongs to another project. Choose a workspace assigned to this project."
+            : code === "slack_not_connected"
+              ? "The selected Slack workspace is not connected or its authorization cannot be read. Reconnect it, then try again."
+              : delivery.error?.message ?? "Slack did not accept the message.";
+      return v1Error(
+        code,
+        actionableSlackError(delivery.error, fallback),
+        status,
+      );
+    }
     return v1Response({
       apiVersion: 1,
       delivery: {
         status: "sent",
-        connectionId: install.id,
-        channelId: receipt.channelId,
-        messageTs: receipt.messageId,
+        connectionId: delivery.result.connectionId,
+        channelId: delivery.result.channelId,
+        messageTs: delivery.result.messageId,
         sentAt: new Date().toISOString(),
       },
     }, 201);
