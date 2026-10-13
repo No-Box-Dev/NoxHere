@@ -21,13 +21,43 @@ async function spotReady() {
   return response.ok && body?.owner === "noxhere" && body?.buildSha === expectedSha;
 }
 
+async function publicRoutesReady() {
+  const headers = { "Cache-Control": "no-cache" };
+  const profile = await fetch(new URL("/api/auth/profile", platformOrigin), { headers });
+  const profileBody = await profile.json().catch(() => null);
+  if (profile.status !== 401
+      || !profile.headers.get("content-type")?.includes("application/json")
+      || profileBody?.error?.code !== "unauthorized") return false;
+
+  // A missing widget must still be answered by Feedback as JavaScript. The
+  // SPA fallback previously returned index.html with HTTP 200, which then
+  // failed in browsers as `Unexpected token '<'`.
+  const widget = await fetch(new URL("/widget/__noxhere_smoke_missing__.js", platformOrigin), { headers });
+  const widgetBody = await widget.text();
+  if (widget.status !== 404
+      || !widget.headers.get("content-type")?.includes("javascript")
+      || widgetBody.trimStart().startsWith("<")) return false;
+
+  const shell = await fetch(new URL("/", platformOrigin), { headers });
+  const shellBody = await shell.text();
+  const entryPath = shellBody.match(/<script[^>]+src="([^"]+\.js)"/)?.[1];
+  if (!shell.ok || !entryPath) return false;
+  const entry = await fetch(new URL(entryPath, platformOrigin), { headers });
+  const entryPrefix = (await entry.text()).trimStart().slice(0, 1);
+  return entry.ok
+    && Boolean(entry.headers.get("content-type")?.includes("javascript"))
+    && entryPrefix !== "<";
+}
+
 for (let attempt = 1; attempt <= 12; attempt += 1) {
   try {
     // Production serves the app and public Feedback API from the same origin.
     // Readiness already probes Feedback through its service binding and checks
     // its exact build SHA, while /health on the app origin intentionally serves
     // the SPA. Staging keeps a dedicated Feedback origin and probes it directly.
-    if (await ready() && (spotOrigin === platformOrigin || await spotReady())) {
+    if (await ready()
+        && await publicRoutesReady()
+        && (spotOrigin === platformOrigin || await spotReady())) {
       console.log(JSON.stringify({ platformOrigin, spotOrigin, buildSha: expectedSha, status: "ready" }));
       process.exit(0);
     }

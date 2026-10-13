@@ -40,6 +40,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url === "/api/auth/profile") return json({ user: { login: "JasperNoBoxDev", email: "jasper@noboxdev.com" }, orgs: [{ login: "No-Box-Dev", role: "admin" }] });
+    if (url === "/api/v1/app-activity" && init?.method === "POST") return json({ recorded: "already_active" });
     if (url === "/api/v1/me") return json({ login: "JasperNoBoxDev", org: "No-Box-Dev", isAdmin: true });
     if (url === `/api/v1/projects/${project.id}/telemetry/actions`) return json({ projectId: project.id, windowDays: 7, actions: [
       { slot: 1, key: "custom.comments.written", label: "Comments written" },
@@ -138,6 +139,28 @@ const resolutionTemplate = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("NoxHere API-backed platform", () => {
+  it("does not prefetch authenticated project data before the session is verified", async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/auth/profile") return json({ error: { code: "unauthorized" } }, 401);
+      return json({ error: { code: "unexpected_request" } }, 500);
+    });
+
+    renderApp(<App />, `/no-box-dev/${project.id}/planning/board`);
+
+    expect(await screen.findByRole("heading", { name: "Sign in to Nox" })).toBeInTheDocument();
+    expect(vi.mocked(fetch).mock.calls.map(([input]) => String(input))).toEqual(["/api/auth/profile"]);
+  });
+
+  it("records app activity with the browser session CSRF token", async () => {
+    document.cookie = "nox_csrf=test-csrf-token; Path=/";
+
+    renderApp(<App />, "/");
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/app-activity", expect.objectContaining({ method: "POST" })));
+    const request = vi.mocked(fetch).mock.calls.find(([input, init]) => String(input) === "/api/v1/app-activity" && init?.method === "POST")?.[1];
+    expect(new Headers(request?.headers).get("X-CSRF-Token")).toBe("test-csrf-token");
+  });
+
   it("sends a text and image message through the selected Slack connection", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {

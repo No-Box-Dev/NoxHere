@@ -151,15 +151,36 @@ describe("NoxHere gateway", () => {
   });
 
   it("relays reporter resolution links without requiring a user session", async () => {
-    const connector = { fetch: vi.fn(async () => new Response("resolution form")) };
-    const bindings = services({ connector });
+    const connector = { fetch: vi.fn(async () => new Response("private connector")) };
+    const feedback = { fetch: vi.fn(async () => new Response("resolution form")) };
+    const bindings = services({ connector, feedback });
     const request = new Request("https://app.noxhere.com/api/feedback/public/v1/resolution/token_123");
 
     const response = await handleRequest(request, bindings);
 
-    expect(connector.fetch).toHaveBeenCalledWith(request);
+    expect(feedback.fetch).toHaveBeenCalledWith(request);
+    expect(connector.fetch).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe("resolution form");
+  });
+
+  it("serves feedback widget JavaScript through the public Feedback binding", async () => {
+    const assets = { fetch: vi.fn(async () => new Response("<!doctype html>")) };
+    const connector = { fetch: vi.fn(async () => new Response("private connector")) };
+    const feedback = { fetch: vi.fn(async () => new Response("Feedback.init({});", {
+      headers: { "Content-Type": "application/javascript" },
+    })) };
+    const bindings = services({ assets, connector, feedback });
+    const request = new Request("https://app.noxhere.com/widget/site-1.js");
+
+    const response = await handleRequest(request, bindings);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("application/javascript");
+    await expect(response.text()).resolves.toBe("Feedback.init({});");
+    expect(feedback.fetch).toHaveBeenCalledWith(request);
+    expect(assets.fetch).not.toHaveBeenCalled();
+    expect(connector.fetch).not.toHaveBeenCalled();
   });
 
   it("returns the standard unavailable envelope when the binding fails", async () => {

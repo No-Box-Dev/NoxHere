@@ -5,6 +5,7 @@ type BoundService = {
 export interface PlatformServices {
   assets: BoundService;
   connector: BoundService;
+  feedback?: BoundService;
   control?: {
     db: D1Database;
     identity: import("./control/oauth").IdentityService;
@@ -112,6 +113,11 @@ export async function handleRequest(
 
   if (url.pathname === "/api" || url.pathname.startsWith(API_PREFIX)) {
     try {
+      if (isPublicFeedbackPath(url.pathname)) {
+        return services.feedback
+          ? gatewayResponse(await services.feedback.fetch(request))
+          : unavailableResponse();
+      }
       const publicConnectorPath = isPublicConnectorPath(url.pathname, request);
       if (publicConnectorPath) return gatewayResponse(await services.connector.fetch(request));
 
@@ -244,6 +250,12 @@ export async function handleRequest(
     }
   }
 
+  if (isPublicFeedbackPath(url.pathname)) {
+    return services.feedback
+      ? gatewayResponse(await services.feedback.fetch(request))
+      : unavailableResponse();
+  }
+
   return services.assets.fetch(request);
 }
 
@@ -305,16 +317,22 @@ function isPublicConnectorPath(pathname: string, request: Request): boolean {
     || pathname === "/api/health/ready"
     || pathname === "/api/webhook"
     || pathname === "/api/postmark/webhook"
-    || pathname.startsWith("/api/feedback/public/v1/resolution/")
-    || pathname.startsWith("/api/feedback/public/v1/resolution-responses/")
     || pathname === "/api/slack/oauth/callback"
     || pathname === "/api/slack/oauth/handoff"
     || pathname === "/api/slack/events"
     || pathname === "/api/slack/interactions"
     || pathname.startsWith("/api/public/")
     || ((pathname === "/api/telemetry/public/v1/events"
-      || pathname === "/api/v1/telemetry/public/events"
-      || pathname === "/api/feedback/public/v1/reports") && !isApiTokenRequest(request));
+      || pathname === "/api/v1/telemetry/public/events") && !isApiTokenRequest(request));
+}
+
+function isPublicFeedbackPath(pathname: string): boolean {
+  return pathname.startsWith("/api/feedback/public/v1/")
+    || pathname.startsWith("/widget/")
+    || pathname.startsWith("/r2/")
+    || pathname.startsWith("/responses/")
+    || pathname === "/feedback.min.js"
+    || pathname === "/feedback-core.min.js";
 }
 
 function unavailableAuthentication(): Response {
@@ -337,6 +355,7 @@ export default {
     return handleRequest(request, {
       assets: env.ASSETS,
       connector: env.NOXHERE,
+      feedback: env.FEEDBACK,
       control: {
         db: env.CONTROL_DB,
         identity: capabilities,

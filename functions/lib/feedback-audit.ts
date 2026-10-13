@@ -12,7 +12,7 @@ export function feedbackAuditStatement(
   },
 ): D1PreparedStatement {
   return db.prepare(
-    `INSERT INTO feedback_config_audit
+    `INSERT INTO noxspot_config_audit
        (id, org_id, project_id, site_id, actor_login, action, changes_json)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
