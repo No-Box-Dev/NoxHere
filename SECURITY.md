@@ -8,7 +8,7 @@ Report security issues privately by email to **security@noboxdev.com**. Include:
 
 - A description of the issue and its impact
 - Steps to reproduce (a proof of concept if you have one)
-- The affected component (frontend, Pages Functions, or the cron Worker) and version/commit
+- The affected component (frontend, API, capability service, or background Worker) and version/commit
 
 We will acknowledge your report within **3 business days** and keep you updated as we investigate and ship a fix. We're grateful for responsible disclosure and will credit reporters who wish to be named once a fix is released.
 

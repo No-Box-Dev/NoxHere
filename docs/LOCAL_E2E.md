@@ -14,7 +14,7 @@ provider secrets.
 | Activity compatibility Worker | 8791 | activity response RPC |
 | Incidents compatibility Worker | 8792 | event ingestion, metrics, and response RPC |
 | RPC smoke Worker | 8793 | disposable private-binding contract caller |
-| NoxHere cron Worker | 8794 | Queue consumer and scheduled background work |
+| NoxHere background Worker | 8794 | Queue consumer and periodic maintenance |
 
 All services use one newly created local persistence directory. NoxHere's
 migrations are the sole schema authority and are applied before any Worker is

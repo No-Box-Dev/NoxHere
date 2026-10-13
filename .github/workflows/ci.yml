@@ -45,7 +45,7 @@ jobs:
       - name: Dry-run private Workers
         run: |
           npx wrangler deploy --dry-run --config services/connections/wrangler.jsonc --env="" --outdir "$RUNNER_TEMP/capabilities"
-          npx wrangler deploy --dry-run --config services/scheduler/wrangler.toml --env="" --outdir "$RUNNER_TEMP/orchestrator"
+          npx wrangler deploy --dry-run --config services/scheduler/wrangler.toml --env="" --outdir "$RUNNER_TEMP/background"
 
   test:
     runs-on: ubuntu-latest

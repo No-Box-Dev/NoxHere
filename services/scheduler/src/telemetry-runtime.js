@@ -31,14 +31,14 @@ export async function reportTelemetryRuntimeFailure(env, error, options = {}) {
     return await client.error(error, {
       title: options.title ?? `NoxHere ${operation} failed`,
       message: options.message ?? "A NoxHere background operation failed and needs attention.",
-      component: options.component ?? "noxhere.cron-worker",
-      fingerprint: `noxhere.runtime|cron-worker|${operation}|${errorKind}`,
+      component: options.component ?? "noxhere.background-worker",
+      fingerprint: `noxhere.runtime|background-worker|${operation}|${errorKind}`,
       fatal: false,
       unhandled: true,
       attributes: { operation, errorKind },
     });
   } catch (reportingError) {
-    console.error("[noxhere-cron] Telemetry reporting failed:", reportingError?.message ?? reportingError);
+    console.error("[noxhere-background] Telemetry reporting failed:", reportingError?.message ?? reportingError);
     return null;
   }
 }

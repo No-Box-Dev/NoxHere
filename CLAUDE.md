@@ -13,7 +13,7 @@ Spot, Telemetry, and Connect are not separate products or browser applications.
 - `services/planning/` — planning, features, specs, and attachments.
 - `services/feedback/` — public feedback capture and resolution responses.
 - `services/telemetry/` — event ingestion, product metrics, health, and incidents.
-- `services/scheduler/` — scheduled reconciliation and queue consumption.
+- `services/scheduler/` — NoxHere background queue consumption and periodic maintenance.
 - `packages/contracts/` — neutral platform-event and outbound-transport contracts.
 - `packages/sdk/` and `packages/python-sdk/` — generated unified public API clients.
 - `packages/feedback-widget/` — feedback capture widget source, tests, and R2 bundles; the shipped browser API remains `Feedback`.

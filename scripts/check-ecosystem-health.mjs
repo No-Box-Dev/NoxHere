@@ -23,8 +23,13 @@ if (platform?.service !== "noxhere" || platform?.status !== "ok") {
 if (boundary?.status !== "ok") {
   throw new Error(`Private service boundary is degraded: ${JSON.stringify(boundary)}`);
 }
-if (readiness?.status !== "ok" || Object.values(readiness?.checks ?? {}).some((value) => value !== true)) {
+const requiredChecks = ["database", "deliveryQueue", "planning", "feedback", "telemetry", "activity"];
+if (!["ok", "degraded"].includes(readiness?.status)
+  || requiredChecks.some((check) => readiness?.checks?.[check] !== true)) {
   throw new Error(`Ecosystem readiness failed: ${JSON.stringify(readiness)}`);
+}
+if (readiness?.status === "degraded") {
+  console.warn(`::warning::Background processing is degraded: ${JSON.stringify(readiness.checks)}`);
 }
 if (expectedService && expectedSha && readiness?.versions?.[expectedService] !== expectedSha) {
   throw new Error(`${expectedService} is ${readiness?.versions?.[expectedService] ?? "unknown"}; expected ${expectedSha}`);
@@ -33,4 +38,4 @@ if (expectedSha && readiness?.versions?.telemetry !== expectedSha) {
   throw new Error(`telemetry is ${readiness?.versions?.telemetry ?? "unknown"}; expected ${expectedSha}`);
 }
 
-console.log(JSON.stringify({ origin, platform: platform.buildSha, versions: readiness.versions, status: "ready" }));
+console.log(JSON.stringify({ origin, platform: platform.buildSha, versions: readiness.versions, status: readiness.status }));

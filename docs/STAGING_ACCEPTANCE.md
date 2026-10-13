@@ -116,4 +116,4 @@ curl -fsS https://noxhere-staging.jasper-414.workers.dev/api/health/ready
 ```
 
 That smoke check validates the deployed service bindings, queue, database, and
-scheduler. It does not need separate provider apps.
+background worker. It does not need separate provider apps.

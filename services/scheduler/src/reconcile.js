@@ -1,4 +1,4 @@
-// reconcileOrg — pull GitHub state into D1 for one org per cron tick.
+// reconcileOrg — pull GitHub state into D1 for one org per maintenance tick.
 //
 // Webhooks already write to D1 in real time, so this is the safety net
 // for everything webhooks structurally can't deliver: deletes (GitHub
@@ -32,8 +32,8 @@ import { reconcileFeedbackReportsForRepo } from "../../../functions/lib/feedback
 // re-scan ancient history every tick.
 const EVENT_RECONCILE_LOOKBACK_HOURS = 48;
 
-// If an unfinished run started within this window, the cron skips the org
-// to avoid two ticks racing. Picked just under the 30 min cron interval.
+// If an unfinished run started within this window, the worker skips the org
+// to avoid two ticks racing. Picked just under the 30-minute interval.
 const LOCK_WINDOW_MIN = 25;
 
 // An installation is flagged 'silent' if no webhook event arrived within
@@ -43,7 +43,7 @@ const SILENT_THRESHOLD_HOURS = 24;
 export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
   const lock = await acquireLock(db, orgId);
   if (!lock) {
-    console.log(`[noxhere-cron] org=${orgLogin} skipped: prior run still in flight`);
+    console.log(`[noxhere-background] org=${orgLogin} skipped: prior run still in flight`);
     return;
   }
 
@@ -69,7 +69,7 @@ export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
       await syncFeatures(db, token, orgId, orgLogin);
     } catch (err) {
       console.error(
-        `[noxhere-cron] org=${orgLogin} Planning feature sync failed; continuing service reconcile:`,
+        `[noxhere-background] org=${orgLogin} Planning feature sync failed; continuing service reconcile:`,
         err?.message ?? err,
       );
     }
@@ -81,7 +81,7 @@ export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
       try {
         await syncPRs(db, token, orgId, orgLogin, repo, await sinceCursor(db, orgId, `prs:${repo}`), env);
       } catch (err) {
-        console.error(`[noxhere-cron] org=${orgLogin} repo=${repo} PRs failed:`, err?.message ?? err);
+        console.error(`[noxhere-background] org=${orgLogin} repo=${repo} PRs failed:`, err?.message ?? err);
       }
       try {
         await syncIssues(db, token, orgId, orgLogin, repo, await sinceCursor(db, orgId, `issues:${repo}`));
@@ -91,7 +91,7 @@ export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
           repo,
         });
       } catch (err) {
-        console.error(`[noxhere-cron] org=${orgLogin} repo=${repo} issue/report reconciliation failed:`, err?.message ?? err);
+        console.error(`[noxhere-background] org=${orgLogin} repo=${repo} issue/report reconciliation failed:`, err?.message ?? err);
       }
       try {
         await reconcileRepoEvents(env, db, {
@@ -102,7 +102,7 @@ export async function reconcileOrg(env, db, orgId, orgLogin, installationId) {
           lookbackHours: EVENT_RECONCILE_LOOKBACK_HOURS,
         });
       } catch (err) {
-        console.error(`[noxhere-cron] org=${orgLogin} repo=${repo} event reconcile failed:`, err?.message ?? err);
+        console.error(`[noxhere-background] org=${orgLogin} repo=${repo} event reconcile failed:`, err?.message ?? err);
       }
     }
 
@@ -170,7 +170,7 @@ async function reconcileDeletedMembers(db, orgId, apiMemberLogins) {
   // return []), but a legitimate empty org is rare enough that bailing here
   // is cheaper than risking another cascade-delete bug down the line.
   if (!Array.isArray(apiMemberLogins) || apiMemberLogins.length === 0) {
-    console.log(`[noxhere-cron] org=${orgId} skipping member-delete reconcile: empty API result`);
+    console.log(`[noxhere-background] org=${orgId} skipping member-delete reconcile: empty API result`);
     return;
   }
   const apiSet = new Set(apiMemberLogins);
@@ -191,7 +191,7 @@ async function reconcileDeletedRepos(db, orgId, apiRepoNames) {
   // less than the cost of mass-deleting issues + PRs + feature links from a
   // bad upstream response.
   if (!Array.isArray(apiRepoNames) || apiRepoNames.length === 0) {
-    console.log(`[noxhere-cron] org=${orgId} skipping repo-delete reconcile: empty API result`);
+    console.log(`[noxhere-background] org=${orgId} skipping repo-delete reconcile: empty API result`);
     return;
   }
   const apiSet = new Set(apiRepoNames);

@@ -15,8 +15,6 @@ vi.mock("../../../../functions/lib/feedback.js", () => ({
   createFeedbackGitHubIssue: vi.fn(),
 }));
 vi.mock("../../../../functions/lib/feedback-resolution.js", () => ({
-  deliverFeedbackResolutionEmail: vi.fn(),
-  prepareFeedbackResolutionEmail: vi.fn(),
   recoverFeedbackResolutionPreparations: vi.fn(),
   recoverFeedbackResolutionEmails: vi.fn(),
 }));
@@ -24,9 +22,8 @@ vi.mock("../../../../functions/lib/telemetry-github.js", () => ({
   createOrUpdateTelemetryGitHubIssue: vi.fn(), recoverTelemetryGithubIncidents: vi.fn(),
 }));
 vi.mock("../../../../functions/lib/delivery-outbox.js", () => ({
-  deliverSlackOutbox: vi.fn(), markOutboxFailed: vi.fn(), recoverOutboxDeliveries: vi.fn(), requeueBlockedForOrg: vi.fn(),
+  markOutboxFailed: vi.fn(), recoverOutboxDeliveries: vi.fn(), requeueBlockedForOrg: vi.fn(),
 }));
-vi.mock("../../../../functions/lib/slack.js", () => ({ checkSlackOrgHealth: vi.fn() }));
 
 import worker from "../index.js";
 import { narrateEvent } from "../../../../functions/lib/narrator.js";
@@ -34,11 +31,16 @@ import { syncRepo } from "../../../../functions/lib/github-sync.js";
 import { getInstallationToken } from "../../../../functions/lib/github-app.js";
 import { recordFailure } from "../../../../functions/lib/op-failures.js";
 import { createFeedbackGitHubIssue } from "../../../../functions/lib/feedback.js";
-import { prepareFeedbackResolutionEmail } from "../../../../functions/lib/feedback-resolution.js";
 import { createOrUpdateTelemetryGitHubIssue } from "../../../../functions/lib/telemetry-github.js";
-import { deliverSlackOutbox, markOutboxFailed } from "../../../../functions/lib/delivery-outbox.js";
+import { markOutboxFailed } from "../../../../functions/lib/delivery-outbox.js";
 
-const env = { DB: {} };
+const connections = {
+  deliverFeedbackResolutionEmail: vi.fn(),
+  prepareFeedbackResolutionEmail: vi.fn(),
+  deliverSlackOutbox: vi.fn(),
+  deliverTransport: vi.fn(),
+};
+const env = { DB: {}, NOXHERE: connections };
 
 function msg(body, attempts = 1) {
   return { body, attempts, ack: vi.fn(), retry: vi.fn() };
@@ -46,7 +48,7 @@ function msg(body, attempts = 1) {
 
 beforeEach(() => vi.clearAllMocks());
 
-describe("cron queue consumer", () => {
+describe("background queue consumer", () => {
   it("dispatches a narrate task and acks", async () => {
     const m = msg({ type: "narrate", eventId: 7 });
     await worker.queue({ messages: [m] }, env);
@@ -75,7 +77,7 @@ describe("cron queue consumer", () => {
     const task = { type: "spot_prepare_resolution_email", reportId: "spot-1" };
     const m = msg(task);
     await worker.queue({ messages: [m] }, env);
-    expect(prepareFeedbackResolutionEmail).toHaveBeenCalledWith(env, "spot-1");
+    expect(connections.prepareFeedbackResolutionEmail).toHaveBeenCalledWith("spot-1");
     expect(m.ack).toHaveBeenCalledOnce();
   });
 
@@ -91,7 +93,7 @@ describe("cron queue consumer", () => {
     const task = { type: "deliver_slack", outboxId: "delivery-1" };
     const m = msg(task);
     await worker.queue({ messages: [m] }, env);
-    expect(deliverSlackOutbox).toHaveBeenCalledWith(env, "delivery-1");
+    expect(connections.deliverSlackOutbox).toHaveBeenCalledWith("delivery-1");
     expect(m.ack).toHaveBeenCalledOnce();
   });
 
@@ -118,7 +120,7 @@ describe("cron queue consumer", () => {
   });
 
   it("marks an exhausted Slack outbox delivery as failed", async () => {
-    deliverSlackOutbox.mockRejectedValueOnce(new Error("Slack unavailable"));
+    connections.deliverSlackOutbox.mockRejectedValueOnce(new Error("Slack unavailable"));
     const m = msg({ type: "deliver_slack", outboxId: "delivery-1", ownerId: "acme" }, 5);
     await worker.queue({ messages: [m] }, env);
     expect(markOutboxFailed).toHaveBeenCalledWith(env.DB, "delivery-1", expect.any(Error));

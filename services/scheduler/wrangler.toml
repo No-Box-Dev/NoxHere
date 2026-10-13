@@ -8,7 +8,6 @@ preview_urls = false
 binding = "CF_VERSION_METADATA"
 
 [vars]
-GITHUB_APP_ID = "3652510"
 NOXHERE_PUBLIC_URL = "https://app.noxhere.com"
 FEEDBACK_PUBLIC_URL = "https://app.noxhere.com/api/feedback/public/v1"
 
@@ -40,7 +39,7 @@ service = "noxhere-telemetry"
 binding = "ACTIVITY_RESPONSE"
 service = "noxhere-activity"
 
-# Same D1 database as the Pages app — the cron writes the same tables
+# Same D1 database as the API — the background Worker writes the same tables
 # (repos, issues, pull_requests, features, members, reconcile_runs).
 [[d1_databases]]
 binding = "DB"
@@ -48,8 +47,8 @@ database_name = "noxhere"
 database_id = "c94084e6-d0be-423c-8de6-249e7cf8bf25"
 migrations_dir = "../../migrations"
 
-# Reconciliation tick. Webhooks are the running source of truth; this
-# cron exists to catch the cases webhooks structurally miss: deletes
+# Background maintenance tick. Webhooks are the running source of truth; this
+# maintenance pass catches the cases webhooks structurally miss: deletes
 # (GitHub doesn't fire delete webhooks), missed deliveries during
 # deploys, and label changes on issues created before the App was
 # installed. 30 min is a reasonable RPO without being chatty.
@@ -77,7 +76,7 @@ max_batch_size = 10
 max_retries = 4
 dead_letter_queue = "noxhere-tasks-dlq"
 
-# The consumer stages follow-up outbox deliveries and the scheduled recovery
+# The consumer stages follow-up outbox deliveries and periodic recovery
 # sweep re-enqueues durable pending rows onto this same queue.
 [[queues.producers]]
 binding = "TASK_QUEUE"
@@ -90,9 +89,6 @@ queue = "noxhere-tasks"
 binding = "EVENTS_ARCHIVE"
 bucket_name = "noxhere-events-archive"
 
-# Secrets required on this worker before the first run:
-#   GITHUB_APP_PRIVATE_KEY (reconcile + bootstrap/sync tasks; App ID is a public var)
-#   ENCRYPTION_KEY (Slack connection tokens and user-provided AI keys)
 # Optional feature secrets:
 #   ANTHROPIC_API_KEY (NoxHere-owned Telemetry/Feedback generation)
 #   TELEMETRY_INGEST_KEY (NoxHere-scoped background failure reporting)
@@ -114,7 +110,6 @@ binding = "CF_VERSION_METADATA"
 crons = ["* * * * *", "*/5 * * * *"]
 
 [env.staging.vars]
-GITHUB_APP_ID = "3652510"
 NOXHERE_PUBLIC_URL = "https://noxhere-staging.jasper-414.workers.dev"
 FEEDBACK_PUBLIC_URL = "https://noxhere-feedback-staging.jasper-414.workers.dev"
 

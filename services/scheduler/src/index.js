@@ -1,9 +1,8 @@
-// NoxHere reconciliation cron.
+// NoxHere background worker.
 //
-// Fires every 30 min. Walks every org with an active GitHub App
-// installation and reconciles D1 against GitHub. Webhooks handle the
-// fast path; this catches deletes, missed deliveries, and any drift
-// that accumulates between events.
+// Owns durable queue consumption plus the small amount of periodic work that
+// cannot be driven reliably by webhooks: report schedules, reconciliation,
+// recovery, health sweeps, and retention.
 //
 // See migrations/0013_reconcile_observability.sql for the
 // `reconcile_runs` table this writes to.
@@ -19,13 +18,10 @@ import { runNextStatsAudit } from "./stats-audit.js";
 import { runDatabaseRecoveryStep } from "./database-recovery.js";
 import { createFeedbackGitHubIssue, finalizeFeedbackGitHubIssue } from "../../../functions/lib/feedback.js";
 import {
-  deliverFeedbackResolutionEmail,
-  prepareFeedbackResolutionEmail,
   recoverFeedbackResolutionPreparations,
   recoverFeedbackResolutionEmails,
 } from "../../../functions/lib/feedback-resolution.js";
-import { deliverSlackOutbox, markOutboxFailed, recoverOutboxDeliveries, requeueBlockedForOrg } from "../../../functions/lib/delivery-outbox.js";
-import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
+import { markOutboxFailed, recoverOutboxDeliveries, requeueBlockedForOrg } from "../../../functions/lib/delivery-outbox.js";
 import { runTelemetryDigests } from "./telemetry-digests.js";
 import { runFeedbackDailyDigests } from "./feedback-digests.js";
 import { runActivityDailySummaries } from "./activity-daily-summaries.js";
@@ -33,9 +29,7 @@ import { createOrUpdateTelemetryGitHubIssue, finalizeTelemetryGitHubIssue, recov
 import { runOperationalAlerts } from "./operational-alerts.js";
 import { recordHeartbeatAttempt, recordHeartbeatFailure, recordHeartbeatSuccess } from "../../../functions/lib/service-heartbeats.js";
 import { isTenantConfigurationFailure, reportTelemetryRuntimeFailure } from "./telemetry-runtime.js";
-import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands } from "../../../functions/lib/transport-outbox.ts";
-import { deliverSlackTransport } from "../../../functions/lib/transports/slack.ts";
-import { deliverGitHubTransport } from "../../../functions/lib/transports/github.ts";
+import { executeTransportCallback, executeTransportCommand, recoverTransportCallbacks, recoverTransportCommands, requeueBlockedTransportCommands, TransportExecutionError } from "../../../functions/lib/transport-outbox.ts";
 import { projectPlatformEvent } from "../../../functions/lib/platform-event-projector.ts";
 import { recoverPlatformEventProjections } from "../../../functions/lib/platform-event-store.ts";
 import { recoverTransportDeliveryEvents } from "../../../functions/lib/transport-delivery-events.ts";
@@ -48,34 +42,30 @@ const MAX_ORGS_PER_TICK = 10;
 // 1-based). We record the terminal failure on the FINAL delivery, so this must
 // equal max_retries + 1 (max_retries is set in services/scheduler/wrangler.toml).
 const MAX_DELIVERIES = 5;
+const HEARTBEAT = Object.freeze({
+  schedule: "background.schedule",
+  reports: "background.reports",
+  maintenance: "background.maintenance",
+  archive: "background.archive",
+  queue: "background.queue",
+});
 
 export default {
   async scheduled(event, env, ctx) {
-    const reportScheduleTick = event.cron === "* * * * *";
-    ctx.waitUntil(reportScheduleTick
-      ? runReportSchedules(env, event.scheduledTime)
-      : runScheduledTick(env, event.scheduledTime));
-    // Daily event-table archival/retention — gated to the 03:00 UTC ticks so it
-    // runs roughly once a day rather than every 30 min. Idempotent, so the two
-    // 03:xx ticks just drain any backlog left by the per-run cap.
-    if (!reportScheduleTick && new Date(event.scheduledTime).getUTCHours() === 3) {
-      ctx.waitUntil(
-        runArchive(env, event.scheduledTime),
-      );
-    }
+    ctx.waitUntil(runScheduledEvent(env, event));
   },
 
   // Durable background work, produced by functions/api/webhook.js. Replaces the
   // webhook's old context.waitUntil calls — these now get retries + a DLQ.
   async queue(batch, env) {
-    await recordHeartbeatAttempt(env.DB, "queue.consumer", env.CF_VERSION_METADATA?.id);
+    await recordHeartbeatAttempt(env.DB, HEARTBEAT.queue, env.CF_VERSION_METADATA?.id);
     try {
       for (const msg of batch.messages) {
         try {
           await handleTask(env, msg.body);
           msg.ack();
         } catch (err) {
-          console.error(`[noxhere-cron] task ${msg.body?.type} failed (attempt ${msg.attempts}):`, err?.message ?? err);
+          console.error(`[noxhere-background] task ${msg.body?.type} failed (attempt ${msg.attempts}):`, err?.message ?? err);
           if (msg.attempts >= MAX_DELIVERIES) {
             // Out of retries — record to the admin-visible op_failures table and
             // ack so it doesn't loop forever (the DLQ is the backstop in config).
@@ -99,10 +89,10 @@ export default {
           }
         }
       }
-      await recordHeartbeatSuccess(env.DB, "queue.consumer", env.CF_VERSION_METADATA?.id);
+      await recordHeartbeatSuccess(env.DB, HEARTBEAT.queue, env.CF_VERSION_METADATA?.id);
     } catch (err) {
-      await recordHeartbeatFailure(env.DB, "queue.consumer", err, env.CF_VERSION_METADATA?.id);
-      await reportTelemetryRuntimeFailure(env, err, { operation: "queue.consumer" });
+      await recordHeartbeatFailure(env.DB, HEARTBEAT.queue, err, env.CF_VERSION_METADATA?.id);
+      await reportTelemetryRuntimeFailure(env, err, { operation: HEARTBEAT.queue });
       throw err;
     }
   },
@@ -130,37 +120,55 @@ export default {
   },
 };
 
-async function runScheduledTick(env, nowMs) {
-  await recordHeartbeatAttempt(env.DB, "scheduled.cron", env.CF_VERSION_METADATA?.id);
-  // This heartbeat measures delivery of the cron trigger itself. A complete
-  // reconciliation can legitimately span much of the 30-minute interval, so
-  // waiting for all GitHub work would make a live scheduler look unavailable.
-  // Individual component failures below still move this heartbeat to `issue`,
-  // and an uncaught top-level failure does the same.
-  await recordHeartbeatSuccess(env.DB, "scheduled.cron", env.CF_VERSION_METADATA?.id);
+async function runScheduledEvent(env, event) {
+  // This heartbeat proves Cloudflare delivered a trigger. Job health is tracked
+  // separately so a provider failure cannot make the HTTP API look unavailable.
+  await recordHeartbeatAttempt(env.DB, HEARTBEAT.schedule, env.CF_VERSION_METADATA?.id);
+  await recordHeartbeatSuccess(env.DB, HEARTBEAT.schedule, env.CF_VERSION_METADATA?.id);
+
+  const reportScheduleTick = event.cron === "* * * * *";
+  if (reportScheduleTick) {
+    await runTrackedJob(env, HEARTBEAT.reports, "background.reports", () => (
+      runReportSchedules(env, event.scheduledTime)
+    ));
+    return;
+  }
+
+  await runTrackedJob(env, HEARTBEAT.maintenance, "background.maintenance", () => (
+    runTick(env, event.scheduledTime, false)
+  ));
+
+  // Daily event-table archival/retention is gated to the 03:00 UTC ticks. The
+  // operation is idempotent, so both 03:xx maintenance ticks may drain backlog.
+  if (new Date(event.scheduledTime).getUTCHours() === 3) {
+    await runArchive(env, event.scheduledTime);
+  }
+}
+
+async function runTrackedJob(env, component, operation, run) {
+  await recordHeartbeatAttempt(env.DB, component, env.CF_VERSION_METADATA?.id);
   try {
-    await runTick(env, nowMs, false);
+    await run();
+    await recordHeartbeatSuccess(env.DB, component, env.CF_VERSION_METADATA?.id);
   } catch (err) {
-    await recordHeartbeatFailure(env.DB, "scheduled.cron", err, env.CF_VERSION_METADATA?.id);
-    await reportTelemetryRuntimeFailure(env, err, { operation: "scheduled.cron" });
-    throw err;
+    await recordHeartbeatFailure(env.DB, component, err, env.CF_VERSION_METADATA?.id);
+    await reportTelemetryRuntimeFailure(env, err, { operation });
   }
 }
 
 async function runArchive(env, nowMs) {
-  await recordHeartbeatAttempt(env.DB, "scheduled.archive", env.CF_VERSION_METADATA?.id);
+  await recordHeartbeatAttempt(env.DB, HEARTBEAT.archive, env.CF_VERSION_METADATA?.id);
   try {
     await archiveOldEvents(env, nowMs);
-    await recordHeartbeatSuccess(env.DB, "scheduled.archive", env.CF_VERSION_METADATA?.id);
+    await recordHeartbeatSuccess(env.DB, HEARTBEAT.archive, env.CF_VERSION_METADATA?.id);
   } catch (err) {
-    console.error("[noxhere-cron] event archival failed:", err?.message ?? err);
-    await recordHeartbeatFailure(env.DB, "scheduled.archive", err, env.CF_VERSION_METADATA?.id);
-    await reportTelemetryRuntimeFailure(env, err, { operation: "scheduled.archive" });
+    console.error("[noxhere-background] event archival failed:", err?.message ?? err);
+    await recordHeartbeatFailure(env.DB, HEARTBEAT.archive, err, env.CF_VERSION_METADATA?.id);
+    await reportTelemetryRuntimeFailure(env, err, { operation: "background.archive" });
   }
 }
 
-async function reportScheduledComponentFailure(env, operation, error) {
-  await recordHeartbeatFailure(env.DB, "scheduled.cron", error, env.CF_VERSION_METADATA?.id);
+async function reportBackgroundComponentFailure(env, operation, error) {
   await reportTelemetryRuntimeFailure(env, error, { operation });
 }
 
@@ -182,17 +190,17 @@ async function handleTask(env, body) {
     case TASK.SPOT_CREATE_GITHUB_ISSUE:
       return createFeedbackGitHubIssue(env, body);
     case TASK.SPOT_PREPARE_RESOLUTION_EMAIL:
-      return prepareFeedbackResolutionEmail(env, body.reportId);
+      return env.NOXHERE.prepareFeedbackResolutionEmail(body.reportId);
     case TASK.SPOT_SEND_RESOLUTION_EMAIL:
-      return deliverFeedbackResolutionEmail(env, body.reportId);
+      return env.NOXHERE.deliverFeedbackResolutionEmail(body.reportId);
     case TASK.TELEMETRY_GITHUB_ISSUE:
       return createOrUpdateTelemetryGitHubIssue(env, body);
     case TASK.DELIVER_SLACK:
-      return deliverSlackOutbox(env, body.outboxId);
+      return env.NOXHERE.deliverSlackOutbox(body.outboxId);
     case TASK.DELIVER_TRANSPORT:
       return executeTransportCommand(env, body.outboxId, {
-        slack: (command) => deliverSlackTransport(env, command),
-        github: (command) => deliverGitHubTransport(env, command),
+        slack: (command) => deliverTransport(env, command),
+        github: (command) => deliverTransport(env, command),
       });
     case TASK.FINALIZE_TRANSPORT:
       return executeTransportCallback(env.DB, body.outboxId, {
@@ -204,6 +212,16 @@ async function handleTask(env, body) {
     default:
       throw new Error(`unknown task type: ${body?.type}`);
   }
+}
+
+async function deliverTransport(env, command) {
+  const receipt = await env.NOXHERE.deliverTransport(command);
+  if (receipt?.ok) return receipt.result;
+  throw new TransportExecutionError(
+    receipt?.error?.message ?? "Connection transport failed",
+    receipt?.error?.code ?? "transport_failed",
+    receipt?.error?.disposition ?? "retryable",
+  );
 }
 
 async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
@@ -219,8 +237,8 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
   try {
     await recoverTelemetryGithubIncidents(env);
   } catch (err) {
-    console.error("[noxhere-cron] Telemetry GitHub issue recovery failed:", err?.message ?? err);
-    await reportScheduledComponentFailure(env, "telemetry.github-recovery", err);
+    console.error("[noxhere-background] Telemetry GitHub issue recovery failed:", err?.message ?? err);
+    await reportBackgroundComponentFailure(env, "telemetry.github-recovery", err);
   }
   await runSlackHealthSweep(env);
   try {
@@ -230,7 +248,7 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
       event: "operational_alert_sweep_failed",
       error: err instanceof Error ? err.message : String(err),
     }));
-    await reportScheduledComponentFailure(env, "operational-alerts.sweep", err);
+    await reportBackgroundComponentFailure(env, "operational-alerts.sweep", err);
   }
   await healOrgInstallationLinks(db);
 
@@ -242,15 +260,15 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
   try {
     await runNextStatsAudit(env);
   } catch (err) {
-    console.error("[noxhere-cron] stats audit failed:", err?.message ?? err);
-    await reportScheduledComponentFailure(env, "stats.audit", err);
+    console.error("[noxhere-background] stats audit failed:", err?.message ?? err);
+    await reportBackgroundComponentFailure(env, "stats.audit", err);
   }
 
   try {
     await runDatabaseRecoveryStep(env);
   } catch (err) {
-    console.error("[noxhere-cron] database recovery step failed:", err?.message ?? err);
-    await reportScheduledComponentFailure(env, "database.recovery", err);
+    console.error("[noxhere-background] database recovery step failed:", err?.message ?? err);
+    await reportBackgroundComponentFailure(env, "database.recovery", err);
   }
 
   const orgs = await db
@@ -269,19 +287,17 @@ async function runTick(env, nowMs = Date.now(), includeReportSchedules = true) {
       await reconcileOrg(env, db, org.id, org.github_login, org.installation_id);
     } catch (err) {
       console.error(
-        `[noxhere-cron] org=${org.github_login} reconcile failed:`,
+        `[noxhere-background] org=${org.github_login} reconcile failed:`,
         err?.message ?? err,
       );
       if (!isTenantConfigurationFailure(err)) {
-        await reportScheduledComponentFailure(env, "github.reconcile", err);
+        await reportBackgroundComponentFailure(env, "github.reconcile", err);
       }
     }
   }
 }
 
 async function runReportSchedules(env, nowMs) {
-  await recordHeartbeatAttempt(env.DB, "scheduled.cron", env.CF_VERSION_METADATA?.id);
-  let firstFailure = null;
   for (const [operation, label, run] of [
     ["telemetry.digest-sweep", "Telemetry digest", runTelemetryDigests],
     ["feedback.digest-sweep", "Feedback daily digest", runFeedbackDailyDigests],
@@ -290,15 +306,9 @@ async function runReportSchedules(env, nowMs) {
     try {
       await run(env, nowMs);
     } catch (err) {
-      console.error(`[noxhere-cron] ${label} sweep failed:`, err?.message ?? err);
-      firstFailure ??= err;
-      await reportTelemetryRuntimeFailure(env, err, { operation });
+      console.error(`[noxhere-background] ${label} sweep failed:`, err?.message ?? err);
+      await reportBackgroundComponentFailure(env, operation, err);
     }
-  }
-  if (firstFailure) {
-    await recordHeartbeatFailure(env.DB, "scheduled.cron", firstFailure, env.CF_VERSION_METADATA?.id);
-  } else {
-    await recordHeartbeatSuccess(env.DB, "scheduled.cron", env.CF_VERSION_METADATA?.id);
   }
 }
 
@@ -312,7 +322,7 @@ async function runSlackHealthSweep(env) {
   ).all();
   for (const row of results ?? []) {
     try {
-      const health = await checkSlackOrgHealth(env, row.org_id, row.id);
+      const health = await env.NOXHERE.checkSlackOrgHealth(row.org_id, row.id);
       if (health.recovered) {
         await Promise.all([
           requeueBlockedForOrg(env, row.org_id),
@@ -346,6 +356,6 @@ async function healOrgInstallationLinks(db) {
     .run();
   const changed = res?.meta?.changes ?? 0;
   if (changed > 0) {
-    console.log(`[noxhere-cron] healed ${changed} org→installation link(s)`);
+    console.log(`[noxhere-background] healed ${changed} org→installation link(s)`);
   }
 }

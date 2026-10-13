@@ -42,7 +42,7 @@ use the same generated resources:
 from noxhere import AsyncNoxHereClient
 
 nox = AsyncNoxHereClient(token="nox_sk_...")
-page = await nox.activity.get_nox_feed(query={"limit": 25})
+page = await nox.activity.get_activity(query={"limit": 25})
 ```
 
 Namespaces are `workspace`, `activity`, `planning`, `feedback`, `stats`, and

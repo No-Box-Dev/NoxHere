@@ -26,7 +26,7 @@ Web / Apple apps / noxhere CLI
 - **Client SDKs** — `packages/sdk/` and `packages/python-sdk/` generate the same 149-operation catalog from `public/openapi.json`; resource namespaces follow the capability boundaries above.
 - **Feedback widget** — `packages/feedback-widget/` owns the independently built browser capture source and tests. Its public `Feedback` API and three compatibility bundles are published to R2 from this repository.
 - **Database** — Cloudflare D1 (SQLite). Schema in `migrations/`, applied with `wrangler d1 migrations apply`.
-- **Scheduler service** — `services/scheduler/` imports shared platform helpers, reconciles GitHub state every 30 minutes, and consumes the background-work queue.
+- **Background worker** — `services/scheduler/` is part of NoxHere, not a separate product. It consumes the durable work queue and runs the few periodic operations that cannot be driven reliably by webhooks: report schedules, reconciliation, recovery, health sweeps, and retention.
 - **Queue + R2** — durable background work (narration, bootstrap, repo sync) runs on a Cloudflare Queue with retries and a dead-letter queue; the `events` table is archived to R2 after 90 days.
 
 ## Multi-tenancy
@@ -50,12 +50,12 @@ Credentials are separated by caller and cannot be substituted for one another:
 GitHub data stays current via three mechanisms, in priority order:
 
 1. **Webhooks** (`functions/api/webhook.js`) — real-time, HMAC-verified. The running source of truth.
-2. **Cron reconcile** (every 30 min) — catches deletes (GitHub fires no delete webhooks), deliveries missed during deploys, and label changes on pre-install issues.
+2. **Background reconciliation** (every 30 min) — catches deletes (GitHub fires no delete webhooks), deliveries missed during deploys, and label changes on pre-install issues.
 3. **Manual sync / backfill** — admin-triggered from the UI for first sync or recovery. Rate-limited to bound cost.
 
 ## Background work
 
-Slow webhook follow-up (LLM narration, install bootstrap, repo backfill) is enqueued to the `noxhere-tasks` Queue rather than run inline. The cron Worker's `queue()` handler dispatches by task type with retries; terminal failures are recorded to the `op_failures` table and surfaced to admins in Settings.
+Slow webhook follow-up (LLM narration, install bootstrap, repo backfill) is enqueued to the `noxhere-tasks` Queue rather than run inline. The background Worker's `queue()` handler dispatches by task type with retries; terminal failures are recorded to the `op_failures` table and surfaced to admins in Settings.
 
 ## Project routing
 
@@ -78,4 +78,4 @@ A bounded server-side Anthropic integration narrates pull-request activity. NoxH
 | Feedback capture widget | `packages/feedback-widget/` |
 | Project routing core | `functions/lib/project-routing.ts`, `functions/api/projects/routing*` |
 | DB schema | `migrations/` |
-| Cron + queue consumer | `services/scheduler/src/` |
+| Background schedules + queue consumer | `services/scheduler/src/` |

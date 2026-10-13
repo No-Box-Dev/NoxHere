@@ -190,7 +190,7 @@ The exact setup is documented in [LOCAL_E2E.md](./LOCAL_E2E.md).
   known vulnerabilities after refreshing the lockfile within existing semver
   ranges (React Router 7.18.3, Vite 7.3.6, and Vitest 4.1.11).
 - Local end-to-end runtime: Wrangler 4.129.0 started NoxHere, Feedback,
-  Activity, Telemetry, the cron Worker, and a disposable RPC caller against one fresh
+  Activity, Telemetry, the background Worker, and a disposable RPC caller against one fresh
   local D1 database. All 102 readiness and functional checks passed, including
   live GitHub identity plus opaque browser- and native-session authentication,
   native access/refresh rotation, CSRF rejection,

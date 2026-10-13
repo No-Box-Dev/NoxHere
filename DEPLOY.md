@@ -1,8 +1,10 @@
 # Self-hosting NoxHere
 
-NoxHere runs on Cloudflare: a Pages project (frontend + authenticated API
-Functions), a public Feedback capture Worker, a D1 database, a sibling cron
-Worker, a Queue, and R2 buckets. This guide walks a fresh deploy end to end.
+NoxHere runs on Cloudflare: a public gateway and private API, capability
+Workers, one NoxHere background Worker, D1 databases, a durable Queue, and R2
+buckets. The background Worker is part of this repository and deployment; it
+is not a separate product or application. This guide walks a fresh deploy end
+to end.
 
 > NoxHere is source-available under the [PolyForm Noncommercial License](./LICENSE). Self-hosting for non-commercial use is fine; commercial use is not.
 
@@ -102,14 +104,20 @@ Generate `ENCRYPTION_KEY` with `openssl rand -hex 32`. `REVIEW_RUNNER_TOKEN` (ge
 npx wrangler pages secret put REVIEW_RUNNER_TOKEN   --project-name noxhere
 ```
 
-The **cron Worker** needs its own copy of the secrets it uses:
+The **background Worker** only receives optional feature secrets. GitHub App
+authentication and encrypted provider credentials stay in Connections and are
+used through its private service binding:
 
 ```bash
-npx wrangler secret put GITHUB_APP_ID        --name noxhere-orchestrator
-npx wrangler secret put GITHUB_APP_PRIVATE_KEY --name noxhere-orchestrator
-npx wrangler secret put ANTHROPIC_API_KEY     --name noxhere-orchestrator
-npx wrangler secret put ENCRYPTION_KEY       --name noxhere-orchestrator
+npx wrangler secret put ANTHROPIC_API_KEY --config services/scheduler/wrangler.toml --env=""
+npx wrangler secret put TELEMETRY_INGEST_KEY --config services/scheduler/wrangler.toml --env=""
 ```
+
+Both keys are optional; omit them when those managed features are disabled.
+`GITHUB_APP_PRIVATE_KEY` and `ENCRYPTION_KEY` belong only to
+`noxhere-connections`; the background Worker must not receive duplicate copies.
+Changing the Connections encryption key without rotating the encrypted data
+makes those credentials unreadable.
 
 > **LLM providers:** `ANTHROPIC_API_KEY` on NoxHere still powers shared Feedback and daily-summary tasks. Activity event posts and release notes use the key configured directly on `noxhere-activity`; clients never supply API credentials. The AI settings API reads Activity readiness through `ACTIVITY_RESPONSE` and reports each service separately; managed mode is ready only when both deployments are configured. An organization can disable AI in Settings, and unavailable generation fails closed to deterministic summaries.
 
@@ -180,14 +188,18 @@ proved locally.
 ```bash
 npm run build
 npx wrangler pages deploy dist --project-name noxhere --branch main
-cd cron && npx wrangler deploy && cd ..
+npx wrangler deploy --config services/scheduler/wrangler.toml --env=""
 cd services/feedback && npm ci && npm run types && npm test && npx wrangler deploy && cd ../..
 ```
 
 Or wire up CI: `.github/workflows/ci.yml` runs lint/typecheck/tests for Pages and
 the capture Worker, and `deploy-pages.yml` deploys Pages, applies D1 migrations,
-and deploys both Workers on a green `main`. It needs repo secrets
-`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+and deploys the unified service set on a green `main`. It needs repository
+secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and
+`NOXHERE_INTERNAL_SECRET`.
+`ANTHROPIC_API_KEY` and `TELEMETRY_INGEST_KEY` are synchronized when present.
+Connections secrets remain attached to that Worker across deployments and are
+managed directly in Cloudflare.
 
 The Feedback capture Worker has no application secrets. It uses direct bindings
 to the shared D1 database, `noxhere-tasks` Queue, `feedback-assets` R2 bucket,
@@ -196,12 +208,12 @@ unified NoxHere gateway. Customer installations use only the project-specific
 `/widget/{project-id}.js` route; the tested deployment
 workflow publishes its loader and matching immutable core artifact.
 
-The API and orchestrator Workers require private, versioned service bindings:
+The API and background Workers require private, versioned service bindings:
 `FEEDBACK_RESPONSE` targets `noxhere-feedback`, `TELEMETRY_RESPONSE` targets
 `noxhere-telemetry`, `ACTIVITY_RESPONSE` targets `noxhere-activity`,
 `PLANNING_SERVICE` targets `noxhere-planning`, and provider execution targets
 `noxhere-connections`. Deploy compatible capability Workers before the API,
-public gateway, or orchestrator. The services receive only
+public gateway, or background Worker. The services receive only
 bounded product data and public references; GitHub credentials, Slack tokens,
 connection IDs, and delivery state never cross these bindings. Activity's
 response Worker is built from `services/activity`. Set its provider secret
@@ -215,7 +227,7 @@ The secret does not cross the service binding. NoxHere sends bounded event
 facts and receives only validated content or a typed unavailable result.
 
 The safe manual order is Connections, Planning, Feedback, Telemetry, Activity,
-API, public Gateway, then Orchestrator. See `docs/SERVICE_BOUNDARIES.md` for the
+API, public Gateway, then the background Worker. See `docs/SERVICE_BOUNDARIES.md` for the
 ownership and contract rules.
 Public Telemetry clients use the stable Pages gateway
 `https://app.noxhere.com/api/v1/telemetry/public/events`. It forwards through the

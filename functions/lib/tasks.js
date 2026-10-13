@@ -2,11 +2,11 @@
 //
 // Producer: functions/api/webhook.js enqueues instead of running work in
 // `context.waitUntil` (which has no retry and is lost on failure/eviction).
-// Consumer: the cron Worker's `queue()` handler (services/scheduler/src/index.js) drains it
+// Consumer: NoxHere's background Worker's `queue()` handler drains it
 // with retries + a dead-letter queue.
 //
 // Kept as plain JS because it's imported by both the JS webhook (Pages) and the
-// JS cron Worker — avoids mixing a .ts module into the cron esbuild bundle.
+// JS background Worker — avoids mixing a .ts module into its esbuild bundle.
 
 export const TASK = {
   NARRATE: "narrate",                 // { eventId }            -> narrateEvent(env, eventId)
