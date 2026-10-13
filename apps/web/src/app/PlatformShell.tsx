@@ -89,7 +89,7 @@ export function PlatformShell() {
           </aside>
           <main className="main-canvas">
             <header className="platform-topbar">
-              <PlatformRetrieval projectId={projectId} />
+              <PlatformRetrieval organizationId={organizationId} projectId={projectId} />
               <div className="topbar-actions">
               <ProjectSwitcher organizationId={bootstrap.data.organization.id} projects={bootstrap.data.projects} selectedId={projectId} canCreate={bootstrap.data.actor.isAdmin} placement="topbar" onSwitch={switchProject} />
               <a className="topbar-projects" href="/developers" target="_blank" rel="noreferrer" aria-label="Open API documentation">

@@ -29,7 +29,7 @@ export interface PlatformApi {
   engineerStats(organizationId: string, projectId: string, signal?: AbortSignal): Promise<EngineerStats>;
   telemetryAlerts(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlert[]>;
   telemetryAlertRules(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlertRule[]>;
-  retrieve(projectId: string, query: string, signal?: AbortSignal): Promise<RetrievalResult[]>;
+  retrieve(organizationId: string, projectId: string, query: string, signal?: AbortSignal): Promise<RetrievalResult[]>;
   guestAccess(organizationId: string, signal?: AbortSignal): Promise<GuestAccess>;
   inviteGuest(organizationId: string, projectId: string, email: string, serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry"): Promise<GuestInvite>;
   revokeGuest(organizationId: string, kind: "invites" | "grants", id: string): Promise<void>;
@@ -130,7 +130,7 @@ export const platformApi: PlatformApi = {
   engineerStats: (organizationId, projectId, signal) => getJson("/api/v1/engineer-stats", engineerStatsSchema, signal, { organizationId, projectId }),
   telemetryAlerts: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/alerts`, telemetryAlertSchema.array(), signal, { organizationId, projectId }),
   telemetryAlertRules: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/alert-rules`, telemetryAlertRuleSchema.array(), signal, { organizationId, projectId }),
-  retrieve: (projectId, query, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/retrieval?q=${encodeURIComponent(query)}`, retrievalResultSchema.array(), signal, { projectId }),
+  retrieve: (organizationId, projectId, query, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/retrieval?q=${encodeURIComponent(query)}`, retrievalResultSchema.array(), signal, { organizationId, projectId }),
   guestAccess: (organizationId, signal) => getJson("/api/v1/guests", guestAccessSchema, signal, { organizationId }),
   inviteGuest: async (organizationId, projectId, email, serviceId) => {
     const service = serviceId === "all" ? null : serviceId;

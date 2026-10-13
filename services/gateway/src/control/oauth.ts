@@ -13,6 +13,10 @@ export interface IdentityExchangeResult {
 export interface IdentityService {
   exchangeGitHubOAuth(input: { code: string; redirectUri: string }): Promise<IdentityExchangeResult>;
   refreshGitHubIdentity?(input: { connectionId: string }): Promise<IdentityExchangeResult>;
+  resolveGitHubIdentity?(connectionId: string): Promise<{
+    token: string;
+    user: { id: number; login: string };
+  } | null>;
   startGitHubDeviceAuth(input: { client: string }): Promise<{
     version: 1; deviceCode: string; userCode: string; verificationUri: string; expiresIn: number; interval: number;
   }>;

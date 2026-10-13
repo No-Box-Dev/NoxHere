@@ -122,6 +122,49 @@ describe("NoxHere gateway", () => {
     });
   });
 
+  it("probes a real connection-backed identity boundary", async () => {
+    const db = {
+      prepare() {
+        return { async first() { return { github_login: "octocat", connection_id: "noxic_connection" }; } };
+      },
+    } as unknown as D1Database;
+    const identity = {
+      exchangeGitHubOAuth: vi.fn(),
+      startGitHubDeviceAuth: vi.fn(),
+      pollGitHubDeviceAuth: vi.fn(),
+      resolveGitHubIdentity: vi.fn(async () => ({ token: "private", user: { id: 42, login: "octocat" } })),
+    };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/__noxhere/health/identity-boundary"),
+      services({ control: { db, identity, assertionSecret: "integration-secret" } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(identity.resolveGitHubIdentity).toHaveBeenCalledWith("noxic_connection");
+    await expect(response.json()).resolves.toEqual({ service: "noxhere", status: "ok", dependency: "connections" });
+  });
+
+  it("fails identity readiness when the Connections capability is unavailable", async () => {
+    const db = {
+      prepare() {
+        return { async first() { return { github_login: "octocat", connection_id: "noxic_connection" }; } };
+      },
+    } as unknown as D1Database;
+    const identity = {
+      exchangeGitHubOAuth: vi.fn(),
+      startGitHubDeviceAuth: vi.fn(),
+      pollGitHubDeviceAuth: vi.fn(),
+      resolveGitHubIdentity: vi.fn(async () => { throw new Error("rpc unavailable"); }),
+    };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/__noxhere/health/identity-boundary"),
+      services({ control: { db, identity, assertionSecret: "integration-secret" } }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ status: "degraded", code: "identity_service_unavailable" });
+  });
+
   it("relays public readiness only through the private connector binding", async () => {
     const connector = { fetch: vi.fn(async () => Response.json({ status: "ok" }, { status: 200 })) };
     const bindings = services({ connector });

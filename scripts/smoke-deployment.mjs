@@ -29,6 +29,10 @@ async function publicRoutesReady() {
       || privateBoundaryBody?.status !== "ok"
       || privateBoundaryBody?.downstreamStatus !== 200) return false;
 
+  const identityBoundary = await fetch(new URL("/__noxhere/health/identity-boundary", platformOrigin), { headers });
+  const identityBoundaryBody = await identityBoundary.json().catch(() => null);
+  if (!identityBoundary.ok || identityBoundaryBody?.status !== "ok") return false;
+
   const profile = await fetch(new URL("/api/auth/profile", platformOrigin), { headers });
   const profileBody = await profile.json().catch(() => null);
   if (profile.status !== 401

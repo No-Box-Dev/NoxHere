@@ -5,6 +5,7 @@ import {
   exchangeGitHubOAuthIdentity,
   pollGitHubDeviceIdentity,
   refreshGitHubIdentity,
+  resolveIdentityConnection,
   startGitHubDeviceIdentity,
 } from "../../../functions/lib/connection-identity";
 import { sendTransactionalEmail } from "../../../functions/lib/transactional-email";
@@ -62,6 +63,15 @@ export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
 
   pollGitHubDeviceAuth(input: unknown) {
     return pollGitHubDeviceIdentity(this.env, input);
+  }
+
+  resolveGitHubIdentity(connectionId: unknown) {
+    if (typeof connectionId !== "string"
+        || !connectionId.startsWith("noxic_")
+        || connectionId.length > 256) {
+      throw new Error("invalid_identity_connection");
+    }
+    return resolveIdentityConnection(this.env, connectionId);
   }
 
   sendEmail(input: unknown) {

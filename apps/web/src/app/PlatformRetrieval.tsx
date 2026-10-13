@@ -4,14 +4,14 @@ import { Link } from "react-router-dom";
 import { platformApi } from "../api/platform";
 import { serviceById } from "./service-registry";
 
-type PlatformRetrievalProps = { projectId: string };
+type PlatformRetrievalProps = { organizationId: string; projectId: string };
 
-export function PlatformRetrieval({ projectId }: PlatformRetrievalProps) {
+export function PlatformRetrieval({ organizationId, projectId }: PlatformRetrievalProps) {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
   const results = useQuery({
-    queryKey: ["platform", projectId, "retrieval", deferredQuery],
-    queryFn: ({ signal }) => platformApi.retrieve(projectId, deferredQuery, signal),
+    queryKey: ["platform", organizationId, projectId, "retrieval", deferredQuery],
+    queryFn: ({ signal }) => platformApi.retrieve(organizationId, projectId, deferredQuery, signal),
     enabled: deferredQuery.length >= 2,
     staleTime: 30_000,
   });
