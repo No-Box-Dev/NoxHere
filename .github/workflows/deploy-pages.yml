@@ -152,7 +152,18 @@ jobs:
         run: |
           GATEWAY_VERSION_TAG="${DEPLOY_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           npx wrangler versions upload --config services/gateway/wrangler.jsonc --env="" --tag "$GATEWAY_VERSION_TAG" --message "$DEPLOY_SHA"
-          npx wrangler versions deploy --config services/gateway/wrangler.jsonc --env="" --version-tag "$GATEWAY_VERSION_TAG" --message "$DEPLOY_SHA" --yes
+          for attempt in 1 2 3 4 5; do
+            if npx wrangler versions deploy --config services/gateway/wrangler.jsonc --env="" --version-tag "$GATEWAY_VERSION_TAG" --message "$DEPLOY_SHA" --yes; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Gateway version was still unavailable after $attempt deployment attempts" >&2
+              exit 1
+            fi
+            delay=$((attempt * 5))
+            echo "Gateway version is not available yet; retrying in ${delay}s" >&2
+            sleep "$delay"
+          done
       - name: Smoke production release
         run: node scripts/smoke-deployment.mjs https://app.noxhere.com https://app.noxhere.com "$DEPLOY_SHA"
       - name: Verify production ecosystem
