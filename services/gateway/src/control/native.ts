@@ -7,7 +7,10 @@ import {
 import { apiError, boundedJson } from "./http";
 import { persistIdentityClaims, validIdentityExchangeResult, type IdentityService } from "./oauth";
 
-export const NATIVE_CLIENTS = ["noxhere-cli", "activity-mac"] as const;
+// `noxhere-mac` is the canonical client shipped by the unified Apple app.
+// Keep `activity-mac` during the rename window so already-installed legacy
+// builds can still sign in and refresh without being stranded.
+export const NATIVE_CLIENTS = ["noxhere-cli", "noxhere-mac", "activity-mac"] as const;
 const Client = z.enum(NATIVE_CLIENTS);
 const Start = z.object({ client: Client }).strict();
 const Poll = z.object({ client: Client, device_code: z.string().startsWith("noxid_").max(96) }).strict();

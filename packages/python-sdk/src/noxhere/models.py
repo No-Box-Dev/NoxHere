@@ -763,7 +763,7 @@ class DownloadSpecAttachmentPath(TypedDict, total=False):
 
 class ExchangeLegacyNativeCredentialBody(TypedDict, total=False):
     access_token: Required[str]
-    client: Required[Literal['activity-mac']]
+    client: Required[Literal['noxhere-mac', 'activity-mac']]
     refresh_token: NotRequired[str]
 
 class GetActivityQuery(TypedDict, total=False):
@@ -917,7 +917,7 @@ class PatchNoxServiceConfigPath(TypedDict, total=False):
     service: Required[Literal['noxhere', 'planning', 'activity', 'feedback', 'telemetry']]
 
 class PollNativeDeviceAuthorizationBody(TypedDict, total=False):
-    client: Required[Literal['activity-mac']]
+    client: Required[Literal['noxhere-mac', 'activity-mac']]
     device_code: Required[str]
 
 class PreviewFeedbackResolutionTemplatePath(TypedDict, total=False):
@@ -982,7 +982,7 @@ class StartConnectionPath(TypedDict, total=False):
     provider: Required[Literal['github', 'slack']]
 
 class StartNativeDeviceAuthorizationBody(TypedDict, total=False):
-    client: Required[Literal['activity-mac']]
+    client: Required[Literal['noxhere-mac', 'activity-mac']]
 
 class TestFeedbackResolutionTemplatePath(TypedDict, total=False):
     siteId: Required[str]

@@ -5773,10 +5773,14 @@
                 "additionalProperties": false,
                 "properties": {
                   "client": {
-                    "const": "activity-mac"
+                    "enum": [
+                      "noxhere-mac",
+                      "activity-mac"
+                    ],
+                    "type": "string"
                   },
                   "device_code": {
-                    "pattern": "^noxdc_",
+                    "pattern": "^noxid_",
                     "type": "string"
                   }
                 },
@@ -5850,7 +5854,11 @@
                 "additionalProperties": false,
                 "properties": {
                   "client": {
-                    "const": "activity-mac"
+                    "enum": [
+                      "noxhere-mac",
+                      "activity-mac"
+                    ],
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -5913,7 +5921,7 @@
     },
     "/api/v1/auth/native/exchange": {
       "post": {
-        "description": "Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow.",
+        "description": "Temporary one-time migration route for older Apple app releases. Normal sign-in uses the brokered device flow.",
         "operationId": "exchangeLegacyNativeCredential",
         "requestBody": {
           "content": {
@@ -5926,7 +5934,11 @@
                     "writeOnly": true
                   },
                   "client": {
-                    "const": "activity-mac"
+                    "enum": [
+                      "noxhere-mac",
+                      "activity-mac"
+                    ],
+                    "type": "string"
                   },
                   "refresh_token": {
                     "type": "string",
@@ -18567,7 +18579,7 @@
       "authentication": "public",
       "automationScope": null,
       "changeSafety": "write_not_safe_to_retry",
-      "description": "Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow.",
+      "description": "Temporary one-time migration route for older Apple app releases. Normal sign-in uses the brokered device flow.",
       "id": "exchangeLegacyNativeCredential",
       "method": "POST",
       "namespace": "workspace",
@@ -18585,7 +18597,11 @@
                   "writeOnly": true
                 },
                 "client": {
-                  "const": "activity-mac"
+                  "enum": [
+                    "noxhere-mac",
+                    "activity-mac"
+                  ],
+                  "type": "string"
                 },
                 "refresh_token": {
                   "type": "string",
@@ -24153,10 +24169,14 @@
               "additionalProperties": false,
               "properties": {
                 "client": {
-                  "const": "activity-mac"
+                  "enum": [
+                    "noxhere-mac",
+                    "activity-mac"
+                  ],
+                  "type": "string"
                 },
                 "device_code": {
-                  "pattern": "^noxdc_",
+                  "pattern": "^noxid_",
                   "type": "string"
                 }
               },
@@ -26283,7 +26303,11 @@
               "additionalProperties": false,
               "properties": {
                 "client": {
-                  "const": "activity-mac"
+                  "enum": [
+                    "noxhere-mac",
+                    "activity-mac"
+                  ],
+                  "type": "string"
                 }
               },
               "required": [
@@ -28937,5 +28961,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "7160b2b0942e163c96d7b67c2f86c4c9de041dc028766de865abc37c3b7e2870"
+  "x-sdk-source-sha256": "c5aef2289cc54e5e519a165ec63bfce7c17fd07477d99a6f8db1e25294343432"
 }

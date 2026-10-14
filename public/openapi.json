@@ -6549,7 +6549,11 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "activity-mac"
+                    "type": "string",
+                    "enum": [
+                      "noxhere-mac",
+                      "activity-mac"
+                    ]
                   }
                 }
               }
@@ -6622,11 +6626,15 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "activity-mac"
+                    "type": "string",
+                    "enum": [
+                      "noxhere-mac",
+                      "activity-mac"
+                    ]
                   },
                   "device_code": {
                     "type": "string",
-                    "pattern": "^noxdc_"
+                    "pattern": "^noxid_"
                   }
                 }
               }
@@ -6758,7 +6766,7 @@
       "post": {
         "operationId": "exchangeLegacyNativeCredential",
         "summary": "Upgrade a legacy native session",
-        "description": "Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow.",
+        "description": "Temporary one-time migration route for older Apple app releases. Normal sign-in uses the brokered device flow.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -6773,7 +6781,11 @@
                 ],
                 "properties": {
                   "client": {
-                    "const": "activity-mac"
+                    "type": "string",
+                    "enum": [
+                      "noxhere-mac",
+                      "activity-mac"
+                    ]
                   },
                   "access_token": {
                     "type": "string",
