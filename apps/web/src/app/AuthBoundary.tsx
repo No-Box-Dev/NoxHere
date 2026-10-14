@@ -60,7 +60,7 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     // ingest key or identity hashing key, and a telemetry failure cannot block
     // opening the app. The endpoint de-duplicates activity to one fact per user
     // per day.
-    void postRawJson("/api/v1/app-activity", {}, { organizationId }).catch(() => undefined);
+    void postRawJson("/api/v1/app-activity", { app: "noxhere" }, { organizationId }).catch(() => undefined);
   }, [profile, scopedOrganization]);
 
   if (loading) return <div className="state-message" role="status"><span className="spinner" />Loading…</div>;

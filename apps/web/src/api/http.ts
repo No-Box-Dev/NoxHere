@@ -15,6 +15,23 @@ export interface RequestScope { organizationId?: string; projectId?: string }
 
 export const AUTH_REQUIRED_EVENT = "noxhere:auth-required";
 
+let sessionVerification: Promise<boolean> | null = null;
+
+async function sessionIsInvalid(): Promise<boolean> {
+  if (!sessionVerification) {
+    sessionVerification = fetch("/api/auth/profile", {
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+    })
+      .then((response) => response.status === 401)
+      .catch(() => false)
+      .finally(() => {
+        sessionVerification = null;
+      });
+  }
+  return sessionVerification;
+}
+
 function requestHeaders(scope?: RequestScope, json = false, extra?: HeadersInit) {
   const methodToken = typeof document === "undefined"
     ? null
@@ -36,7 +53,7 @@ async function checkedResponse(response: Response): Promise<Response> {
 
 async function throwApiError(response: Response): Promise<never> {
   const body = await response.json().catch(() => null) as { error?: string | { code?: string; message?: string } } | null;
-  if (response.status === 401 && typeof window !== "undefined") {
+  if (response.status === 401 && typeof window !== "undefined" && await sessionIsInvalid()) {
     window.dispatchEvent(new Event(AUTH_REQUIRED_EVENT));
   }
   const structuredError = typeof body?.error === "object" ? body.error : null;
