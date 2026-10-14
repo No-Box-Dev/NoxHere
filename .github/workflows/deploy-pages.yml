@@ -82,6 +82,15 @@ jobs:
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/core-api/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/connections/wrangler.jsonc --env staging
+      - name: Synchronize staging app activity secrets
+        env:
+          TELEMETRY_INGEST_KEY: ${{ secrets.TELEMETRY_STAGING_INGEST_KEY }}
+          NOXHERE_IDENTITY_HASH_KEY: ${{ secrets.NOXHERE_STAGING_IDENTITY_HASH_KEY }}
+        run: |
+          test -n "$TELEMETRY_INGEST_KEY"
+          test -n "$NOXHERE_IDENTITY_HASH_KEY"
+          printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/core-api/wrangler.jsonc --env staging
+          printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env staging
       - name: Deploy staging private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional staging background-worker secrets
@@ -133,6 +142,15 @@ jobs:
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/core-api/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/gateway/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_INTERNAL_SECRET" | npx wrangler secret put NOXHERE_INTERNAL_SECRET --config services/connections/wrangler.jsonc --env=""
+      - name: Synchronize production app activity secrets
+        env:
+          TELEMETRY_INGEST_KEY: ${{ secrets.TELEMETRY_INGEST_KEY }}
+          NOXHERE_IDENTITY_HASH_KEY: ${{ secrets.NOXHERE_IDENTITY_HASH_KEY }}
+        run: |
+          test -n "$TELEMETRY_INGEST_KEY"
+          test -n "$NOXHERE_IDENTITY_HASH_KEY"
+          printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/core-api/wrangler.jsonc --env=""
+          printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env=""
       - name: Deploy production private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional production background-worker secrets
