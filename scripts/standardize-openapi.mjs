@@ -523,13 +523,13 @@ for (const pathItem of Object.values(document.paths)) {
 document.paths["/api/v1/auth/native/device/start"] = {
   post: nativeAuthOperation("startNativeDeviceAuthorization", "Start native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client"],
-    properties: { client: { type: "string", enum: ["noxhere-mac", "activity-mac"] } },
+    properties: { client: { type: "string", enum: ["noxhere-mac", "noxfeed-mac", "activity-mac"] } },
   }, "Returns an opaque NoxHere device handle plus the GitHub verification URI and user code."),
 };
 document.paths["/api/v1/auth/native/device/poll"] = {
   post: nativeAuthOperation("pollNativeDeviceAuthorization", "Poll native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client", "device_code"],
-    properties: { client: { type: "string", enum: ["noxhere-mac", "activity-mac"] }, device_code: { type: "string", pattern: "^noxid_" } },
+    properties: { client: { type: "string", enum: ["noxhere-mac", "noxfeed-mac", "activity-mac"] }, device_code: { type: "string", pattern: "^noxid_" } },
   }, "NoxHere completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials."),
 };
 document.paths["/api/v1/auth/native/refresh"] = {
@@ -542,7 +542,7 @@ document.paths["/api/v1/auth/native/exchange"] = {
   post: nativeAuthOperation("exchangeLegacyNativeCredential", "Upgrade a legacy native session", {
     type: "object", additionalProperties: false, required: ["client", "access_token"],
     properties: {
-      client: { type: "string", enum: ["noxhere-mac", "activity-mac"] },
+      client: { type: "string", enum: ["noxhere-mac", "noxfeed-mac", "activity-mac"] },
       access_token: { type: "string", writeOnly: true },
       refresh_token: { type: "string", writeOnly: true },
     },

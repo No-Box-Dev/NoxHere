@@ -96,7 +96,7 @@ export async function exchangeLegacyGitHubCredential(
     throw new Error("invalid_legacy_identity_exchange");
   }
   const value = input as Record<string, unknown>;
-  if ((value.client !== "noxhere-mac" && value.client !== "activity-mac")
+  if ((value.client !== "noxhere-mac" && value.client !== "noxfeed-mac" && value.client !== "activity-mac")
       || typeof value.accessToken !== "string"
       || !value.accessToken
       || value.accessToken.length > 2048
@@ -375,7 +375,8 @@ function positiveSeconds(value: unknown): boolean {
 function parseDeviceClient(input: unknown): string {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid_device_request");
   const client = (input as Record<string, unknown>).client;
-  if (client !== "noxhere-cli" && client !== "noxhere-mac" && client !== "activity-mac") {
+  if (client !== "noxhere-cli" && client !== "noxhere-mac"
+      && client !== "noxfeed-mac" && client !== "activity-mac") {
     throw new Error("invalid_device_client");
   }
   return client;
