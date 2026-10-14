@@ -404,7 +404,7 @@ export interface paths {
         put?: never;
         /**
          * Upgrade a legacy native session
-         * @description Temporary one-time migration route for older Activity releases. Normal sign-in uses the brokered device flow.
+         * @description Temporary one-time migration route for older Apple app releases. Normal sign-in uses the brokered device flow.
          */
         post: operations["exchangeLegacyNativeCredential"];
         delete?: never;
@@ -4634,8 +4634,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @constant */
-                    client: "activity-mac";
+                    /** @enum {string} */
+                    client: "noxhere-mac" | "activity-mac";
                     device_code: string;
                 };
             };
@@ -4677,8 +4677,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @constant */
-                    client: "activity-mac";
+                    /** @enum {string} */
+                    client: "noxhere-mac" | "activity-mac";
                 };
             };
         };
@@ -4720,8 +4720,8 @@ export interface operations {
             content: {
                 "application/json": {
                     access_token: string;
-                    /** @constant */
-                    client: "activity-mac";
+                    /** @enum {string} */
+                    client: "noxhere-mac" | "activity-mac";
                     refresh_token?: string;
                 };
             };

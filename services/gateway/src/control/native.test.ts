@@ -46,6 +46,16 @@ describe("NoxHere native authentication", () => {
     expect(provider.startGitHubDeviceAuth).toHaveBeenCalledWith({ client: "noxhere-cli" });
   });
 
+  it("accepts the unified NoxHere macOS client", async () => {
+    const provider = identity();
+    const response = await handleNativeAuth(new Request(
+      "https://app.noxhere.com/api/v1/auth/native/device/start",
+      { method: "POST", body: JSON.stringify({ client: "noxhere-mac" }) },
+    ), database().db, provider);
+    expect(response?.status).toBe(200);
+    expect(provider.startGitHubDeviceAuth).toHaveBeenCalledWith({ client: "noxhere-mac" });
+  });
+
   it("returns an opaque provider-device handle", async () => {
     const response = await handleNativeAuth(new Request(
       "https://app.noxhere.com/api/v1/auth/native/device/start",

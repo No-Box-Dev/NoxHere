@@ -106,7 +106,7 @@ describe("GitHub OAuth identity connection", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("upgrades a legacy native credential without returning or storing it in plaintext", async () => {
+  it("upgrades a unified macOS credential without returning or storing it in plaintext", async () => {
     const { db, calls } = database();
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -118,7 +118,7 @@ describe("GitHub OAuth identity connection", () => {
       DB: db,
       ENCRYPTION_KEY: "11".repeat(32),
     }, {
-      client: "activity-mac",
+      client: "noxhere-mac",
       accessToken: "github-access-secret",
       refreshToken: "github-refresh-secret",
     });
@@ -148,7 +148,7 @@ describe("GitHub OAuth identity connection", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("returns an opaque device handle and encrypts GitHub's device code", async () => {
+  it("starts unified macOS auth with an opaque device handle", async () => {
     const { db, calls } = database();
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({
       device_code: "github-provider-device-secret",
@@ -161,7 +161,7 @@ describe("GitHub OAuth identity connection", () => {
       DB: db,
       GITHUB_APP_CLIENT_ID: "client-id",
       ENCRYPTION_KEY: "11".repeat(32),
-    }, { client: "activity-mac" });
+    }, { client: "noxhere-mac" });
     expect(result.deviceCode).toMatch(/^noxid_/);
     expect(JSON.stringify(result)).not.toContain("github-provider-device-secret");
     const insert = calls.find((call) => call.sql.includes("INSERT INTO identity_device_authorizations"));
