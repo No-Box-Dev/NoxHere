@@ -19,6 +19,11 @@ export async function createOrUpdateTelemetryGitHubIssue(env, task) {
   try {
     return await processIncident(env, task.incidentId);
   } catch (error) {
+    const permanentFailure = permanentIncidentFailure(error);
+    if (permanentFailure) {
+      await markDisabled(env.DB, task.incidentId, permanentFailure);
+      return { skipped: "invalid_diagnostic_payload" };
+    }
     await env.DB.prepare(
       `UPDATE cue_github_incidents SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?`,
     ).bind(errorMessage(error), new Date().toISOString(), task.incidentId).run();
@@ -226,6 +231,12 @@ function enabledEnvironment(raw, environment) {
 
 function updateDue(last, minutes) { return !last || Date.now() - Date.parse(last) >= Number(minutes) * 60_000; }
 function validRepo(value) { return typeof value === "string" && /^[A-Za-z0-9_.-]{1,100}$/.test(value); }
+function permanentIncidentFailure(error) {
+  const message = errorMessage(error);
+  if (message.includes("Telemetry incident has invalid diagnostic payload")) return message;
+  if (message.includes("Telemetry returned an invalid incident presentation")) return message;
+  return null;
+}
 function requirePresentation(value) {
   if (!value || value.contract !== "telemetry.response" || value.version !== 1 || value.kind !== "github_incident"
     || typeof value.marker !== "string" || value.marker.length > 320
