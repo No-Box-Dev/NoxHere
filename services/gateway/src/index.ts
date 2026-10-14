@@ -26,6 +26,9 @@ const PROVIDER_INGRESS_HEALTH_PATH = "/__noxhere/health/provider-ingress";
 function gatewayResponse(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("X-NoxHere-Gateway", "1");
+  if (!headers.has("Cache-Control")) headers.set("Cache-Control", "no-store");
+  if (!headers.has("Link")) headers.set("Link", '</openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"');
+  if (!headers.has("X-Content-Type-Options")) headers.set("X-Content-Type-Options", "nosniff");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

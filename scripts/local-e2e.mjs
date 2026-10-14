@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -15,6 +15,7 @@ const activityDir = resolve(process.env.ACTIVITY_SERVICE_DIR || join(root, "serv
 const feedbackDir = resolve(process.env.FEEDBACK_CAPTURE_DIR || join(root, "services/feedback"));
 const planningDir = resolve(process.env.PLANNING_SERVICE_DIR || join(root, "services/planning"));
 const capabilityDir = join(root, "services/connections");
+const gatewayDir = join(root, "services/gateway");
 const coreApiConfig = join(root, "services/core-api/wrangler.jsonc");
 const wrangler = join(root, "node_modules/.bin/wrangler");
 const keepState = process.argv.includes("--keep-state");
@@ -34,13 +35,15 @@ const internalSecret = randomBytes(32).toString("base64url");
 const stateRoot = mkdtempSync(join(tmpdir(), "noxhere-local-e2e-"));
 const runId = randomBytes(5).toString("hex");
 const serviceNames = {
-  capabilities: `noxhere-connections-e2e-${runId}`,
-  cue: `telemetry-e2e-${runId}`,
-  spot: `feedback-e2e-${runId}`,
-  feed: `activity-e2e-${runId}`,
-  ticket: `planning-e2e-${runId}`,
+  capabilities: "noxhere-connections",
+  cue: "noxhere-telemetry",
+  spot: "noxhere-feedback",
+  feed: "noxhere-activity",
+  ticket: "noxhere-planning",
   background: `noxhere-orchestrator-e2e-${runId}`,
   rpc: `noxhere-rpc-e2e-${runId}`,
+  core: "noxhere-api",
+  gateway: "noxhere",
 };
 const persistence = join(stateRoot, "state");
 const logsDir = join(stateRoot, "logs");
@@ -49,6 +52,8 @@ const children = [];
 const results = [];
 let failed = false;
 let stopping = false;
+let browserSessionCredential = null;
+let projectBearer = null;
 
 mkdirSync(persistence, { recursive: true });
 mkdirSync(logsDir, { recursive: true });
@@ -138,6 +143,17 @@ async function waitFor(name, url, { timeoutMs = 45_000, expected = 200 } = {}) {
 async function request(label, path, options = {}, expected = 200) {
   const { noxHereAuth, ...fetchOptions } = options;
   if (noxHereAuth) {
+    if (noxHereAuth.credentialType === "session" && browserSessionCredential) {
+      const headers = new Headers(fetchOptions.headers);
+      headers.set("Cookie", `__Host-nox_session=${browserSessionCredential.sessionToken}; nox_csrf=${browserSessionCredential.csrfToken}`);
+      headers.set("X-CSRF-Token", browserSessionCredential.csrfToken);
+      headers.set("X-Org", org);
+      fetchOptions.headers = headers;
+    } else if (noxHereAuth.credentialType === "api_token" && projectBearer) {
+      const headers = new Headers(fetchOptions.headers);
+      headers.set("Authorization", `Bearer ${projectBearer}`);
+      fetchOptions.headers = headers;
+    } else {
     const method = (fetchOptions.method || "GET").toUpperCase();
     const now = Math.floor(Date.now() / 1000);
     const assertion = {
@@ -150,8 +166,14 @@ async function request(label, path, options = {}, expected = 200) {
     headers.set("X-NoxHere-Internal-Assertion", payload);
     headers.set("X-NoxHere-Internal-Signature", signature);
     fetchOptions.headers = headers;
+    }
   }
-  const response = await fetch(path.startsWith("http") ? path : `${base}${path}`, fetchOptions);
+  let response;
+  try {
+    response = await fetch(path.startsWith("http") ? path : `${base}${path}`, fetchOptions);
+  } catch (error) {
+    throw new Error(`${label}: request failed: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+  }
   const raw = await response.text();
   let body = raw;
   if ((response.headers.get("content-type") || "").includes("json")) {
@@ -245,6 +267,10 @@ async function main() {
     "d1", "migrations", "apply", "DB", "--config", coreApiConfig,
     "--env=", "--local", "--persist-to", persistence,
   ]);
+  run("apply gateway control migrations to a fresh local D1", wrangler, [
+    "d1", "migrations", "apply", "CONTROL_DB", "--config", join(gatewayDir, "wrangler.jsonc"),
+    "--env=", "--local", "--persist-to", persistence,
+  ]);
   run("apply Ticket migrations to its fresh local D1", wrangler, [
     "d1", "migrations", "apply", "DB", "--local", "--persist-to", persistence,
   ], { cwd: planningDir });
@@ -264,6 +290,17 @@ async function main() {
     "d1", "execute", "DB", "--config", coreApiConfig,
     "--env=", "--local", "--persist-to", persistence, "--command", fixtureSql,
   ]);
+  const controlFixtureSql = [
+    `INSERT INTO orgs (id, github_login) VALUES (910004, '${org.replaceAll("'", "''")}');`,
+    `INSERT INTO projects (id, org_id, name, enabled) VALUES ('${projectId.replaceAll("'", "''")}', 910004, '${repo.replaceAll("'", "''")}', 1);`,
+    `INSERT INTO project_repositories (org_id, repo, project_id) VALUES (910004, '${repo.replaceAll("'", "''")}', '${projectId.replaceAll("'", "''")}');`,
+    `INSERT INTO projects (id, org_id, name, enabled) VALUES ('${otherProjectId.replaceAll("'", "''")}', 910004, '${otherRepo.replaceAll("'", "''")}', 1);`,
+    `INSERT INTO project_repositories (org_id, repo, project_id) VALUES (910004, '${otherRepo.replaceAll("'", "''")}', '${otherProjectId.replaceAll("'", "''")}');`,
+  ].join(" ");
+  run("seed the gateway control organization and projects", wrangler, [
+    "d1", "execute", "CONTROL_DB", "--config", join(gatewayDir, "wrangler.jsonc"),
+    "--env=", "--local", "--persist-to", persistence, "--command", controlFixtureSql,
+  ]);
 
   const encryptionKey = randomBytes(32).toString("hex");
   const webhookSecret = randomBytes(32).toString("hex");
@@ -271,7 +308,8 @@ async function main() {
   start("capabilities", capabilityDir, [
     "dev", "--name", serviceNames.capabilities, "--port", String(port(8796)),
     "--inspector-port", String(port(9236)), "--var", `ENCRYPTION_KEY:${encryptionKey}`,
-    "--var", `GITHUB_WEBHOOK_SECRET:${webhookSecret}`, ...commonDev,
+    "--var", `GITHUB_WEBHOOK_SECRET:${webhookSecret}`,
+    "--var", `NOXHERE_INTERNAL_SECRET:${internalSecret}`, ...commonDev,
   ]);
   await waitFor("capabilities", `http://127.0.0.1:${port(8796)}/`, { expected: 404 });
   start("telemetry", telemetryDir, ["dev", "--name", serviceNames.cue, "--port", String(port(8792)), "--inspector-port", String(port(9232)), ...commonDev]);
@@ -287,19 +325,20 @@ async function main() {
   makeRpcSmokeWorker();
   start("rpc", rpcDir, ["dev", "-c", "wrangler.jsonc", "--port", String(port(8793)), "--inspector-port", String(port(9233)), ...commonDev]);
 
-  start("noxhere", root, [
-    "pages", "dev", webDist, "--port", String(port(8788)), "--inspector-port", String(port(9231)),
-    "--persist-to", persistence, "--log-level", "warn", "--show-interactive-dev-session=false",
-    "--d1", "DB=c94084e6-d0be-423c-8de6-249e7cf8bf25",
-    "--binding", `ENCRYPTION_KEY=${encryptionKey}`,
-    "--binding", `GITHUB_WEBHOOK_SECRET=${webhookSecret}`,
-    "--binding", `NOXHERE_INTERNAL_SECRET=${internalSecret}`,
-    "--service", `FEEDBACK_RESPONSE=${serviceNames.spot}`,
-    "--service", `TELEMETRY_RESPONSE=${serviceNames.cue}`,
-    "--service", `TELEMETRY_INGEST=${serviceNames.cue}`,
-    "--service", `ACTIVITY_RESPONSE=${serviceNames.feed}`,
-    "--service", `PLANNING_SERVICE=${serviceNames.ticket}`,
-    "--service", `NOXHERE_EMAIL=${serviceNames.capabilities}`,
+  run("build the local core API worker", "npm", ["run", "build:core-api"]);
+  start("core-api", root, [
+    "dev", "--config", coreApiConfig, "--name", serviceNames.core,
+    "--port", String(port(8787)), "--inspector-port", String(port(9231)),
+    "--var", `ENCRYPTION_KEY:${encryptionKey}`, "--var", `GITHUB_WEBHOOK_SECRET:${webhookSecret}`,
+    "--var", `NOXHERE_INTERNAL_SECRET:${internalSecret}`,
+    ...commonDev,
+  ]);
+  await waitFor("core-api", `http://127.0.0.1:${port(8787)}/api/health/live`);
+  start("noxhere", gatewayDir, [
+    "dev", "--name", serviceNames.gateway, "--port", String(port(8788)), "--inspector-port", String(port(9237)),
+    "--var", `NOXHERE_INTERNAL_SECRET:${internalSecret}`,
+    "--var", `PUBLIC_APP_ORIGIN:${base}`,
+    ...commonDev,
   ]);
   await waitFor("noxhere", `${base}/developers`);
   await waitFor("rpc", `http://127.0.0.1:${port(8793)}/`);
@@ -340,15 +379,44 @@ async function main() {
     "--env=", "--local", "--persist-to", persistence, "--command", authFixtureSql,
   ]);
 
+  const sessionToken = randomBytes(32).toString("base64url");
+  const csrfToken = randomBytes(32).toString("base64url");
+  const principalId = `github:${githubUserId}`;
+  const gatewayAuthSql = [
+    `INSERT INTO principals (id, github_user_id, github_login, github_connection_id) VALUES ('${principalId}', ${githubUserId}, '${githubLogin.replaceAll("'", "''")}', '${connectionId}');`,
+    `INSERT INTO org_memberships (org_id, principal_id, role, verified_at) VALUES (910004, '${principalId}', 'admin', strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));`,
+    `INSERT INTO browser_sessions (token_hash, principal_id, connection_id, csrf_hash, expires_at) VALUES ('${createHash("sha256").update(sessionToken).digest("hex")}', '${principalId}', '${connectionId}', '${createHash("sha256").update(csrfToken).digest("hex")}', strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '+1 hour'));`,
+  ].join(" ");
+  run("seed a real gateway browser session", wrangler, [
+    "d1", "execute", "CONTROL_DB", "--config", join(gatewayDir, "wrangler.jsonc"),
+    "--env=", "--local", "--persist-to", persistence, "--command", gatewayAuthSql,
+  ]);
+  browserSessionCredential = { sessionToken, csrfToken };
+  await waitFor("noxhere", `${base}/developers`);
+
   const sessionAuth = {
     credentialType: "session", credentialId: "local-session", principalId: `github:${githubUserId}`,
     userLogin: githubLogin, userId: githubUserId, orgId: 910004, orgLogin: org,
     isAdmin: true, projectId: null, scopes: [], connectionId,
+    membershipVerifiedAt: new Date().toISOString(),
   };
   const projectAuth = {
     ...sessionAuth, credentialType: "api_token", credentialId: "local-project-token",
-    projectId, scopes: ["services:read", "activity:read", "feedback:write", "telemetry:write"], connectionId: null,
+    projectId, scopes: ["services:read", "activity:write", "feedback:write", "telemetry:write", "slack:send", "developer-feedback:write"], connectionId: null,
   };
+  const automation = await request("create a real one-time unified automation token", "/api/v1/api-tokens", signedOptions(sessionAuth, {
+    method: "POST",
+    body: JSON.stringify({
+      name: "Local E2E unified write", environment: "test", projectId,
+      scopes: projectAuth.scopes, expiresInDays: 1,
+    }),
+  }), 201);
+  const automationId = automation.body?.credential?.id;
+  const automationToken = automation.body?.token;
+  if (typeof automationId !== "string" || !/^nox_sk_test_[A-Za-z0-9_-]+$/.test(automationToken ?? "")) {
+    throw new Error("Unified automation token was not returned once with the expected test prefix");
+  }
+  projectBearer = automationToken;
   await request("signed NoxHere session authenticates without exposing a provider bearer", "/api/v1/services", signedOptions(sessionAuth));
   await request("GitHub provider bearer is not a NoxHere API credential", "/api/v1/services", { headers: { Authorization: `Bearer ${token}` } }, 401);
   await request("signed NoxHere session reads its organization role", "/api/v1/me", signedOptions(sessionAuth));
@@ -451,9 +519,71 @@ async function main() {
 
   const source = await request("create a Telemetry source through the control API", "/api/v1/telemetry/sources", signedOptions(sessionAuth, {
     method: "POST",
-    body: JSON.stringify({ name: "Local E2E", projectId, enabled: true, timezone: "UTC", digestEnabled: false, digestTimeLocal: "00:30", allowedOrigins: [], healthEnabled: false, healthUrl: null, slackChannelId: null, slackConnectionId: null }),
+    body: JSON.stringify({ name: "Local E2E", projectId, environment: "test", enabled: true, timezone: "UTC", digestEnabled: false, digestTimeLocal: "00:30", allowedOrigins: [], healthEnabled: false, healthUrl: null, slackChannelId: null, slackConnectionId: null }),
   }), 201);
   const sourceId = source.body.id;
+
+  const listedAutomation = await request("list unified automation token as redacted metadata", "/api/v1/api-tokens", signedOptions(sessionAuth));
+  const listedRecord = listedAutomation.body?.tokens?.find((item) => item.id === automationId);
+  if (!listedRecord || JSON.stringify(listedAutomation.body).includes(automationToken)) {
+    throw new Error("Unified automation token listing omitted metadata or exposed the secret");
+  }
+  await request("automation token cannot manage automation credentials", "/api/v1/api-tokens", {
+    headers: { Authorization: `Bearer ${automationToken}` },
+  }, 403);
+  const automationEvent = await request("unified token ingests a Telemetry event", "/api/v1/telemetry/public/events", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${automationToken}`, "Content-Type": "application/json", "X-Nox-Source-ID": sourceId },
+    body: JSON.stringify({ version: 1, type: "user.active", userId: "h1_local-e2e_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", idempotencyKey: "local-e2e-unified-token" }),
+  }, 202);
+  if (!automationEvent.body?.accepted) throw new Error("Unified automation token did not ingest Telemetry");
+  await request("unified token reaches Slack validation with its send scope", "/api/v1/integrations/slack/messages", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${automationToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ connectionId: "", channelId: "", message: { text: "Disposable local E2E" } }),
+  }, 422);
+  const developerFeedback = await request("unified token submits developer feedback", "/api/v1/developer-feedback", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${automationToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      area: "api", category: "suggestion", summary: "Local unified token lifecycle",
+      details: "Disposable local verification of the developer feedback capability.",
+      impact: "low", idempotencyKey: `local-e2e-${runId}`, client: { name: "local-e2e" },
+    }),
+  }, 202);
+  if (developerFeedback.body?.feedback?.status !== "received") throw new Error("Unified token developer feedback was not accepted");
+  const usedAutomation = await request("automation token usage timestamp is visible", "/api/v1/api-tokens", signedOptions(sessionAuth));
+  if (!usedAutomation.body?.tokens?.find((item) => item.id === automationId)?.lastUsedAt) {
+    throw new Error("Unified automation token did not record last use");
+  }
+  const rotatedAutomation = await request("rotate unified automation token", `/api/v1/api-tokens/${encodeURIComponent(automationId)}/rotate`, signedOptions(sessionAuth, {
+    method: "POST", body: JSON.stringify({}),
+  }), 201);
+  const rotatedId = rotatedAutomation.body?.credential?.id;
+  const rotatedToken = rotatedAutomation.body?.token;
+  if (typeof rotatedId !== "string" || typeof rotatedToken !== "string" || rotatedToken === automationToken) {
+    throw new Error("Unified automation token rotation did not return a distinct replacement");
+  }
+  await request("rotated automation token rejects its previous secret", "/api/v1/developer-feedback", {
+    method: "POST", headers: { Authorization: `Bearer ${automationToken}`, "Content-Type": "application/json" }, body: "{}",
+  }, 401);
+  await request("rotated automation token replacement is active", "/api/v1/integrations/slack/messages", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${rotatedToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ connectionId: "", channelId: "", message: { text: "Disposable local E2E" } }),
+  }, 422);
+  await request("revoke rotated unified automation token", `/api/v1/api-tokens/${encodeURIComponent(rotatedId)}`, signedOptions(sessionAuth, { method: "DELETE" }));
+  await request("revoked automation token is rejected", "/api/v1/integrations/slack/messages", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${rotatedToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ connectionId: "", channelId: "", message: { text: "Disposable local E2E" } }),
+  }, 401);
+  const lifecycleHistory = await request("rotated and revoked token history remains auditable", "/api/v1/api-tokens", signedOptions(sessionAuth));
+  const historicalIds = lifecycleHistory.body?.tokens?.filter((item) => item.revokedAt).map((item) => item.id) ?? [];
+  if (!historicalIds.includes(automationId) || !historicalIds.includes(rotatedId)) {
+    throw new Error("Unified automation token lifecycle history is incomplete");
+  }
+
   const key = await request("create a one-time Telemetry ingest key", `/api/v1/telemetry/sources/${sourceId}/keys`, signedOptions(sessionAuth, {
     method: "POST", body: JSON.stringify({ name: "Local E2E", kind: "secret" }),
   }), 201);
