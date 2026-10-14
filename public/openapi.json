@@ -6552,6 +6552,7 @@
                     "type": "string",
                     "enum": [
                       "noxhere-mac",
+                      "noxfeed-mac",
                       "activity-mac"
                     ]
                   }
@@ -6629,6 +6630,7 @@
                     "type": "string",
                     "enum": [
                       "noxhere-mac",
+                      "noxfeed-mac",
                       "activity-mac"
                     ]
                   },
@@ -6784,6 +6786,7 @@
                     "type": "string",
                     "enum": [
                       "noxhere-mac",
+                      "noxfeed-mac",
                       "activity-mac"
                     ]
                   },

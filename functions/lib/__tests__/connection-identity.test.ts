@@ -186,4 +186,22 @@ describe("GitHub OAuth identity connection", () => {
     const insert = calls.find((call) => call.sql.includes("INSERT INTO identity_device_authorizations"));
     expect(insert?.binds).toContain("noxhere-cli");
   });
+
+  it("accepts the installed legacy NoxFeed macOS client", async () => {
+    const { db, calls } = database();
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+      device_code: "github-provider-device-secret",
+      user_code: "ABCD-EFGH",
+      verification_uri: "https://github.com/login/device",
+      expires_in: 900,
+      interval: 5,
+    })));
+    await startGitHubDeviceIdentity({
+      DB: db,
+      GITHUB_APP_CLIENT_ID: "client-id",
+      ENCRYPTION_KEY: "11".repeat(32),
+    }, { client: "noxfeed-mac" });
+    const insert = calls.find((call) => call.sql.includes("INSERT INTO identity_device_authorizations"));
+    expect(insert?.binds).toContain("noxfeed-mac");
+  });
 });

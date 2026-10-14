@@ -5775,6 +5775,7 @@
                   "client": {
                     "enum": [
                       "noxhere-mac",
+                      "noxfeed-mac",
                       "activity-mac"
                     ],
                     "type": "string"
@@ -5856,6 +5857,7 @@
                   "client": {
                     "enum": [
                       "noxhere-mac",
+                      "noxfeed-mac",
                       "activity-mac"
                     ],
                     "type": "string"
@@ -5936,6 +5938,7 @@
                   "client": {
                     "enum": [
                       "noxhere-mac",
+                      "noxfeed-mac",
                       "activity-mac"
                     ],
                     "type": "string"
@@ -18599,6 +18602,7 @@
                 "client": {
                   "enum": [
                     "noxhere-mac",
+                    "noxfeed-mac",
                     "activity-mac"
                   ],
                   "type": "string"
@@ -24171,6 +24175,7 @@
                 "client": {
                   "enum": [
                     "noxhere-mac",
+                    "noxfeed-mac",
                     "activity-mac"
                   ],
                   "type": "string"
@@ -26305,6 +26310,7 @@
                 "client": {
                   "enum": [
                     "noxhere-mac",
+                    "noxfeed-mac",
                     "activity-mac"
                   ],
                   "type": "string"
@@ -28961,5 +28967,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "c5aef2289cc54e5e519a165ec63bfce7c17fd07477d99a6f8db1e25294343432"
+  "x-sdk-source-sha256": "1323cd71b4af2dda6ce927a6d5a2f40b9431e0c8da328d0647e3246f56a98079"
 }
