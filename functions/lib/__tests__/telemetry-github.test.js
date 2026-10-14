@@ -106,6 +106,36 @@ describe("Telemetry GitHub issue routing", () => {
     }));
   });
 
+  it("disables an incident with a permanently invalid diagnostic payload", async () => {
+    const builder = vi.fn().mockRejectedValue(new Error("Telemetry incident has invalid diagnostic payload"));
+    const { env, statements } = environment(baseRow, builder);
+
+    await expect(createOrUpdateTelemetryGitHubIssue(env, { incidentId: "incident-1" }))
+      .resolves.toEqual({ skipped: "invalid_diagnostic_payload" });
+
+    const disabled = statements.find(({ sql }) => sql.includes("SET status = 'disabled'"));
+    expect(disabled?.args).toEqual([
+      "Telemetry incident has invalid diagnostic payload",
+      expect.any(String),
+      "incident-1",
+    ]);
+  });
+
+  it("keeps transient incident failures retryable", async () => {
+    const builder = vi.fn().mockRejectedValue(new Error("Telemetry response service timed out"));
+    const { env, statements } = environment(baseRow, builder);
+
+    await expect(createOrUpdateTelemetryGitHubIssue(env, { incidentId: "incident-1" }))
+      .rejects.toThrow("Telemetry response service timed out");
+
+    const failed = statements.find(({ sql }) => sql.includes("SET status = 'failed'"));
+    expect(failed?.args).toEqual([
+      "Telemetry response service timed out",
+      expect.any(String),
+      "incident-1",
+    ]);
+  });
+
   it("deduplicates against the mapped open issue without a noisy update inside the interval", async () => {
     const row = { ...baseRow, github_issue_number: 12, github_repo: "playnist", last_github_update_at: new Date().toISOString(), last_github_release: "web-123" };
     const { env } = environment(row);
