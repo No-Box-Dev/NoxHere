@@ -160,6 +160,7 @@ describe("NoxHere API-backed platform", () => {
     const request = vi.mocked(fetch).mock.calls.find(([input, init]) => String(input) === "/api/v1/app-activity" && init?.method === "POST")?.[1];
     expect(new Headers(request?.headers).get("X-CSRF-Token")).toBe("test-csrf-token");
     expect(new Headers(request?.headers).get("X-Org")).toBe("No-Box-Dev");
+    expect(JSON.parse(String(request?.body))).toEqual({ app: "noxhere" });
   });
 
   it("does not bootstrap a workspace that is absent from the verified profile", async () => {
@@ -332,7 +333,12 @@ describe("NoxHere API-backed platform", () => {
 
   it("returns to sign-in when an authenticated API request reports an expired session", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    let profileChecks = 0;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/auth/profile") {
+        profileChecks += 1;
+        if (profileChecks > 1) return json({ error: { code: "unauthorized", message: "Session expired; sign in again" } }, 401);
+      }
       if (String(input) === "/api/v1/me") {
         return json({ apiVersion: 1, error: { code: "unauthorized", message: "Session expired; sign in again" } }, 401);
       }
@@ -343,6 +349,22 @@ describe("NoxHere API-backed platform", () => {
 
     expect(await screen.findByRole("heading", { name: "Sign in to Nox" })).toBeInTheDocument();
     expect(screen.queryByText("Could not load this view")).not.toBeInTheDocument();
+  });
+
+  it("keeps a verified session when one feature endpoint returns 401", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/features?state=all") {
+        return json({ apiVersion: 1, error: { code: "unauthorized", message: "Feature access denied" } }, 401);
+      }
+      return baseFetch(input, init);
+    });
+
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
+
+    expect(await screen.findByRole("heading", { name: "Planning is unavailable" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Sign in to Nox" })).not.toBeInTheDocument();
+    expect(vi.mocked(fetch).mock.calls.filter(([input]) => String(input) === "/api/auth/profile")).toHaveLength(2);
   });
 
   it("renders the main project with API-backed empty states", async () => {
