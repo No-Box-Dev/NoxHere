@@ -9,8 +9,8 @@ This document tracks the eight local standardization gates for the API served by
 `app.noxhere.com`. NoxHere remains the shared foundation; the product services
 remain bounded by capability and storage ownership.
 
-Last integrated verification: **2026-09-09**, based on `origin/main` at
-`07464a1` plus the all-service client migration described here.
+Last integrated verification: **2026-10-14**, based on `origin/main` at
+`bc936f1` plus the changes described here.
 
 ## Progress
 
@@ -23,7 +23,7 @@ Last integrated verification: **2026-09-09**, based on `origin/main` at
 | 5 | Authentication, authorization, and project scoping | Complete | HttpOnly browser sessions + CSRF; brokered native sessions; hashed, expiring, one-project API tokens; server-enforced service/resource scopes; secure GitHub-owner admin bootstrap |
 | 6 | Safe writes, revisions, errors, and compatibility | Complete | ETag/If-Match CAS, coded v1 errors, normalized legacy boundary |
 | 7 | OpenAPI, machine guidance, and overview | Complete | 95 paths and 121 classified operations, generated reference, agent guide, this overview |
-| 8 | Local verification | Complete | full regression suite plus a 102-check real multi-Worker end-to-end run |
+| 8 | Local verification | Complete | full regression suite plus a real multi-Worker end-to-end run with lifecycle assertions |
 
 ## Service ownership
 
@@ -189,9 +189,10 @@ The exact setup is documented in [LOCAL_E2E.md](./LOCAL_E2E.md).
 - Dependency audit: production and complete dependency trees both report zero
   known vulnerabilities after refreshing the lockfile within existing semver
   ranges (React Router 7.18.3, Vite 7.3.6, and Vitest 4.1.11).
-- Local end-to-end runtime: Wrangler 4.129.0 started NoxHere, Feedback,
-  Activity, Telemetry, the background Worker, and a disposable RPC caller against one fresh
-  local D1 database. All 102 readiness and functional checks passed, including
+- Local end-to-end runtime: Wrangler 4.147.0 started the public NoxHere gateway,
+  private core API, Connections, Feedback, Activity, Telemetry, Planning, the
+  background Worker, and a disposable RPC caller against fresh core and control
+  D1 databases. All readiness and functional checks passed, including
   live GitHub identity plus opaque browser- and native-session authentication,
   native access/refresh rotation, CSRF rejection,
   project-scoped API-token create/list/rotate/revoke and adversarial isolation,

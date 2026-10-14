@@ -9,19 +9,20 @@ provider secrets.
 
 | Local service | Port | Role |
 |---|---:|---|
-| NoxHere Pages | 8788 | capability API behind a simulated private gateway boundary |
+| NoxHere gateway | 8788 | public authentication, token lifecycle, and routing boundary |
+| NoxHere core API | 8787 | private capability API behind the gateway |
 | Feedback compatibility Worker | 8790 | public feedback capture and response RPC |
 | Activity compatibility Worker | 8791 | activity response RPC |
 | Incidents compatibility Worker | 8792 | event ingestion, metrics, and response RPC |
 | RPC smoke Worker | 8793 | disposable private-binding contract caller |
 | NoxHere background Worker | 8794 | Queue consumer and periodic maintenance |
+| Planning Worker | 8795 | planning response RPC |
+| Connections Worker | 8796 | provider identity, Slack, and email boundary |
 
-All services use one newly created local persistence directory. NoxHere's
-migrations are the sole schema authority and are applied before any Worker is
-started. The runner seeds a disposable organization, installation, repository,
-project, and opaque connector identity. It does not create a browser/native
-session or API token inside the capability runtime; those credentials belong to
-the NoxHere gateway.
+All services use one newly created local persistence directory. The core and
+gateway-control migrations are applied to fresh local D1 databases before any
+Worker starts. The runner seeds a disposable organization, installation,
+repository, project, opaque connector identity, browser session, and API token.
 
 ## Prerequisites
 
@@ -50,9 +51,10 @@ topology by one offset without changing any checked-in Worker configuration:
 NOXHERE_E2E_PORT_OFFSET=100 npm run e2e:local
 ```
 
-Every Worker also receives a random per-run development name. This keeps local
-service bindings isolated from other Wrangler sessions using the production
-service names.
+The suite registers the same service names used by checked-in bindings so the
+local topology matches production. Use the port offset when another local suite
+is running, and do not run two copies concurrently in the same Wrangler service
+registry.
 
 Use `node scripts/local-e2e.mjs --allow-auth-skip` only when a public and
 service-binding smoke run is useful without GitHub CLI authentication. Use
@@ -70,6 +72,8 @@ Worker, and checks:
 - private RPC contracts for Feedback, Incidents, and Activity;
 - anonymous and direct-provider-bearer rejection, signed short-lived gateway
   assertions, connector identity resolution, and project-scope enforcement;
+- real browser-session and unified API-token create, redacted list, capability
+  use, usage timestamp, rotation, revocation, and lifecycle-history checks;
 - project-scoped Incidents GitHub-issue configuration;
 - all five service catalog, setup, health, and config contracts;
 - ETag/`If-Match` config writes, missing preconditions, and stale revisions;
@@ -83,11 +87,12 @@ Worker, and checks:
 ### Authorization-boundary assertions
 
 The key checks use real HTTP requests and fresh D1 rows, not handler mocks. The
-runner signs the same method-and-path-bound assertion that the NoxHere gateway sends over
-the private binding, verifies connector-side HMAC validation, resolves a real
-encrypted connector identity, and exercises organization, project, capability,
-cross-project, and filtered-feed enforcement. The gateway owns
-separate lifecycle tests for browser/native sessions, CSRF, and API tokens.
+runner authenticates through the public gateway using an opaque browser session
+and a real one-time `nox_sk_test_…` token. It verifies the same
+method-and-path-bound assertion sent over the private binding, connector-side
+HMAC validation, encrypted connector identity resolution, organization and
+project isolation, exact capability scopes, and immediate rejection of rotated
+or revoked secrets.
 
 ## Deliberate external boundary
 

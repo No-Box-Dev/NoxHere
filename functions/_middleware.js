@@ -214,7 +214,12 @@ export async function onRequest(context) {
   context.data.userLogin = auth.userLogin;
   context.data.userId = auth.userId;
   context.data.token = providerToken;
-  context.data.isAdmin = auth.isAdmin;
+  // Legacy capability handlers use `isAdmin` as their write-admission flag.
+  // A project API token reaches this boundary only after the public gateway
+  // has enforced its exact route scope and project, so grant that internal
+  // write admission without representing the token as a human administrator
+  // in `context.data.auth` or any user-facing identity response.
+  context.data.isAdmin = auth.isAdmin || auth.credentialType === "api_token";
   context.data.isPlatformOperator = isPlatformOperator(context.env, auth.userId);
   context.data.projectId = projectId;
   context.data.auth = {

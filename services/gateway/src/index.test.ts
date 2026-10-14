@@ -258,6 +258,9 @@ describe("NoxHere gateway", () => {
     expect(response.status).toBe(200);
     expect(provider.fetch).toHaveBeenCalledOnce();
     expect(connector.fetch).not.toHaveBeenCalled();
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Link")).toContain("/openapi.json");
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
     await expect(response.json()).resolves.toEqual({ configured: true });
   });
 
