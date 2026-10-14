@@ -22,6 +22,7 @@
     "ops:telemetry-requeue": "node scripts/requeue-telemetry-incidents.mjs",
     "health:activity-policy": "node scripts/check-activity-policy.mjs",
     "health:feedback-runtime": "node scripts/check-feedback-runtime.mjs",
+    "health:api-surface": "node scripts/probe-openapi-deployment.mjs",
     "health:boundaries": "node scripts/check-product-boundaries.mjs",
     "e2e:local": "npm run build:web && node scripts/local-e2e.mjs",
     "e2e:provider": "node --env-file-if-exists=.env.staging-acceptance scripts/staging-acceptance.mjs",
@@ -86,9 +87,9 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vitest": "^4.0.18",
-    "wrangler": "^4.129.0"
+    "wrangler": "^4.151.0"
   },
   "overrides": {
-    "sharp": "0.35.4"
+    "sharp": "0.35.5"
   }
 }

@@ -110,6 +110,8 @@ jobs:
         run: npx wrangler deploy --config services/gateway/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
       - name: Smoke staging release
         run: node scripts/smoke-deployment.mjs https://noxhere-staging.jasper-414.workers.dev https://noxhere-feedback-staging.jasper-414.workers.dev "$DEPLOY_SHA"
+      - name: Verify every staging API operation
+        run: npm run health:api-surface -- https://noxhere-staging.jasper-414.workers.dev
 
       - name: Migrate production platform database
         run: npx wrangler d1 migrations apply DB --config services/core-api/wrangler.jsonc --env="" --remote
@@ -184,6 +186,8 @@ jobs:
           done
       - name: Smoke production release
         run: node scripts/smoke-deployment.mjs https://app.noxhere.com https://app.noxhere.com "$DEPLOY_SHA"
+      - name: Verify every production API operation
+        run: npm run health:api-surface -- https://app.noxhere.com
       - name: Verify production ecosystem
         # Updating Cron Triggers can take up to 15 minutes to propagate across
         # Cloudflare. Keep the gate strict, but allow the new schedule enough
