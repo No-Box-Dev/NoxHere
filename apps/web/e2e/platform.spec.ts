@@ -157,6 +157,25 @@ test("expands a real Feedback report and opens its linked issue", async ({ page 
   await expect(report.getByRole("link", { name: "Open GitHub issue" })).toHaveAttribute("href", /github\.com\/No-Box-Dev\/playnist\/issues\/2000/);
 });
 
+test("keeps shared application surfaces readable in dark mode", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("noxhere.theme", "dark"));
+
+  const surfaces = [
+    ["/no-box-dev/proj_no-box-dev_playnist/feedback/issues", ".spot-report"],
+    ["/no-box-dev/proj_no-box-dev_playnist/activity/merged", ".feed-post-card"],
+    ["/no-box-dev/proj_no-box-dev_playnist/incidents/issues", ".list-surface"],
+    ["/no-box-dev/proj_no-box-dev_playnist/settings/project", ".settings-card"],
+  ] as const;
+
+  for (const [path, selector] of surfaces) {
+    await page.goto(path);
+    const surface = page.locator(selector).first();
+    await expect(surface).toBeVisible({ timeout: 30_000 });
+    await expect(surface).toHaveCSS("background-color", "rgb(40, 37, 34)");
+    await expect(surface).toHaveCSS("color", "rgb(247, 242, 233)");
+  }
+});
+
 test("shows the mirrored Playnist stats dashboard", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/stats/overview");
   await expect(page.getByText("Total users", { exact: true })).toBeVisible({ timeout: 30_000 });
