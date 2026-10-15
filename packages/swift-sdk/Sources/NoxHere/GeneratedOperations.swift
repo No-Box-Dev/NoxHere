@@ -29,7 +29,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 169
+    public static let operationCount = 171
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -60,6 +60,7 @@ public enum NoxHereOperations {
         "disconnectConnection": .init(id: "disconnectConnection", method: "POST", path: "/api/v1/integrations/connections/{provider}/disconnect", resource: .workspace, changeSafety: .destructive, servers: []),
         "disconnectSlackWorkspace": .init(id: "disconnectSlackWorkspace", method: "POST", path: "/api/v1/slack/disconnect", resource: .workspace, changeSafety: .destructive, servers: []),
         "downloadFeatureAttachment": .init(id: "downloadFeatureAttachment", method: "GET", path: "/api/v1/features/{number}/attachments/{attachmentId}", resource: .planning, changeSafety: .safeRead, servers: []),
+        "downloadFeedbackAsset": .init(id: "downloadFeedbackAsset", method: "GET", path: "/api/v1/feedback/assets/{assetId}", resource: .feedback, changeSafety: .safeRead, servers: []),
         "downloadSpecAttachment": .init(id: "downloadSpecAttachment", method: "GET", path: "/api/v1/specs/{specId}/attachments/{attachmentId}", resource: .planning, changeSafety: .safeRead, servers: []),
         "draftPlanningItem": .init(id: "draftPlanningItem", method: "POST", path: "/api/v1/planning/assist", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "exchangeLegacyNativeCredential": .init(id: "exchangeLegacyNativeCredential", method: "POST", path: "/api/v1/auth/native/exchange", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
@@ -73,6 +74,7 @@ public enum NoxHereOperations {
         "getEngineerActivity": .init(id: "getEngineerActivity", method: "GET", path: "/api/v1/engineer-activity", resource: .activity, changeSafety: .safeRead, servers: []),
         "getEngineerStats": .init(id: "getEngineerStats", method: "GET", path: "/api/v1/engineer-stats", resource: .activity, changeSafety: .safeRead, servers: []),
         "getFeedbackProjectOverview": .init(id: "getFeedbackProjectOverview", method: "GET", path: "/api/v1/feedback/project-overview", resource: .feedback, changeSafety: .safeRead, servers: []),
+        "getFeedbackReport": .init(id: "getFeedbackReport", method: "GET", path: "/api/v1/feedback/reports/{reportId}", resource: .feedback, changeSafety: .safeRead, servers: []),
         "getFeedbackResolutionTemplate": .init(id: "getFeedbackResolutionTemplate", method: "GET", path: "/api/v1/feedback/sites/{siteId}/resolution-template", resource: .feedback, changeSafety: .safeRead, servers: []),
         "getFeedEvent": .init(id: "getFeedEvent", method: "GET", path: "/api/v1/events/{id}", resource: .activity, changeSafety: .safeRead, servers: []),
         "getGitHubComments": .init(id: "getGitHubComments", method: "GET", path: "/api/v1/github/comments", resource: .activity, changeSafety: .safeRead, servers: []),

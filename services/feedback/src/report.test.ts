@@ -82,9 +82,9 @@ describe("capture validation", () => {
     });
   });
 
-  it("creates deterministic screenshot keys under the site prefix", () => {
-    const target = screenshotTarget(site.id, "capture-1", "data:image/png;base64,AA==", "https://cdn.example.com");
-    expect(target?.key).toBe("screenshots/site-1/capture-1.png");
-    expect(target?.url).toContain(target?.key);
+  it("creates deterministic private evidence targets", async () => {
+    const target = await screenshotTarget(site.org_id, site.id, "capture-1", "data:image/png;base64,AA==", "https://app.example.com");
+    expect(target?.key).toMatch(/^evidence\/asset_[a-f0-9]{32}$/);
+    expect(target?.url).toBe(`https://app.example.com/api/v1/feedback/assets/${target?.id}`);
   });
 });

@@ -57,6 +57,7 @@ function responseCapture(capture) {
     reporterEmail: capture.reporterEmail ?? null,
     environment: capture.environment ?? null,
     screenshotUrl: capture.screenshotUrl ?? null,
+    screenshotAssetId: capture.screenshotAssetId ?? null,
     metadata: capture.metadata ?? null,
     elements: capture.elements ?? null,
     context: capture.context ?? null,

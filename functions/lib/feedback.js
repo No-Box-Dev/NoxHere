@@ -126,6 +126,7 @@ async function storeEvent(db, capture, issue) {
       captureId: capture.captureId,
       notificationRequested: capture.notifyOnResolution === true && Boolean(capture.reporterEmail),
       screenshotUrl: capture.screenshotUrl ?? null,
+      screenshotAssetId: capture.screenshotAssetId ?? null,
       shareUrl: issue.html_url,
     }),
     capture.ownerId,

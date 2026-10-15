@@ -15,6 +15,7 @@ export interface CaptureInput extends Record<string, unknown> {
   reporterGithubLogin?: string | null;
   environment?: string | null;
   screenshotUrl?: string | null;
+  screenshotAssetId?: string | null;
   rating?: number | null;
   blockValues?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
@@ -78,9 +79,10 @@ export function buildSlackResponse(capture: CaptureInput, issue: IssueInput) {
     { type: "section", fields },
   ];
   if (capture.description) blocks.push({ type: "section", text: { type: "mrkdwn", text: truncate(escapeMrkdwn(capture.description), 2_800) } });
-  if (capture.screenshotUrl) blocks.push({ type: "image", image_url: capture.screenshotUrl, alt_text: "Feedback issue screenshot" });
   const actions: Record<string, unknown>[] = [];
   if (pageUrl) actions.push({ type: "button", text: { type: "plain_text", text: "Open reported page" }, url: pageUrl });
+  const evidenceUrl = safeHttpUrl(capture.screenshotUrl);
+  if (evidenceUrl) actions.push({ type: "button", text: { type: "plain_text", text: "Open screenshot securely" }, url: evidenceUrl });
   actions.push({ type: "button", text: { type: "plain_text", text: "Open GitHub issue" }, url: issueUrl });
   blocks.push({ type: "actions", elements: actions });
   return {
@@ -177,7 +179,16 @@ function issueLink(issue: IssueInput) {
 function buildIssueBody(capture: CaptureInput, marker: string) {
   const lines: string[] = [];
   if (capture.description) lines.push(capture.description, "");
-  if (capture.screenshotUrl) lines.push(`![Feedback capture](${capture.screenshotUrl})`, "");
+  const evidenceUrl = safeHttpUrl(capture.screenshotUrl);
+  if (evidenceUrl) {
+    lines.push(
+      "### Evidence",
+      "",
+      `- 🔒 [Open screenshot securely in NoxHere](${evidenceUrl})`,
+      "- **AI agents:** fetch the link using an authenticated, project-scoped NoxHere API connection. The image is stored privately and is not attached to GitHub.",
+      "",
+    );
+  }
   lines.push("### Capture", "", `- **Site:** ${capture.siteName || capture.siteId}`);
   if (capture.environment) lines.push(`- **Environment:** ${capture.environment}`);
   if (capture.reporterGithubLogin) lines.push(`- **Reporter:** @${capture.reporterGithubLogin}`);
@@ -189,7 +200,10 @@ function buildIssueBody(capture: CaptureInput, marker: string) {
   addJson(lines, "Selected elements", capture.elements);
   addJson(lines, "Application context", capture.context);
   const content = lines.join("\n");
-  const suffix = `\n\n${marker}`;
+  const evidenceMarker = capture.screenshotAssetId
+    ? `\n<!-- feedback-evidence:${capture.screenshotAssetId} -->`
+    : "";
+  const suffix = `\n\n${marker}${evidenceMarker}`;
   return `${content.slice(0, MAX_GITHUB_BODY_LENGTH - suffix.length)}${suffix}`;
 }
 

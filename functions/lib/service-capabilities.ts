@@ -235,6 +235,8 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "preview_resolution_template", method: "POST", path: "/api/v1/feedback/sites/{siteId}/resolution-template/preview", authentication: "admin", description: "Render a safe sample without sending email." },
         { id: "test_resolution_template", method: "POST", path: "/api/v1/feedback/sites/{siteId}/resolution-template/test", authentication: "admin", description: "Send a rendered template test through NoxHere and Postmark." },
         { id: "get_feedback_project_overview", method: "GET", path: "/api/v1/feedback/project-overview", authentication: "member", description: "Read the selected project's guest-safe feedback overview." },
+        { id: "get_feedback_report", method: "GET", path: "/api/v1/feedback/reports/{reportId}", authentication: "member", description: "Read a report and its protected evidence metadata." },
+        { id: "download_feedback_asset", method: "GET", path: "/api/v1/feedback/assets/{assetId}", authentication: "member", description: "Stream evidence after organization and project authorization." },
         { id: "update_feedback_report", method: "PATCH", path: "/api/v1/feedback/reports/{reportId}", authentication: "admin", description: "Investigate, resolve, reopen, or retry notification for a report." },
       ] },
       { id: "feedback_delivery", name: "Slack delivery", description: "Route each site's feedback to its own Slack destination or the shared fallback.", access: "admin", requires: ["github", "slack"], operations: [

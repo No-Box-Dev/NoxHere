@@ -7275,6 +7275,94 @@
         "x-project-scope": "optional"
       }
     },
+    "/api/v1/feedback/assets/{assetId}": {
+      "get": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "downloadFeedbackAsset",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Authenticated Feedback evidence bytes"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "410": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Download authenticated Feedback evidence",
+        "tags": [
+          "Feedback"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "member"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "assetId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/feedback/project-overview": {
       "get": {
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
@@ -7335,6 +7423,73 @@
       }
     },
     "/api/v1/feedback/reports/{reportId}": {
+      "get": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "getFeedbackReport",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Read a Feedback report and its evidence",
+        "tags": [
+          "Feedback"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "member"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "reportId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
       "patch": {
         "description": "Mark a report open, investigating, or resolved and optionally send or retry the reporter's consented resolution email.",
         "operationId": "updateFeedbackReport",
@@ -18434,6 +18589,97 @@
       "authentication": "member",
       "automationScope": null,
       "changeSafety": "safe_read",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "downloadFeedbackAsset",
+      "method": "GET",
+      "namespace": "feedback",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "assetId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/feedback/assets/{assetId}",
+      "projectScope": "optional",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "description": "Authenticated Feedback evidence bytes"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "404": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "410": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Download authenticated Feedback evidence",
+      "tag": "Feedback"
+    },
+    {
+      "authentication": "member",
+      "automationScope": null,
+      "changeSafety": "safe_read",
       "description": "Download a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "downloadSpecAttachment",
       "method": "GET",
@@ -19365,6 +19611,76 @@
       ],
       "servers": [],
       "summary": "Read a guest-safe Feedback project overview",
+      "tag": "Feedback"
+    },
+    {
+      "authentication": "member",
+      "automationScope": null,
+      "changeSafety": "safe_read",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "getFeedbackReport",
+      "method": "GET",
+      "namespace": "feedback",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "reportId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/feedback/reports/{reportId}",
+      "projectScope": "optional",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Read a Feedback report and its evidence",
       "tag": "Feedback"
     },
     {
@@ -27312,6 +27628,15 @@
           "name": "reportId",
           "required": true,
           "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "reportId",
+          "required": true,
+          "schema": {
             "maxLength": 120,
             "type": "string"
           }
@@ -28971,5 +29296,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "9d89c06fa3f7216639132c979e5843a66848d569975df5b588186127518b6765"
+  "x-sdk-source-sha256": "9248eb1bd708ce91f5cb5321286cb6941b715a46c62f86b1d5e3df6811ce5c51"
 }

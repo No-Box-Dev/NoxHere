@@ -1,1 +1,1 @@
-export { onRequestPatch } from "../../../feedback/reports/[id]";
+export { onRequestGet, onRequestPatch } from "../../../feedback/reports/[id]";

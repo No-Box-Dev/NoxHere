@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { evidenceTarget, putEvidence, recordEvidence } from "./evidence";
 
 export const RESPONSE_TEXT_MAX = 2_000;
 export const RESPONSE_SCREENSHOT_MAX = 7_000_000;
@@ -87,20 +88,35 @@ export async function submitResolutionResponse(context: AppContext): Promise<Res
   if ((claimed.meta.changes ?? 0) !== 1) return page("Already submitted", "<p>This response is already being processed or has reopened the issue.</p>", 409);
 
   let screenshotKey: string | null = null;
+  let screenshotAssetId: string | null = null;
   let screenshotUrl: string | null = null;
   try {
     if (screenshot instanceof File && screenshot.size > 0) {
-      const extension = screenshot.type === "image/jpeg" ? "jpg" : screenshot.type.split("/")[1];
-      screenshotKey = `responses/${row.site_id}/${responseId}.${extension}`;
-      await context.env.ASSETS.put(screenshotKey, await screenshot.arrayBuffer(), {
-        httpMetadata: { contentType: screenshot.type },
+      const target = await evidenceTarget({
+        orgId: row.org_id,
+        siteId: row.site_id,
+        reportId: row.report_id ?? responseId,
+        sourceId: responseId,
+        role: "follow_up_screenshot",
+        contentType: screenshot.type,
+        apiBaseUrl: context.env.PUBLIC_API_BASE_URL,
       });
-      screenshotUrl = `${context.env.PUBLIC_ASSET_BASE_URL.replace(/\/$/, "")}/${screenshotKey}`;
+      screenshotKey = target.key;
+      screenshotAssetId = target.id;
+      const stored = await putEvidence(context.env.ASSETS, target, await screenshot.arrayBuffer());
+      await recordEvidence(context.env.DB, target, {
+        orgId: row.org_id,
+        projectId: row.project_id,
+        siteId: row.site_id,
+      }, stored);
+      screenshotUrl = target.url;
     }
     const commentBody = [
       "The reporter says this is not fixed.",
       responseText ? `\n${responseText}` : "\nNo additional note was provided.",
-      screenshotUrl ? `\n![Reporter follow-up screenshot](${screenshotUrl})` : "",
+      screenshotUrl ? `\n\n🔒 [Open the reporter's follow-up screenshot securely in NoxHere](${screenshotUrl})` : "",
+      screenshotUrl ? "\n\nAI agents: fetch this link using an authenticated, project-scoped NoxHere API connection. The image is stored privately and is not attached to GitHub." : "",
+      screenshotAssetId ? `\n\n<!-- feedback-evidence:${screenshotAssetId} -->` : "",
       `\n<!-- feedback-response:${responseId} -->`,
     ].join("");
     await context.env.NOXHERE.execute(capability(row, responseId, "comment", {
@@ -124,6 +140,10 @@ export async function submitResolutionResponse(context: AppContext): Promise<Res
           WHERE id = ?`,
       ).bind(now, row.report_id)] : []),
       ...(row.report_id ? [context.env.DB.prepare(
+        `UPDATE feedback_assets SET expires_at = NULL
+          WHERE report_id = ? AND org_id = ? AND deleted_at IS NULL`,
+      ).bind(row.report_id, row.org_id)] : []),
+      ...(row.report_id ? [context.env.DB.prepare(
         `INSERT INTO spot_report_activity (id, report_id, kind, actor, summary, created_at)
          VALUES (?, ?, 'reopened', 'reporter', ?, ?)
          ON CONFLICT(id) DO NOTHING`,
@@ -131,7 +151,13 @@ export async function submitResolutionResponse(context: AppContext): Promise<Res
     ]);
     return page("Issue reopened", "<h1>Thanks for the update</h1><p>The issue has been reopened and the Playnist team will take another look.</p>", 200);
   } catch (error) {
-    if (screenshotKey) await context.env.ASSETS.delete(screenshotKey).catch(() => undefined);
+    if (screenshotKey) {
+      await context.env.ASSETS.delete(screenshotKey).catch(() => undefined);
+      if (screenshotAssetId) {
+        await context.env.DB.prepare("DELETE FROM feedback_assets WHERE id = ? AND org_id = ?")
+          .bind(screenshotAssetId, row.org_id).run().catch(() => undefined);
+      }
+    }
     const detail = error instanceof Error ? error.message.slice(0, 500) : "Response processing failed";
     await context.env.DB.prepare(
       `UPDATE spot_report_response_tokens

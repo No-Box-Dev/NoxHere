@@ -81,6 +81,14 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
     return { kind: "resource", projectId: row?.project_id ?? null };
   }
 
+  match = pathname.match(/^\/api\/feedback\/assets\/([^/]+)/);
+  if (match) {
+    const row = await db.prepare(
+      "SELECT project_id FROM feedback_assets WHERE org_id = ? AND id = ?",
+    ).bind(orgId, decodeURIComponent(match[1])).first();
+    return { kind: "resource", projectId: row?.project_id ?? null };
+  }
+
   match = pathname.match(/^\/api\/telemetry\/projects\/([^/]+)/);
   if (match) return { kind: "project", projectId: decodeURIComponent(match[1]) };
 
@@ -110,6 +118,8 @@ export function projectScopedApiTokenPathSupported(pathname, method) {
   if (verb === "POST" && /^\/api\/projects\/[^/]+\/backfill-prs$/.test(pathname)) return true;
   if (/^\/api\/feedback\/sites(?:\/|$)/.test(pathname)) return true;
   if (verb === "PATCH" && /^\/api\/feedback\/reports\/[^/]+$/.test(pathname)) return true;
+  if ((verb === "GET" || verb === "HEAD") && /^\/api\/feedback\/assets\/[^/]+$/.test(pathname)) return true;
+  if (verb === "GET" && /^\/api\/feedback\/reports\/[^/]+$/.test(pathname)) return true;
   if (/^\/api\/telemetry\/sources(?:\/|$)/.test(pathname)) return true;
   if (verb === "GET" && (pathname === "/api/telemetry/events" || pathname === "/api/telemetry/metrics")) return true;
   if (/^\/api\/telemetry\/projects\/[^/]+\/metrics$/.test(pathname)) return true;

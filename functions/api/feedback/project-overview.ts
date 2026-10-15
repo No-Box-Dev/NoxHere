@@ -64,7 +64,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const cursorFilter = cursor ? " AND (updated_at < ? OR (updated_at = ? AND id < ?))" : "";
   const issueBinds = [...projectBinds, ...(issueState ? [issueState] : []), ...(cursor ? [cursor.updatedAt, cursor.updatedAt, cursor.id] : []), pageSize + 1];
 
-  const [issues, captures, reports, activities] = await db.batch([
+  const [issues, captures, reports, activities, assets] = await db.batch([
     db.prepare(
       `SELECT id, repo, number, title, state, author, author_avatar, created_at, updated_at, closed_at,
               html_url, assignees_json, labels_json
@@ -94,6 +94,14 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
           : ""}
         ORDER BY activity.created_at DESC LIMIT 2000`,
     ).bind(...projectBinds),
+    db.prepare(
+      `SELECT asset.id, asset.report_id, asset.role, asset.media_type, asset.size_bytes,
+              asset.sha256, asset.created_at, asset.expires_at
+         FROM feedback_assets asset
+        WHERE asset.org_id = ?${projectId ? " AND asset.project_id = ?" : ""}
+          AND asset.deleted_at IS NULL
+        ORDER BY asset.created_at ASC LIMIT 2000`,
+    ).bind(orgId, ...(projectId ? [projectId] : [])),
   ]);
 
   const keyFor = (repo: unknown, number: unknown) => `${String(repo)}#${Number(number)}`;
@@ -121,6 +129,24 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       createdAt: activity.created_at,
     });
     activityByReport.set(reportId, entries);
+  }
+  const evidenceByReport = new Map<string, Array<Record<string, unknown>>>();
+  for (const row of assets.results ?? []) {
+    const asset = row as Record<string, unknown>;
+    const reportId = String(asset.report_id);
+    const entries = evidenceByReport.get(reportId) ?? [];
+    const id = String(asset.id);
+    entries.push({
+      id,
+      type: asset.role,
+      mediaType: asset.media_type,
+      size: Number(asset.size_bytes),
+      sha256: asset.sha256,
+      url: `/api/v1/feedback/assets/${encodeURIComponent(id)}`,
+      createdAt: asset.created_at,
+      expiresAt: asset.expires_at,
+    });
+    evidenceByReport.set(reportId, entries);
   }
   const issueRows = (issues.results ?? []).slice(0, pageSize);
   const mappedIssues = issueRows.map((row) => {
@@ -163,6 +189,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
         lastNotifiedAt: report.last_notified_at ?? null,
       } : { eligible: false, status: "not_requested", attempts: 0, lastError: null, lastNotifiedAt: null },
       activity: reportId ? activityByReport.get(reportId) ?? [] : [],
+      evidence: reportId ? evidenceByReport.get(reportId) ?? [] : [],
     };
   });
   const countStatus = (status: string) => mappedIssues.filter((issue) => issue.reportStatus === status).length;

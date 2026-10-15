@@ -470,6 +470,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "downloadFeedbackAsset",
+    "method": "GET",
+    "path": "/api/v1/feedback/assets/{assetId}",
+    "namespace": "feedback",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ],
+    "servers": []
+  },
+  {
     "id": "downloadSpecAttachment",
     "method": "GET",
     "path": "/api/v1/specs/{specId}/attachments/{attachmentId}",
@@ -657,6 +674,21 @@ export const operationDefinitions = [
     "id": "getFeedbackProjectOverview",
     "method": "GET",
     "path": "/api/v1/feedback/project-overview",
+    "namespace": "feedback",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getFeedbackReport",
+    "method": "GET",
+    "path": "/api/v1/feedback/reports/{reportId}",
     "namespace": "feedback",
     "authentication": "member",
     "automationScope": null,

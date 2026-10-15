@@ -1,4 +1,5 @@
 import type { CaptureSite } from "./site-config";
+import { evidenceTarget, putEvidence, type EvidenceTarget, type StoredEvidence } from "./evidence";
 
 export const MAX_REPORT_BODY_BYTES = 7_500_000;
 export const MAX_ERROR_BODY_BYTES = 128_000;
@@ -48,6 +49,7 @@ export interface CaptureTask {
   notifyOnResolution: boolean;
   environment: string | null;
   screenshotUrl: string | null;
+  screenshotAssetId: string | null;
   metadata: Record<string, unknown> | null;
   elements: Record<string, unknown>[] | null;
   context: Record<string, unknown> | null;
@@ -159,26 +161,32 @@ function titleFromDescription(description: string): string {
   return firstLine.slice(0, 256);
 }
 
-interface ScreenshotTarget {
-  key: string;
-  url: string;
-  contentType: string;
-}
-
-export function screenshotTarget(siteId: string, captureId: string, screenshot: string | null, assetBaseUrl: string): ScreenshotTarget | null {
+export async function screenshotTarget(
+  orgId: number,
+  siteId: string,
+  captureId: string,
+  screenshot: string | null,
+  apiBaseUrl: string,
+): Promise<EvidenceTarget | null> {
   if (!screenshot) return null;
   const match = screenshot.match(/^data:image\/(png|jpeg|webp);base64,/);
   if (!match) return null;
   const type = match[1] === "jpeg" ? "jpeg" : match[1];
-  const extension = type === "jpeg" ? "jpg" : type;
-  const key = `screenshots/${siteId}/${captureId}.${extension}`;
-  return { key, url: `${assetBaseUrl.replace(/\/$/, "")}/${key}`, contentType: `image/${type}` };
+  return evidenceTarget({
+    orgId,
+    siteId,
+    reportId: captureId,
+    sourceId: captureId,
+    role: "screenshot",
+    contentType: `image/${type}`,
+    apiBaseUrl,
+  });
 }
 
-export async function putScreenshot(bucket: R2Bucket, target: ScreenshotTarget, screenshot: string): Promise<void> {
+export async function putScreenshot(bucket: R2Bucket, target: EvidenceTarget, screenshot: string): Promise<StoredEvidence> {
   const encoded = screenshot.slice(screenshot.indexOf(",") + 1);
   const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
-  await bucket.put(target.key, bytes, { httpMetadata: { contentType: target.contentType } });
+  return putEvidence(bucket, target, bytes);
 }
 
 export function buildCaptureTask(args: {
@@ -186,6 +194,7 @@ export function buildCaptureTask(args: {
   params: ReportParams;
   captureId: string;
   screenshotUrl: string | null;
+  screenshotAssetId?: string | null;
   issueType?: CaptureTask["issueType"];
 }): CaptureTask {
   const { site, params, captureId, screenshotUrl } = args;
@@ -210,6 +219,7 @@ export function buildCaptureTask(args: {
     notifyOnResolution: params.notifyOnResolution,
     environment: params.environment,
     screenshotUrl,
+    screenshotAssetId: args.screenshotAssetId ?? null,
     metadata: params.metadata,
     elements: params.elements,
     context: params.context,
