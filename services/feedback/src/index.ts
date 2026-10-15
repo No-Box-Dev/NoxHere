@@ -383,22 +383,34 @@ async function telemetryBody(context: AppContext): Promise<unknown | Response> {
   }
 }
 
-app.post("/telemetry/screenshot-failures", async (context) => {
+async function screenshotFailure(context: AppContext) {
   const body = await telemetryBody(context);
   return body instanceof Response ? body : receiveScreenshotFailure(context, body);
-});
-app.post("/telemetry/widget-failures", async (context) => {
+}
+
+async function widgetFailure(context: AppContext) {
   const body = await telemetryBody(context);
   return body instanceof Response ? body : receiveWidgetFailure(context, body);
-});
-app.post("/telemetry/screenshot-outcomes", async (context) => {
+}
+
+async function screenshotOutcome(context: AppContext) {
   const body = await telemetryBody(context);
   return body instanceof Response ? body : receiveScreenshotOutcome(context, body);
-});
-app.post("/telemetry/widget-installs", async (context) => {
+}
+
+async function widgetInstall(context: AppContext) {
   const body = await telemetryBody(context);
   return body instanceof Response ? body : receiveWidgetInstall(context, body);
-});
+}
+
+app.post("/telemetry/screenshot-failures", screenshotFailure);
+app.post("/api/feedback/public/v1/telemetry/screenshot-failures", screenshotFailure);
+app.post("/telemetry/widget-failures", widgetFailure);
+app.post("/api/feedback/public/v1/telemetry/widget-failures", widgetFailure);
+app.post("/telemetry/screenshot-outcomes", screenshotOutcome);
+app.post("/api/feedback/public/v1/telemetry/screenshot-outcomes", screenshotOutcome);
+app.post("/telemetry/widget-installs", widgetInstall);
+app.post("/api/feedback/public/v1/telemetry/widget-installs", widgetInstall);
 
 async function serveObject(context: AppContext, key: string) {
   const object = await context.env.ASSETS.get(key);
