@@ -3,6 +3,7 @@ import { useState } from "react";
 import { deleteRawJson, getRawJson, patchRawJson, postRawJson, type RequestScope } from "../../api/http";
 import { platformApi } from "../../api/platform";
 import { useConfirmDialog } from "../../components/ConfirmDialog";
+import type { Project } from "../../api/contracts";
 
 type WidgetEnvironment = {
   name: string;
@@ -17,6 +18,7 @@ type WidgetEnvironment = {
 type WidgetSite = {
   id: string;
   name: string;
+  projectId?: string | null;
   repo?: string | null;
   buttonColor?: string;
   buttonText?: string;
@@ -40,7 +42,7 @@ type WidgetBlock = { id: string; type: "title" | "description" | "reporter" | "c
 
 type SitesResponse = { sites?: WidgetSite[] };
 
-export function FeedbackWidgets({ organizationId, projectId, isAdmin }: { organizationId: string; projectId: string; isAdmin: boolean }) {
+export function FeedbackWidgets({ organizationId, projectId, projects, isAdmin }: { organizationId: string; projectId: string; projects: Project[]; isAdmin: boolean }) {
   const scope = { organizationId, projectId };
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -72,20 +74,23 @@ export function FeedbackWidgets({ organizationId, projectId, isAdmin }: { organi
       <div><input id="new-widget-site" value={newSiteName} maxLength={120} placeholder="Customer app" onChange={(event) => setNewSiteName(event.target.value)} /><button className="button" disabled={!newSiteName.trim() || create.isPending}>{create.isPending ? "Adding…" : "Add site"}</button></div>
       {create.isError ? <small role="alert">{create.error instanceof Error ? create.error.message : "The site could not be created."}</small> : null}
     </form> : null}
-    {sites.length ? <div className="widget-site-list">{sites.map((site) => <WidgetSiteCard key={site.id} site={site} scope={scope} isAdmin={isAdmin} />)}</div>
+    {sites.length ? <div className="widget-site-list">{sites.map((site) => <WidgetSiteCard key={site.id} site={site} scope={scope} projects={projects} isAdmin={isAdmin} />)}</div>
       : <WidgetState title="No capture sites yet" detail={isAdmin ? "Add a site to generate its install code." : "An administrator needs to add a capture site for this project."} />}
   </div>;
 }
 
-function WidgetSiteCard({ site, scope, isAdmin }: { site: WidgetSite; scope: RequestScope; isAdmin: boolean }) {
+function WidgetSiteCard({ site, scope, projects, isAdmin }: { site: WidgetSite; scope: RequestScope; projects: Project[]; isAdmin: boolean }) {
   const { confirm, confirmation } = useConfirmDialog();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [slackDraft, setSlackDraft] = useState(site.slackChannelId ?? "");
+  const [projectDraft, setProjectDraft] = useState(site.projectId ?? scope.projectId ?? "");
   const snippet = `<script src="https://app.noxhere.com/widget/${site.id}.js" defer></script>`;
+  const identitySnippet = `Feedback.identify({\n  name: currentUser.name,\n  email: currentUser.email,\n  avatarUrl: currentUser.avatarUrl,\n  notifyOnResolution: true\n});`;
+  const compatibleProjects = projects.filter((project) => !site.repo || project.connections.some((connection) => connection.provider === "github" && connection.label.split("/").at(-1)?.toLowerCase() === site.repo?.toLowerCase()));
   const update = useMutation({
     mutationFn: (body: unknown) => patchRawJson(`/api/v1/feedback/sites/${encodeURIComponent(site.id)}`, body, {}, scope),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["spot-sites", scope.organizationId, scope.projectId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["spot-sites", scope.organizationId] }),
   });
   const remove = useMutation({ mutationFn: () => deleteRawJson(`/api/v1/feedback/sites/${encodeURIComponent(site.id)}`, scope), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["spot-sites", scope.organizationId, scope.projectId] }) });
   const retry = useMutation({ mutationFn: () => postRawJson<{ queued?: number }>(`/api/v1/feedback/sites/${encodeURIComponent(site.id)}/retry-deliveries`, {}, scope), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["spot-sites", scope.organizationId, scope.projectId] }) });
@@ -99,10 +104,13 @@ function WidgetSiteCard({ site, scope, isAdmin }: { site: WidgetSite; scope: Req
       await navigator.clipboard.writeText(snippet);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
-    }}>{copied ? "Copied" : "Copy"}</button></div></section>
+    }}>{copied ? "Copied" : "Copy"}</button></div><details><summary>Identify signed-in reporters</summary><p>After the widget script loads, pass approved profile fields from the host application. Call it again when the signed-in user changes; the widget never reads session cookies.</p><pre><code>{identitySnippet}</code></pre></details></section>
     {site.slackPendingCount || site.slackBlockedCount ? <div className="widget-delivery-health"><span>{site.slackPendingCount ?? 0} pending · {site.slackBlockedCount ?? 0} blocked</span>{site.slackLastError ? <small>{site.slackLastError}</small> : null}{isAdmin ? <button className="mini-button" disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "Retrying…" : "Retry deliveries"}</button> : null}</div> : null}
     {isAdmin ? <div className="widget-slack-route"><label>Slack destination<select value={slackDraft} disabled={!connection} onChange={(event) => setSlackDraft(event.target.value)}><option value="">Use organization fallback</option>{(channels.data?.channels ?? []).filter((channel) => !channel.is_archived).map((channel) => <option value={channel.id} key={channel.id}>#{channel.name}</option>)}</select></label><button className="button" disabled={update.isPending || slackDraft === (site.slackChannelId ?? "")} onClick={() => update.mutate({ slackChannelId: slackDraft || null, slackConnectionId: slackDraft ? connection?.id : null })}>Save Slack route</button><button className="button" disabled={!slackDraft || testSlack.isPending} onClick={() => testSlack.mutate()}>{testSlack.isPending ? "Testing…" : "Send test"}</button>{testSlack.isSuccess ? <small role="status">Test delivered.</small> : testSlack.error ? <small role="alert">{testSlack.error.message}</small> : null}</div> : null}
-    {isAdmin ? <><WidgetEditor key={`${site.id}:${site.updatedAt ?? ""}`} site={site} pending={update.isPending} error={update.error} onSave={(body) => update.mutate(body)} /><button type="button" className="mini-button destructive widget-delete" disabled={remove.isPending} onClick={() => void confirm({ title: "Delete capture site?", detail: `${site.name} will stop loading and its stored screenshots will be removed.`, confirmLabel: "Delete site", destructive: true }).then((confirmed) => { if (confirmed) remove.mutate(); })}>{remove.isPending ? "Deleting…" : "Delete capture site"}</button></> : null}
+    {isAdmin ? <><div className="widget-project-route"><label>Owning project<select aria-label={`Owning project for ${site.name}`} value={projectDraft} disabled={update.isPending} onChange={(event) => setProjectDraft(event.target.value)}>{compatibleProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label><button type="button" className="button" disabled={update.isPending || projectDraft === site.projectId} onClick={() => {
+      const target = projects.find((project) => project.id === projectDraft);
+      void confirm({ title: "Move capture site?", detail: `${site.name} and its existing reports will move to ${target?.name ?? projectDraft}. It will disappear from this project's Widgets page.`, confirmLabel: "Move site", destructive: false }).then((confirmed) => { if (confirmed) update.mutate({ projectId: projectDraft }); });
+    }}>Move site</button></div><WidgetEditor key={`${site.id}:${site.updatedAt ?? ""}`} site={site} pending={update.isPending} error={update.error} onSave={(body) => update.mutate(body)} /><button type="button" className="mini-button destructive widget-delete" disabled={remove.isPending} onClick={() => void confirm({ title: "Delete capture site?", detail: `${site.name} will stop loading and its stored screenshots will be removed.`, confirmLabel: "Delete site", destructive: true }).then((confirmed) => { if (confirmed) remove.mutate(); })}>{remove.isPending ? "Deleting…" : "Delete capture site"}</button></> : null}
     {confirmation}
   </article>;
 }

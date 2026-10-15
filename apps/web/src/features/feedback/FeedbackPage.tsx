@@ -90,7 +90,7 @@ export default function FeedbackPage() {
       {visible.length ? <div className="spot-reports">{visible.map((issue) => <SpotReport key={`${issue.repo}-${issue.number}`} issue={issue} resolved={view === "resolved"} />)}</div> : <Empty title={`No ${view === "issues" ? "open" : "resolved"} issues`} detail={source === "all" ? "Issues from GitHub and Feedback will appear here." : `No ${source === "feedback" ? "Feedback" : "GitHub"} issues match this view.`} />}
       {query.hasNextPage ? <div className="feed-pagination"><button type="button" className="button" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? "Loading…" : "Load more"}</button></div> : null}
     </> : null}
-    {view === "widgets" ? <FeedbackWidgets organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}
+    {view === "widgets" ? <FeedbackWidgets organizationId={organizationId} projectId={projectId} projects={bootstrap.projects} isAdmin={bootstrap.actor.isAdmin} /> : null}
     {view === "messaging" ? <FeedbackMessaging organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /> : null}
   </div></section>;
 }

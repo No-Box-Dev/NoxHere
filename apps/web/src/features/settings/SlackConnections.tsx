@@ -4,11 +4,13 @@ import type { Project, SlackStatus } from "../../api/contracts";
 import { patchRawJson, postRawJson, type RequestScope } from "../../api/http";
 import { platformApi } from "../../api/platform";
 import { StatusTag } from "../../components/StatusTag";
+import { useConfirmDialog } from "../../components/ConfirmDialog";
 
 type Connection = SlackStatus["connections"][number];
 type OAuthStart = { url: string };
 
 export function SlackConnections({ organizationId, projectId, projects, isAdmin }: { organizationId: string; projectId: string; projects: Project[]; isAdmin: boolean }) {
+  const { confirm, confirmation } = useConfirmDialog();
   const queryClient = useQueryClient();
   const scope: RequestScope = { organizationId, projectId };
   const queryKey = ["slack-connections", organizationId] as const;
@@ -37,11 +39,10 @@ export function SlackConnections({ organizationId, projectId, projects, isAdmin 
   const connections = status.data?.connections ?? [];
   return <>
     <div className="connect-inline-action"><p>Each workspace is an organization connection. Its project controls which Nox functionality may use it.</p>{isAdmin ? <button type="button" className="button primary-button" disabled={start.isPending} onClick={() => start.mutate({ team: null, projectId })}>{start.isPending ? "Opening Slack…" : "Add Slack workspace"}</button> : <StatusTag>View only</StatusTag>}</div>
-    {connections.length ? <div className="list-surface slack-connection-list">{connections.map((connection) => <SlackConnectionRow key={connection.id} connection={connection} projects={projects} isAdmin={isAdmin} busy={update.isPending || disconnect.isPending || start.isPending} onUpdate={(body) => update.mutate({ id: connection.id, body })} onReconnect={() => start.mutate({ team: connection.teamId, projectId: connection.projectId ?? projectId })} onDisconnect={() => {
-      if (window.confirm(`Disconnect ${connection.displayName || connection.teamName}? Nox will stop sending to channels that use it.`)) disconnect.mutate(connection.id);
-    }} />)}</div> : <div className="connect-empty"><b>No Slack workspaces connected</b><p>An organization admin can add the first workspace here. Tokens stay encrypted and are never returned to the browser.</p></div>}
+    {connections.length ? <div className="list-surface slack-connection-list">{connections.map((connection) => <SlackConnectionRow key={connection.id} connection={connection} projects={projects} isAdmin={isAdmin} busy={update.isPending || disconnect.isPending || start.isPending} onUpdate={(body) => update.mutate({ id: connection.id, body })} onReconnect={() => start.mutate({ team: connection.teamId, projectId: connection.projectId ?? projectId })} onDisconnect={() => void confirm({ title: "Disconnect Slack workspace?", detail: `${connection.displayName || connection.teamName} will stop sending to every channel that uses this connection.`, confirmLabel: "Disconnect", destructive: true }).then((confirmed) => { if (confirmed) disconnect.mutate(connection.id); })} />)}</div> : <div className="connect-empty"><b>No Slack workspaces connected</b><p>An organization admin can add the first workspace here. Tokens stay encrypted and are never returned to the browser.</p></div>}
     {(start.error || update.error || disconnect.error) ? <p className="form-error" role="alert">{errorMessage(start.error || update.error || disconnect.error)}</p> : null}
     <p className="section-note">Nox records who first opened a connection, who last reconnected it, and when it was last used successfully. Removing a workspace also clears routes that depended on it.</p>
+    {confirmation}
   </>;
 }
 

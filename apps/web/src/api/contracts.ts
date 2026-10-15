@@ -248,6 +248,14 @@ export const engineerStatsSchema = z.object({
     approvalsGivenSince: z.string().nullable(), mergedByKnown: z.number(), mergedPRs: z.number(),
     issuesClosedByKnown: z.number(), closedIssues: z.number(),
   }),
+  prAudits: z.record(z.string(), z.object({
+    startMonth: z.string(), endMonth: z.string(), completedAt: z.string(),
+    githubPRs: z.number(), cachedAllPRs: z.number(), cachedTrackedPRs: z.number(),
+  })).default({}),
+  freshness: z.object({
+    repositories: z.number(), pullRequestsAt: z.string().nullable(), issuesAt: z.string().nullable(),
+    commitsAt: z.string().nullable(), eventsAt: z.string().nullable(),
+  }).optional(),
 }).loose();
 
 export const telemetryAlertSchema = z.object({

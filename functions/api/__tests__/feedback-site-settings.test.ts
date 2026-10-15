@@ -12,7 +12,7 @@ import { onRequestPatch } from "../feedback/sites/[id]/index";
 import { getSlackChannel, resolveSlackChannels, resolveSlackInstall } from "../../lib/slack.js";
 import { requeueBlockedForSite } from "../../lib/delivery-outbox.js";
 
-function database() {
+function database({ targetProject = true, feedbackAssets = true }: { targetProject?: boolean; feedbackAssets?: boolean } = {}) {
   const runs: Array<{ sql: string; binds: unknown[] }> = [];
   return {
     runs,
@@ -24,7 +24,9 @@ function database() {
         binds: [] as unknown[],
         bind(...binds: unknown[]) { statement.binds = binds; return statement; },
         async first() {
-          if (sql.includes("FROM spot_sites")) return { id: "site-1", project_id: "playnist", slack_channel_id: null, widget_config: "{}" };
+          if (sql.includes("FROM spot_sites")) return { id: "site-1", project_id: "playnist", repo: "web", slack_channel_id: null, widget_config: "{}" };
+          if (sql.includes("FROM projects project")) return targetProject ? { id: "umbrella" } : null;
+          if (sql.includes("sqlite_master")) return feedbackAssets ? { name: "feedback_assets" } : null;
           return null;
         },
         async run() { runs.push({ sql, binds: statement.binds }); return { success: true }; },
@@ -86,6 +88,30 @@ describe("Feedback Slack site settings", () => {
 });
 
 describe("Feedback widget configuration", () => {
+  it("moves a site and all project-scoped feedback records together", async () => {
+    const db = database();
+    const response = await onRequestPatch(context(db, { projectId: "umbrella" }) as never);
+    expect(response.status).toBe(200);
+    expect(db.runs).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sql: expect.stringContaining("UPDATE spot_sites SET project_id"), binds: expect.arrayContaining(["umbrella", "site-1", 7, "playnist"]) }),
+      expect.objectContaining({ sql: expect.stringContaining("UPDATE spot_reports SET project_id"), binds: ["umbrella", 7, "site-1", "playnist"] }),
+      expect.objectContaining({ sql: expect.stringContaining("UPDATE feedback_assets SET project_id"), binds: ["umbrella", 7, "site-1", "playnist"] }),
+      expect.objectContaining({ sql: expect.stringContaining("UPDATE delivery_outbox SET project_id"), binds: ["umbrella", 7, "site-1", "playnist"] }),
+    ]));
+  });
+
+  it("rejects a target project that does not own the site's repository", async () => {
+    const response = await onRequestPatch(context(database({ targetProject: false }), { projectId: "unrelated" }) as never);
+    expect(response.status).toBe(409);
+  });
+
+  it("supports installations that do not have private evidence storage yet", async () => {
+    const db = database({ feedbackAssets: false });
+    const response = await onRequestPatch(context(db, { projectId: "umbrella" }) as never);
+    expect(response.status).toBe(200);
+    expect(db.runs.some((run) => run.sql.includes("UPDATE feedback_assets"))).toBe(false);
+  });
+
   it("requires one mandatory description and allows an optional title", async () => {
     const valid = await onRequestPatch(context(database(), {
       blocks: [
@@ -134,7 +160,7 @@ describe("Feedback widget configuration", () => {
     }) as never);
     expect(response.status).toBe(200);
     const update = db.runs.find((run) => run.sql.includes("UPDATE spot_sites SET"));
-    expect(JSON.parse(String(update?.binds[2]))).toMatchObject({
+    expect(JSON.parse(String(update?.binds[3]))).toMatchObject({
       environments: [{ name: "Production" }],
       blocks: [{ id: "description" }, { id: "impact", options: ["Low", "High"] }],
     });
@@ -149,7 +175,7 @@ describe("Feedback daily summary settings", () => {
     }) as never);
     expect(response.status).toBe(200);
     const update = db.runs.find((run) => run.sql.includes("UPDATE spot_sites SET"));
-    expect(JSON.parse(String(update?.binds[2]))).toMatchObject({
+    expect(JSON.parse(String(update?.binds[3]))).toMatchObject({
       dailySummaryEnabled: true,
     });
   });

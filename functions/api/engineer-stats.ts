@@ -52,7 +52,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     : "0";
   const fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [openPRs, openNonDraftPRs, reviewing, approvals, merges, assigned, lifetime, recent, lifetimeCommits, recentCommits, closed, coverage, audits] =
+  const [openPRs, openNonDraftPRs, reviewing, approvals, merges, assigned, lifetime, recent, lifetimeCommits, recentCommits, closed, coverage, audits, freshness] =
     await db.batch([
       db
         .prepare(
@@ -250,6 +250,20 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
            GROUP BY request.id, request.login`,
         )
         .bind(orgId),
+      db
+        .prepare(
+          `WITH active(repo) AS (SELECT value FROM json_each(?))
+           SELECT
+             (SELECT MAX(updated_at) FROM pull_requests
+               WHERE org_id = ? AND repo IN (SELECT repo FROM active)) AS pull_requests_at,
+             (SELECT MAX(updated_at) FROM issues
+               WHERE org_id = ? AND repo IN (SELECT repo FROM active)) AS issues_at,
+             (SELECT MAX(authored_at) FROM github_commits
+               WHERE org_id = ? AND repo IN (SELECT repo FROM active)) AS commits_at,
+             (SELECT MAX(created_at) FROM events
+               WHERE org = ? AND repo IN (SELECT repo FROM active) AND type LIKE 'github:%') AS events_at`,
+        )
+        .bind(JSON.stringify(activeRepos), orgId, orgId, orgId, orgLogin),
     ]);
 
   const coverageRow = coverage.results[0] as {
@@ -258,6 +272,12 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     merged_prs?: number;
     issues_closed_by_known?: number;
     closed_issues?: number;
+  } | undefined;
+  const freshnessRow = freshness.results[0] as {
+    pull_requests_at?: string | null;
+    issues_at?: string | null;
+    commits_at?: string | null;
+    events_at?: string | null;
   } | undefined;
 
   return jsonResponse({
@@ -280,6 +300,13 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       closedIssues: Number(coverageRow?.closed_issues ?? 0),
     },
     prAudits: toAuditMap(audits.results),
+    freshness: {
+      repositories: activeRepos.length,
+      pullRequestsAt: freshnessRow?.pull_requests_at ?? null,
+      issuesAt: freshnessRow?.issues_at ?? null,
+      commitsAt: freshnessRow?.commits_at ?? null,
+      eventsAt: freshnessRow?.events_at ?? null,
+    },
   });
 }
 
