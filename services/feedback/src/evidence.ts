@@ -49,7 +49,7 @@ export async function evidenceTarget(input: {
 }
 
 export async function putEvidence(bucket: R2Bucket, target: EvidenceTarget, bytes: ArrayBuffer | Uint8Array): Promise<StoredEvidence> {
-  const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const data = Uint8Array.from(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
   const digest = await crypto.subtle.digest("SHA-256", data);
   await bucket.put(target.key, data, {
     httpMetadata: { contentType: target.contentType, cacheControl: "private, no-store" },

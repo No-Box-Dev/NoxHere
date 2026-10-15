@@ -334,7 +334,7 @@ describe("public capture Worker", () => {
   });
 
   it("stores new screenshots as private evidence and queues only the authenticated API link", async () => {
-    const send = vi.fn(async () => undefined);
+    const send = vi.fn(async (_task: unknown) => undefined);
     const response = await app.request("/api/feedback/public/v1/reports", {
       method: "POST",
       headers: { Origin: "https://app.example.com", "Content-Type": "application/json" },
