@@ -132,7 +132,7 @@ jobs:
           cache: npm
           cache-dependency-path: services/feedback/package-lock.json
       - run: npm ci
-      - run: npm run types
+      - run: npm run types:check
       - run: npx tsc --noEmit
       - run: npm test
       - run: npm run build
