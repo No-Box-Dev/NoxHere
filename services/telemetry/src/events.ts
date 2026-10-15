@@ -391,19 +391,36 @@ function escapeSlack(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export function buildTelemetrySlackMessage(sourceName: string, event: TelemetryErrorEvent, occurrence: number) {
+export function buildTelemetrySlackMessage(sourceName: string, event: TelemetryErrorEvent, occurrence: number, eventId?: string) {
   const details = [
     event.data.errorCode ? `*Code:* \`${escapeSlack(event.data.errorCode)}\`` : null,
     event.data.component ? `*Component:* ${escapeSlack(event.data.component)}` : null,
+    event.error?.name ? `*Type:* ${escapeSlack(event.error.name)}` : null,
+    event.error?.status ? `*HTTP status:* ${event.error.status}` : null,
     event.environment ? `*Environment:* ${escapeSlack(event.environment)}` : null,
     event.context?.release ? `*Release:* \`${escapeSlack(event.context.release)}\`` : null,
     event.context?.runtime ? `*Runtime:* ${escapeSlack(event.context.runtime)}` : null,
+    eventId ? `*Event ID:* \`${escapeSlack(eventId)}\`` : null,
     event.message ? escapeSlack(event.message) : null,
   ].filter((line): line is string => Boolean(line));
+  const diagnosticAttributes = Object.entries(event.data.attributes ?? {}).slice(0, 6)
+    .map(([key, value]) => `• ${escapeSlack(key.slice(0, 80))}: ${escapeSlack(String(value).slice(0, 220))}`)
+    .join("\n");
+  const stack = event.error?.stack
+    ?.replace(/```/g, "''' ")
+    .slice(0, 1_800);
   return {
     text: `${sourceName}: ${event.title}`,
     blocks: [
       { type: "section", text: { type: "mrkdwn", text: `:rotating_light: *${escapeSlack(event.title)}*\n${details.join("\n")}` } },
+      ...(diagnosticAttributes ? [{
+        type: "section",
+        text: { type: "mrkdwn", text: `*Diagnostic context*\n${diagnosticAttributes}` },
+      }] : []),
+      ...(stack ? [{
+        type: "section",
+        text: { type: "mrkdwn", text: `*Stack excerpt*\n\`\`\`${escapeSlack(stack).slice(0, 1_800)}\`\`\`` },
+      }] : []),
       ...(event.url ? [{
         type: "actions",
         elements: [{ type: "button", text: { type: "plain_text", text: "Open" }, url: event.url }],
@@ -587,26 +604,42 @@ async function storeError(
     status: "open" | "acknowledged" | "resolved";
   }>();
   const cooldownMs = source.error_cooldown_minutes * 60_000;
+  const notifyEveryOccurrence = source.key_kind !== "publishable"
+    && normalizedEvent.data.attributes?.notifyEveryOccurrence === true;
   const shouldNotify = source.aggregate_only_slack !== 1 && Boolean(source.slack_channel_id) && (
-    group?.status === "resolved"
+    notifyEveryOccurrence
+    || group?.status === "resolved"
     || !group?.last_notified_at
     || receivedAt.valueOf() - Date.parse(group.last_notified_at) >= cooldownMs
   );
   const occurrence = (group?.occurrence_count ?? 0) + 1;
   const payload = { ...normalizedEvent, data: { ...normalizedEvent.data, fingerprint },
     eventId, sourceId: source.source_id, source: source.source_name };
+  const diagnosticSample = JSON.stringify({
+    eventId,
+    message: normalizedEvent.message ?? null,
+    url: normalizedEvent.url ?? null,
+    error: normalizedEvent.error ?? null,
+    context: normalizedEvent.context ?? null,
+    data: { attributes: normalizedEvent.data.attributes ?? {} },
+  });
   const statements = [
     eventStatement(env, source, normalizedEvent, eventId, payload),
     env.NOX_DB.prepare(
       `INSERT INTO cue_error_groups
          (org_id, source_id, fingerprint, title, error_code, component, environment,
-          first_seen_at, last_seen_at, occurrence_count, last_notified_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+          first_seen_at, last_seen_at, occurrence_count, last_notified_at,
+          grouping_kind, sample_json, first_release, last_release)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
        ON CONFLICT(source_id, fingerprint) DO UPDATE SET
          title = excluded.title, error_code = excluded.error_code,
          component = excluded.component, environment = excluded.environment,
          last_seen_at = excluded.last_seen_at,
          occurrence_count = cue_error_groups.occurrence_count + 1,
+         grouping_kind = excluded.grouping_kind,
+         sample_json = excluded.sample_json,
+         first_release = COALESCE(cue_error_groups.first_release, excluded.first_release),
+         last_release = COALESCE(excluded.last_release, cue_error_groups.last_release),
          status = CASE WHEN cue_error_groups.status = 'resolved' THEN 'open' ELSE cue_error_groups.status END,
          acknowledged_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_at END,
          acknowledged_by = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_by END,
@@ -617,6 +650,8 @@ async function storeError(
       source.org_id, source.source_id, fingerprint, normalizedEvent.title, normalizedEvent.data.errorCode ?? null,
       normalizedEvent.data.component ?? null, normalizedEvent.data.environment ?? null,
       receivedAt.toISOString(), receivedAt.toISOString(), shouldNotify ? receivedAt.toISOString() : null,
+      event.data.fingerprint ? "explicit" : "inferred", diagnosticSample,
+      normalizedEvent.context?.release ?? null, normalizedEvent.context?.release ?? null,
     ),
     env.NOX_DB.prepare(
       `INSERT INTO cue_error_daily_groups
@@ -644,7 +679,7 @@ async function storeError(
         route: "incidents",
         routeContext: { kind: "source", id: source.source_id },
         idempotencyKey: `telemetry:error:${eventId}`,
-        message: buildTelemetrySlackMessage(source.source_name, normalizedEvent, occurrence),
+        message: buildTelemetrySlackMessage(source.source_name, normalizedEvent, occurrence, eventId),
       })
     : Promise.resolve(null);
   const [queued, githubQueued] = await Promise.all([

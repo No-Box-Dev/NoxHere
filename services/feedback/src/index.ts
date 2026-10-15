@@ -39,6 +39,7 @@ import {
   receiveScreenshotOutcome,
   receiveWidgetFailure,
   receiveWidgetInstall,
+  reportSiteError,
 } from "./telemetry";
 import { resolutionResponsePage, submitResolutionResponse, type FeedbackEnv } from "./resolution-response";
 
@@ -183,6 +184,32 @@ async function submitReport(context: AppContext) {
       }
     }
     console.error(JSON.stringify({ event: "feedback.report.queue_failed", siteId: site.id, captureId, error: message(error) }));
+    try {
+      await reportSiteError(context, {
+        siteId: site.id,
+        sourceEventId: captureId,
+        title: "Feedback report submission failed",
+        message: message(error),
+        component: "feedback.report.submit",
+        errorCode: "FEEDBACK_REPORT_DELIVERY_FAILED",
+        errorName: error instanceof Error ? error.name : "Error",
+        errorStack: error instanceof Error ? error.stack : null,
+        environment: params.environment,
+        url: context.req.url,
+        attributes: {
+          captureId,
+          hasScreenshot: Boolean(params.screenshot),
+          payloadBytes: new TextEncoder().encode(JSON.stringify(body)).byteLength,
+        },
+      });
+    } catch (telemetryError) {
+      console.error(JSON.stringify({
+        event: "feedback.report.incident_failed",
+        siteId: site.id,
+        captureId,
+        error: message(telemetryError),
+      }));
+    }
     return jsonError(context, "Issue delivery is temporarily unavailable", 503);
   }
 
@@ -224,7 +251,11 @@ async function submitErrors(context: AppContext) {
   if (config.autoErrorLogging !== true) return jsonError(context, "Automatic error logging is not enabled", 404);
   const environment = environmentForOrigin(config, requestOrigin(context.req.raw))?.name ?? null;
 
-  const queued: Array<{ task: CaptureTask; result: { fingerprint: string; action: "queued"; issueId: string } }> = [];
+  const queued: Array<{
+    task: CaptureTask;
+    incident: Parameters<typeof reportSiteError>[1];
+    result: { fingerprint: string; action: "queued"; issueId: string };
+  }> = [];
   for (const candidate of body.errors) {
     if (!plainObject(candidate) || typeof candidate.message !== "string" || !candidate.message.trim()) continue;
     const errorMessage = candidate.message.slice(0, 10_000);
@@ -235,7 +266,10 @@ async function submitErrors(context: AppContext) {
       .replace(/\b\d+\b/g, "#");
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${normalized}|${source || ""}`));
     const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-    const captureId = crypto.randomUUID();
+    const suppliedEventId = stringField(candidate.eventId, 100);
+    const captureId = suppliedEventId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(suppliedEventId)
+      ? suppliedEventId
+      : crypto.randomUUID();
     const params: ReportParams = {
       attemptId: null,
       siteId: site.id,
@@ -264,11 +298,52 @@ async function submitErrors(context: AppContext) {
       blockValues: null,
     };
     const task = validateQueueTask(buildCaptureTask({ site, params, captureId, screenshotUrl: null, issueType: "error" }));
-    queued.push({ task, result: { fingerprint, action: "queued", issueId: captureId } });
+    const consoleEntries = Array.isArray(candidate.console) ? candidate.console.slice(-20) : [];
+    const consoleAttributes = Object.fromEntries(consoleEntries.flatMap((entry, index) => {
+      if (!plainObject(entry)) return [];
+      const line = [stringField(entry.timestamp, 40), stringField(entry.type, 30), stringField(entry.message, 300)]
+        .filter(Boolean).join(" · ");
+      return line ? [[`console.${index}`, line]] : [];
+    }));
+    queued.push({
+      task,
+      incident: {
+        siteId: site.id,
+        sourceEventId: captureId,
+        title: "Unhandled browser error",
+        message: errorMessage,
+        component: "browser.unhandled",
+        errorCode: stringField(candidate.code, 120) || "BROWSER_UNHANDLED_ERROR",
+        errorName: stringField(candidate.name, 120) || "Error",
+        errorStack: stringField(candidate.stack, 8_000),
+        environment,
+        occurredAt: stringField(candidate.timestamp, 40),
+        url: stringField(candidate.url, 2_048),
+        fatal: true,
+        unhandled: true,
+        attributes: {
+          ...(source ? { source } : {}),
+          ...(Number.isInteger(candidate.lineno) ? { line: Number(candidate.lineno) } : {}),
+          ...(Number.isInteger(candidate.colno) ? { column: Number(candidate.colno) } : {}),
+          ...(stringField(candidate.browser, 200) ? { browser: stringField(candidate.browser, 200)! } : {}),
+          ...(stringField(candidate.os, 200) ? { os: stringField(candidate.os, 200)! } : {}),
+          ...(stringField(candidate.release, 120) ? { release: stringField(candidate.release, 120)! } : {}),
+          ...(Number.isInteger(candidate.status) ? { status: Number(candidate.status) } : {}),
+          ...(stringField(candidate.correlationId, 120) ? { correlationId: stringField(candidate.correlationId, 120)! } : {}),
+          ...consoleAttributes,
+          online: candidate.online !== false,
+          visibility: stringField(candidate.visibility, 30) || "unknown",
+        },
+      },
+      result: { fingerprint, action: "queued", issueId: captureId },
+    });
   }
   if (!queued.length) return jsonError(context, "No valid errors supplied", 400);
 
   try {
+    // Store every occurrence as an Incident before acknowledging the browser.
+    // A retry carries the same eventId and is therefore idempotent.
+    await Promise.all(queued.map(({ incident }) => reportSiteError(context, incident)));
     await context.env.TASK_QUEUE.sendBatch(queued.map(({ task }) => ({ body: task })));
   } catch (error) {
     console.error(JSON.stringify({ event: "feedback.errors.queue_failed", siteId: site.id, count: queued.length, error: message(error) }));

@@ -50,6 +50,7 @@ jobs:
           npm run build:api-gateway
         env:
           VITE_GITHUB_APP_CLIENT_ID: ${{ vars.VITE_GITHUB_CLIENT_ID }}
+          VITE_BUILD_SHA: ${{ env.DEPLOY_SHA }}
 
       - name: Resolve dedicated staging Activity database
         run: node scripts/prepare-staging-activity-database.mjs
@@ -92,6 +93,7 @@ jobs:
           test -n "$TELEMETRY_INGEST_KEY"
           test -n "$NOXHERE_IDENTITY_HASH_KEY"
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/core-api/wrangler.jsonc --env staging
+          printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/gateway/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env staging
       - name: Deploy staging private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
@@ -109,7 +111,7 @@ jobs:
       - name: Deploy staging background worker
         run: npx wrangler deploy --config services/scheduler/wrangler.toml --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging NoxHere gateway
-        run: npx wrangler deploy --config services/gateway/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/gateway/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Smoke staging release
         run: node scripts/smoke-deployment.mjs https://noxhere-staging.jasper-414.workers.dev https://noxhere-feedback-staging.jasper-414.workers.dev "$DEPLOY_SHA"
       - name: Verify every staging API operation
@@ -157,6 +159,7 @@ jobs:
           test -n "$TELEMETRY_INGEST_KEY"
           test -n "$NOXHERE_IDENTITY_HASH_KEY"
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/core-api/wrangler.jsonc --env=""
+          printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/gateway/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env=""
       - name: Deploy production private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
@@ -176,7 +179,7 @@ jobs:
       - name: Deploy production NoxHere gateway
         run: |
           GATEWAY_VERSION_TAG="${DEPLOY_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          npx wrangler versions upload --config services/gateway/wrangler.jsonc --env="" --tag "$GATEWAY_VERSION_TAG" --message "$DEPLOY_SHA"
+          npx wrangler versions upload --config services/gateway/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --tag "$GATEWAY_VERSION_TAG" --message "$DEPLOY_SHA"
           for attempt in 1 2 3 4 5; do
             if npx wrangler versions deploy --config services/gateway/wrangler.jsonc --env="" --version-tag "$GATEWAY_VERSION_TAG" --message "$DEPLOY_SHA" --yes; then
               break

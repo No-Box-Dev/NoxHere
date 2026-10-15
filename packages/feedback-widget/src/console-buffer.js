@@ -105,13 +105,8 @@ export function autoReportErrors(siteId, apiUrl) {
   const MAX_QUEUE = 100;
 
   const queue = [];
-  const reported = new Set();
   let flushTimer = null;
   let flushing = false;
-
-  function fingerprint(msg, source) {
-    return `${msg}|${source || ''}`;
-  }
 
   async function flush() {
     if (flushing || queue.length === 0) return;
@@ -149,14 +144,15 @@ export function autoReportErrors(siteId, apiUrl) {
   }
 
   function enqueue(errorData) {
-    const fp = fingerprint(errorData.message, errorData.source);
-    if (reported.has(fp)) return;
-    reported.add(fp);
-
+    errorData.eventId = crypto.randomUUID();
     errorData.url = window.location.href;
     errorData.browser = getBrowser();
     errorData.os = getOS();
     errorData.timestamp = new Date().toISOString();
+    errorData.release = document.documentElement.dataset.buildSha || null;
+    errorData.online = navigator.onLine;
+    errorData.visibility = document.visibilityState;
+    errorData.console = consoleLogs.slice(-20);
 
     // Cap the queue so repeated network failures don't leak memory.
     if (queue.length >= MAX_QUEUE) queue.shift();
@@ -168,6 +164,7 @@ export function autoReportErrors(siteId, apiUrl) {
   const onError = (event) => {
     if (event.message?.startsWith('[Feedback]')) return;
     enqueue({
+      name: event.error?.name || 'Error',
       message: event.message || 'Unknown error',
       source: event.filename || null,
       lineno: event.lineno || null,
@@ -179,6 +176,7 @@ export function autoReportErrors(siteId, apiUrl) {
   const onRejection = (event) => {
     const reason = event.reason;
     enqueue({
+      name: reason?.name || 'UnhandledPromiseRejection',
       message: reason?.message || String(reason) || 'Unhandled promise rejection',
       source: null,
       lineno: null,
@@ -187,12 +185,29 @@ export function autoReportErrors(siteId, apiUrl) {
     });
   };
 
+  const onOperationalError = (event) => {
+    const detail = event.detail || {};
+    enqueue({
+      name: detail.name || 'OperationalError',
+      message: detail.message || 'Application operation failed',
+      source: detail.source || window.location.pathname,
+      lineno: null,
+      colno: null,
+      stack: detail.stack || null,
+      status: detail.status || null,
+      code: detail.code || null,
+      correlationId: detail.correlationId || null,
+    });
+  };
+
   window.addEventListener('error', onError);
   window.addEventListener('unhandledrejection', onRejection);
+  window.addEventListener('noxhere:operational-error', onOperationalError);
 
   return () => {
     window.removeEventListener('error', onError);
     window.removeEventListener('unhandledrejection', onRejection);
+    window.removeEventListener('noxhere:operational-error', onOperationalError);
     if (flushTimer) {
       clearTimeout(flushTimer);
       flushTimer = null;
