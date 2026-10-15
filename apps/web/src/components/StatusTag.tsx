@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Badge } from "@/components/ui/badge";
 
 type StatusTagProps = {
   tone?: "neutral" | "positive" | "warning" | "danger";
@@ -6,5 +7,6 @@ type StatusTagProps = {
 };
 
 export function StatusTag({ tone = "neutral", children }: StatusTagProps) {
-  return <span className={`status-tag ${tone}`}>{children}</span>;
+  const variant = tone === "positive" ? "success" : tone === "neutral" ? "neutral" : tone;
+  return <Badge className={`status-tag ${tone}`} variant={variant}>{children}</Badge>;
 }

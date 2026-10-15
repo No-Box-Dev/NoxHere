@@ -185,7 +185,7 @@ describe("NoxHere API-backed platform", () => {
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/slack");
 
-    await screen.findByRole("heading", { name: "Slack" });
+    await screen.findByRole("region", { name: "Slack" });
     await user.click(await screen.findByRole("button", { name: "Send to Slack" }));
     expect(await screen.findByText("Choose a Slack channel before sending the message.")).toHaveAttribute("role", "alert");
 
@@ -218,7 +218,7 @@ describe("NoxHere API-backed platform", () => {
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings/integrations/slack");
 
-    await screen.findByRole("heading", { name: "Slack" });
+    await screen.findByRole("region", { name: "Slack" });
     expect(await screen.findByText(/Opened by jasper/)).toBeInTheDocument();
     expect(screen.getByText(/Last used/)).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: "Connection name for No Box Dev" }), "Product alerts");
@@ -285,13 +285,16 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByTestId("current-route")).toHaveTextContent("/");
   });
 
-  it("uses permanent NoxHere branding and keeps project selection in the top bar", async () => {
+  it("uses permanent Nox branding and keeps project selection beside it", async () => {
     renderApp(<App />, `/no-box-dev/${project.id}/connections/overview`);
 
-    expect(await screen.findByRole("link", { name: "NoxHere home" })).toHaveTextContent("NoxHere");
-    expect(screen.getByRole("button", { name: "Open project switcher" })).toHaveTextContent("Projects");
+    const brandLink = await screen.findByRole("link", { name: "NoxHere home" });
+    expect(within(brandLink).getByRole("img", { name: "Nox" })).toBeInTheDocument();
+    const projectSwitcher = screen.getByRole("button", { name: "Open project switcher" });
+    expect(projectSwitcher).toHaveTextContent(project.name);
+    expect(projectSwitcher.closest(".brand-row")).not.toBeNull();
+    expect(projectSwitcher.closest(".topbar-actions")).toBeNull();
     expect(screen.getByRole("link", { name: "Open API documentation" })).toHaveAttribute("href", "/developers");
-    expect(screen.queryByText(project.name)?.closest(".brand-row")).toBeNull();
   });
 
   it("returns an unknown project URL to the chooser instead of selecting the first project", async () => {
@@ -1145,7 +1148,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("keeps Stats and Issues and Incidents as separate unified capabilities", async () => {
     const stats = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/stats/overview`);
-    expect(await screen.findByRole("tab", { name: /Dashboard/ })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Dashboard" })).toHaveClass("active");
     expect(screen.queryByRole("link", { name: /^Incidents$/ })).not.toBeInTheDocument();
     stats.unmount();
 

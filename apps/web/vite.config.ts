@@ -53,6 +53,9 @@ function localAuthProfile() {
 }
 
 export default defineConfig({
+  resolve: {
+    alias: { "@": resolve("src") },
+  },
   publicDir: "../../public",
   plugins: [react(), localAuthProfile(), {
     name: "noxhere-openapi-contract",

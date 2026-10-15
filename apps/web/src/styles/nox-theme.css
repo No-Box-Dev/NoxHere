@@ -1,0 +1,80 @@
+:root {
+  color-scheme: light;
+  --bone-0: #fcfaf6;
+  --bone-50: #f6f2eb;
+  --bone-100: #ece7de;
+  --bone-200: #d9d3c8;
+  --bone-300: #bbb5aa;
+  --carbon-400: #939393;
+  --carbon-500: #565454;
+  --carbon-800: #30332f;
+  --carbon-900: #201e1d;
+  --signal-50: #fff0ec;
+  --signal-100: #ffd9d0;
+  --signal-300: #ff8c74;
+  --signal-500: #ff5738;
+  --signal-700: #b63827;
+  --background: var(--bone-0);
+  --foreground: var(--carbon-900);
+  --card: var(--bone-0);
+  --card-foreground: var(--carbon-900);
+  --popover: var(--bone-0);
+  --popover-foreground: var(--carbon-900);
+  --primary: var(--signal-500);
+  --primary-hover: var(--signal-300);
+  --primary-foreground: var(--carbon-900);
+  --secondary: var(--bone-100);
+  --secondary-foreground: var(--carbon-900);
+  --muted: var(--bone-100);
+  --muted-foreground: var(--carbon-500);
+  --accent: var(--bone-50);
+  --accent-foreground: var(--carbon-900);
+  --border: var(--bone-300);
+  --input: var(--carbon-400);
+  --ring: var(--carbon-900);
+  --success: #26734a;
+  --success-wash: #e7f1eb;
+  --warning: #665a8e;
+  --warning-wash: #efecf5;
+  --danger: #b22e4a;
+  --danger-wash: #f8e7eb;
+  --info: #326b93;
+  --info-wash: #e7f0f6;
+  --sidebar-background: var(--bone-50);
+  --sidebar-foreground: var(--carbon-900);
+  --cut-md: 10px;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #1b1a18;
+  --foreground: #f7f2e9;
+  --card: #282522;
+  --card-foreground: #f7f2e9;
+  --popover: #332f2b;
+  --popover-foreground: #f7f2e9;
+  --primary: var(--signal-500);
+  --primary-hover: var(--signal-300);
+  --primary-foreground: var(--carbon-900);
+  --secondary: #332f2b;
+  --secondary-foreground: #f7f2e9;
+  --muted: #282522;
+  --muted-foreground: #aaa39d;
+  --accent: #332f2b;
+  --accent-foreground: #f7f2e9;
+  --border: #49433d;
+  --input: #756e67;
+  --ring: var(--bone-0);
+  --success: #78bd95;
+  --success-wash: #20362a;
+  --warning: #b5a6d7;
+  --warning-wash: #302b3d;
+  --danger: #ff9aae;
+  --danger-wash: #4b2530;
+  --info: #8fc2e1;
+  --info-wash: #203442;
+  --sidebar-background: var(--carbon-900);
+  --sidebar-foreground: #f7f2e9;
+}
+
+::selection { background: var(--signal-100); color: var(--carbon-900); }

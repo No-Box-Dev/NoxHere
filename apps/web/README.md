@@ -7,6 +7,17 @@ deployment are orchestrated from the repository root; the former standalone
 This is the clean replacement frontend for NoxHere. It does not import UI code,
 CSS, routes, or state from the previous application.
 
+## UI system
+
+The app uses the Nox ShadCN registry as its visual source of truth. Runtime
+components are checked into `src/components/ui` and imported directly through
+the `@/components/ui/*` alias, following ShadCN's source-ownership model. Brand
+tokens live in `src/styles/nox-theme.css`; shared app chrome and reusable
+components use those semantic tokens instead of service-specific theming.
+
+When the branding registry is running locally on port 5173, `components.json`
+links the `@nox` namespace to its generated registry components.
+
 ## Ownership
 
 - **NoxHere** owns the application shell, authenticated session, project context,

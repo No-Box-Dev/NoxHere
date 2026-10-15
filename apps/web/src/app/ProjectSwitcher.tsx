@@ -9,7 +9,7 @@ type ProjectSwitcherProps = {
   projects: Project[];
   selectedId: string;
   canCreate: boolean;
-  placement?: "sidebar" | "topbar";
+  placement?: "sidebar" | "topbar" | "brand";
   onSwitch: (projectId: string) => void;
 };
 

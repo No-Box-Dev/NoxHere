@@ -9,7 +9,6 @@ type SettingsNavGroup = {
 export function SettingsShell({ base, active, groups, children }: { base: string; active: string; groups: readonly SettingsNavGroup[]; children: ReactNode }) {
   return <div className="settings-shell">
     <aside className="settings-navigation" aria-label="Settings sections">
-      <header><span className="eyebrow">PROJECT SETTINGS</span><h1>Settings</h1></header>
       {groups.map((group, index) => <div className="settings-navigation-group" key={group.label ?? index}>
         {group.label ? <span>{group.label}</span> : null}
         <nav>{group.items.map((item) => <NavLink className={active === item.id ? "active" : ""} to={`${base}/${item.id}`} key={item.id}>{item.label}</NavLink>)}</nav>
@@ -20,7 +19,7 @@ export function SettingsShell({ base, active, groups, children }: { base: string
 }
 
 export function SettingsPageHeader({ title, description, scope = "Project" }: { title: string; description: string; scope?: "Project" | "Workspace" }) {
-  return <header className="settings-page-header"><div><h2>{title}</h2><p>{description}</p></div><span>{scope} scope</span></header>;
+  return <div className="settings-page-header" role="region" aria-label={title}><p>{description}</p><span>{scope} scope</span></div>;
 }
 
 export function SettingsSection({ title, description, children }: { title?: string; description?: string; children: ReactNode }) {
