@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useOutletContext, useParams, useSearchParams } from "react-router-dom";
 import type { PlanningTask, TaskStage, PlanningFeatureAttachment, PlanningFeatureRecord } from "../../api/contracts";
 import { platformApi, projectSettingsQueryKey } from "../../api/platform";
-import { postRawJson } from "../../api/http";
 import { ListRow } from "../../components/ListRow";
 import { useConfirmDialog } from "../../components/ConfirmDialog";
 import { SearchableSelect } from "../../components/SearchableSelect";
@@ -265,7 +264,6 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
       <select aria-label="Sort features" value={sort} onChange={(event) => setSort(event.target.value as "updated" | "title")}><option value="updated">Default</option><option value="title">Title A–Z</option></select>
       <span className="toolbar-spacer" />{mode === "board" ? <button type="button" className="button" disabled={productionCount === 0 || saving} onClick={completeProduction}>{saving ? "Moving…" : `Move production to completed${productionCount ? ` (${productionCount})` : ""}`}</button> : null}<button type="button" className="button primary-button" onClick={() => setAdding(true)}>New feature</button>
     </div>
-    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="feature" owner={person} features={features} onApply={(draft) => createFeature(draft.title, mode === "backlog", person, draft.description)} />
     {adding ? <form className="ticket-create-row" onSubmit={addFeature}><input autoFocus aria-label="Feature title" value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder={mode === "backlog" ? "Add to backlog…" : "Feature title…"} /><button className="button primary-button">Create feature</button><button type="button" className="button" onClick={() => setAdding(false)}>Cancel</button></form> : null}
     {mode === "board" ? <div className="ticket-board full-board">{stages.map((stage) => { const items = active.filter((feature) => feature.status === stage.id); return <section className="ticket-column" aria-label={`${stage.label} column`} style={{ "--stage-color": stage.color } as CSSProperties} key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, stage.id)}><header><span className="stage-title"><i /><b>{stage.label}</b></span><span>{items.length}</span></header>{items.map((feature) => <div draggable onDragStart={(event) => { event.dataTransfer.setData("text/plain", String(feature.id)); event.dataTransfer.effectAllowed = "move"; }} key={feature.id}><FeatureCard organizationId={organizationId} projectId={projectId} feature={feature} members={members} onOpen={() => setSelectedId(feature.id)} onPriority={(priority) => saveFeature({ ...feature, priority, updated: "Now" })} onAssign={(owner) => saveFeature({ ...feature, owners: owner ? [owner] : [], updated: "Now" })} onMoveToBacklog={() => saveFeature({ ...feature, backlog: true, updated: "Now", history: ["Moved to Backlog · now", ...feature.history] })} onDelete={() => deleteFeature(feature)} /></div>)}<button type="button" className="ticket-add" onClick={() => setAdding(true)}>＋ Add feature</button></section>; })}</div> : null}
     {mode === "backlog" ? <div className="ticket-list">{backlog.map((feature) => <div className="list-row ticket-backlog-row" key={feature.id}><PriorityFlag feature={feature} onChange={(priority) => saveFeature({ ...feature, priority, updated: "Now" })} /><button type="button" className="list-copy row-open-button" onClick={() => setSelectedId(feature.id)}><b>{feature.title}</b><small>#{feature.id} · {feature.links.length} {feature.links.length === 1 ? "link" : "links"} · {feature.owners.join(", ") || "Unassigned"}</small></button><span className="list-meta"><AttachmentUploadButton organizationId={organizationId} projectId={projectId} feature={feature} /><button className="mini-button" onClick={() => saveFeature({ ...feature, backlog: false, updated: "Now", history: ["Moved to Features · now", ...feature.history] })}>Move to features</button><button type="button" className="ticket-card-action destructive" aria-label={`Delete ${feature.title}`} title="Delete" onClick={() => void confirm({ title: "Delete feature?", detail: `“${feature.title}” will be removed from planning.`, confirmLabel: "Delete feature", destructive: true }).then((confirmed) => { if (confirmed) deleteFeature(feature); })}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" /></svg></button></span></div>)}</div> : null}
@@ -331,45 +329,12 @@ function TasksBoard({ organizationId, projectId, features, tasks, actor, members
     </div>
     {editingWorkflow && ownBoard ? <div className="personal-task-workflow"><StageSettings title="My task workflow" detail="Your columns are private preferences for this project. Start with GTD, then rename, reorder, add, or remove stages to match how you work." stages={draftStages} setStages={setDraftStages} saveStages={persistWorkflow} saving={saveWorkflow.isPending} error={saveWorkflow.error} completionSelectable maxStages={10} /><button type="button" className="button" disabled={saveWorkflow.isPending} onClick={() => persistWorkflow(defaultTaskStages.map((stage) => ({ ...stage })))}>Reset to GTD</button></div> : null}
     {workflowQuery.isError ? <DataNotice title="Personal workflow unavailable" detail="The task board could not load this person's workflow." /> : null}
-    <PlanningAiBar organizationId={organizationId} projectId={projectId} kind="task" owner={person} features={features} onApply={(draft) => createTask({ title: draft.title, note: draft.description, owner: person, featureNumber: draft.featureNumber, stageId: stages.find((stage) => !stage.completed)?.id ?? "inbox" })} />
     {adding ? <div className="board-task-composer"><TaskComposer owner={person} initialStageId={stages.find((stage) => !stage.completed)?.id ?? "inbox"} features={features} onCreate={(input) => { createTask(input); setAdding(false); }} onCancel={() => setAdding(false)} saving={saving} /></div> : null}
     {!workflowQuery.isError ? <div className="ticket-board task-board">{stages.map((stage) => {
       const items = visibleTasks.filter((task) => stageForTask(task) === stage.id).sort((a, b) => a.position - b.position || byTitle(a, b));
       return <section className="ticket-column" aria-label={`${stage.label} column`} style={{ "--stage-color": stage.color } as CSSProperties} key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, stage.id, items.length)}><header><span className="stage-title"><i /><b>{stage.label}</b></span><span>{items.length}</span></header>{items.map((task, index) => <div draggable onDragStart={(event) => { event.dataTransfer.setData("text/plain", task.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.stopPropagation(); drop(event, stage.id, index); }} key={task.id}><TaskCard task={task} feature={task.featureNumber === null ? null : featureByNumber.get(task.featureNumber) ?? null} color={stage.color} onDelete={() => deleteTask(task.id)} /></div>)}</section>;
     })}</div> : null}
   </>;
-}
-
-type PlanningDraft = { title: string; description: string; featureNumber: number | null; message: string };
-type PlanningMessage = { role: "user" | "assistant"; content: string };
-
-function PlanningAiBar({ organizationId, projectId, kind, owner, features, onApply }: { organizationId: string; projectId: string; kind: "feature" | "task"; owner: string; features: PlanningFeature[]; onApply: (draft: PlanningDraft) => void }) {
-  const [prompt, setPrompt] = useState("");
-  const [draft, setDraft] = useState<PlanningDraft | null>(null);
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<PlanningMessage[]>([]);
-  const assist = useMutation({
-    mutationFn: () => postRawJson<{ draft: PlanningDraft }>("/api/v1/planning/assist", {
-      kind,
-      prompt: prompt.trim(),
-      messages,
-      owner,
-      features: features.filter((feature) => !feature.closed).slice(0, 30).map((feature) => ({ number: feature.id, title: feature.title, owners: feature.owners })),
-    }, { organizationId, projectId }),
-    onSuccess: (result) => {
-      setMessages((current) => [...current, { role: "user", content: prompt.trim() }, { role: "assistant", content: result.draft.message }]);
-      setDraft(result.draft);
-      setPrompt("");
-    },
-  });
-  const submit = (event: FormEvent) => { event.preventDefault(); if (prompt.trim()) assist.mutate(); };
-  const close = () => { setOpen(false); setPrompt(""); setDraft(null); setMessages([]); assist.reset(); };
-  const apply = () => { if (!draft) return; onApply(draft); close(); };
-  return <><div className="planning-ai-bar">
-    <span className="planning-ai-mark" aria-hidden="true">✦</span>
-    <span>Plan a {kind} with AI, refine it in chat, and create it when the description is ready.</span>
-    <button type="button" className="button" onClick={() => setOpen(true)}>Open AI planner</button>
-  </div>{open ? <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}><section className="planning-ai-dialog" role="dialog" aria-modal="true" aria-labelledby={`planning-ai-${kind}-title`}><header><div><span className="eyebrow">AI PLANNER</span><h2 id={`planning-ai-${kind}-title`}>Draft a {kind}</h2></div><button type="button" className="dialog-close" aria-label="Close AI planner" onClick={close}>×</button></header><div className="planning-ai-conversation">{messages.length ? messages.map((message, index) => <p className={`planning-ai-message ${message.role}`} key={index}><b>{message.role === "user" ? "You" : "Nox"}</b>{message.content}</p>) : <p className="section-note">Describe the outcome you need. You can keep chatting to refine the title, description, and linked feature.</p>}</div>{draft ? <div className="planning-ai-preview"><label>Title<input value={draft.title} maxLength={200} onChange={(event) => setDraft((current) => current ? { ...current, title: event.target.value } : current)} /></label><label>Description<textarea value={draft.description} maxLength={1_200} rows={6} onChange={(event) => setDraft((current) => current ? { ...current, description: event.target.value } : current)} /></label>{draft.featureNumber ? <small>Linked to feature #{draft.featureNumber}</small> : null}</div> : null}<form className="planning-ai-prompt" onSubmit={submit}><textarea autoFocus aria-label={`Ask AI to draft a ${kind}`} value={prompt} maxLength={2_000} rows={3} onChange={(event) => { setPrompt(event.target.value); assist.reset(); }} placeholder={messages.length ? "Ask for a change or add more context…" : `Describe the ${kind}, desired outcome, and acceptance criteria…`} />{assist.isError ? <span className="form-error" role="alert">{assist.error.message}</span> : null}<footer><button type="button" className="button" onClick={close}>Cancel</button>{draft ? <button type="button" className="button primary-button" disabled={!draft.title.trim()} onClick={apply}>Create {kind}</button> : null}<button className="button" disabled={!prompt.trim() || assist.isPending}>{assist.isPending ? "Thinking…" : messages.length ? "Refine draft" : "Create draft"}</button></footer></form></section></div> : null}</>;
 }
 
 function TaskComposer({ owner, initialStageId, features, onCreate, onCancel, saving }: { owner: string; initialStageId: string; features: PlanningFeature[]; onCreate: (input: TaskInput) => void; onCancel: () => void; saving: boolean }) {
