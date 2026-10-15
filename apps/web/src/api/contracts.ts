@@ -258,6 +258,24 @@ export const telemetryAlertSchema = z.object({
   status: z.enum(["active", "resolved"]),
   occurrences: z.number(),
   happenedAt: z.string(),
+  diagnostics: z.object({
+    eventId: z.string().nullable(),
+    message: z.string().nullable(),
+    url: z.string().nullable(),
+    error: z.object({
+      name: z.string().nullable(),
+      message: z.string().nullable(),
+      code: z.string().nullable(),
+      status: z.number().nullable(),
+      stack: z.string().nullable(),
+    }),
+    context: z.object({
+      release: z.string().nullable(),
+      runtime: z.string().nullable(),
+      sdkVersion: z.string().nullable(),
+    }),
+    attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+  }).nullable().optional(),
 });
 
 export const telemetryAlertRuleSchema = z.object({

@@ -401,4 +401,32 @@ describe("public capture Worker", () => {
       await env.DB.prepare("DELETE FROM config WHERE org_id = 1 AND key = 'settings'").run();
     }
   });
+
+  it("persists every automatic browser error as a telemetry incident before acknowledging it", async () => {
+    const eventId = crypto.randomUUID();
+    const response = await SELF.fetch("https://capture.test/errors", {
+      method: "POST",
+      headers: { Origin: "https://app.example.com", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        siteId: "site-1",
+        errors: [{
+          eventId,
+          name: "ApiError",
+          message: "BROWSER_INCIDENT_TEST",
+          code: "HTTP_503",
+          status: 503,
+          correlationId: "ray-123",
+          url: "https://app.example.com/private?token=secret",
+          stack: "ApiError: BROWSER_INCIDENT_TEST at https://app.example.com/app.js:1:2",
+          timestamp: new Date().toISOString(),
+        }],
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      results: [{ issueId: eventId, action: "queued" }],
+    });
+  });
 });

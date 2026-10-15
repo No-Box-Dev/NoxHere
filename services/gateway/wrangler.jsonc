@@ -36,6 +36,10 @@
     {
       "binding": "FEEDBACK",
       "service": "noxhere-feedback"
+    },
+    {
+      "binding": "TELEMETRY_INGEST",
+      "service": "noxhere-telemetry"
     }
   ],
   "d1_databases": [
@@ -47,7 +51,9 @@
     }
   ],
   "vars": {
-    "PUBLIC_APP_ORIGIN": "https://app.noxhere.com"
+    "PUBLIC_APP_ORIGIN": "https://app.noxhere.com",
+    "BUILD_SHA": "development",
+    "ENVIRONMENT": "production"
   },
   "observability": {
     "enabled": true,
@@ -67,7 +73,9 @@
       "workers_dev": true,
       "routes": [],
       "vars": {
-        "PUBLIC_APP_ORIGIN": "https://noxhere-staging.jasper-414.workers.dev"
+        "PUBLIC_APP_ORIGIN": "https://noxhere-staging.jasper-414.workers.dev",
+        "BUILD_SHA": "development",
+        "ENVIRONMENT": "staging"
       },
       "services": [
         {
@@ -81,6 +89,10 @@
         {
           "binding": "FEEDBACK",
           "service": "noxhere-feedback-staging"
+        },
+        {
+          "binding": "TELEMETRY_INGEST",
+          "service": "noxhere-telemetry-staging"
         }
       ],
       "d1_databases": [

@@ -10,6 +10,8 @@ import "@fontsource/familjen-grotesk/latin-700.css";
 import "./styles/nox-theme.css";
 import "./styles/global.css";
 
+document.documentElement.dataset.buildSha = import.meta.env.VITE_BUILD_SHA || "development";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

@@ -34,7 +34,9 @@ delivery receipts, and event archival to R2.
 3. The payload must be `error.occurred` or `stats.daily`; daily snapshots require
    a secret server key.
 4. An error updates its bounded fingerprint/day aggregates and, outside its
-   cooldown, inserts a Slack outbox row.
+   cooldown, inserts a Slack outbox row. Trusted NoxHere operational reporters
+   can require one durable Slack row per occurrence; publishable browser keys
+   cannot bypass cooldowns.
 5. A daily snapshot upserts only the ten reported catalog metrics and five
    deterministic calculated metrics. It never creates an immediate Slack row.
 6. NoxHere's 30-minute scheduled sweep closes local days, calculates the five

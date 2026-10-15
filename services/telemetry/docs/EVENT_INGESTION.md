@@ -154,6 +154,10 @@ Slack; repeats notify only after the source cooldown while still contributing
 to the daily totals. Telemetry hashes `affectedUser` before storing it in the
 affected-user rollup.
 
+NoxHere's own trusted gateway and feedback reporters mark operational failures
+for per-occurrence delivery. That marker is accepted only from a secret/server
+source key; browser publishable keys remain subject to the configured cooldown.
+
 By default Telemetry derives a readable key from stable evidence:
 `event-or-feature/reason-or-component/component-or-code/code/operation`. Dynamic
 IDs, timestamps, stack line numbers, and long numeric values are removed, so the

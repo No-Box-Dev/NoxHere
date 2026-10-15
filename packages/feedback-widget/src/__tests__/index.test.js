@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { isUrlMatch, init, destroy, identify, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS } from '../loader.js';
+import { isUrlMatch, init, destroy, identify, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS, reportSubmitFailure } from '../loader.js';
 
 describe('isUrlMatch', () => {
   beforeEach(() => {
@@ -134,6 +134,23 @@ describe('init', () => {
     init({});
     expect(document.querySelector('.feedback-trigger')).toBeNull();
     expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it('reports a caught submission failure with a traceable incident id', () => {
+    init({ siteId: 'test-site' });
+    const error = Object.assign(new Error('Queue unavailable'), { status: 503, code: 'QUEUE_UNAVAILABLE' });
+
+    const incidentId = reportSubmitFailure(error, { siteId: 'test-site', title: 'Broken' }, 'submit');
+
+    expect(incidentId).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(fetch).toHaveBeenCalledWith(
+      'https://app.noxhere.com/api/feedback/public/v1/telemetry/widget-failures',
+      expect.objectContaining({
+        method: 'POST',
+        keepalive: true,
+        body: expect.stringContaining('QUEUE_UNAVAILABLE'),
+      }),
+    );
   });
 
   it('exposes identify and updates an open reporter field', () => {

@@ -611,6 +611,58 @@ async function sendReport(body) {
   return response.json().catch(() => ({}));
 }
 
+export function reportSubmitFailure(error, body, stage) {
+  const eventId = crypto.randomUUID();
+  const payload = {
+    eventId,
+    siteId: config.siteId,
+    environment: config.environment,
+    widgetVersion: LOADER_DATASET.version || 'release',
+    occurredAt: new Date().toISOString(),
+    stage,
+    errorType: error?.name || 'Error',
+    errorMessage: error?.message || String(error),
+    errorStack: error?.stack || null,
+    captureMode: config.captureMode,
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio || 1,
+    },
+    page: {
+      nodeCount: document.getElementsByTagName('*').length,
+      imageCount: document.images.length,
+      iframeCount: document.getElementsByTagName('iframe').length,
+      canvasCount: document.getElementsByTagName('canvas').length,
+      svgCount: document.getElementsByTagName('svg').length,
+      fontStatus: document.fonts?.status || 'unknown',
+      visibilityState: document.visibilityState,
+      online: navigator.onLine,
+      pathDepth: (window.location.pathname || '').split('/').filter(Boolean).length,
+      hasQuery: Boolean(window.location.search),
+      readyState: document.readyState,
+    },
+    renderer: {
+      phase: stage,
+      outcome: 'failed',
+      errorType: error?.name || 'Error',
+      errorMessage: error?.message || String(error),
+      requestBytes: new TextEncoder().encode(JSON.stringify(body)).byteLength,
+      status: Number.isInteger(error?.status) ? error.status : 0,
+      code: error?.code || 'UNKNOWN',
+    },
+  };
+  // This path must never mask the original UI failure. The server persists it
+  // synchronously as an Incident and routes Slack through its durable outbox.
+  void fetch(`${API_URL}/api/feedback/public/v1/telemetry/widget-failures`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {});
+  return eventId;
+}
+
 function openIssueAction(issueUrl) {
   // Only open if the response looks like a real https URL — defensive against
   // a malformed payload. The toast renders the value as a button label only,
@@ -649,8 +701,9 @@ function handleSubmit(data) {
     })
     .catch((error) => {
       console.error('[Feedback] Submit failed:', error);
+      const incidentId = reportSubmitFailure(error, body, 'submit');
       showToast({
-        message: 'Report failed to send',
+        message: `Report failed to send · ${incidentId.slice(0, 8)}`,
         variant: 'error',
         durationMs: 8000,
         action: {
@@ -674,8 +727,9 @@ function retrySubmit(body) {
     })
     .catch((error) => {
       console.error('[Feedback] Retry failed:', error);
+      const incidentId = reportSubmitFailure(error, body, 'retry');
       showToast({
-        message: 'Still failing — check your connection',
+        message: `Still failing · ${incidentId.slice(0, 8)}`,
         variant: 'error',
         durationMs: 8000,
         action: {

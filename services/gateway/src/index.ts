@@ -1,3 +1,5 @@
+import { createTelemetry } from "../../../packages/sdk/src/telemetry/server.js";
+
 type BoundService = {
   fetch(request: Request): Promise<Response>;
 };
@@ -416,7 +418,77 @@ function unavailableAuthentication(): Response {
 
 type RuntimeEnv = Env & {
   NOXHERE_INTERNAL_SECRET?: string;
+  TELEMETRY_INGEST?: Fetcher;
+  TELEMETRY_INGEST_KEY?: string;
+  BUILD_SHA?: string;
+  ENVIRONMENT?: "production" | "staging";
 };
+
+function serviceFetch(service: Fetcher): typeof fetch {
+  return ((input: RequestInfo | URL, init?: RequestInit) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    return service.fetch(request);
+  }) as typeof fetch;
+}
+
+function incidentRoute(pathname: string): string {
+  return pathname
+    .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}(?=\/|$)/gi, "/:id")
+    .replace(/\/[0-9a-f]{32,}(?=\/|$)/gi, "/:id")
+    .replace(/\/\d+(?=\/|$)/g, "/:id")
+    .slice(0, 160);
+}
+
+function shouldReportGatewayFailure(pathname: string): boolean {
+  return !pathname.startsWith("/__noxhere/health")
+    && pathname !== "/api/health/live"
+    && pathname !== "/api/health/ready"
+    && pathname !== "/api/v1/telemetry/public/events"
+    && pathname !== "/api/telemetry/public/v1/events";
+}
+
+function reportGatewayFailure(
+  env: RuntimeEnv,
+  request: Request,
+  error: unknown,
+  status: number,
+  correlationId: string,
+): Promise<unknown> {
+  if (!env.TELEMETRY_INGEST || !env.TELEMETRY_INGEST_KEY) return Promise.resolve();
+  const url = new URL(request.url);
+  const route = incidentRoute(url.pathname);
+  const client = createTelemetry({
+    key: env.TELEMETRY_INGEST_KEY,
+    environment: env.ENVIRONMENT ?? "production",
+    release: env.BUILD_SHA,
+    endpoint: "https://telemetry.internal/v1/events",
+    fetch: serviceFetch(env.TELEMETRY_INGEST),
+    maxRetries: 3,
+  });
+  const evidence = error ?? Object.assign(new Error(`Gateway returned HTTP ${status}`), {
+    name: "GatewayResponseError",
+    code: `HTTP_${status}`,
+    status,
+  });
+  return client.error(evidence, {
+    title: `NoxHere ${request.method.toUpperCase()} ${route} failed`,
+    message: "The public NoxHere gateway could not complete a request.",
+    component: "noxhere.gateway",
+    fingerprint: `noxhere.gateway|${request.method.toUpperCase()}|${route}|${status}`,
+    idempotencyKey: correlationId,
+    url: `${url.origin}${url.pathname}`,
+    fatal: false,
+    unhandled: Boolean(error),
+    attributes: {
+      method: request.method.toUpperCase(),
+      route,
+      status,
+      correlationId,
+      cfRay: request.headers.get("CF-Ray") ?? "unavailable",
+      notifyEveryOccurrence: true,
+    },
+  });
+}
 
 export default {
   async fetch(request, env, execution): Promise<Response> {
@@ -424,21 +496,48 @@ export default {
     const capabilities = env.NOXHERE_IDENTITY as typeof env.NOXHERE_IDENTITY
       & import("./control/oauth").IdentityService
       & import("./control/oauth").EmailService;
-    return handleRequest(request, {
-      assets: env.ASSETS,
-      connector: env.NOXHERE,
-      provider: capabilities,
-      feedback: env.FEEDBACK,
-      control: {
-        db: env.CONTROL_DB,
-        identity: capabilities,
-        email: capabilities,
-        assertionSecret: runtimeEnv.NOXHERE_INTERNAL_SECRET,
-        guestEmail: {
-          PUBLIC_APP_ORIGIN: env.PUBLIC_APP_ORIGIN,
+    const url = new URL(request.url);
+    const correlationId = request.headers.get("CF-Ray") ?? crypto.randomUUID();
+    try {
+      const response = await handleRequest(request, {
+        assets: env.ASSETS,
+        connector: env.NOXHERE,
+        provider: capabilities,
+        feedback: env.FEEDBACK,
+        control: {
+          db: env.CONTROL_DB,
+          identity: capabilities,
+          email: capabilities,
+          assertionSecret: runtimeEnv.NOXHERE_INTERNAL_SECRET,
+          guestEmail: {
+            PUBLIC_APP_ORIGIN: env.PUBLIC_APP_ORIGIN,
+          },
         },
-      },
-      background: (work) => execution.waitUntil(work),
-    });
+        background: (work) => execution.waitUntil(work),
+      });
+      if (response.status >= 500 && shouldReportGatewayFailure(url.pathname)) {
+        execution.waitUntil(reportGatewayFailure(runtimeEnv, request, null, response.status, correlationId));
+      }
+      const headers = new Headers(response.headers);
+      headers.set("X-NoxHere-Correlation-ID", correlationId);
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    } catch (error) {
+      if (shouldReportGatewayFailure(url.pathname)) {
+        execution.waitUntil(reportGatewayFailure(runtimeEnv, request, error, 500, correlationId));
+      }
+      console.error(JSON.stringify({
+        event: "gateway.unhandled_failure",
+        correlationId,
+        route: incidentRoute(url.pathname),
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      const response = unavailableResponse();
+      response.headers.set("X-NoxHere-Correlation-ID", correlationId);
+      return response;
+    }
   },
 } satisfies ExportedHandler<RuntimeEnv>;

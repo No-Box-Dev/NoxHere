@@ -57,11 +57,23 @@ async function throwApiError(response: Response): Promise<never> {
     window.dispatchEvent(new Event(AUTH_REQUIRED_EVENT));
   }
   const structuredError = typeof body?.error === "object" ? body.error : null;
-  throw new ApiError(
+  const error = new ApiError(
     (typeof body?.error === "string" ? body.error : structuredError?.message) ?? `Request failed with status ${response.status}`,
     response.status,
     structuredError?.code ?? "request_failed",
   );
+  if (response.status >= 500 && typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("noxhere:operational-error", { detail: {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      status: error.status,
+      code: error.code,
+      correlationId: response.headers.get("X-NoxHere-Correlation-ID"),
+      source: response.url ? new URL(response.url).pathname : window.location.pathname,
+    } }));
+  }
+  throw error;
 }
 
 export async function getJson<T>(path: string, schema: z.ZodType<T>, signal?: AbortSignal, scope?: RequestScope): Promise<T> {
