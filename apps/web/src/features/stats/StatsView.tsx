@@ -1,34 +1,31 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
 import type { TelemetryStat } from "../../api/contracts";
 import { platformApi } from "../../api/platform";
 import { AsyncState } from "../../components/AsyncState";
 import { ListRow } from "../../components/ListRow";
-import { SegmentedControl } from "../../components/SegmentedControl";
+import { ServiceTabs } from "../../components/ServiceTabs";
 import { Sparkline } from "../../components/Sparkline";
 import { StatusTag } from "../../components/StatusTag";
 
 type StatsViewProps = { organizationId: string; projectId: string; canConfigure?: boolean };
 type StatsSubview = "dashboard" | "productivity" | "events";
 
-const segments = [
-  { id: "dashboard", label: "Dashboard", description: "Trends and totals" },
-  { id: "productivity", label: "Productivity", description: "Engineering delivery" },
-  { id: "events", label: "Stat events", description: "Incoming triggers" },
+const tabs = [
+  ["dashboard", "Dashboard"],
+  ["productivity", "Productivity"],
+  ["events", "Stat events"],
 ] as const;
 
-export function StatsView({ organizationId, projectId, canConfigure = false }: StatsViewProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requested = searchParams.get("view");
-  const selected: StatsSubview = requested === "events" || requested === "productivity" ? requested : "dashboard";
-  const select = (view: StatsSubview) => setSearchParams(view === "dashboard" ? {} : { view });
-
+export function StatsView({ organizationId, projectId, canConfigure = false, view = "dashboard" }: StatsViewProps & { view?: StatsSubview }) {
+  const base = `/${organizationId}/${projectId}/stats`;
   return (
-    <div className="workspace-view">
-      <SegmentedControl label="Stats views" value={selected} segments={segments} onChange={select} />
-      {selected === "dashboard" ? <StatsDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} /> : selected === "productivity" ? <ProductivityStats organizationId={organizationId} projectId={projectId} /> : <StatEvents organizationId={organizationId} projectId={projectId} />}
-    </div>
+    <>
+      <ServiceTabs base={base} active={view} tabs={tabs} />
+      <div className="workspace-view">
+        {view === "dashboard" ? <StatsDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} /> : view === "productivity" ? <ProductivityStats organizationId={organizationId} projectId={projectId} /> : <StatEvents organizationId={organizationId} projectId={projectId} />}
+      </div>
+    </>
   );
 }
 

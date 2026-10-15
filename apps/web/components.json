@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": false,
+  "tsx": true,
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "registries": {
+    "@nox": "http://127.0.0.1:5173/r/{name}.json"
+  }
+}

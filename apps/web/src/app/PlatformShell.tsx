@@ -1,13 +1,15 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { platformApi } from "../api/platform";
 import { AsyncState } from "../components/AsyncState";
 import { PlatformRetrieval } from "./PlatformRetrieval";
 import { ProjectSwitcher } from "./ProjectSwitcher";
-import { serviceById, services, type ServiceId } from "./service-registry";
+import { services } from "./service-registry";
 import { clearLastProject, saveLastProject } from "./last-project";
 import type { PlatformOutletContext } from "./platform-context";
+import { NoxLogo } from "@/components/ui/nox-logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 function browserStorage() {
   try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
@@ -23,7 +25,6 @@ export function PlatformShell() {
     staleTime: 5 * 60_000,
   });
   const routeSegment = location.pathname.split("/").filter(Boolean)[2];
-  const service = serviceById.get(routeSegment as ServiceId) ?? serviceById.get("connections")!;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => browserStorage()?.getItem("noxhere.sidebar.collapsed") === "true");
   const selectedProject = bootstrap.data?.projects.find((project) => project.id === projectId);
   const isGuest = bootstrap.data?.actor.accessLevel === "guest";
@@ -62,10 +63,11 @@ export function PlatformShell() {
       {bootstrap.data ? (
         !selectedProject ? <Navigate replace to="/?choose=1" />
           : guestRouteForbidden && guestFallback ? <Navigate replace to={`/${bootstrap.data.organization.id}/${projectId}/${guestFallback.id}/${guestFallback.defaultView}`} />
-          : <div className={`platform ${sidebarCollapsed ? "sidebar-collapsed" : ""}`} style={{ "--service": service.color, "--service-soft": service.softColor } as CSSProperties}>
+          : <div className={`platform ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
           <aside className="sidebar">
             <div className="brand-row">
-              <Link className="platform-brand" to="/" aria-label="NoxHere home"><span>N</span><strong>NoxHere</strong></Link>
+              <Link className="platform-brand" to="/" aria-label="NoxHere home"><NoxLogo /></Link>
+              <ProjectSwitcher organizationId={bootstrap.data.organization.id} projects={bootstrap.data.projects} selectedId={projectId} canCreate={bootstrap.data.actor.isAdmin} placement="brand" onSwitch={switchProject} />
             </div>
             <button type="button" className="sidebar-collapse" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>{sidebarCollapsed ? "›" : "‹"}</button>
             <div className="sidebar-rule" />
@@ -91,11 +93,11 @@ export function PlatformShell() {
             <header className="platform-topbar">
               <PlatformRetrieval organizationId={organizationId} projectId={projectId} />
               <div className="topbar-actions">
-              <ProjectSwitcher organizationId={bootstrap.data.organization.id} projects={bootstrap.data.projects} selectedId={projectId} canCreate={bootstrap.data.actor.isAdmin} placement="topbar" onSwitch={switchProject} />
               <a className="topbar-projects" href="/developers" target="_blank" rel="noreferrer" aria-label="Open API documentation">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13H6z" /><path d="M14 4v4h4M9 12h6M9 16h6" /></svg>
                 <span>API docs</span>
               </a>
+              <ThemeToggle />
               </div>
             </header>
             <div className="page-canvas">
@@ -115,7 +117,7 @@ export function PlatformShell() {
 }
 
 function ServiceIcon({ service }: { service: (typeof services)[number] }) {
-  return <span className="service-icon" aria-hidden="true" style={{ "--icon-color": service.color, "--icon-soft": service.softColor } as CSSProperties}>
+  return <span className="service-icon" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none">
       {service.id === "planning" ? <><path d="M6 4v16M6 7h5a3 3 0 0 1 3 3v1a3 3 0 0 0 3 3h1" /><path d="m16 12 2 2 3-3" /></> : null}
       {service.id === "activity" ? <><path d="M6 7h12M6 12h12M6 17h8" /><circle cx="18" cy="17" r="1" /></> : null}

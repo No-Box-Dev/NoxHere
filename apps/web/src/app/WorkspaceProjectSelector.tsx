@@ -5,6 +5,8 @@ import type { Bootstrap, Project } from "../api/contracts";
 import { platformApi } from "../api/platform";
 import { services } from "./service-registry";
 import { readLastProject } from "./last-project";
+import { Button } from "@/components/ui/button";
+import { NoxLogo } from "@/components/ui/nox-logo";
 
 export type WorkspaceProfile = {
   user: { login: string; email?: string | null };
@@ -81,7 +83,7 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
   return <main className="workspace-selector-page">
     <section className="workspace-selector-panel" aria-labelledby="workspace-selector-title">
       <header>
-        <span className="workspace-selector-mark">N</span>
+        <NoxLogo className="workspace-selector-logo" />
         <div><small>NoxHere</small><h1 id="workspace-selector-title">Choose a project</h1></div>
       </header>
       <label className="workspace-selector-field">
@@ -102,10 +104,10 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
             {projects.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}
           </select>
         </label>
-        <button className="button primary workspace-open" type="button" onClick={() => {
+        <Button className="workspace-open" variant="cut" size="lg" type="button" onClick={() => {
           const project = projects.find((item) => item.id === effectiveProject);
           if (bootstrap && project) destination(bootstrap, project);
-        }}>Open project</button>
+        }}>Open project</Button>
       </> : null}
 
       {!workspaceQuery?.isLoading && !workspaceQuery?.isError && !projects.length ? <div className="workspace-empty">
@@ -115,7 +117,7 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
 
       {canCreate && (!projects.length || creating) ? <form className="workspace-project-form" onSubmit={submitProject}>
         <label className="workspace-selector-field"><span>Project name</span><input aria-label="New project name" value={projectName} maxLength={100} autoFocus={!projects.length} onChange={(event) => setProjectName(event.target.value)} placeholder="My project" /></label>
-        <div><button className="button primary" disabled={!projectName.trim() || create.isPending}>{create.isPending ? "Creating…" : "Create project"}</button>{projects.length ? <button className="button secondary" type="button" onClick={() => { setCreating(false); setProjectName(""); create.reset(); }}>Cancel</button> : null}</div>
+        <div><Button variant="cut" disabled={!projectName.trim() || create.isPending}>{create.isPending ? "Creating…" : "Create project"}</Button>{projects.length ? <Button variant="outline" type="button" onClick={() => { setCreating(false); setProjectName(""); create.reset(); }}>Cancel</Button> : null}</div>
         {create.error ? <small role="alert">{create.error.message}</small> : null}
       </form> : null}
       {canCreate && projects.length && !creating ? <button className="workspace-new-project" type="button" onClick={() => setCreating(true)}>+ Create another project</button> : null}

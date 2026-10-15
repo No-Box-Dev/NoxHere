@@ -18,7 +18,7 @@ test("keeps administration in Settings and NoxHere last", async ({ page }) => {
   await expect(page).toHaveURL(/\/settings\/project$/);
   await expect(page.getByText("API access", { exact: true })).toBeVisible();
   await expect(page.getByText("Maintenance", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Project" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Project" })).toBeVisible();
 });
 
 test("collapses the capability sidebar and remembers the preference", async ({ page }) => {
@@ -118,7 +118,7 @@ test("opens each NoxHere section and project settings controls", async ({ page }
 
 test("opens canonical settings sections and redirects contextual configuration", async ({ page }) => {
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/settings/people");
-  await expect(page.getByRole("heading", { name: "People & access" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("region", { name: "People & access" })).toBeVisible({ timeout: 30_000 });
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/stats/sources");
   await expect(page).toHaveURL(/\/settings\/integrations\/telemetry$/);
   await page.goto("/no-box-dev/proj_no-box-dev_playnist/incidents/rules");

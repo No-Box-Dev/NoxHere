@@ -1,0 +1,11 @@
+import { cn } from "@/lib/utils";
+
+export function NoxLogo({ className, title = "Nox" }: { className?: string; title?: string }) {
+  return <svg className={cn("nox-logo", className)} viewBox="0 0 63.5 23.5" role="img" aria-label={title}>
+    <g fill="currentColor">
+      <path transform="translate(0 23.2) scale(.015625 -.015625)" d="M156 0V1466H355L1125 315V1466H1311V0H1112L342 1152V0Z" />
+      <g transform="translate(22.9 .07) scale(.02999081 .03052)"><path d="M326 0 627 176 551 230 326 99 102 230 26 184Z" /><path d="M0 217 86 268 86 497 0 548Z" /><path d="M653 217 567 268 567 497 653 548Z" /><path d="M326 765 627 589 551 535 326 666 102 535 26 581Z" /></g>
+      <path transform="translate(42.2453125 23.2) scale(.015625 -.015625)" d="M9 0 576 764 76 1466H307L573 1090Q656 973 691 910Q740 990 807 1077L1102 1466H1313L798 775 1353 0H1113L744 523Q713 568 680 621Q631 541 610 511L242 0Z" />
+    </g>
+  </svg>;
+}
