@@ -24,6 +24,13 @@ export default defineConfig({
               && !JSON.stringify(attributes).includes("top-secret");
             if (!valid) return Response.json({ error: "invalid_diagnostics" }, { status: 422 });
           }
+          if (JSON.stringify(body).includes("BROWSER_INCIDENT_TEST")) {
+            const attributes = data.attributes as Record<string, unknown> | undefined;
+            const valid = attributes?.notifyEveryOccurrence === true
+              && attributes?.correlationId === "ray-123"
+              && body.type === "error.occurred";
+            if (!valid) return Response.json({ error: "invalid_browser_incident" }, { status: 422 });
+          }
           return body.type === "error.occurred" && JSON.stringify(body).includes("FORCE_TELEMETRY_FAILURE")
             ? new Response(null, { status: 503 })
             : new Response(null, { status: 202 });

@@ -65,6 +65,24 @@ interface RequestIdentity {
   originHost: string;
 }
 
+export interface SiteErrorReport {
+  siteId: string;
+  sourceEventId: string;
+  title: string;
+  message: string;
+  component: string;
+  errorCode: string;
+  errorName?: string | null;
+  errorStack?: string | null;
+  status?: number | null;
+  environment?: string | null;
+  occurredAt?: string | null;
+  url?: string | null;
+  fatal?: boolean;
+  unhandled?: boolean;
+  attributes?: Record<string, string | number | boolean>;
+}
+
 function plainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -128,6 +146,7 @@ const RENDERER_KEYS = new Set([
   "sourceOrder", "attempts", "kind", "outcome", "errorType", "errorMessage", "tagCounts", "style", "script",
   "use", "image", "iframe", "foreignObject", "crossOriginCount", "origins", "origin", "path", "sameOrigin",
   "tag", "attribute", "property", "clone", "flatten", "pin+scroll", "inline", "serialize", "rasterize",
+  "requestBytes", "status", "code",
 ]);
 
 function addDiagnostic(attributes: Record<string, string | number | boolean>, key: string, value: unknown): void {
@@ -277,6 +296,60 @@ async function sendTelemetry(context: TelemetryContext, payload: Record<string, 
   if (!response.ok) throw new Error(`Telemetry rejected telemetry with status ${response.status}`);
 }
 
+/**
+ * Persist a site-scoped operational failure through Telemetry before the
+ * public endpoint acknowledges it. Callers supply a stable sourceEventId so
+ * browser retries are idempotent while separate occurrences remain separate.
+ */
+export async function reportSiteError(context: TelemetryContext, report: SiteErrorReport): Promise<void> {
+  const status = Number(report.status);
+  const safeStatus = Number.isInteger(status) && status >= 100 && status <= 599 ? status : undefined;
+  const errorCode = safeDiagnosticString(report.errorCode, 120) || "UNKNOWN";
+  const component = safeDiagnosticString(report.component, 120) || "application.unknown";
+  const message = safeDiagnosticString(report.message, 2_000) || "Unknown application error";
+  const errorName = safeDiagnosticString(report.errorName, 120) || "Error";
+  const stack = safeDiagnosticString(report.errorStack, 8_000) || undefined;
+  const attributes: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(report.attributes ?? {}).slice(0, 96)) addDiagnostic(attributes, key, value);
+  attributes.notifyEveryOccurrence = true;
+  await sendTelemetry(context, {
+    version: 1,
+    type: "error.occurred",
+    eventId: await eventUuid("error.site.failure", report.siteId, report.sourceEventId),
+    title: safeDiagnosticString(report.title, 200) || "Application operation failed",
+    level: "error",
+    message,
+    error: {
+      name: errorName,
+      message,
+      code: errorCode,
+      ...(safeStatus ? { status: safeStatus } : {}),
+      ...(stack ? { stack } : {}),
+    },
+    occurredAt: report.occurredAt && Number.isFinite(Date.parse(report.occurredAt))
+      ? new Date(report.occurredAt).toISOString()
+      : new Date().toISOString(),
+    ...(report.url ? { url: sanitizeReportUrl(report.url) } : {}),
+    data: {
+      errorCode,
+      fingerprint: `${component}:${errorCode}:${errorName}`.slice(0, 200),
+      component,
+      fatal: report.fatal === true,
+      unhandled: report.unhandled === true,
+      ...(Object.keys(attributes).length ? { attributes } : {}),
+    },
+  });
+}
+
+function sanitizeReportUrl(value: string): string | undefined {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? `${url.origin}${url.pathname}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function schedule(context: TelemetryContext, promise: Promise<void>, event: BaseEvent): void {
   context.executionCtx.waitUntil(promise.catch((error) => {
     console.error(JSON.stringify({
@@ -367,13 +440,22 @@ async function sendFailureError(context: TelemetryContext, event: ScreenshotFail
       // environment remains in the message without overriding source routing.
       fatal: false,
       unhandled: false,
-      attributes: event.attributes,
+      attributes: { ...event.attributes, notifyEveryOccurrence: true },
     },
   });
 }
 
 async function sendWidgetFailureError(context: TelemetryContext, event: ScreenshotFailure, identity: RequestIdentity): Promise<void> {
-  const errorCode = `WIDGET_${event.stage.toUpperCase()}`;
+  const reportedCode = typeof event.attributes["renderer.code"] === "string"
+    ? event.attributes["renderer.code"]
+    : null;
+  const reportedStatus = typeof event.attributes["renderer.status"] === "number"
+    && event.attributes["renderer.status"] >= 100
+    && event.attributes["renderer.status"] <= 599
+    ? event.attributes["renderer.status"]
+    : null;
+  const errorCode = safeDiagnosticString(reportedCode, 120) || `WIDGET_${event.stage.toUpperCase()}`;
+  const errorMessage = safeDiagnosticString(event.errorMessage, 2_000) || "Feedback widget operation failed";
   await sendTelemetry(context, {
     version: 1,
     type: "error.occurred",
@@ -381,6 +463,13 @@ async function sendWidgetFailureError(context: TelemetryContext, event: Screensh
     title: "Feedback widget operation failed",
     level: "error",
     message: screenshotErrorMessage(event, identity),
+    error: {
+      name: safeDiagnosticString(event.errorType, 120) || "Error",
+      message: errorMessage,
+      code: errorCode,
+      ...(reportedStatus ? { status: reportedStatus } : {}),
+      ...(event.errorStack ? { stack: safeDiagnosticString(event.errorStack, 8_000) } : {}),
+    },
     occurredAt: event.occurredAt || new Date().toISOString(),
     url: `https://${identity.originHost}`,
     data: {
@@ -391,7 +480,7 @@ async function sendWidgetFailureError(context: TelemetryContext, event: Screensh
       // environment remains in the message without overriding source routing.
       fatal: false,
       unhandled: event.stage === "runtime",
-      attributes: event.attributes,
+      attributes: { ...event.attributes, notifyEveryOccurrence: true },
     },
   });
 }
