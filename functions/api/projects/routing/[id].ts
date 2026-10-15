@@ -3,13 +3,14 @@ import { getCtx, errorResponse, jsonResponse } from "../../../lib/db";
 import { getActiveRepoNames } from "../../../lib/inactive-repos.js";
 import {
   PROJECT_ROUTE_KEYS,
+  projectSlackDestinationErrorStatus,
   type ProjectRouteKey,
   validateProjectSlackDestination,
 } from "../../../lib/project-routing";
 import { validate } from "../../../lib/validate";
 
 interface Ctx {
-  env: { DB: D1Database; ENCRYPTION_KEY?: string };
+  env: { DB: D1Database; CONNECTIONS?: { validateSlackDestination(input: unknown): Promise<unknown> } };
   data: { orgId: number; orgLogin: string; isAdmin: boolean };
   params: { id: string };
   request: Request;
@@ -77,7 +78,10 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
         await validateProjectSlackDestination(context.env, orgId, project.id, destination);
       }));
     } catch (error) {
-      return errorResponse(error instanceof Error ? error.message : "Slack channel is unavailable", 409);
+      return errorResponse(
+        error instanceof Error ? error.message : "Slack channel validation is temporarily unavailable",
+        projectSlackDestinationErrorStatus(error),
+      );
     }
   }
 

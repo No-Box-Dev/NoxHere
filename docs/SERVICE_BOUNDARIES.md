@@ -10,6 +10,9 @@ The private connectors layer owns GitHub and Slack installations, encrypted
 provider tokens, provider clients, connection health, channel routing, the
 durable delivery outbox, retries, and final provider delivery. It does not own
 the public user experience or decide what a capability says or renders.
+The control plane validates saved Slack destinations through the private
+`CONNECTIONS` RPC binding; provider tokens and the encryption key never cross
+into the API Worker.
 
 GitHub is exclusively a Connect capability. Connect owns webhook receipt
 and normalization, installation-token minting, repository discovery, issue and

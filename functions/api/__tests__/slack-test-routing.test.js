@@ -1,27 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../lib/slack.js", () => ({
-  checkSlackOrgHealth: vi.fn(async () => ({ status: "ok", recovered: false })),
-  getSlackChannel: vi.fn(async () => ({ id: "C-ALERT", is_member: true })),
-  resolveSlackInstall: vi.fn(async () => ({ id: "conn-2", botToken: "xoxb-test" })),
-  slackInstallNeedsReconnect: vi.fn(() => false),
-  postSlackMessage: vi.fn(async () => ({ ok: true, channel: "C-ALERT", ts: "1.2" })),
   actionableSlackError: vi.fn((_error, fallback) => fallback),
 }));
 
 import { onRequestPost } from "../slack/test.js";
-import { actionableSlackError, checkSlackOrgHealth, getSlackChannel, postSlackMessage } from "../../lib/slack.js";
+import { actionableSlackError } from "../../lib/slack.js";
 
 function context(body) {
   const calls = [];
+  const checkSlackOrgHealth = vi.fn(async () => ({ status: "ok", recovered: false }));
+  const sendSlackMessage = vi.fn(async ({ connectionId, channelId }) => ({
+    ok: true,
+    result: { connectionId, channelId, messageId: "1.2" },
+  }));
   return {
     request: new Request("https://app.noxhere.com/api/slack/test", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }),
-    data: { orgId: 7, orgLogin: "acme", isAdmin: true },
+    data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
     env: {
+      CONNECTIONS: { checkSlackOrgHealth, sendSlackMessage },
       TELEMETRY_RESPONSE: {
         buildTestResponse: vi.fn(async (org) => ({ contract: "telemetry.response", version: 1, message: { text: `Telemetry delivery test for ${org}`, blocks: [{ type: "section" }] } })),
       },
@@ -64,6 +65,8 @@ function context(body) {
       },
     },
     calls,
+    checkSlackOrgHealth,
+    sendSlackMessage,
   };
 }
 
@@ -71,7 +74,8 @@ describe("Slack route tests", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("sends the Telemetry-specific payload to the selected channel", async () => {
-    const response = await onRequestPost(context({ kind: "telemetry", channelId: "C-ALERT" }));
+    const ctx = context({ kind: "telemetry", connectionId: "conn-2", channelId: "C-ALERT" });
+    const response = await onRequestPost(ctx);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       ok: true,
@@ -79,78 +83,80 @@ describe("Slack route tests", () => {
       channelId: "C-ALERT",
       messageTs: "1.2",
     });
-    expect(postSlackMessage).toHaveBeenCalledWith(
-      "xoxb-test",
-      "C-ALERT",
-      expect.objectContaining({ text: "Telemetry delivery test for acme" }),
-    );
+    expect(ctx.sendSlackMessage).toHaveBeenCalledWith(expect.objectContaining({
+      orgId: 7,
+      projectId: "project-1",
+      connectionId: "conn-2",
+      channelId: "C-ALERT",
+      message: expect.objectContaining({ text: "Telemetry delivery test for acme" }),
+    }));
   });
 
   it("sends a dedicated Telemetry alert-route test", async () => {
-    const response = await onRequestPost(context({ kind: "telemetry_alerts", channelId: "C-ALERT" }));
+    const ctx = context({ kind: "telemetry_alerts", connectionId: "conn-2", channelId: "C-ALERT" });
+    const response = await onRequestPost(ctx);
     expect(response.status).toBe(200);
-    expect(postSlackMessage).toHaveBeenCalledWith(
-      "xoxb-test",
-      "C-ALERT",
-      expect.objectContaining({ text: "Telemetry alert delivery test for acme" }),
-    );
+    expect(ctx.sendSlackMessage).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.objectContaining({ text: "Telemetry alert delivery test for acme" }),
+    }));
   });
 
   it("sends the real Feedback daily-summary format for a selected site", async () => {
-    const response = await onRequestPost(context({
+    const ctx = context({
       kind: "feedback", sourceId: "site-playnist", connectionId: "conn-2", channelId: "C-ALERT",
-    }));
+    });
+    const response = await onRequestPost(ctx);
     expect(response.status).toBe(200);
-    expect(postSlackMessage).toHaveBeenCalledWith(
-      "xoxb-test",
-      "C-ALERT",
-      expect.objectContaining({ text: expect.stringMatching(/^Playnist — test \d{4}-\d{2}-\d{2}: 0 filed, 0 solved$/) }),
-    );
+    expect(ctx.sendSlackMessage).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.objectContaining({ text: expect.stringMatching(/^Playnist — test \d{4}-\d{2}-\d{2}: 0 filed, 0 solved$/) }),
+    }));
   });
 
   it("marks a bad receipt as an issue and the next accepted message as verified", async () => {
-    vi.mocked(postSlackMessage)
-      .mockResolvedValueOnce({ ok: true, channel: "C-WRONG", ts: "1.1" })
-      .mockResolvedValueOnce({ ok: true, channel: "C-ALERT", ts: "1.2" });
-
-    const failed = context({ kind: "telemetry", channelId: "C-ALERT" });
+    const failed = context({ kind: "telemetry", connectionId: "conn-2", channelId: "C-ALERT" });
+    failed.sendSlackMessage.mockResolvedValueOnce({
+      ok: false,
+      error: { code: "slack_delivery_failed", message: "wrong channel" },
+    });
     expect((await onRequestPost(failed)).status).toBe(502);
     expect(failed.calls.some((call) => call.sql.includes("INSERT INTO slack_channel_status")
       && call.sql.includes("'issue'"))).toBe(true);
 
-    const recovered = context({ kind: "telemetry", channelId: "C-ALERT" });
+    const recovered = context({ kind: "telemetry", connectionId: "conn-2", channelId: "C-ALERT" });
     expect((await onRequestPost(recovered)).status).toBe(200);
     expect(recovered.calls.some((call) => call.sql.includes("INSERT INTO slack_channel_status")
       && call.sql.includes("'verified'"))).toBe(true);
   });
 
-  it("turns Slack's ambiguous channel-not-found response into invite guidance when the channel is visible", async () => {
-    vi.mocked(postSlackMessage).mockRejectedValueOnce(Object.assign(new Error("channel_not_found"), { code: "channel_not_found" }));
-    vi.mocked(getSlackChannel).mockResolvedValueOnce({ id: "C-ALERT", is_member: false });
-    const response = await onRequestPost(context({ kind: "planning", connectionId: "conn-2", channelId: "C-ALERT" }));
-    expect(response.status).toBe(502);
+  it("returns invite guidance from the credential-owning service", async () => {
+    const ctx = context({ kind: "planning", connectionId: "conn-2", channelId: "C-ALERT" });
+    ctx.sendSlackMessage.mockResolvedValueOnce({
+      ok: false,
+      error: { code: "slack_channel_membership_required", message: "invite the bot" },
+    });
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(409);
     expect(actionableSlackError).toHaveBeenCalledWith(
-      expect.objectContaining({ code: "not_in_channel" }),
+      expect.objectContaining({ code: "slack_channel_membership_required" }),
       expect.any(String),
     );
   });
 
   it("does not silently reinterpret an unknown test as Activity", async () => {
-    const response = await onRequestPost(context({ kind: "wrong", channelId: "C-OTHER" }));
+    const ctx = context({ kind: "wrong", connectionId: "conn-2", channelId: "C-OTHER" });
+    const response = await onRequestPost(ctx);
     expect(response.status).toBe(400);
-    expect(postSlackMessage).not.toHaveBeenCalled();
+    expect(ctx.sendSlackMessage).not.toHaveBeenCalled();
   });
 
   it("verifies one workspace connection and posts a real test message", async () => {
     const ctx = context({ kind: "connection", connectionId: "conn-2", channelId: "C-ALERT" });
     const response = await onRequestPost(ctx);
     expect(response.status).toBe(200);
-    expect(checkSlackOrgHealth).toHaveBeenCalledWith(expect.anything(), 7, "conn-2");
-    expect(postSlackMessage).toHaveBeenCalledWith(
-      "xoxb-test",
-      "C-ALERT",
-      expect.objectContaining({ text: "NoxHere workspace test for acme" }),
-    );
+    expect(ctx.checkSlackOrgHealth).toHaveBeenCalledWith(7, "conn-2");
+    expect(ctx.sendSlackMessage).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.objectContaining({ text: "NoxHere workspace test for acme" }),
+    }));
     expect(ctx.calls.some((call) => call.sql.includes("INSERT INTO slack_channel_status")
       && call.binds.includes("C-ALERT"))).toBe(true);
   });
@@ -159,24 +165,20 @@ describe("Slack route tests", () => {
     ["activity_posts", "Activity posts delivery test for acme"],
     ["activity_release_notes", "Activity release notes delivery test for acme"],
   ])("sends a distinct %s test payload", async (kind, text) => {
-    vi.mocked(postSlackMessage).mockResolvedValueOnce({ ok: true, channel: "C-FEED", ts: "1.2" });
-    const response = await onRequestPost(context({ kind, channelId: "C-FEED" }));
+    const ctx = context({ kind, connectionId: "conn-2", channelId: "C-FEED" });
+    const response = await onRequestPost(ctx);
     expect(response.status).toBe(200);
-    expect(postSlackMessage).toHaveBeenCalledWith(
-      "xoxb-test",
-      "C-FEED",
-      expect.objectContaining({ text }),
-    );
+    expect(ctx.sendSlackMessage).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.objectContaining({ text }),
+    }));
   });
 
   it("sends a dedicated daily-summary test payload", async () => {
-    vi.mocked(postSlackMessage).mockResolvedValueOnce({ ok: true, channel: "C-SUMMARY", ts: "1.3" });
-    const response = await onRequestPost(context({ kind: "activity_daily_summary", channelId: "C-SUMMARY" }));
+    const ctx = context({ kind: "activity_daily_summary", connectionId: "conn-2", channelId: "C-SUMMARY" });
+    const response = await onRequestPost(ctx);
     expect(response.status).toBe(200);
-    expect(postSlackMessage).toHaveBeenCalledWith(
-      "xoxb-test",
-      "C-SUMMARY",
-      expect.objectContaining({ text: "Activity daily summary delivery test for acme" }),
-    );
+    expect(ctx.sendSlackMessage).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.objectContaining({ text: "Activity daily summary delivery test for acme" }),
+    }));
   });
 });

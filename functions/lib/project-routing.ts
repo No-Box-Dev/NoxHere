@@ -15,8 +15,29 @@ export interface ProjectSlackDestination {
 }
 
 interface SlackEnvironment {
-  DB: D1Database;
-  ENCRYPTION_KEY?: string;
+  CONNECTIONS?: {
+    validateSlackDestination(input: unknown): Promise<unknown>;
+  };
+}
+
+interface SlackDestinationValidationResult {
+  ok: boolean;
+  result?: { connectionId: string };
+  error?: { code: string; message: string; status?: number };
+}
+
+export class ProjectSlackDestinationError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status = 409) {
+    super(message);
+    this.name = "ProjectSlackDestinationError";
+    this.status = status;
+  }
+}
+
+export function projectSlackDestinationErrorStatus(error: unknown): number {
+  return error instanceof ProjectSlackDestinationError ? error.status : 503;
 }
 
 export async function validateProjectSlackDestination(
@@ -32,22 +53,27 @@ export async function validateProjectSlackDestination(
   }
   if (!channelId) return null;
 
-  const install = await resolveSlackInstall(env, orgId, connectionId);
-  if (!install) throw new Error("Connect the selected Slack workspace before choosing a channel");
-  const connection = await env.DB.prepare(
-    "SELECT project_id FROM slack_connections WHERE id = ? AND org_id = ?",
-  ).bind(install.id, orgId).first<{ project_id: string | null }>();
-  if (connection?.project_id && connection.project_id !== projectId) {
-    throw new Error(projectId
-      ? "The selected Slack workspace belongs to another project"
-      : "Link this source to the project that owns the selected Slack workspace");
+  if (!env.CONNECTIONS?.validateSlackDestination) {
+    throw new ProjectSlackDestinationError("Slack channel validation is temporarily unavailable", 503);
   }
-  const channel = await getSlackChannel(install.botToken, channelId);
-  if (!channel || channel.is_archived) throw new Error("Slack channel is archived or unavailable");
-  if (channel.is_private && !channel.is_member) {
-    throw new Error("Invite the Nox bot to this private channel first");
+
+  let validation: SlackDestinationValidationResult;
+  try {
+    const raw = await env.CONNECTIONS.validateSlackDestination({ orgId, projectId, connectionId, channelId });
+    if (!raw || typeof raw !== "object" || !("ok" in raw) || typeof raw.ok !== "boolean") {
+      throw new Error("Invalid Connections response");
+    }
+    validation = raw as SlackDestinationValidationResult;
+  } catch {
+    throw new ProjectSlackDestinationError("Slack channel validation is temporarily unavailable", 503);
   }
-  return install.id;
+  if (!validation.ok || !validation.result?.connectionId) {
+    throw new ProjectSlackDestinationError(
+      validation.error?.message ?? "Slack channel is unavailable",
+      validation.error?.status === 400 ? 400 : validation.error?.status === 503 ? 503 : 409,
+    );
+  }
+  return validation.result.connectionId;
 }
 
 interface RouteRow {
@@ -87,4 +113,3 @@ export async function resolveProjectSlackDestination(
     channelId: row.channel_id,
   };
 }
-import { getSlackChannel, resolveSlackInstall } from "./slack.js";

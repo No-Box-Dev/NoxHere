@@ -1,16 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../lib/slack.js", () => ({
-  resolveSlackInstall: vi.fn(async () => ({ id: "conn-1", botToken: "xoxb-test" })),
-  getSlackChannel: vi.fn(async () => ({ id: "C1", is_archived: false, is_private: false, is_member: true })),
-}));
 vi.mock("../../lib/inactive-repos.js", () => ({
   getActiveRepoNames: vi.fn(async (db: { _available: string[] }) => db._available),
 }));
 
 import { onRequestGet } from "../projects/routing";
 import { onRequestPut } from "../projects/routing/[id]";
-import { getSlackChannel, resolveSlackInstall } from "../../lib/slack.js";
 
 function makeDb({ projects = [], assignments = [], routes = [], project = { id: "proj-playnist" }, available = [], connectionProjectId = null }: {
   projects?: Array<Record<string, unknown>>;
@@ -50,10 +45,10 @@ function makeDb({ projects = [], assignments = [], routes = [], project = { id: 
   return db;
 }
 
-function context(db: ReturnType<typeof makeDb>, { body, admin = true }:
-  { body?: unknown; admin?: boolean } = {}) {
+function context(db: ReturnType<typeof makeDb>, { body, admin = true, validateSlackDestination = vi.fn(async () => ({ ok: true, result: { connectionId: "conn-1" } })) }:
+  { body?: unknown; admin?: boolean; validateSlackDestination?: ReturnType<typeof vi.fn> } = {}) {
   return {
-    env: { DB: db, ENCRYPTION_KEY: "test" },
+    env: { DB: db, CONNECTIONS: { validateSlackDestination } },
     data: { orgId: 7, orgLogin: "acme", isAdmin: admin },
     params: { id: "proj-playnist" },
     request: new Request("https://app.noxhere.com/api/projects/routing/proj-playnist", {
@@ -114,10 +109,16 @@ describe("PUT /api/projects/routing/:id", () => {
 
   it("moves repositories and saves product destinations atomically", async () => {
     const db = makeDb({ available: ["api", "web"] });
-    const response = await onRequestPut(context(db, { body: validBody }) as never);
+    const validateSlackDestination = vi.fn(async () => ({ ok: true, result: { connectionId: "conn-1" } }));
+    const response = await onRequestPut(context(db, { body: validBody, validateSlackDestination }) as never);
     expect(response.status).toBe(200);
-    expect(resolveSlackInstall).toHaveBeenCalledTimes(2);
-    expect(getSlackChannel).toHaveBeenCalledTimes(2);
+    expect(validateSlackDestination).toHaveBeenCalledTimes(2);
+    expect(validateSlackDestination).toHaveBeenCalledWith({
+      orgId: 7,
+      projectId: "proj-playnist",
+      connectionId: "conn-1",
+      channelId: "C-POSTS",
+    });
     expect(db._calls.batch.filter((statement) => statement._sql.includes("INSERT INTO project_repositories"))).toHaveLength(2);
     expect(db._calls.batch.filter((statement) => statement._sql.includes("INSERT INTO project_slack_routes"))).toHaveLength(2);
     expect(db._calls.batch.some((statement) => statement._sql.includes("INSERT INTO project_routing_settings"))).toBe(true);
@@ -125,16 +126,28 @@ describe("PUT /api/projects/routing/:id", () => {
 
   it("disables routing without revalidating retained destinations", async () => {
     const db = makeDb();
-    const response = await onRequestPut(context(db, { body: { ...validBody, enabled: false } }) as never);
+    const validateSlackDestination = vi.fn();
+    const response = await onRequestPut(context(db, { body: { ...validBody, enabled: false }, validateSlackDestination }) as never);
     expect(response.status).toBe(200);
-    expect(resolveSlackInstall).not.toHaveBeenCalled();
+    expect(validateSlackDestination).not.toHaveBeenCalled();
     expect(db._calls.batch.find((statement) => statement._sql.includes("INSERT INTO project_routing_settings"))?._binds).toEqual([7, "proj-playnist", 0]);
   });
 
   it("rejects a workspace assigned to another project", async () => {
-    const response = await onRequestPut(context(makeDb({ available: ["api", "web"], connectionProjectId: "other" }), { body: validBody }) as never);
+    const validateSlackDestination = vi.fn(async () => ({
+      ok: false,
+      error: { code: "slack_workspace_project_mismatch", message: "The selected Slack workspace belongs to another project", status: 409 },
+    }));
+    const response = await onRequestPut(context(makeDb({ available: ["api", "web"] }), { body: validBody, validateSlackDestination }) as never);
     expect(response.status).toBe(409);
     expect(((await response.json()) as { error: string }).error).toContain("another project");
+  });
+
+  it("fails closed when the Connections validation RPC is unavailable", async () => {
+    const validateSlackDestination = vi.fn(async () => { throw new Error("rpc unavailable"); });
+    const response = await onRequestPut(context(makeDb({ available: ["api", "web"] }), { body: validBody, validateSlackDestination }) as never);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "Slack channel validation is temporarily unavailable" });
   });
 
   it("rejects repositories outside the organization", async () => {

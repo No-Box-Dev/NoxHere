@@ -1,11 +1,11 @@
 import { getCtx, errorResponse, jsonResponse } from "../../../../lib/db";
 import { getNoxDb, type NoxDatabaseEnv } from "../../../../lib/nox-db";
 import { telemetrySourceInputSchema } from "../../../../lib/telemetry-settings";
-import { validateProjectSlackDestination } from "../../../../lib/project-routing";
+import { projectSlackDestinationErrorStatus, validateProjectSlackDestination } from "../../../../lib/project-routing";
 import { validate } from "../../../../lib/validate";
 
 interface Ctx {
-  env: NoxDatabaseEnv;
+  env: NoxDatabaseEnv & { CONNECTIONS?: { validateSlackDestination(input: unknown): Promise<unknown> } };
   data: { orgId: number; projectId?: string | null; orgLogin: string; userLogin: string; isAdmin: boolean };
   params: { id: string };
   request: Request;
@@ -51,12 +51,15 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
 
   let slackConnectionId: string | null = null;
   try {
-    slackConnectionId = await validateProjectSlackDestination({ ...context.env, DB: db }, orgId, targetProjectId, {
+    slackConnectionId = await validateProjectSlackDestination(context.env, orgId, targetProjectId, {
       connectionId: parsed.data.slackConnectionId,
       channelId: parsed.data.slackChannelId,
     });
   } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Slack channel is unavailable", 409);
+    return errorResponse(
+      error instanceof Error ? error.message : "Slack channel validation is temporarily unavailable",
+      projectSlackDestinationErrorStatus(error),
+    );
   }
   const result = await db.prepare(
     `UPDATE telemetry_sources SET name = ?, environment = ?, project_id = ?, enabled = ?, alerts_enabled = ?,
