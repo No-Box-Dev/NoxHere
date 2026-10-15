@@ -55,7 +55,7 @@ npx wrangler r2 bucket create feedback-assets
 Apply migrations to the remote DB:
 
 ```bash
-npx wrangler d1 migrations apply noxhere --remote
+npx wrangler d1 migrations apply DB --config services/core-api/wrangler.jsonc --env="" --remote
 ```
 
 ## 3. Register a GitHub App

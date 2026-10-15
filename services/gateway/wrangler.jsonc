@@ -41,7 +41,7 @@
   "d1_databases": [
     {
       "binding": "CONTROL_DB",
-      "database_name": "noxhere-control",
+      "database_name": "noxhere-control-production",
       "database_id": "b4e665cf-6fc9-4547-9f5d-2851d1163703",
       "migrations_dir": "migrations"
     }

@@ -10,7 +10,7 @@ enabled = true
 
 [[d1_databases]]
 binding = "DEMO_DB"
-database_name = "activity-demo"
+database_name = "noxhere-activity-demo-production"
 database_id = "86e5f900-5f92-469d-bd10-2b05e9e7a9a7"
 migrations_dir = "migrations"
 
@@ -19,7 +19,7 @@ name = "noxhere-activity-staging"
 
 [[env.staging.d1_databases]]
 binding = "DEMO_DB"
-database_name = "activity-demo-staging"
+database_name = "noxhere-activity-demo-staging"
 # Resolved to the dedicated database by scripts/prepare-staging-activity-database.mjs
 # before any remote staging migration or deploy.
 database_id = "b5f3f43a-eadd-4091-9814-9474a73838d5"
