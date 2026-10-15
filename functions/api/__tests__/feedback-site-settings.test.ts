@@ -12,7 +12,7 @@ import { onRequestPatch } from "../feedback/sites/[id]/index";
 import { getSlackChannel, resolveSlackChannels, resolveSlackInstall } from "../../lib/slack.js";
 import { requeueBlockedForSite } from "../../lib/delivery-outbox.js";
 
-function database({ targetProject = true }: { targetProject?: boolean } = {}) {
+function database({ targetProject = true, feedbackAssets = true }: { targetProject?: boolean; feedbackAssets?: boolean } = {}) {
   const runs: Array<{ sql: string; binds: unknown[] }> = [];
   return {
     runs,
@@ -26,6 +26,7 @@ function database({ targetProject = true }: { targetProject?: boolean } = {}) {
         async first() {
           if (sql.includes("FROM spot_sites")) return { id: "site-1", project_id: "playnist", repo: "web", slack_channel_id: null, widget_config: "{}" };
           if (sql.includes("FROM projects project")) return targetProject ? { id: "umbrella" } : null;
+          if (sql.includes("sqlite_master")) return feedbackAssets ? { name: "feedback_assets" } : null;
           return null;
         },
         async run() { runs.push({ sql, binds: statement.binds }); return { success: true }; },
@@ -102,6 +103,13 @@ describe("Feedback widget configuration", () => {
   it("rejects a target project that does not own the site's repository", async () => {
     const response = await onRequestPatch(context(database({ targetProject: false }), { projectId: "unrelated" }) as never);
     expect(response.status).toBe(409);
+  });
+
+  it("supports installations that do not have private evidence storage yet", async () => {
+    const db = database({ feedbackAssets: false });
+    const response = await onRequestPatch(context(db, { projectId: "umbrella" }) as never);
+    expect(response.status).toBe(200);
+    expect(db.runs.some((run) => run.sql.includes("UPDATE feedback_assets"))).toBe(false);
   });
 
   it("requires one mandatory description and allows an optional title", async () => {

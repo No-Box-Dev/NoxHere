@@ -153,14 +153,24 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     orgId,
     resourceProjectId,
   );
-  const moveStatements = targetProjectId === resourceProjectId ? [] : [
-    db.prepare("UPDATE spot_reports SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id = ?")
-      .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
-    db.prepare("UPDATE feedback_assets SET project_id = ? WHERE org_id = ? AND site_id = ? AND project_id = ?")
-      .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
-    db.prepare("UPDATE delivery_outbox SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id = ?")
-      .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
-  ];
+  const moveStatements: D1PreparedStatement[] = [];
+  if (targetProjectId !== resourceProjectId) {
+    moveStatements.push(
+      db.prepare("UPDATE spot_reports SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id = ?")
+        .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
+      db.prepare("UPDATE delivery_outbox SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id = ?")
+        .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
+    );
+    const evidenceTable = await db.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'feedback_assets'",
+    ).first<{ name: string }>();
+    if (evidenceTable) {
+      moveStatements.push(
+        db.prepare("UPDATE feedback_assets SET project_id = ? WHERE org_id = ? AND site_id = ? AND project_id = ?")
+          .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
+      );
+    }
+  }
   await db.batch([
     updateStatement,
     ...moveStatements,
