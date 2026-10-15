@@ -1,6 +1,5 @@
 import { getCtx, jsonResponse, errorResponse } from "../../lib/db";
-import { actionableSlackError, checkSlackOrgHealth, getSlackChannel, resolveSlackInstall } from "../../lib/slack";
-import { deliverResolvedSlackMessage } from "../../lib/transports/slack";
+import { actionableSlackError } from "../../lib/slack";
 import { markSlackChannelIssue, markSlackChannelVerified } from "../../lib/slack-channel-status";
 import { getTelemetryDigestResponse, getTelemetryTestResponse } from "../../lib/telemetry-response.js";
 import { completedPeriodAt, loadTelemetryDigestData } from "../../lib/telemetry-digest-data.js";
@@ -21,7 +20,7 @@ import { buildPlanningTestResponse } from "../../products/planning/response.js";
 // verify the bot is installed in the right workspace + the channel routes
 // correctly before saving the channel selection.
 export async function onRequestPost(context) {
-  const { orgId, orgLogin, isAdmin } = getCtx(context);
+  const { orgId, orgLogin, projectId, isAdmin } = getCtx(context);
   if (!orgId || !orgLogin) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Only an organization admin can test Slack delivery. Ask an admin to send this test.", 403);
 
@@ -42,16 +41,20 @@ export async function onRequestPost(context) {
   if (kind === "connection") {
     if (!connectionId) return errorResponse("Choose a Slack workspace before sending a connection test.", 400);
     if (!channelId) return errorResponse("Choose a Slack channel before sending a connection test.", 400);
-    const health = await checkSlackOrgHealth(context.env, orgId, connectionId);
+    if (!context.env.CONNECTIONS?.checkSlackOrgHealth) {
+      return errorResponse("Slack delivery is temporarily unavailable", 503);
+    }
+    const health = await context.env.CONNECTIONS.checkSlackOrgHealth(orgId, connectionId);
     if (health.status !== "ok") {
       const message = actionableSlackError(health.error, "Slack connection verification failed. Reconnect the affected workspace, then send the test again.");
       return errorResponse(message, 502);
     }
   }
   if (!channelId) return errorResponse("Choose a Slack channel before sending a test message.", 400);
-
-  const install = await resolveSlackInstall(context.env, orgId, connectionId);
-  if (!install) return errorResponse("This Slack workspace is not connected or its authorization cannot be read. Reconnect it, then send the test again.", 404);
+  if (!connectionId) return errorResponse("Choose a Slack workspace before sending a test message.", 400);
+  if (!context.env.CONNECTIONS?.sendSlackMessage) {
+    return errorResponse("Slack delivery is temporarily unavailable", 503);
+  }
 
   try {
     let payload;
@@ -140,42 +143,47 @@ export async function onRequestPost(context) {
       }
       : null;
 
-    const receipt = await deliverResolvedSlackMessage(context.env, {
+    const delivery = await context.env.CONNECTIONS.sendSlackMessage({
       orgId,
+      projectId: projectId ?? null,
       connectionId,
       channelId,
       message: payload,
     });
+    if (!delivery?.ok || !delivery.result) {
+      const deliveryError = delivery?.error ?? { code: "slack_delivery_failed", message: "Slack delivery failed" };
+      const status = deliveryError.code === "rate_limited" ? 429
+        : ["slack_not_connected", "slack_workspace_project_mismatch", "slack_channel_unavailable", "slack_channel_membership_required"].includes(deliveryError.code)
+          ? 409
+          : deliveryError.code === "invalid_request" ? 400 : 502;
+      await markSlackChannelIssue(context.env.DB, orgId, connectionId, channelId, deliveryError);
+      return errorResponse(actionableSlackError(
+        deliveryError,
+        "Slack did not accept the test message. Review the workspace and channel, then send the test again.",
+      ), status);
+    }
     await Promise.all([
       context.env.DB.prepare(
         `UPDATE slack_connections SET health_status = 'ok', last_error = NULL,
          last_checked_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND id = ?`,
-      ).bind(orgId, install.id).run(),
-      markSlackChannelVerified(context.env.DB, orgId, install.id, channelId),
+      ).bind(orgId, delivery.result.connectionId).run(),
+      markSlackChannelVerified(context.env.DB, orgId, delivery.result.connectionId, channelId),
     ]);
     return jsonResponse({
       ok: true,
-      connectionId: install.id,
-      channelId: receipt.channelId,
-      messageTs: receipt.messageId,
+      connectionId: delivery.result.connectionId,
+      channelId: delivery.result.channelId,
+      messageTs: delivery.result.messageId,
       deliveredAt: new Date().toISOString(),
     });
   } catch (err) {
-    let deliveryError = err;
-    if (err?.code === "channel_not_found") {
-      try {
-        const channel = await getSlackChannel(install.botToken, channelId);
-        if (channel && !channel.is_member) {
-          deliveryError = Object.assign(new Error("NoxHere is not a member of this channel"), { code: "not_in_channel" });
-        }
-      } catch { /* Keep Slack's original error when the channel is not visible to this workspace token. */ }
-    }
+    const deliveryError = err;
     await Promise.all([
       context.env.DB.prepare(
         `UPDATE slack_connections SET health_status = 'degraded', last_error = ?,
          last_checked_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND id = ?`,
-      ).bind(deliveryError instanceof Error ? deliveryError.message.slice(0, 1000) : String(deliveryError).slice(0, 1000), orgId, install.id).run(),
-      markSlackChannelIssue(context.env.DB, orgId, install.id, channelId, deliveryError),
+      ).bind(deliveryError instanceof Error ? deliveryError.message.slice(0, 1000) : String(deliveryError).slice(0, 1000), orgId, connectionId).run(),
+      markSlackChannelIssue(context.env.DB, orgId, connectionId, channelId, deliveryError),
     ]);
     return errorResponse(actionableSlackError(deliveryError, "Slack did not accept the test message. Review the workspace and channel, then send the test again."), 502);
   }
