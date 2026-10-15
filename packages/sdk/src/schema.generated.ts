@@ -717,6 +717,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/feedback/assets/{assetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Download authenticated Feedback evidence
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        get: operations["downloadFeedbackAsset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/feedback/project-overview": {
         parameters: {
             query?: never;
@@ -741,10 +763,16 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                reportId: string;
+            };
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Read a Feedback report and its evidence
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        get: operations["getFeedbackReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5363,6 +5391,40 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
+    downloadFeedbackAsset: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated Feedback evidence bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "image/webp": string;
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            410: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
     getFeedbackProjectOverview: {
         parameters: {
             query?: never;
@@ -5371,6 +5433,36 @@ export interface operations {
                 "X-Project-ID"?: components["parameters"]["projectContext"];
             };
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getFeedbackReport: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                reportId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;

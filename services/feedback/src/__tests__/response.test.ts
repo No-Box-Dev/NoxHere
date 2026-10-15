@@ -18,9 +18,16 @@ const capture = {
 
 describe("Feedback response service contract", () => {
   it("renders an idempotent GitHub issue", () => {
-    const response = buildIssueResponse(capture);
+    const response = buildIssueResponse({
+      ...capture,
+      screenshotAssetId: "asset_0123456789abcdef0123456789abcdef",
+      screenshotUrl: "https://app.noxhere.com/api/v1/feedback/assets/asset_0123456789abcdef0123456789abcdef",
+    });
     expect(response).toMatchObject({ contract: "feedback.response", version: 1 });
     expect(response.issue.body).toContain("<!-- feedback:capture-1 -->");
+    expect(response.issue.body).toContain("<!-- feedback-evidence:asset_0123456789abcdef0123456789abcdef -->");
+    expect(response.issue.body).toContain("AI agents:");
+    expect(response.issue.body).not.toContain("![Feedback capture]");
   });
 
   it("renders a Slack message with the issue and reported page", () => {

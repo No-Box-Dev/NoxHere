@@ -32,6 +32,12 @@ beforeAll(async () => {
       expires_at TEXT NOT NULL, claimed_at TEXT, used_at TEXT, response_id TEXT, response_text TEXT,
       screenshot_url TEXT, last_error TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
     )`),
+    env.DB.prepare(`CREATE TABLE feedback_assets (
+      id TEXT PRIMARY KEY, report_id TEXT NOT NULL, org_id INTEGER NOT NULL, project_id TEXT,
+      site_id TEXT NOT NULL, role TEXT NOT NULL, media_type TEXT NOT NULL, size_bytes INTEGER NOT NULL,
+      sha256 TEXT NOT NULL, r2_key TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      expires_at TEXT, deleted_at TEXT
+    )`),
     env.DB.prepare("INSERT INTO orgs (id, github_login) VALUES (1, 'acme')"),
     env.DB.prepare(`INSERT INTO members (id, org_id, login, avatar_url, kind) VALUES
       (1, 1, 'Ada-Lovelace', 'https://avatars.example/ada.png', 'human'),
@@ -166,11 +172,13 @@ describe("public capture Worker", () => {
     ).bind(hash).first<{ used_at: string; response_text: string; screenshot_url: string }>();
     expect(stored?.used_at).toBeTruthy();
     expect(stored?.response_text).toContain("too far right");
-    expect(stored?.screenshot_url).toContain("responses/site-1/");
-    const screenshotPath = new URL(stored!.screenshot_url).pathname;
-    const screenshotResponse = await app.request(screenshotPath, {}, { ...env, NOXHERE: { execute } } as never);
-    expect(screenshotResponse.status).toBe(200);
-    expect(screenshotResponse.headers.get("Content-Type")).toBe("image/png");
+    expect(stored?.screenshot_url).toContain("/api/v1/feedback/assets/asset_");
+    const asset = await env.DB.prepare(
+      "SELECT id, r2_key, media_type FROM feedback_assets WHERE role = 'follow_up_screenshot' LIMIT 1",
+    ).first<{ id: string; r2_key: string; media_type: string }>();
+    expect(asset?.media_type).toBe("image/png");
+    expect(await env.ASSETS.head(asset!.r2_key)).not.toBeNull();
+    expect((await app.request(`/api/feedback/public/v1/assets/${asset!.r2_key}`, {}, { ...env, NOXHERE: { execute } } as never)).status).toBe(404);
   });
 
   it("accepts diagnostic screenshot failures and keeps successful telemetry origin-scoped", async () => {
@@ -323,6 +331,30 @@ describe("public capture Worker", () => {
     });
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: "Idempotency key does not match attempt ID" });
+  });
+
+  it("stores new screenshots as private evidence and queues only the authenticated API link", async () => {
+    const send = vi.fn(async () => undefined);
+    const response = await app.request("/api/feedback/public/v1/reports", {
+      method: "POST",
+      headers: { Origin: "https://app.example.com", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        siteId: "site-1",
+        attemptId: "private-evidence-1",
+        title: "Private evidence",
+        screenshot: "data:image/png;base64,iVBORw0KGgo=",
+      }),
+    }, { ...env, TASK_QUEUE: { send } } as never);
+
+    expect(response.status).toBe(200);
+    const task = send.mock.calls[0][0] as { screenshotAssetId: string; screenshotUrl: string };
+    expect(task.screenshotAssetId).toMatch(/^asset_[a-f0-9]{32}$/);
+    expect(task.screenshotUrl).toBe(`https://app.noxhere.com/api/v1/feedback/assets/${task.screenshotAssetId}`);
+    const asset = await env.DB.prepare("SELECT r2_key FROM feedback_assets WHERE id = ?")
+      .bind(task.screenshotAssetId).first<{ r2_key: string }>();
+    expect(asset?.r2_key).toBe(`evidence/${task.screenshotAssetId}`);
+    expect(await env.ASSETS.head(asset!.r2_key)).not.toBeNull();
+    expect((await app.request(`/api/feedback/public/v1/assets/${asset!.r2_key}`, {}, env as never)).status).toBe(404);
   });
 
   it("does not expose retired generic widget routes", async () => {

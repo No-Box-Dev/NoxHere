@@ -4,7 +4,7 @@ vi.mock("../../lib/feedback-resolution.js", () => ({
   updateFeedbackReport: vi.fn(),
 }));
 
-import { onRequestPatch } from "../feedback/reports/[id]";
+import { onRequestGet, onRequestPatch } from "../feedback/reports/[id]";
 import { updateFeedbackReport } from "../../lib/feedback-resolution.js";
 
 function context(body: unknown, data: Record<string, unknown> = {}) {
@@ -53,5 +53,38 @@ describe("Feedback report status API", () => {
   it("rejects a non-admin browser member", async () => {
     const response = await onRequestPatch(context({ status: "resolved" }, { isAdmin: false }) as never);
     expect(response.status).toBe(403);
+  });
+
+  it("returns authenticated evidence metadata with the report", async () => {
+    const report = {
+      id: "capture-1", project_id: "project-1", site_id: "site-1", repo: "web",
+      issue_number: 42, issue_url: "https://github.com/acme/web/issues/42", title: "Broken",
+      reporter_name: "Ada", reporter_avatar_url: null, status: "open", resolution_summary: null,
+      resolved_at: null, resolved_by: null, created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z",
+    };
+    const asset = {
+      id: "asset_0123456789abcdef0123456789abcdef", role: "screenshot", media_type: "image/png",
+      size_bytes: 4, sha256: "abcd", created_at: "2026-10-01T00:00:00Z", expires_at: null,
+    };
+    const prepare = vi.fn((sql: string) => ({
+      bind: vi.fn(() => sql.includes("FROM spot_reports")
+        ? { first: vi.fn(async () => report) }
+        : { all: vi.fn(async () => ({ results: [asset] })) }),
+    }));
+    const ctx = context({}, {});
+    ctx.env.DB = { prepare };
+    ctx.request = new Request("https://app.noxhere.com/api/v1/feedback/reports/capture-1");
+    const response = await onRequestGet(ctx as never);
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      report: {
+        id: "capture-1",
+        evidence: [{
+          id: asset.id,
+          url: `/api/v1/feedback/assets/${asset.id}`,
+          mediaType: "image/png",
+        }],
+      },
+    });
   });
 });

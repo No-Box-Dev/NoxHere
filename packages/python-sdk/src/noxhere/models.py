@@ -757,6 +757,9 @@ class DownloadFeatureAttachmentPath(TypedDict, total=False):
     number: Required[int]
     attachmentId: Required[int]
 
+class DownloadFeedbackAssetPath(TypedDict, total=False):
+    assetId: Required[str]
+
 class DownloadSpecAttachmentPath(TypedDict, total=False):
     specId: Required[int]
     attachmentId: Required[int]
@@ -779,6 +782,9 @@ class GetActorPath(TypedDict, total=False):
 class GetEngineerActivityQuery(TypedDict, total=False):
     login: Required[str]
     month: NotRequired[str]
+
+class GetFeedbackReportPath(TypedDict, total=False):
+    reportId: Required[str]
 
 class GetFeedbackResolutionTemplatePath(TypedDict, total=False):
     siteId: Required[str]

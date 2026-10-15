@@ -4,6 +4,7 @@ import { generateFeedbackResolutionSummary } from "./feedback-resolution-ai.js";
 import { resolutionTemplateFromWidgetConfig, resolutionTemplateRevision } from "./feedback-resolution-template.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EVIDENCE_RETENTION_DAYS = 90;
 
 export async function storeFeedbackReport(env, capture, issue) {
   const email = normalizeEmail(capture.reporterEmail);
@@ -69,6 +70,7 @@ export async function updateFeedbackReport(env, input) {
   if (!report) return null;
 
   const now = new Date().toISOString();
+  const evidenceExpiresAt = new Date(Date.parse(now) + EVIDENCE_RETENTION_DAYS * 86_400_000).toISOString();
   const status = input.status;
   const activityKind = status === "open" ? "reopened" : status;
   const resolving = status === "resolved";
@@ -137,6 +139,11 @@ export async function updateFeedbackReport(env, input) {
       summary,
       now,
     ),
+    env.DB.prepare(
+      `UPDATE feedback_assets
+          SET expires_at = CASE WHEN ? = 'resolved' THEN ? ELSE NULL END
+        WHERE report_id = ? AND org_id = ? AND deleted_at IS NULL`,
+    ).bind(status, evidenceExpiresAt, report.id, input.orgId),
   ];
   if (queueNotification) {
     statements.push(env.DB.prepare(

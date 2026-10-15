@@ -657,6 +657,8 @@ const clientRouteContracts = [
   ["/api/v1/slack/status", [["get", "getSlackStatus", "Read Slack connections and delivery health", "member"]]],
   ["/api/v1/slack/test", [["post", "testSlackDestination", "Send a test message to a Slack destination", "admin"]]],
   ["/api/v1/feedback/project-overview", [["get", "getFeedbackProjectOverview", "Read a guest-safe Feedback project overview", "member"]]],
+  ["/api/v1/feedback/reports/{reportId}", [["get", "getFeedbackReport", "Read a Feedback report and its evidence", "member"]]],
+  ["/api/v1/feedback/assets/{assetId}", [["get", "downloadFeedbackAsset", "Download authenticated Feedback evidence", "member"]]],
   ["/api/v1/activity/current-summary", [["get", "getCurrentWorkSummary", "Read per-person current-work counts for the selected project", "member"]]],
   ["/api/v1/sync", [
     ["get", "getSyncStatus", "Read GitHub synchronization freshness", "member"],
@@ -678,6 +680,16 @@ for (const [path, methods] of clientRouteContracts) {
 }
 document.paths["/api/v1/telemetry/project-overview"].get["x-guest-access"] = "read";
 document.paths["/api/v1/feedback/project-overview"].get["x-guest-access"] = "read";
+document.paths["/api/v1/feedback/assets/{assetId}"].get.responses["200"] = {
+  description: "Authenticated Feedback evidence bytes",
+  content: {
+    "image/png": { schema: { type: "string", format: "binary" } },
+    "image/jpeg": { schema: { type: "string", format: "binary" } },
+    "image/webp": { schema: { type: "string", format: "binary" } },
+  },
+};
+document.paths["/api/v1/feedback/assets/{assetId}"].get.responses["404"] = { "$ref": "#/components/responses/V1Error" };
+document.paths["/api/v1/feedback/assets/{assetId}"].get.responses["410"] = { "$ref": "#/components/responses/V1Error" };
 for (const path of ["/api/v1/tasks", "/api/v1/task-workflows", "/api/v1/projects/{projectId}/telemetry/dashboard"]) {
   if (document.paths[path]?.get) document.paths[path].get["x-guest-access"] = "read";
 }

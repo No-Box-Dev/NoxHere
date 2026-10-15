@@ -13,6 +13,8 @@ describe("API authentication primitives", () => {
     expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/public/events", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/feedback/sites/site-1", "PATCH")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/feedback/sites/site-1", "PATCH")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/feedback/reports/report-1", "GET")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/feedback/assets/asset_0123456789abcdef0123456789abcdef", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/telemetry/sources/source-1/keys", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/sources/source-1/keys", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/services/activity/config", "GET")).toBe(false);
@@ -60,6 +62,18 @@ describe("API authentication primitives", () => {
       "/api/v1/projects?view=bootstrap",
       7,
     )).resolves.toBeNull();
+  });
+
+  it("resolves Feedback evidence to its owning project", async () => {
+    const first = vi.fn(async () => ({ project_id: "project-playnist" }));
+    const bind = vi.fn(() => ({ first }));
+    const prepare = vi.fn(() => ({ bind }));
+    await expect(apiTokenProjectResource(
+      { prepare } as never,
+      "/api/v1/feedback/assets/asset_0123456789abcdef0123456789abcdef",
+      7,
+    )).resolves.toEqual({ kind: "resource", projectId: "project-playnist" });
+    expect(bind).toHaveBeenCalledWith(7, "asset_0123456789abcdef0123456789abcdef");
   });
 
 });

@@ -24,6 +24,7 @@ import {
   type CaptureTask,
   type ReportParams,
 } from "./report";
+import { deleteExpiredEvidence, recordEvidence } from "./evidence";
 import {
   environmentForOrigin,
   getCaptureSite,
@@ -158,11 +159,16 @@ async function submitReport(context: AppContext) {
   const effectiveConfig = publicWidgetConfig(site, origin);
 
   const captureId = params.attemptId || crypto.randomUUID();
-  const target = screenshotTarget(params.siteId, captureId, params.screenshot, context.env.PUBLIC_ASSET_BASE_URL);
+  const target = await screenshotTarget(site.org_id, params.siteId, captureId, params.screenshot, context.env.PUBLIC_API_BASE_URL);
   let screenshotStored = false;
   try {
     if (target && params.screenshot) {
-      await putScreenshot(context.env.ASSETS, target, params.screenshot);
+      const stored = await putScreenshot(context.env.ASSETS, target, params.screenshot);
+      await recordEvidence(context.env.DB, target, {
+        orgId: site.org_id,
+        projectId: site.project_id,
+        siteId: site.id,
+      }, stored);
       screenshotStored = true;
     }
     const task = validateQueueTask(buildCaptureTask({
@@ -170,6 +176,7 @@ async function submitReport(context: AppContext) {
       params,
       captureId,
       screenshotUrl: target?.url ?? null,
+      screenshotAssetId: target?.id ?? null,
     }));
     await context.env.TASK_QUEUE.send(task);
   } catch (error) {
@@ -177,7 +184,11 @@ async function submitReport(context: AppContext) {
     // the first attempt may already reference that object, so never delete it.
     // Generated one-shot IDs remain safe to clean up immediately.
     if (screenshotStored && target && !params.attemptId) {
-      try { await context.env.ASSETS.delete(target.key); }
+      try {
+        await context.env.ASSETS.delete(target.key);
+        await context.env.DB.prepare("DELETE FROM feedback_assets WHERE id = ? AND org_id = ?")
+          .bind(target.id, site.org_id).run();
+      }
       catch (cleanupError) {
         console.error(JSON.stringify({ event: "feedback.screenshot.cleanup_failed", key: target.key, error: message(cleanupError) }));
       }
@@ -314,16 +325,9 @@ app.post("/telemetry/widget-installs", async (context) => {
   return body instanceof Response ? body : receiveWidgetInstall(context, body);
 });
 
-const EXPIRED_SCREENSHOT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" role="img" aria-label="Screenshot expired"><rect width="800" height="450" fill="#f4f4f5"/><g fill="#a1a1aa" font-family="sans-serif" text-anchor="middle"><text x="400" y="212" font-size="26" font-weight="600">Screenshot expired</text><text x="400" y="248" font-size="16">Removed after 90 days</text></g></svg>`;
-
 async function serveObject(context: AppContext, key: string) {
   const object = await context.env.ASSETS.get(key);
-  if (!object) {
-    if (key.startsWith("screenshots/")) {
-      return new Response(EXPIRED_SCREENSHOT_SVG, { status: 200, headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" } });
-    }
-    return context.notFound();
-  }
+  if (!object) return context.notFound();
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("ETag", object.httpEtag);
@@ -340,11 +344,13 @@ async function serveSiteScreenshot(context: AppContext, siteId: string, key: str
 
 app.get("/r2/:key{.+}", async (context) => {
   const key = context.req.param("key");
+  if (key.startsWith("evidence/")) return context.notFound();
   const screenshot = key.match(/^screenshots\/([^/]+)\//);
   return screenshot ? serveSiteScreenshot(context, screenshot[1], key) : serveObject(context, key);
 });
 app.get("/api/feedback/public/v1/assets/:key{.+}", async (context) => {
   const key = context.req.param("key");
+  if (key.startsWith("evidence/")) return context.notFound();
   const siteAsset = key.match(/^(?:screenshots|responses)\/([^/]+)\//);
   return siteAsset ? serveSiteScreenshot(context, siteAsset[1], key) : serveObject(context, key);
 });
@@ -415,8 +421,11 @@ export default class FeedbackService extends WorkerEntrypoint<FeedbackEnv> {
   }
 
   scheduled() {
-    this.ctx.waitUntil(deleteExpiredScreenshots(this.env.ASSETS).then((deleted) => {
-      console.log(JSON.stringify({ event: "feedback.retention.complete", deleted }));
+    this.ctx.waitUntil(Promise.all([
+      deleteExpiredScreenshots(this.env.ASSETS),
+      deleteExpiredEvidence(this.env.DB, this.env.ASSETS),
+    ]).then(([legacyDeleted, evidenceDeleted]) => {
+      console.log(JSON.stringify({ event: "feedback.retention.complete", legacyDeleted, evidenceDeleted }));
     }).catch((error) => {
       console.error(JSON.stringify({ event: "feedback.retention.failed", error: message(error) }));
       throw error;
