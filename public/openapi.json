@@ -6551,6 +6551,7 @@
                   "client": {
                     "type": "string",
                     "enum": [
+                      "noxhere-cli",
                       "noxhere-mac",
                       "noxfeed-mac",
                       "activity-mac"
@@ -6629,6 +6630,7 @@
                   "client": {
                     "type": "string",
                     "enum": [
+                      "noxhere-cli",
                       "noxhere-mac",
                       "noxfeed-mac",
                       "activity-mac"

@@ -1,3 +1,5 @@
+import { NATIVE_DEVICE_CLIENTS } from "../packages/contracts/native-clients.ts";
+
 const [platformOrigin, spotOrigin, expectedSha] = process.argv.slice(2);
 if (!platformOrigin || !spotOrigin || !expectedSha) {
   throw new Error("Usage: smoke-deployment.mjs <platform-origin> <spot-origin> <sha>");
@@ -77,8 +79,7 @@ async function publicRoutesReady() {
   // both the current NoxHere app and the installed NoxFeed App Store build.
   // Unit tests did not catch the deployed-code regression, so make this a
   // release gate against the actual staging and production origins.
-  const nativeClients = ["noxhere-mac", "noxfeed-mac", "activity-mac", "noxhere-cli"];
-  const nativeResults = await Promise.all(nativeClients.map(async (client) => {
+  const nativeResults = await Promise.all(NATIVE_DEVICE_CLIENTS.map(async (client) => {
     const response = await fetch(smokeUrl("/api/v1/auth/native/device/start"), {
       method: "POST",
       headers: { ...headers, Accept: "application/json", "Content-Type": "application/json" },

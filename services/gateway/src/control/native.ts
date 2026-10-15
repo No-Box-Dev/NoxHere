@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NATIVE_DEVICE_CLIENTS } from "../../../../packages/contracts/native-clients";
 import {
   createNativeSession,
   revokeNativeSession,
@@ -7,11 +8,7 @@ import {
 import { apiError, boundedJson } from "./http";
 import { persistIdentityClaims, validIdentityExchangeResult, type IdentityService } from "./oauth";
 
-// `noxhere-mac` is the canonical client shipped by the unified Apple app.
-// Keep both historical identifiers so already-installed NoxFeed and Activity
-// builds can still sign in and refresh without being stranded by the rename.
-export const NATIVE_CLIENTS = ["noxhere-cli", "noxhere-mac", "noxfeed-mac", "activity-mac"] as const;
-const Client = z.enum(NATIVE_CLIENTS);
+const Client = z.enum(NATIVE_DEVICE_CLIENTS);
 const Start = z.object({ client: Client }).strict();
 const Poll = z.object({ client: Client, device_code: z.string().startsWith("noxid_").max(96) }).strict();
 const Refresh = z.object({ refresh_token: z.string().startsWith("nox_rt_").max(256) }).strict();

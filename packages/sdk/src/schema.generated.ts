@@ -4635,7 +4635,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @enum {string} */
-                    client: "noxhere-mac" | "noxfeed-mac" | "activity-mac";
+                    client: "noxhere-cli" | "noxhere-mac" | "noxfeed-mac" | "activity-mac";
                     device_code: string;
                 };
             };
@@ -4678,7 +4678,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @enum {string} */
-                    client: "noxhere-mac" | "noxfeed-mac" | "activity-mac";
+                    client: "noxhere-cli" | "noxhere-mac" | "noxfeed-mac" | "activity-mac";
                 };
             };
         };
