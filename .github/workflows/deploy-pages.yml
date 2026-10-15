@@ -94,6 +94,7 @@ jobs:
           test -n "$NOXHERE_IDENTITY_HASH_KEY"
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/core-api/wrangler.jsonc --env staging
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/gateway/wrangler.jsonc --env staging
+          printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/feedback/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env staging
       - name: Deploy staging private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
@@ -160,6 +161,7 @@ jobs:
           test -n "$NOXHERE_IDENTITY_HASH_KEY"
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/core-api/wrangler.jsonc --env=""
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/gateway/wrangler.jsonc --env=""
+          printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/feedback/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env=""
       - name: Deploy production private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
