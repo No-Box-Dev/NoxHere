@@ -257,6 +257,26 @@ describe("public capture Worker", () => {
     expect(response.status).toBe(202);
   });
 
+  it("accepts widget failures through the versioned public route used by the loader", async () => {
+    const response = await SELF.fetch("https://capture.test/api/feedback/public/v1/telemetry/widget-failures", {
+      method: "POST",
+      headers: { Origin: "https://app.example.com", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        version: 1,
+        eventId: crypto.randomUUID(),
+        siteId: "site-1",
+        environment: "Production",
+        widgetVersion: "build-1",
+        captureMode: "click",
+        stage: "submit",
+        errorType: "TypeError",
+        errorMessage: "Failed to fetch",
+        occurredAt: new Date().toISOString(),
+      }),
+    });
+    expect(response.status).toBe(202);
+  });
+
   it("keeps screenshot failures retryable until Telemetry confirms diagnostic storage", async () => {
     const response = await SELF.fetch("https://capture.test/telemetry/screenshot-failures", {
       method: "POST",
