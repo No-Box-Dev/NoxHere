@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "predeploy": "node ../../scripts/assert-main-release.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --env=\"\"",
     "build": "wrangler deploy --dry-run --outdir dist --env=\"\"",

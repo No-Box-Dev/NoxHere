@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyProbe,
   operationsFromSpec,
+  probeDeployment,
   probePath,
   requiresAuthentication,
 } from "./probe-openapi-deployment.mjs";
@@ -76,5 +77,28 @@ describe("deployment OpenAPI probe", () => {
       response(404, "text/html"),
       "<p>Not found</p>",
     )).toContain("API operation returned HTML");
+  });
+
+  it("waits for the production contract cache to converge", async () => {
+    const localSpec = { openapi: "3.1.0", paths: {} };
+    const responses = [
+      { openapi: "3.1.0", paths: { "/stale": {} } },
+      localSpec,
+    ];
+    const requested = [];
+    const result = await probeDeployment({
+      origin: "https://app.example.test",
+      localSpec,
+      fetchImpl: async (url) => {
+        requested.push(String(url));
+        return Response.json(responses.shift());
+      },
+      contractRetryMs: 0,
+      sleepImpl: async () => {},
+    });
+
+    expect(result.contractMatches).toBe(true);
+    expect(requested).toHaveLength(2);
+    expect(requested[0]).toContain("nox_release_probe=");
   });
 });

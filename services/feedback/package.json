@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predeploy": "node ../../scripts/assert-main-release.mjs",
     "build": "wrangler deploy --dry-run --env=\"\"",
     "deploy": "wrangler deploy --env=\"\"",
     "test": "vitest run",

@@ -6,6 +6,7 @@
   "scripts": {
     "build": "wrangler deploy --dry-run --outdir dist --env=\"\"",
     "cf-typegen": "wrangler types worker-configuration.d.ts",
+    "predeploy:production": "node ../../scripts/assert-main-release.mjs",
     "deploy:production": "wrangler deploy --env=\"\"",
     "deploy:staging": "wrangler deploy --env=staging",
     "test": "vitest run",
