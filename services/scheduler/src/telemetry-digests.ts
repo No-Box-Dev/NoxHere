@@ -141,7 +141,7 @@ async function createDigest(
   period: string,
 ) {
   const existing = await env.DB.prepare(
-    "SELECT id FROM cue_digest_runs WHERE source_id = ? AND period = ?",
+    "SELECT id FROM telemetry_digest_runs WHERE source_id = ? AND period = ?",
   ).bind(source.id, period).first();
   if (existing) return { skipped: "already_created" };
 
@@ -158,7 +158,7 @@ async function createDigest(
       message: unavailableDigestMessage(displayName, period),
     });
     await env.DB.prepare(
-      `INSERT OR IGNORE INTO cue_digest_runs
+      `INSERT OR IGNORE INTO telemetry_digest_runs
          (id, org_id, source_id, period, transport_outbox_id, metrics_json)
        VALUES (?, ?, ?, ?, ?, ?)`,
     ).bind(
@@ -205,7 +205,7 @@ async function createDigest(
   });
   const digestId = crypto.randomUUID();
   await env.DB.prepare(
-    `INSERT OR IGNORE INTO cue_digest_runs
+    `INSERT OR IGNORE INTO telemetry_digest_runs
        (id, org_id, source_id, period, transport_outbox_id, metrics_json)
      VALUES (?, ?, ?, ?, ?, ?)`,
   ).bind(
@@ -232,11 +232,11 @@ export async function runTelemetryDigests(env: DigestEnv, nowMs = Date.now()) {
             NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '') AS fallback_channel_id,
             NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '') AS fallback_connection_id,
             COALESCE((SELECT json_group_array(recent.period)
-              FROM (SELECT digest.period FROM cue_digest_runs digest
+              FROM (SELECT digest.period FROM telemetry_digest_runs digest
                      WHERE digest.source_id = source.id
                        AND digest.period >= date('now', '-8 days')
                      ORDER BY digest.period) recent), '[]') AS recent_digest_periods_json
-       FROM cue_sources source
+       FROM telemetry_sources source
        JOIN project_config config
          ON config.org_id = source.org_id AND config.project_id = source.project_id AND config.key = 'settings'
        LEFT JOIN project_slack_routes project_route
@@ -279,15 +279,15 @@ export async function runTelemetryDigests(env: DigestEnv, nowMs = Date.now()) {
     }
   }
   await env.DB.batch([
-    env.DB.prepare(`DELETE FROM cue_user_active_days
-      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM cue_sources WHERE id = cue_user_active_days.source_id), 62) || ' days')`),
-    env.DB.prepare(`DELETE FROM cue_activity_events
-      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM cue_sources WHERE id = cue_activity_events.source_id), 62) || ' days')`),
-    env.DB.prepare(`DELETE FROM cue_tracked_events
-      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM cue_sources WHERE id = cue_tracked_events.source_id), 62) || ' days')`),
+    env.DB.prepare(`DELETE FROM telemetry_user_active_days
+      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM telemetry_sources WHERE id = telemetry_user_active_days.source_id), 62) || ' days')`),
+    env.DB.prepare(`DELETE FROM telemetry_activity_events
+      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM telemetry_sources WHERE id = telemetry_activity_events.source_id), 62) || ' days')`),
+    env.DB.prepare(`DELETE FROM telemetry_tracked_events
+      WHERE period < date('now', '-' || COALESCE((SELECT retention_days FROM telemetry_sources WHERE id = telemetry_tracked_events.source_id), 62) || ' days')`),
   ]);
   await env.DB.prepare(
-    "DELETE FROM cue_error_receipts WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
+    "DELETE FROM telemetry_error_receipts WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
   ).run();
   return { created, skipped, failed };
 }

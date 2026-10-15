@@ -190,7 +190,7 @@ async function checkEndpointMonitor(env: Env, row: MonitorRow): Promise<void> {
     incidentStartedAt: row.incident_started_at,
   }, result.healthy, now);
   await env.NOX_DB.prepare(
-    `UPDATE cue_endpoint_monitors SET status = ?, consecutive_failures = ?, consecutive_successes = ?,
+    `UPDATE telemetry_endpoint_monitors SET status = ?, consecutive_failures = ?, consecutive_successes = ?,
        incident_started_at = ?, last_checked_at = ?, last_status_code = ?, last_latency_ms = ?,
        last_success_at = CASE WHEN ? THEN ? ELSE last_success_at END,
        last_failure_at = CASE WHEN ? THEN last_failure_at ELSE ? END, last_error = ?,
@@ -249,7 +249,7 @@ const ROUTED_MONITOR_SELECT = `
            WHEN NULLIF(json_extract(config.data, '$.slack.telemetryChannelId'), '') IS NOT NULL
              THEN NULLIF(json_extract(config.data, '$.slack.telemetryConnectionId'), '')
            ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '') END END AS slack_connection_id
-    FROM cue_endpoint_monitors monitor JOIN cue_sources source ON source.id = monitor.source_id
+    FROM telemetry_endpoint_monitors monitor JOIN telemetry_sources source ON source.id = monitor.source_id
     LEFT JOIN config ON config.org_id = source.org_id AND config.key = 'settings'
     LEFT JOIN project_routing_settings routing ON routing.org_id = source.org_id
       AND routing.project_id = source.project_id AND routing.enabled = 1
@@ -299,5 +299,5 @@ export async function runEndpointMonitors(env: Env): Promise<void> {
   for (let index = 0; index < rows.length; index += 5) {
     await Promise.all(rows.slice(index, index + 5).map((row) => checkEndpointMonitor(env, row)));
   }
-  await env.NOX_DB.prepare("DELETE FROM cue_feature_results WHERE received_at < datetime('now', '-7 days')").run();
+  await env.NOX_DB.prepare("DELETE FROM telemetry_feature_results WHERE received_at < datetime('now', '-7 days')").run();
 }

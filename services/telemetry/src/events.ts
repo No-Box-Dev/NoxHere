@@ -238,8 +238,8 @@ async function findSource(env: Env, providedKey: string): Promise<TelemetrySourc
                 THEN NULLIF(json_extract(config.data, '$.slack.telemetryConnectionId'), '')
               ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '')
             END END AS slack_connection_id
-       FROM cue_source_keys key
-       JOIN cue_sources source ON source.id = key.source_id
+       FROM telemetry_source_keys key
+       JOIN telemetry_sources source ON source.id = key.source_id
        LEFT JOIN config ON config.org_id = source.org_id AND config.key = 'settings'
        LEFT JOIN project_routing_settings routing_settings
          ON routing_settings.org_id = source.org_id
@@ -287,7 +287,7 @@ async function findSourcesForApiToken(
                 THEN NULLIF(json_extract(config.data, '$.slack.telemetryConnectionId'), '')
               ELSE NULLIF(json_extract(config.data, '$.slack.fallbackConnectionId'), '')
             END END AS slack_connection_id
-       FROM cue_sources source
+       FROM telemetry_sources source
        LEFT JOIN config ON config.org_id = source.org_id AND config.key = 'settings'
        LEFT JOIN project_routing_settings routing_settings
          ON routing_settings.org_id = source.org_id
@@ -372,18 +372,18 @@ async function eventIdFor(sourceId: string, timezone: string, environment: Telem
     const period = event.type === "user.active"
       ? localPeriodAt(event.occurredAt ?? new Date(), timezone)
       : "lifetime";
-    return `cue_user_${(await hash(`${sourceId}\u0000${environment}\u0000${event.type}\u0000${event.userId}\u0000${period}`)).slice(0, 40)}`;
+    return `telemetry_user_${(await hash(`${sourceId}\u0000${environment}\u0000${event.type}\u0000${event.userId}\u0000${period}`)).slice(0, 40)}`;
   }
   if (event.type === "feature.result") {
     if (event.eventId) return event.eventId;
-    if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
+    if (event.idempotencyKey) return `telemetry_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
     return crypto.randomUUID();
   }
   if (event.type === "activity.tracked" && event.idempotencyKey) {
-    return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
+    return `telemetry_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
   }
   if (event.eventId) return event.eventId;
-  if (event.idempotencyKey) return `cue_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
+  if (event.idempotencyKey) return `telemetry_${(await hash(`${sourceId}\u0000${environment}\u0000${event.idempotencyKey}`)).slice(0, 40)}`;
   return crypto.randomUUID();
 }
 
@@ -457,12 +457,12 @@ async function storeUserEvent(
   if (event.type === "user.registered") {
     const [registration] = await env.NOX_DB.batch([
       env.NOX_DB.prepare(
-      `INSERT OR IGNORE INTO cue_user_registrations
+      `INSERT OR IGNORE INTO telemetry_user_registrations
          (org_id, source_id, subject_hash, period, occurred_at, received_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
       ).bind(source.org_id, source.source_id, subjectHash, period, occurredAt.toISOString(), receivedAt),
       env.NOX_DB.prepare(
-        `INSERT OR IGNORE INTO cue_user_active_days
+        `INSERT OR IGNORE INTO telemetry_user_active_days
            (org_id, source_id, period, subject_hash, occurred_at, received_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
       ).bind(source.org_id, source.source_id, period, subjectHash, occurredAt.toISOString(), receivedAt),
@@ -475,7 +475,7 @@ async function storeUserEvent(
     };
   }
   const result = await env.NOX_DB.prepare(
-      `INSERT OR IGNORE INTO cue_user_active_days
+      `INSERT OR IGNORE INTO telemetry_user_active_days
          (org_id, source_id, period, subject_hash, occurred_at, received_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
     ).bind(source.org_id, source.source_id, period, subjectHash, occurredAt.toISOString(), receivedAt).run();
@@ -493,7 +493,7 @@ async function storeActivityEvent(
   if (occurredAt.valueOf() > Date.now() + 5 * 60_000) throw new Error("invalid_occurred_at");
   const period = localPeriodAt(occurredAt, source.timezone);
   const result = await env.NOX_DB.prepare(
-    `INSERT OR IGNORE INTO cue_activity_events
+    `INSERT OR IGNORE INTO telemetry_activity_events
        (org_id, source_id, event_id, metric_key, subject_hash, period, occurred_at, received_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
@@ -520,7 +520,7 @@ async function storeTrackedEvent(
   const period = localPeriodAt(occurredAt, source.timezone);
   const subjectHash = event.userId ? await hash(`${source.source_id}\u0000${event.userId}`) : null;
   const result = await env.NOX_DB.prepare(
-    `INSERT OR IGNORE INTO cue_tracked_events
+    `INSERT OR IGNORE INTO telemetry_tracked_events
        (org_id, source_id, event_id, name, value, subject_hash, period, attributes_json, occurred_at, received_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
@@ -596,7 +596,7 @@ async function storeError(
   };
   const fingerprint = errorIncidentKey(normalizedEvent);
   const group = await env.NOX_DB.prepare(
-    `SELECT occurrence_count, last_notified_at, status FROM cue_error_groups
+    `SELECT occurrence_count, last_notified_at, status FROM telemetry_error_groups
       WHERE source_id = ? AND fingerprint = ?`,
   ).bind(source.source_id, fingerprint).first<{
     occurrence_count: number;
@@ -626,7 +626,7 @@ async function storeError(
   const statements = [
     eventStatement(env, source, normalizedEvent, eventId, payload),
     env.NOX_DB.prepare(
-      `INSERT INTO cue_error_groups
+      `INSERT INTO telemetry_error_groups
          (org_id, source_id, fingerprint, title, error_code, component, environment,
           first_seen_at, last_seen_at, occurrence_count, last_notified_at,
           grouping_kind, sample_json, first_release, last_release)
@@ -635,17 +635,17 @@ async function storeError(
          title = excluded.title, error_code = excluded.error_code,
          component = excluded.component, environment = excluded.environment,
          last_seen_at = excluded.last_seen_at,
-         occurrence_count = cue_error_groups.occurrence_count + 1,
+         occurrence_count = telemetry_error_groups.occurrence_count + 1,
          grouping_kind = excluded.grouping_kind,
          sample_json = excluded.sample_json,
-         first_release = COALESCE(cue_error_groups.first_release, excluded.first_release),
-         last_release = COALESCE(excluded.last_release, cue_error_groups.last_release),
-         status = CASE WHEN cue_error_groups.status = 'resolved' THEN 'open' ELSE cue_error_groups.status END,
-         acknowledged_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_at END,
-         acknowledged_by = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.acknowledged_by END,
-         resolved_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.resolved_at END,
-         resolved_by = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL ELSE cue_error_groups.resolved_by END,
-         last_notified_at = COALESCE(excluded.last_notified_at, cue_error_groups.last_notified_at)`,
+         first_release = COALESCE(telemetry_error_groups.first_release, excluded.first_release),
+         last_release = COALESCE(excluded.last_release, telemetry_error_groups.last_release),
+         status = CASE WHEN telemetry_error_groups.status = 'resolved' THEN 'open' ELSE telemetry_error_groups.status END,
+         acknowledged_at = CASE WHEN telemetry_error_groups.status = 'resolved' THEN NULL ELSE telemetry_error_groups.acknowledged_at END,
+         acknowledged_by = CASE WHEN telemetry_error_groups.status = 'resolved' THEN NULL ELSE telemetry_error_groups.acknowledged_by END,
+         resolved_at = CASE WHEN telemetry_error_groups.status = 'resolved' THEN NULL ELSE telemetry_error_groups.resolved_at END,
+         resolved_by = CASE WHEN telemetry_error_groups.status = 'resolved' THEN NULL ELSE telemetry_error_groups.resolved_by END,
+         last_notified_at = COALESCE(excluded.last_notified_at, telemetry_error_groups.last_notified_at)`,
     ).bind(
       source.org_id, source.source_id, fingerprint, normalizedEvent.title, normalizedEvent.data.errorCode ?? null,
       normalizedEvent.data.component ?? null, normalizedEvent.data.environment ?? null,
@@ -654,18 +654,18 @@ async function storeError(
       normalizedEvent.context?.release ?? null, normalizedEvent.context?.release ?? null,
     ),
     env.NOX_DB.prepare(
-      `INSERT INTO cue_error_daily_groups
+      `INSERT INTO telemetry_error_daily_groups
          (org_id, source_id, period, fingerprint, occurrence_count, fatal_count, unhandled_count)
        VALUES (?, ?, ?, ?, 1, ?, ?)
        ON CONFLICT(source_id, period, fingerprint) DO UPDATE SET
-         occurrence_count = cue_error_daily_groups.occurrence_count + 1,
-         fatal_count = cue_error_daily_groups.fatal_count + excluded.fatal_count,
-         unhandled_count = cue_error_daily_groups.unhandled_count + excluded.unhandled_count`,
+         occurrence_count = telemetry_error_daily_groups.occurrence_count + 1,
+         fatal_count = telemetry_error_daily_groups.fatal_count + excluded.fatal_count,
+         unhandled_count = telemetry_error_daily_groups.unhandled_count + excluded.unhandled_count`,
     ).bind(source.org_id, source.source_id, period, fingerprint, normalizedEvent.data.fatal ? 1 : 0, normalizedEvent.data.unhandled ? 1 : 0),
   ];
   if (event.data.affectedUser) {
     statements.push(env.NOX_DB.prepare(
-      `INSERT OR IGNORE INTO cue_error_daily_users (org_id, source_id, period, user_hash)
+      `INSERT OR IGNORE INTO telemetry_error_daily_users (org_id, source_id, period, user_hash)
        VALUES (?, ?, ?, ?)`,
     ).bind(source.org_id, source.source_id, period, await hash(event.data.affectedUser)));
   }
@@ -840,14 +840,14 @@ export async function handleTelemetryEvent(
         : await storeError(env, source, event, eventId);
     if (source.key_id) {
       await env.NOX_DB.prepare(
-        `UPDATE cue_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
+        `UPDATE telemetry_source_keys SET last_used_at = ? WHERE id = ? AND revoked_at IS NULL`,
       ).bind(new Date().toISOString(), source.key_id).run();
       await env.NOX_DB.prepare(
-        `INSERT INTO cue_source_key_daily_usage
+        `INSERT INTO telemetry_source_key_daily_usage
            (org_id, source_id, key_id, period, request_count, first_used_at, last_used_at)
          VALUES (?, ?, ?, date('now'), 1, ?, ?)
          ON CONFLICT(key_id, period) DO UPDATE SET
-           request_count = cue_source_key_daily_usage.request_count + 1,
+           request_count = telemetry_source_key_daily_usage.request_count + 1,
            last_used_at = excluded.last_used_at`,
       ).bind(source.org_id, source.source_id, source.key_id, new Date().toISOString(), new Date().toISOString()).run();
     }

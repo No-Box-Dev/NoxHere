@@ -22,7 +22,7 @@ describe("Telemetry project metric settings", () => {
   it("reports registration and activity metric readiness independently", async () => {
     const db = {
       prepare(sql) {
-        if (sql.includes("cue_metric_definitions")) return statement(sql, { all: async () => ({ results: [
+        if (sql.includes("telemetry_metric_definitions")) return statement(sql, { all: async () => ({ results: [
           { key: "users.new", label: "New users", unit: "count", description: "New users", enabled: 1 },
           { key: "users.active.daily", label: "DAU", unit: "count", description: "Daily active", enabled: 0 },
         ] }) });

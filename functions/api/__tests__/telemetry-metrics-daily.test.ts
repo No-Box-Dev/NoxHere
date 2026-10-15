@@ -12,7 +12,7 @@ describe("Telemetry daily custom metric history", () => {
           period: "2026-09-09", metric_key: "custom.journals.added", label: "Journals added",
           daily_events: 4, monthly_events: 10, monthly_active: 2, updated_at: "2026-09-09T20:00:00Z",
         }] };
-        if (sql.includes("FROM cue_error_groups")) return { results: [{
+        if (sql.includes("FROM telemetry_error_groups")) return { results: [{
           fingerprint: "server:signup:auth_503", title: "Signup failed", occurrence_count: 2,
           first_seen_at: "2026-09-09T18:00:00Z", last_seen_at: "2026-09-09T19:00:00Z",
           affected_user_count: 2, grouping_kind: "inferred", first_release: "release-a", last_release: "release-b",
@@ -37,14 +37,14 @@ describe("Telemetry daily custom metric history", () => {
       groupingKind: "inferred", firstRelease: "release-a", lastRelease: "release-b",
       sample: { error: { message: "Provider unavailable", stack: "at signup" } },
     });
-    expect(queries.find((sql) => sql.includes("FROM cue_error_groups"))).toContain("cue_error_group_users");
+    expect(queries.find((sql) => sql.includes("FROM telemetry_error_groups"))).toContain("telemetry_error_group_users");
   });
 
   it("returns null for a corrupt legacy error sample instead of failing the dashboard", async () => {
     const db = { prepare(sql: string) { const statement = {
       bind() { return statement; },
       async first() { return { id: "11111111-1111-4111-8111-111111111111" }; },
-      async all() { return sql.includes("FROM cue_error_groups")
+      async all() { return sql.includes("FROM telemetry_error_groups")
         ? { results: [{ fingerprint: "legacy", title: "Legacy", occurrence_count: 1, sample_json: "{" }] }
         : { results: [] }; },
     }; return statement; } };

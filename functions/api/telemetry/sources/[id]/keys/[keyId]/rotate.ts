@@ -14,8 +14,8 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   if (!isAdmin) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
   const current = await db.prepare(
-    `SELECT key.name, key.kind FROM cue_source_keys key
-      JOIN cue_sources source ON source.id = key.source_id
+    `SELECT key.name, key.kind FROM telemetry_source_keys key
+      JOIN telemetry_sources source ON source.id = key.source_id
      WHERE key.id = ? AND key.source_id = ? AND key.org_id = ? AND key.revoked_at IS NULL
        ${projectId ? "AND source.project_id = ?" : ""}`,
   ).bind(...(projectId
@@ -27,15 +27,15 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const id = crypto.randomUUID();
   const overlapEndsAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
   await db.batch([
-    db.prepare("UPDATE cue_source_keys SET valid_until = ? WHERE id = ? AND valid_until IS NULL")
+    db.prepare("UPDATE telemetry_source_keys SET valid_until = ? WHERE id = ? AND valid_until IS NULL")
       .bind(overlapEndsAt, context.params.keyId),
     db.prepare(
-      `INSERT INTO cue_source_keys
+      `INSERT INTO telemetry_source_keys
         (id, org_id, source_id, name, kind, key_prefix, key_hash, created_by, rotated_from_key_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(id, orgId, context.params.id, current.name, current.kind, value.slice(0, 20), await hashTelemetryKey(value), userLogin, context.params.keyId),
     db.prepare(
-      `INSERT INTO cue_source_key_audit
+      `INSERT INTO telemetry_source_key_audit
         (id, org_id, source_id, key_id, action, actor, details_json)
        VALUES (?, ?, ?, ?, 'rotated', ?, ?)`,
     ).bind(crypto.randomUUID(), orgId, context.params.id, id, userLogin, JSON.stringify({ rotatedFrom: context.params.keyId, overlapEndsAt })),

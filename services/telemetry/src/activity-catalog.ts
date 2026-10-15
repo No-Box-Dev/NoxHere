@@ -21,7 +21,7 @@ export async function resolveActivityMetric(
   if (!key.startsWith("custom.")) return null;
   const metric = await env.NOX_DB.prepare(
     `SELECT label
-       FROM cue_custom_metrics
+       FROM telemetry_custom_metrics
       WHERE org_id = ? AND metric_key = ? AND enabled = 1
         AND ((? IS NOT NULL AND project_id = ?)
           OR (? IS NULL AND source_id = ?))`,

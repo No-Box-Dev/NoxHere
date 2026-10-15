@@ -3,24 +3,30 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migrationDirectory = resolve(process.cwd(), "migrations");
-const migration = readFileSync(resolve(
+const storageMigration = readFileSync(resolve(
   migrationDirectory,
   readdirSync(migrationDirectory).find((name) => name.startsWith("0094_")),
+), "utf8");
+const namingMigration = readFileSync(resolve(
+  migrationDirectory,
+  "0115_standardize_capability_schema.sql",
 ), "utf8");
 
 describe("Telemetry grouped-error storage contract", () => {
   it("uses a source/event receipt as the exact deduplication boundary", () => {
-    expect(migration).toContain("PRIMARY KEY (source_id, event_id)");
-    expect(migration).toContain("ingest_token TEXT NOT NULL");
-    expect(migration).toContain("idx_cue_error_receipts_expiry");
+    expect(storageMigration).toContain("PRIMARY KEY (source_id, event_id)");
+    expect(storageMigration).toContain("ingest_token TEXT NOT NULL");
+    expect(namingMigration).toContain("idx_telemetry_error_receipts_expiry");
+    expect(namingMigration).toContain("UPDATE telemetry_error_receipts");
+    expect(namingMigration).toContain("SET event_id = 'telemetry_' || substr(event_id, 5)");
   });
 
   it("retains group evidence and hashed membership without an occurrence body table", () => {
-    expect(migration).toContain("sample_json TEXT");
-    expect(migration).toContain("first_release TEXT");
-    expect(migration).toContain("last_release TEXT");
-    expect(migration).toContain("user_hash    TEXT NOT NULL");
-    expect(migration).not.toMatch(/CREATE TABLE\s+cue_error_occurrences/i);
-    expect(migration).not.toMatch(/\b(email|user_id|error_json|payload_json)\b/i);
+    expect(storageMigration).toContain("sample_json TEXT");
+    expect(storageMigration).toContain("first_release TEXT");
+    expect(storageMigration).toContain("last_release TEXT");
+    expect(storageMigration).toContain("user_hash    TEXT NOT NULL");
+    expect(storageMigration).not.toMatch(/CREATE TABLE\s+\w*_error_occurrences/i);
+    expect(storageMigration).not.toMatch(/\b(email|user_id|error_json|payload_json)\b/i);
   });
 });

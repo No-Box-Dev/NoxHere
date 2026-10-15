@@ -227,7 +227,7 @@ export async function storeFeatureResult(
   if (occurredAt.valueOf() > Date.now() + 5 * 60_000) throw new Error("invalid_occurred_at");
   const now = new Date().toISOString();
   const inserted = await env.NOX_DB.prepare(
-    `INSERT OR IGNORE INTO cue_feature_results
+    `INSERT OR IGNORE INTO telemetry_feature_results
        (org_id, source_id, event_id, feature_key, feature_kind, outcome, reason,
         message, error_json, duration_ms, is_test, occurred_at, received_at, subject_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -250,7 +250,7 @@ export async function storeFeatureResult(
     event.userId ? await hashIdentity(`${source.source_id}\u0000${event.userId}`) : null).run();
   const previous = await env.NOX_DB.prepare(
     `SELECT status, consecutive_failures, consecutive_successes, incident_started_at, last_reason
-       FROM cue_feature_states WHERE source_id = ? AND feature_key = ?`,
+       FROM telemetry_feature_states WHERE source_id = ? AND feature_key = ?`,
   ).bind(source.source_id, event.feature).first<StateRow>();
   if (!inserted.meta.changes) {
     return { eventId, duplicate: true, status: previous?.status ?? "waiting", queued: false };
@@ -279,7 +279,7 @@ export async function storeFeatureResult(
   }
 
   await env.NOX_DB.prepare(
-    `INSERT INTO cue_feature_states
+    `INSERT INTO telemetry_feature_states
        (org_id, source_id, feature_key, status, consecutive_failures, consecutive_successes,
         incident_started_at, last_result_at, last_success_at, last_failure_at, last_reason, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -287,8 +287,8 @@ export async function storeFeatureResult(
        status = excluded.status, consecutive_failures = excluded.consecutive_failures,
        consecutive_successes = excluded.consecutive_successes,
        incident_started_at = excluded.incident_started_at, last_result_at = excluded.last_result_at,
-       last_success_at = COALESCE(excluded.last_success_at, cue_feature_states.last_success_at),
-       last_failure_at = COALESCE(excluded.last_failure_at, cue_feature_states.last_failure_at),
+       last_success_at = COALESCE(excluded.last_success_at, telemetry_feature_states.last_success_at),
+       last_failure_at = COALESCE(excluded.last_failure_at, telemetry_feature_states.last_failure_at),
        last_reason = excluded.last_reason, updated_at = excluded.updated_at`,
   ).bind(source.org_id, source.source_id, event.feature, status, failures, successes, incidentAt,
     now, event.outcome === "success" ? now : null, event.outcome === "failure" ? now : null,

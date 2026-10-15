@@ -43,7 +43,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
             COALESCE(error.environment, source.environment) AS environment,
             error.last_seen_at, error.occurrence_count, COALESCE(error.status, 'open') AS status,
             error.sample_json AS payload_json
-       FROM cue_error_groups error JOIN cue_sources source ON source.id = error.source_id
+       FROM telemetry_error_groups error JOIN telemetry_sources source ON source.id = error.source_id
       WHERE source.org_id = ? AND source.project_id = ?
       ORDER BY error.last_seen_at DESC LIMIT 100`,
   ).bind(orgId, projectId).all();

@@ -71,7 +71,7 @@ export async function resolveFeature(
 
   const custom = await env.NOX_DB.prepare(
     `SELECT label, failure_message
-       FROM cue_custom_features
+       FROM telemetry_custom_features
       WHERE org_id = ? AND feature_key = ? AND enabled = 1
         AND ((? IS NOT NULL AND project_id = ?)
           OR (? IS NULL AND source_id = ?))`,

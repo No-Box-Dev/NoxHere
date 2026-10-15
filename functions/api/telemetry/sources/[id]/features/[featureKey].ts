@@ -46,7 +46,7 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
   if (!parsed.ok) return parsed.response;
   const db = getNoxDb(context.env);
   const result = await db.prepare(
-    `UPDATE cue_custom_features
+    `UPDATE telemetry_custom_features
         SET label = ?, failure_message = ?, enabled = ?,
             updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
       WHERE ${SCOPE_WHERE}`,
@@ -64,7 +64,7 @@ export async function onRequestDelete(context: Ctx): Promise<Response> {
   if (!scope) return errorResponse("Telemetry source not found", 404);
   if (!FEATURE_KEY.test(key)) return errorResponse("Invalid custom feature key", 400);
   const db = getNoxDb(context.env);
-  const result = await db.prepare(`DELETE FROM cue_custom_features WHERE ${SCOPE_WHERE}`)
+  const result = await db.prepare(`DELETE FROM telemetry_custom_features WHERE ${SCOPE_WHERE}`)
     .bind(orgId, key, ...scopeValues(scope)).run();
   if (!result.meta.changes) return errorResponse("Custom feature not found", 404);
   return jsonResponse(await loadTelemetryFeatureCatalog(db, orgId, scope));

@@ -38,9 +38,9 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
          FROM projects project
          JOIN project_routing_settings routing
            ON routing.project_id = project.id AND routing.org_id = ? AND routing.enabled = 1
-         LEFT JOIN cue_github_issue_settings setting
+         LEFT JOIN telemetry_github_issue_settings setting
            ON setting.org_id = routing.org_id AND setting.project_id = project.id
-         LEFT JOIN cue_github_incidents incident
+         LEFT JOIN telemetry_github_incidents incident
            ON incident.org_id = routing.org_id AND incident.project_id = project.id
         WHERE project.org_id = ?${projectId ? " AND project.id = ?" : ""} AND COALESCE(project.archived, 0) = 0
         GROUP BY project.id, project.name, project.repo, setting.enabled, setting.environments_json,
@@ -76,7 +76,7 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
   if (!project) return errorResponse("Active project not found", 404);
   if (parsed.data.enabled && !project.repo) return errorResponse("Link a GitHub repository to this project first", 409);
   await db.prepare(
-    `INSERT INTO cue_github_issue_settings
+    `INSERT INTO telemetry_github_issue_settings
        (org_id, project_id, enabled, environments_json, comment_on_repeat,
         repeat_interval_minutes, created_by, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -93,7 +93,7 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
     `SELECT project.id, project.name, project.repo, setting.enabled, setting.environments_json,
             setting.comment_on_repeat, setting.repeat_interval_minutes,
             0 AS open_incidents
-       FROM projects project JOIN cue_github_issue_settings setting ON setting.project_id = project.id
+       FROM projects project JOIN telemetry_github_issue_settings setting ON setting.project_id = project.id
       WHERE project.id = ? AND setting.org_id = ?`,
   ).bind(project.id, orgId).first<ProjectRow>();
   return jsonResponse({ project: present(saved!) });

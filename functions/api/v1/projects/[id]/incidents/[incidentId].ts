@@ -83,8 +83,8 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
             incident.last_seen_at, incident.occurrence_count, incident.status,
             incident.acknowledged_at, incident.acknowledged_by,
             incident.resolved_at, incident.resolved_by
-       FROM cue_error_groups incident
-       JOIN cue_sources source ON source.id = incident.source_id
+       FROM telemetry_error_groups incident
+       JOIN telemetry_sources source ON source.id = incident.source_id
       WHERE incident.id = ? AND incident.org_id = ?
         AND source.org_id = ? AND source.project_id = ?`,
   ).bind(scope.incidentId, scope.orgId, scope.orgId, scope.projectId).first<IncidentRow>();
@@ -107,7 +107,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
 
   const now = new Date().toISOString();
   const row = await context.env.DB.prepare(
-    `UPDATE cue_error_groups
+    `UPDATE telemetry_error_groups
         SET status = ?,
             acknowledged_at = CASE WHEN ? = 'acknowledged' THEN ? ELSE NULL END,
             acknowledged_by = CASE WHEN ? = 'acknowledged' THEN ? ELSE NULL END,
@@ -115,8 +115,8 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
             resolved_by = CASE WHEN ? = 'resolved' THEN ? ELSE NULL END
       WHERE id = ? AND org_id = ?
         AND EXISTS (
-          SELECT 1 FROM cue_sources source
-           WHERE source.id = cue_error_groups.source_id
+          SELECT 1 FROM telemetry_sources source
+           WHERE source.id = telemetry_error_groups.source_id
              AND source.org_id = ? AND source.project_id = ?
         )
       RETURNING id, source_id, NULL AS source_name,

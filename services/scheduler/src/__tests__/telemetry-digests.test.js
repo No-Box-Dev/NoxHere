@@ -70,7 +70,7 @@ describe("Telemetry daily digest periods", () => {
         args: [],
         bind(...args) { this.args = args; return this; },
         async all() {
-          if (sql.includes("FROM cue_sources source")) return { results: [{
+          if (sql.includes("FROM telemetry_sources source")) return { results: [{
             id: "source-1", org_id: 7, owner_id: "acme", project_id: "playnist", name: "Checkout",
             environment: "production",
             timezone: "Asia/Kuala_Lumpur", digest_time_local: "00:30",
@@ -80,20 +80,20 @@ describe("Telemetry daily digest periods", () => {
             fallback_channel_id: null, fallback_connection_id: null,
             recent_digest_periods_json: "[]",
           }] };
-          if (sql.includes("FROM cue_daily_metrics")) return { results: [
+          if (sql.includes("FROM telemetry_daily_metrics")) return { results: [
             { period: "2026-07-30", metric_key: "users.new", value: 70, origin: "reported" },
             { period: "2026-08-28", metric_key: "users.new", value: 80, origin: "reported" },
             { period: "2026-08-29", metric_key: "users.new", value: 86, origin: "reported" },
             { period: "2026-08-29", metric_key: "users.total", value: 4210, origin: "reported" },
           ] };
-          if (sql.includes("FROM cue_project_metric_settings")) return { results: [
+          if (sql.includes("FROM telemetry_project_metric_settings")) return { results: [
             { metric_key: "users.new", enabled: 1 },
             { metric_key: "users.total", enabled: 0 },
           ] };
           return { results: [] };
         },
         async first() {
-          if (sql.includes("FROM cue_digest_runs")) return null;
+          if (sql.includes("FROM telemetry_digest_runs")) return null;
           if (sql.includes("INSERT INTO delivery_outbox")) return { id: "delivery-1", status: "pending" };
           return null;
         },
@@ -133,8 +133,8 @@ describe("Telemetry daily digest periods", () => {
     expect(publishSlackTransport).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       route: "engagement", routeContext: { kind: "source", id: "source-1" },
     }));
-    expect(statements.find(({ sql }) => sql.includes("FROM cue_sources source"))?.sql).toContain("project_slack_routes");
-    expect(statements.find(({ sql }) => sql.includes("FROM cue_sources source"))?.sql).toContain("project_routing_settings");
-    expect(statements.some(({ sql }) => sql.includes("INSERT OR IGNORE INTO cue_digest_runs"))).toBe(true);
+    expect(statements.find(({ sql }) => sql.includes("FROM telemetry_sources source"))?.sql).toContain("project_slack_routes");
+    expect(statements.find(({ sql }) => sql.includes("FROM telemetry_sources source"))?.sql).toContain("project_routing_settings");
+    expect(statements.some(({ sql }) => sql.includes("INSERT OR IGNORE INTO telemetry_digest_runs"))).toBe(true);
   });
 });

@@ -12,7 +12,7 @@ function makeDb(projectId: string | null = "playnist") {
         bind(...values: unknown[]) { this.binds = values; return this; },
         async first() { return { source_id: "source-1", source_name: "Playnist", project_id: projectId, project_name: projectId ? "Playnist" : null }; },
         async all() {
-          if (!sql.includes("FROM cue_custom_metrics metric")) return { results: [] };
+          if (!sql.includes("FROM telemetry_custom_metrics metric")) return { results: [] };
           return { results: [{ metric_key: "custom.journals.added", label: "Journals added", enabled: 1, last_event_at: "2026-09-01T01:00:00Z" }] };
         },
         async run() { writes.push({ sql, binds: this.binds }); return { success: true, meta: { changes: 1 } }; },
@@ -51,7 +51,7 @@ describe("Telemetry custom activity metrics", () => {
     const db = makeDb();
     const response = await onRequestPost(context(db, "POST", { key: "custom.comments.written", label: "Comments written" }) as never);
     expect(response.status).toBe(201);
-    const write = db.writes.find(({ sql }) => sql.includes("INSERT INTO cue_custom_metrics"));
+    const write = db.writes.find(({ sql }) => sql.includes("INSERT INTO telemetry_custom_metrics"));
     expect(write?.binds.slice(1)).toEqual([7, "playnist", null, "custom.comments.written", "Comments written", "jasper"]);
   });
 
@@ -59,7 +59,7 @@ describe("Telemetry custom activity metrics", () => {
     const db = makeDb();
     expect((await onRequestPut(context(db, "PUT", { label: "Journals added", enabled: false }) as never)).status).toBe(200);
     expect((await onRequestDelete(context(db, "DELETE") as never)).status).toBe(200);
-    expect(db.writes.find(({ sql }) => sql.includes("UPDATE cue_custom_metrics"))?.binds.slice(-6))
+    expect(db.writes.find(({ sql }) => sql.includes("UPDATE telemetry_custom_metrics"))?.binds.slice(-6))
       .toEqual([7, "custom.journals.added", "playnist", "playnist", "playnist", "source-1"]);
   });
 });

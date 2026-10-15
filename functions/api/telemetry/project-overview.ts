@@ -19,20 +19,20 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     context.env.DB.prepare(
       `SELECT source.id, source.name, source.environment,
               (SELECT MAX(registration.received_at)
-                 FROM cue_user_registrations registration
+                 FROM telemetry_user_registrations registration
                 WHERE registration.source_id = source.id) AS last_registration_at,
               (SELECT MAX(activity.received_at)
-                 FROM cue_user_active_days activity
+                 FROM telemetry_user_active_days activity
                 WHERE activity.source_id = source.id) AS last_activity_at
-         FROM cue_sources source
+         FROM telemetry_sources source
         WHERE source.org_id = ?${sourceScope} AND source.enabled = 1
         ORDER BY source.name`,
     ).bind(...scopeBinds),
     context.env.DB.prepare(
       `SELECT metric.source_id, source.name AS source_name, metric.period,
               metric.metric_key, metric.value, metric.origin
-         FROM cue_daily_metrics metric
-         JOIN cue_sources source ON source.id = metric.source_id
+         FROM telemetry_daily_metrics metric
+         JOIN telemetry_sources source ON source.id = metric.source_id
         WHERE source.org_id = ?${joinedSourceScope}
           AND metric.period >= date('now', '-13 days')
         ORDER BY metric.period DESC, source.name, metric.metric_key`,
@@ -40,8 +40,8 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     context.env.DB.prepare(
       `SELECT error.id, error.source_id, source.name AS source_name, error.fingerprint,
               error.title, error.environment, error.last_seen_at, error.occurrence_count
-         FROM cue_error_groups error
-         JOIN cue_sources source ON source.id = error.source_id
+         FROM telemetry_error_groups error
+         JOIN telemetry_sources source ON source.id = error.source_id
         WHERE source.org_id = ?${joinedSourceScope} AND COALESCE(error.status, 'open') != 'resolved'
         ORDER BY error.last_seen_at DESC LIMIT 50`,
     ).bind(...scopeBinds),

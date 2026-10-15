@@ -19,7 +19,7 @@ function makeDb() {
           };
         },
         async all() {
-          if (sql.includes("cue_metric_definitions")) return { results: [
+          if (sql.includes("telemetry_metric_definitions")) return { results: [
             { key: "users.new", label: "New users", unit: "count", description: "New users", enabled: 1 },
           ] };
           return { results: [] };

@@ -15,7 +15,7 @@ if (!["production", "staging"].includes(environment) || ids.length === 0 || ids.
 
 const quotedIds = ids.map((id) => `'${id}'`).join(", ");
 const selectSql = `SELECT id, status, last_error, occurrence_count, last_seen_at
-FROM cue_github_incidents
+FROM telemetry_github_incidents
 WHERE id IN (${quotedIds})
 ORDER BY id`;
 
@@ -40,7 +40,7 @@ if (!apply) {
   process.exit(0);
 }
 
-const updateSql = `UPDATE cue_github_incidents
+const updateSql = `UPDATE telemetry_github_incidents
 SET status = 'pending', last_error = NULL,
     updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
 WHERE id IN (${quotedIds})

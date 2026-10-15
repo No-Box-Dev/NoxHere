@@ -28,7 +28,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
               WHERE event.org_id = ? AND event.source = 'telemetry'`;
   const binds: Array<string | number> = [orgId];
   sql += ` AND EXISTS (
-      SELECT 1 FROM cue_sources source
+      SELECT 1 FROM telemetry_sources source
        WHERE source.id = json_extract(event.payload_json, '$.sourceId')
          AND source.org_id = ?${projectId ? " AND source.project_id = ?" : ""}
     )`;

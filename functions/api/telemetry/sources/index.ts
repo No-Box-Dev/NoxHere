@@ -121,16 +121,16 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
                 WHEN NULLIF(json_extract(config.data, '$.slack.fallbackChannelId'), '') IS NOT NULL THEN 'fallback'
                 ELSE NULL
               END AS alert_slack_route_level,
-              (SELECT MAX(registration.received_at) FROM cue_user_registrations registration
+              (SELECT MAX(registration.received_at) FROM telemetry_user_registrations registration
                 WHERE registration.source_id = source.id) AS last_registration_at,
-              (SELECT MAX(activity.received_at) FROM cue_user_active_days activity
+              (SELECT MAX(activity.received_at) FROM telemetry_user_active_days activity
                 WHERE activity.source_id = source.id) AS last_activity_at,
               source.created_at
-         FROM cue_sources source
+         FROM telemetry_sources source
          LEFT JOIN projects project ON project.id = source.project_id
          LEFT JOIN project_config config
            ON config.org_id = source.org_id AND config.project_id = source.project_id AND config.key = 'settings'
-         LEFT JOIN cue_endpoint_monitors monitor ON monitor.source_id = source.id
+         LEFT JOIN telemetry_endpoint_monitors monitor ON monitor.source_id = source.id
          LEFT JOIN project_slack_routes project_route
            ON project_route.org_id = source.org_id
           AND project_route.project_id = source.project_id
@@ -156,10 +156,10 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
     ).bind(...(projectId ? [orgId, orgLogin, projectId] : [orgId, orgLogin])).all<SourceRow>(),
     db.prepare(
       `SELECT id, source_id, name, kind, key_prefix, created_at, last_used_at, revoked_at
-         FROM cue_source_keys source_key
+         FROM telemetry_source_keys source_key
         WHERE source_key.org_id = ?
           AND EXISTS (
-            SELECT 1 FROM cue_sources source
+            SELECT 1 FROM telemetry_sources source
              WHERE source.id = source_key.source_id${projectId ? " AND source.project_id = ?" : ""}
           )
         ORDER BY source_key.created_at DESC`,
@@ -268,7 +268,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
 
   const id = crypto.randomUUID();
   await db.prepare(
-    `INSERT INTO cue_sources
+    `INSERT INTO telemetry_sources
        (id, org_id, owner_id, project_id, name, environment, enabled, alerts_enabled, allowed_origins_json,
         allowed_events_json, report_title, production_stats, retention_days, aggregate_only_slack, timezone,
         digest_enabled, digest_time_local, error_cooldown_minutes, slack_channel_id,
@@ -284,11 +284,11 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
     parsed.data.slackChannelId, slackConnectionId, userLogin,
   ).run();
   await db.prepare(
-    `INSERT INTO cue_endpoint_monitors (org_id, source_id, enabled, url, updated_at)
+    `INSERT INTO telemetry_endpoint_monitors (org_id, source_id, enabled, url, updated_at)
      VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))`,
   ).bind(orgId, id, parsed.data.healthEnabled ? 1 : 0, parsed.data.healthUrl).run();
   await db.prepare(
-    `INSERT INTO cue_source_audit (id, org_id, source_id, action, actor, details_json)
+    `INSERT INTO telemetry_source_audit (id, org_id, source_id, action, actor, details_json)
      VALUES (?, ?, ?, 'created', ?, ?)`,
   ).bind(crypto.randomUUID(), orgId, id, userLogin, JSON.stringify({
     projectId: targetProjectId,

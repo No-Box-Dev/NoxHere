@@ -39,7 +39,7 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
   if (!parsed.ok) return parsed.response;
   const db = getNoxDb(context.env);
   const result = await db.prepare(
-    `UPDATE cue_custom_metrics SET label = ?, enabled = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE ${SCOPE_WHERE}`,
+    `UPDATE telemetry_custom_metrics SET label = ?, enabled = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE ${SCOPE_WHERE}`,
   ).bind(parsed.data.label, parsed.data.enabled ? 1 : 0, orgId, key, ...scopeValues(scope)).run();
   if (!result.meta.changes) return errorResponse("Custom metric not found", 404);
   return jsonResponse(await loadTelemetryCustomMetrics(db, orgId, scope));
@@ -53,7 +53,7 @@ export async function onRequestDelete(context: Ctx): Promise<Response> {
   if (!scope) return errorResponse("Telemetry source not found", 404);
   if (!METRIC_KEY.test(key)) return errorResponse("Invalid custom metric key", 400);
   const db = getNoxDb(context.env);
-  const result = await db.prepare(`DELETE FROM cue_custom_metrics WHERE ${SCOPE_WHERE}`)
+  const result = await db.prepare(`DELETE FROM telemetry_custom_metrics WHERE ${SCOPE_WHERE}`)
     .bind(orgId, key, ...scopeValues(scope)).run();
   if (!result.meta.changes) return errorResponse("Custom metric not found", 404);
   return jsonResponse(await loadTelemetryCustomMetrics(db, orgId, scope));

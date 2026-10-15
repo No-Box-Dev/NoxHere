@@ -17,7 +17,7 @@ function makeDb(repo: string | null = "playnist") {
         async first() {
           if (sql.includes("SELECT installation_id")) return { installation_id: 42 };
           if (sql.includes("FROM projects project JOIN project_routing_settings")) return { id: "playnist", name: "Playnist", repo };
-          if (sql.includes("JOIN cue_github_issue_settings")) return {
+          if (sql.includes("JOIN telemetry_github_issue_settings")) return {
             id: "playnist", name: "Playnist", repo, enabled: 1,
             environments_json: '["production","staging"]', comment_on_repeat: 0,
             repeat_interval_minutes: 360, open_incidents: 0,

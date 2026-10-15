@@ -45,7 +45,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const hasRoute = (field: string) => Boolean(resolveSavedSlackChannel(slack, field));
   const [spotCount, telemetryCount, projectRouteCount] = await Promise.all([
     countRows(context.env.DB, `SELECT COUNT(*) AS count FROM spot_sites WHERE org_id = ?${projectId ? " AND project_id = ?" : ""}`, ...(projectId ? [orgId, projectId] : [orgId])),
-    countRows(context.env.DB, `SELECT COUNT(*) AS count FROM cue_sources WHERE org_id = ?${projectId ? " AND project_id = ?" : ""} AND enabled = 1`, ...(projectId ? [orgId, projectId] : [orgId])),
+    countRows(context.env.DB, `SELECT COUNT(*) AS count FROM telemetry_sources WHERE org_id = ?${projectId ? " AND project_id = ?" : ""} AND enabled = 1`, ...(projectId ? [orgId, projectId] : [orgId])),
     countRows(context.env.DB, `SELECT COUNT(*) AS count FROM project_routing_settings WHERE org_id = ?${projectId ? " AND project_id = ?" : ""} AND enabled = 1`, ...(projectId ? [orgId, projectId] : [orgId])),
   ]);
 

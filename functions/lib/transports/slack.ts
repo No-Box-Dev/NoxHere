@@ -83,7 +83,7 @@ async function resolveDestination(env: SlackTransportEnvironment, command: Slack
   if (command.routeContext?.kind === "source") {
     const source = await env.DB.prepare(
       `SELECT slack_connection_id AS connection_id, slack_channel_id AS channel_id
-         FROM cue_sources WHERE id = ? AND org_id = ? AND project_id = ? LIMIT 1`,
+         FROM telemetry_sources WHERE id = ? AND org_id = ? AND project_id = ? LIMIT 1`,
     ).bind(command.routeContext.id, command.orgId, command.projectId)
       .first<{ connection_id: string | null; channel_id: string | null }>();
     if (source?.channel_id) return {

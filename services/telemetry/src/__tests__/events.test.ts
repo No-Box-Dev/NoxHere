@@ -127,7 +127,7 @@ describe("Telemetry event contract", () => {
       const statement = {
         bind: vi.fn(() => statement),
         first: vi.fn(async () => {
-          if (sql.includes("FROM cue_source_keys")) return {
+          if (sql.includes("FROM telemetry_source_keys")) return {
             key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
             source_id: "source-1", source_name: "Checkout", project_id: "project-1",
             source_environment: "production",
@@ -163,13 +163,13 @@ describe("Telemetry event contract", () => {
     }), env);
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ accepted: true, stored: true, queued: true });
-    const sourceLookup = prepare.mock.calls.find(([sql]) => String(sql).includes("FROM cue_source_keys"));
+    const sourceLookup = prepare.mock.calls.find(([sql]) => String(sql).includes("FROM telemetry_source_keys"));
     expect(String(sourceLookup?.[0])).toContain("alert_route.route_key = 'telemetry_alerts'");
     expect(String(sourceLookup?.[0]).indexOf("NULLIF(alert_route.channel_id"))
       .toBeLessThan(String(sourceLookup?.[0]).indexOf("NULLIF(source.slack_channel_id"));
-    const groupUpsert = prepare.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO cue_error_groups"));
-    expect(String(groupUpsert?.[0])).toContain("status = CASE WHEN cue_error_groups.status = 'resolved' THEN 'open'");
-    expect(String(groupUpsert?.[0])).toContain("resolved_at = CASE WHEN cue_error_groups.status = 'resolved' THEN NULL");
+    const groupUpsert = prepare.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO telemetry_error_groups"));
+    expect(String(groupUpsert?.[0])).toContain("status = CASE WHEN telemetry_error_groups.status = 'resolved' THEN 'open'");
+    expect(String(groupUpsert?.[0])).toContain("resolved_at = CASE WHEN telemetry_error_groups.status = 'resolved' THEN NULL");
     expect(batch).toHaveBeenCalledOnce();
     expect(queue.send).toHaveBeenCalledWith(expect.objectContaining({ type: "deliver_transport" }));
   });
@@ -178,7 +178,7 @@ describe("Telemetry event contract", () => {
     const prepare = vi.fn((sql: string) => {
       const statement = {
         bind: vi.fn(() => statement),
-        all: vi.fn(async () => sql.includes("FROM cue_sources source") ? ({ results: [{
+        all: vi.fn(async () => sql.includes("FROM telemetry_sources source") ? ({ results: [{
           key_id: null, key_kind: "api_token", org_id: 7, owner_id: "acme",
           source_id: "source-1", source_name: "App", project_id: "project-1",
           allowed_origins_json: "[]", allowed_events_json: "[]", timezone: "UTC",
@@ -205,14 +205,14 @@ describe("Telemetry event contract", () => {
     });
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ accepted: true, environment: "production" });
-    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("UPDATE cue_source_keys"))).toBe(false);
+    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("UPDATE telemetry_source_keys"))).toBe(false);
   });
 
   it("requires an explicit source when a token project has multiple sources", async () => {
     const prepare = vi.fn((sql: string) => {
       const statement = {
         bind: vi.fn(() => statement),
-        all: vi.fn(async () => ({ results: sql.includes("FROM cue_sources source") ? [
+        all: vi.fn(async () => ({ results: sql.includes("FROM telemetry_sources source") ? [
           { source_id: "one" }, { source_id: "two" },
         ] : [] })),
       };
@@ -238,7 +238,7 @@ describe("Telemetry event contract", () => {
       const statement = {
         bind: vi.fn(() => statement),
         first: vi.fn(async () => {
-          if (sql.includes("FROM cue_source_keys")) return {
+          if (sql.includes("FROM telemetry_source_keys")) return {
             key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
             source_id: "source-1", source_name: "Checkout", project_id: "project-1",
             allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
@@ -286,7 +286,7 @@ describe("Telemetry event contract", () => {
     const prepare = vi.fn((sql: string) => {
       const statement = {
         bind: vi.fn(() => statement),
-        first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
+        first: vi.fn(async () => sql.includes("FROM telemetry_source_keys") ? {
           key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
           source_id: "source-1", source_name: "Playnist Production", project_id: "playnist",
           allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
@@ -328,14 +328,14 @@ describe("Telemetry event contract", () => {
       const statement = {
         bind: vi.fn((...values: unknown[]) => { bindings.push(values); return statement; }),
         first: vi.fn(async () => {
-          if (sql.includes("FROM cue_source_keys")) return {
+          if (sql.includes("FROM telemetry_source_keys")) return {
             key_id: "key-1", key_kind: "publishable", org_id: 7, owner_id: "acme",
             source_id: "source-1", source_name: "Playnist", project_id: "playnist",
             allowed_origins_json: '["https://app.example.com"]', timezone: "UTC",
             error_cooldown_minutes: 15, environment: "production", alerts_enabled: 1,
             slack_channel_id: "C123", slack_connection_id: "conn-1",
           };
-          if (sql.includes("FROM cue_custom_features")) return null;
+          if (sql.includes("FROM telemetry_custom_features")) return null;
           if (sql.includes("INSERT INTO transport_outbox")) return {
             id: "transport-2", org_id: 7, project_id: "playnist", provider: "slack",
             operation: "slack.message.send", idempotency_key: "telemetry:unregistered", command_json: "{}",
@@ -375,7 +375,7 @@ describe("Telemetry event contract", () => {
       classification: "unregistered",
       requestedFeature: "journal.publish",
     });
-    expect(sqlSeen.some((sql) => sql.includes("INSERT INTO cue_feature_results"))).toBe(false);
+    expect(sqlSeen.some((sql) => sql.includes("INSERT INTO telemetry_feature_results"))).toBe(false);
     expect(JSON.stringify(bindings)).toContain("A user could not publish a journal");
     expect(JSON.stringify(bindings)).toContain("DB_TIMEOUT: Database request timed out");
     expect(batch).toHaveBeenCalledOnce();
@@ -383,14 +383,14 @@ describe("Telemetry event contract", () => {
   });
 
   it.each([
-    ["user.registered", "cue_user_registrations"],
-    ["user.active", "cue_user_active_days"],
+    ["user.registered", "telemetry_user_registrations"],
+    ["user.active", "telemetry_user_active_days"],
   ])("hashes and deduplicates %s facts without storing the raw user ID", async (type, table) => {
     const bindings: unknown[][] = [];
     const prepare = vi.fn((sql: string) => {
       const statement = {
         bind: vi.fn((...values: unknown[]) => { bindings.push(values); return statement; }),
-        first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
+        first: vi.fn(async () => sql.includes("FROM telemetry_source_keys") ? {
           key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
           source_id: "source-1", source_name: "Playnist", project_id: null,
           source_environment: "production",
@@ -419,7 +419,7 @@ describe("Telemetry event contract", () => {
     expect(await response.json()).toMatchObject({ accepted: true, duplicate: false, period: "2026-08-29" });
     expect(prepare.mock.calls.some(([sql]) => String(sql).includes(table))).toBe(true);
     if (type === "user.registered") {
-      expect(prepare.mock.calls.some(([sql]) => String(sql).includes("cue_user_active_days"))).toBe(true);
+      expect(prepare.mock.calls.some(([sql]) => String(sql).includes("telemetry_user_active_days"))).toBe(true);
       expect(batch).toHaveBeenCalledOnce();
     }
     const inserted = bindings.find((values) => values.includes("source-1") && values.includes("2026-08-29"));
@@ -433,14 +433,14 @@ describe("Telemetry event contract", () => {
       const statement = {
         bind: vi.fn((...values: unknown[]) => { bindings.push(values); return statement; }),
         first: vi.fn(async () => {
-          if (sql.includes("FROM cue_source_keys")) return {
+          if (sql.includes("FROM telemetry_source_keys")) return {
             key_id: "key-1", key_kind: "secret", org_id: 7, owner_id: "acme",
             source_id: "source-1", source_name: "Playnist", project_id: "playnist",
             allowed_origins_json: "[]", timezone: "UTC", error_cooldown_minutes: 15,
             environment: "production", alerts_enabled: 1,
             slack_channel_id: null, slack_connection_id: null,
           };
-          if (sql.includes("FROM cue_custom_metrics")) return { label: "Journals added" };
+          if (sql.includes("FROM telemetry_custom_metrics")) return { label: "Journals added" };
           return null;
         }),
         run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
@@ -464,7 +464,7 @@ describe("Telemetry event contract", () => {
 
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ accepted: true, duplicate: false, period: "2026-08-29" });
-    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("INSERT OR IGNORE INTO cue_activity_events"))).toBe(true);
+    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("INSERT OR IGNORE INTO telemetry_activity_events"))).toBe(true);
     const activityBindings = bindings.find((values) => values.includes("custom.journals.added") && values.includes("2026-08-29"));
     expect(activityBindings).toBeDefined();
     expect(activityBindings).not.toContain(PROTECTED_USER);

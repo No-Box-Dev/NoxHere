@@ -12,7 +12,7 @@ function featureEnv(previous: Record<string, unknown> | null) {
         return statement;
       }),
       first: vi.fn(async () => {
-        if (sql.includes("FROM cue_feature_states")) return previous;
+        if (sql.includes("FROM telemetry_feature_states")) return previous;
         if (sql.includes("INSERT INTO transport_outbox")) return {
           id: "transport-1", org_id: 7, project_id: "project-1", provider: "slack",
           operation: "slack.message.send", idempotency_key: "telemetry:test", command_json: "{}",
@@ -64,7 +64,7 @@ describe("critical feature incidents", () => {
     expect(JSON.stringify(outbox?.values)).toContain("feature:source-1:auth.signup:incident:11111111-1111-4111-8111-111111111111");
     expect(JSON.stringify(outbox?.values)).toContain("A user was prevented from signing up");
     expect(JSON.stringify(outbox?.values)).toContain("Provider returned 503");
-    const storedResult = bindings.find(({ sql }) => sql.includes("INSERT OR IGNORE INTO cue_feature_results"));
+    const storedResult = bindings.find(({ sql }) => sql.includes("INSERT OR IGNORE INTO telemetry_feature_results"));
     expect(JSON.stringify(storedResult?.values)).toContain("playnist@abc123");
     const errorJson = storedResult?.values.find((value) => typeof value === "string" && value.includes("sdkVersion"));
     expect(JSON.parse(String(errorJson))).toMatchObject({ context: { sdkVersion: "0.1.0" } });
