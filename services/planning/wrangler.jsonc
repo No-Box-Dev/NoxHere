@@ -14,7 +14,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "planning",
+      "database_name": "noxhere-planning-production",
       "database_id": "b2506cb3-c7e5-4178-8f9d-f828c1791851",
       "migrations_dir": "migrations"
     }
@@ -32,7 +32,7 @@
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "planning-staging",
+          "database_name": "noxhere-planning-staging",
           "database_id": "6bcdb912-5d76-4099-824a-6cf4277ab2f9",
           "migrations_dir": "migrations"
         }

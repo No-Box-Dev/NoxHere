@@ -27,7 +27,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "noxhere",
+      "database_name": "noxhere-platform-production",
       "database_id": "c94084e6-d0be-423c-8de6-249e7cf8bf25",
       "migrations_dir": "../../migrations"
     }
@@ -83,7 +83,7 @@
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "noxhere-staging",
+          "database_name": "noxhere-platform-staging",
           "database_id": "3a9d9857-c26d-4421-9fbd-b81f474864d3",
           "migrations_dir": "../../migrations"
         }
