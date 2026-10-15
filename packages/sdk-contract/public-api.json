@@ -5774,6 +5774,7 @@
                 "properties": {
                   "client": {
                     "enum": [
+                      "noxhere-cli",
                       "noxhere-mac",
                       "noxfeed-mac",
                       "activity-mac"
@@ -5856,6 +5857,7 @@
                 "properties": {
                   "client": {
                     "enum": [
+                      "noxhere-cli",
                       "noxhere-mac",
                       "noxfeed-mac",
                       "activity-mac"
@@ -24174,6 +24176,7 @@
               "properties": {
                 "client": {
                   "enum": [
+                    "noxhere-cli",
                     "noxhere-mac",
                     "noxfeed-mac",
                     "activity-mac"
@@ -26309,6 +26312,7 @@
               "properties": {
                 "client": {
                   "enum": [
+                    "noxhere-cli",
                     "noxhere-mac",
                     "noxfeed-mac",
                     "activity-mac"
@@ -28967,5 +28971,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "1323cd71b4af2dda6ce927a6d5a2f40b9431e0c8da328d0647e3246f56a98079"
+  "x-sdk-source-sha256": "9d89c06fa3f7216639132c979e5843a66848d569975df5b588186127518b6765"
 }

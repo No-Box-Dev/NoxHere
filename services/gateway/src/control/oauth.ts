@@ -1,14 +1,14 @@
 import { constantTimeHashEqual } from "./crypto";
+import type {
+  NativeDevicePollResult,
+  NativeDeviceStartResult,
+  NativeIdentityExchangeResult,
+} from "../../../../packages/contracts/native-clients";
 import { createBrowserSession, parseCookies, resolvePrincipalCredential, sessionCookies } from "./auth";
 import { apiError } from "./http";
 import { mergePrincipals } from "./guests";
 
-export interface IdentityExchangeResult {
-  version: 1;
-  connectionId: string;
-  user: { id: number; login: string; avatarUrl: string | null };
-  organizations: Array<{ id: number; login: string; role: "member" | "admin" }>;
-}
+export type IdentityExchangeResult = NativeIdentityExchangeResult;
 
 export interface IdentityService {
   exchangeGitHubOAuth(input: { code: string; redirectUri: string }): Promise<IdentityExchangeResult>;
@@ -17,14 +17,8 @@ export interface IdentityService {
     token: string;
     user: { id: number; login: string };
   } | null>;
-  startGitHubDeviceAuth(input: { client: string }): Promise<{
-    version: 1; deviceCode: string; userCode: string; verificationUri: string; expiresIn: number; interval: number;
-  }>;
-  pollGitHubDeviceAuth(input: { client: string; deviceCode: string }): Promise<
-    | { version: 1; status: "pending" | "slow_down"; retryAfter: number }
-    | { version: 1; status: "expired" | "denied" }
-    | ({ version: 1; status: "complete" } & IdentityExchangeResult)
-  >;
+  startGitHubDeviceAuth(input: { client: string }): Promise<NativeDeviceStartResult>;
+  pollGitHubDeviceAuth(input: { client: string; deviceCode: string }): Promise<NativeDevicePollResult>;
 }
 
 export interface EmailService {

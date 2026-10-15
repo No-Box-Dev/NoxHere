@@ -1,5 +1,13 @@
 import { decryptToken, encryptToken } from "./crypto";
 import { refreshWithGitHub } from "./oauth-tokens.js";
+import {
+  isLegacyNativeExchangeClient,
+  isNativeDeviceClient,
+  type NativeDevicePollResult,
+  type NativeDeviceStartResult,
+  type NativeDeviceClient,
+  type NativeIdentityExchangeResult,
+} from "../../packages/contracts/native-clients";
 
 interface IdentityEnvironment {
   DB: D1Database;
@@ -41,26 +49,9 @@ interface ConnectionRow {
   refresh_token_expires_at: string | null;
 }
 
-export interface IdentityExchangeResult {
-  version: 1;
-  connectionId: string;
-  user: { id: number; login: string; avatarUrl: string | null };
-  organizations: Array<{ id: number; login: string; role: "member" | "admin" }>;
-}
-
-export interface DeviceStartResult {
-  version: 1;
-  deviceCode: string;
-  userCode: string;
-  verificationUri: string;
-  expiresIn: number;
-  interval: number;
-}
-
-export type DevicePollResult =
-  | { version: 1; status: "pending" | "slow_down"; retryAfter: number }
-  | { version: 1; status: "expired" | "denied" }
-  | ({ version: 1; status: "complete" } & IdentityExchangeResult);
+export type IdentityExchangeResult = NativeIdentityExchangeResult;
+export type DeviceStartResult = NativeDeviceStartResult;
+export type DevicePollResult = NativeDevicePollResult;
 
 export async function exchangeGitHubOAuthIdentity(
   env: IdentityEnvironment,
@@ -96,7 +87,7 @@ export async function exchangeLegacyGitHubCredential(
     throw new Error("invalid_legacy_identity_exchange");
   }
   const value = input as Record<string, unknown>;
-  if ((value.client !== "noxhere-mac" && value.client !== "noxfeed-mac" && value.client !== "activity-mac")
+  if (!isLegacyNativeExchangeClient(value.client)
       || typeof value.accessToken !== "string"
       || !value.accessToken
       || value.accessToken.length > 2048
@@ -372,17 +363,14 @@ function positiveSeconds(value: unknown): boolean {
   return Number.isFinite(Number(value)) && Number(value) > 0;
 }
 
-function parseDeviceClient(input: unknown): string {
+function parseDeviceClient(input: unknown): NativeDeviceClient {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid_device_request");
   const client = (input as Record<string, unknown>).client;
-  if (client !== "noxhere-cli" && client !== "noxhere-mac"
-      && client !== "noxfeed-mac" && client !== "activity-mac") {
-    throw new Error("invalid_device_client");
-  }
+  if (!isNativeDeviceClient(client)) throw new Error("invalid_device_client");
   return client;
 }
 
-function parseDevicePoll(input: unknown): { client: string; deviceCode: string } {
+function parseDevicePoll(input: unknown): { client: NativeDeviceClient; deviceCode: string } {
   const client = parseDeviceClient(input);
   const deviceCode = (input as Record<string, unknown>).deviceCode;
   if (typeof deviceCode !== "string" || !deviceCode.startsWith("noxid_") || deviceCode.length > 96) {

@@ -1,4 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
+import {
+  LEGACY_NATIVE_EXCHANGE_CLIENTS,
+  NATIVE_DEVICE_CLIENTS,
+} from "../packages/contracts/native-clients.ts";
 
 const target = new URL("../public/openapi.json", import.meta.url);
 const original = await readFile(target, "utf8");
@@ -523,13 +527,13 @@ for (const pathItem of Object.values(document.paths)) {
 document.paths["/api/v1/auth/native/device/start"] = {
   post: nativeAuthOperation("startNativeDeviceAuthorization", "Start native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client"],
-    properties: { client: { type: "string", enum: ["noxhere-mac", "noxfeed-mac", "activity-mac"] } },
+    properties: { client: { type: "string", enum: [...NATIVE_DEVICE_CLIENTS] } },
   }, "Returns an opaque NoxHere device handle plus the GitHub verification URI and user code."),
 };
 document.paths["/api/v1/auth/native/device/poll"] = {
   post: nativeAuthOperation("pollNativeDeviceAuthorization", "Poll native GitHub authorization", {
     type: "object", additionalProperties: false, required: ["client", "device_code"],
-    properties: { client: { type: "string", enum: ["noxhere-mac", "noxfeed-mac", "activity-mac"] }, device_code: { type: "string", pattern: "^noxid_" } },
+    properties: { client: { type: "string", enum: [...NATIVE_DEVICE_CLIENTS] }, device_code: { type: "string", pattern: "^noxid_" } },
   }, "NoxHere completes the GitHub exchange server-side and returns its own short-lived access and rotating refresh credentials."),
 };
 document.paths["/api/v1/auth/native/refresh"] = {
@@ -542,7 +546,7 @@ document.paths["/api/v1/auth/native/exchange"] = {
   post: nativeAuthOperation("exchangeLegacyNativeCredential", "Upgrade a legacy native session", {
     type: "object", additionalProperties: false, required: ["client", "access_token"],
     properties: {
-      client: { type: "string", enum: ["noxhere-mac", "noxfeed-mac", "activity-mac"] },
+      client: { type: "string", enum: [...LEGACY_NATIVE_EXCHANGE_CLIENTS] },
       access_token: { type: "string", writeOnly: true },
       refresh_token: { type: "string", writeOnly: true },
     },
