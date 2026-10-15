@@ -67,9 +67,31 @@ async function publicRoutesReady() {
   if (!shell.ok || !entryPath) return false;
   const entry = await fetch(new URL(entryPath, platformOrigin), { headers });
   const entryPrefix = (await entry.text()).trimStart().slice(0, 1);
-  return entry.ok
+  const assetsReady = entry.ok
     && Boolean(entry.headers.get("content-type")?.includes("javascript"))
     && entryPrefix !== "<";
+  if (!assetsReady) return false;
+
+  // Keep every shipped native client able to begin GitHub device login. An
+  // older gateway deployment once accepted the CLI while returning 400 to
+  // both the current NoxHere app and the installed NoxFeed App Store build.
+  // Unit tests did not catch the deployed-code regression, so make this a
+  // release gate against the actual staging and production origins.
+  const nativeClients = ["noxhere-mac", "noxfeed-mac", "activity-mac", "noxhere-cli"];
+  const nativeResults = await Promise.all(nativeClients.map(async (client) => {
+    const response = await fetch(smokeUrl("/api/v1/auth/native/device/start"), {
+      method: "POST",
+      headers: { ...headers, Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ client }),
+    });
+    const body = await response.json().catch(() => null);
+    return response.status === 200
+      && typeof body?.device_code === "string"
+      && body.device_code.startsWith("noxid_")
+      && typeof body?.user_code === "string"
+      && typeof body?.verification_uri === "string";
+  }));
+  return nativeResults.every(Boolean);
 }
 
 for (let attempt = 1; attempt <= 12; attempt += 1) {
