@@ -19,10 +19,10 @@ export async function createChartSnapshot(db: D1Database, snapshot: ChartSnapsho
   const expiresAt = new Date(Date.now() + SNAPSHOT_LIFETIME_DAYS * 86_400_000).toISOString();
   await db.batch([
     db.prepare(
-      `INSERT INTO cue_chart_snapshots (id, payload_json, expires_at)
+      `INSERT INTO telemetry_chart_snapshots (id, payload_json, expires_at)
        VALUES (?1, ?2, ?3)`,
     ).bind(id, JSON.stringify(snapshot), expiresAt),
-    db.prepare("DELETE FROM cue_chart_snapshots WHERE datetime(expires_at) <= datetime('now')"),
+    db.prepare("DELETE FROM telemetry_chart_snapshots WHERE datetime(expires_at) <= datetime('now')"),
   ]);
   return id;
 }
@@ -36,7 +36,7 @@ export async function handleChartImage(request: Request, db: D1Database): Promis
 
   const row = await db.prepare(
     `SELECT payload_json
-       FROM cue_chart_snapshots
+       FROM telemetry_chart_snapshots
       WHERE id = ?1 AND datetime(expires_at) > datetime('now')`,
   ).bind(id).first<{ payload_json: string }>();
   if (!row) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });

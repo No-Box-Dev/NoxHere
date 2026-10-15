@@ -58,7 +58,7 @@ export async function onRequestPost(context) {
     if (kind === "telemetry") {
       if (sourceId) {
         const source = await context.env.DB.prepare(
-          `SELECT name, timezone, project_id FROM cue_sources WHERE id = ? AND org_id = ?`,
+          `SELECT name, timezone, project_id FROM telemetry_sources WHERE id = ? AND org_id = ?`,
         ).bind(sourceId, orgId).first();
         if (!source) return errorResponse("This Telemetry source no longer exists. Refresh the source list and choose an existing source.", 404);
         const period = completedPeriodAt(source.timezone);

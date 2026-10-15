@@ -30,15 +30,15 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
 
   const now = new Date().toISOString();
   const result = await context.env.DB.prepare(
-    `UPDATE cue_error_groups
+    `UPDATE telemetry_error_groups
         SET status = ?,
             acknowledged_at = CASE WHEN ? = 'acknowledged' THEN ? ELSE NULL END,
             acknowledged_by = CASE WHEN ? = 'acknowledged' THEN ? ELSE NULL END,
             resolved_at = CASE WHEN ? = 'resolved' THEN ? ELSE NULL END,
             resolved_by = CASE WHEN ? = 'resolved' THEN ? ELSE NULL END
       WHERE source_id = ? AND fingerprint = ? AND org_id = ?
-        AND EXISTS (SELECT 1 FROM cue_sources source
-          WHERE source.id = cue_error_groups.source_id AND source.org_id = ?${projectId ? " AND source.project_id = ?" : ""})`,
+        AND EXISTS (SELECT 1 FROM telemetry_sources source
+          WHERE source.id = telemetry_error_groups.source_id AND source.org_id = ?${projectId ? " AND source.project_id = ?" : ""})`,
   ).bind(
     parsed.data.status,
     parsed.data.status, now,

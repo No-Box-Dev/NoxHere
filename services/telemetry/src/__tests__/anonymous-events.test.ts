@@ -7,7 +7,7 @@ function environment(kind: "publishable" | "secret" = "publishable") {
   const prepare = vi.fn((sql: string) => {
     const statement = {
       bind: vi.fn(() => statement),
-      first: vi.fn(async () => sql.includes("FROM cue_source_keys") ? {
+      first: vi.fn(async () => sql.includes("FROM telemetry_source_keys") ? {
         key_id: "key-1", key_kind: kind, org_id: 7, owner_id: "acme",
         source_id: "source-1", source_name: "N1 Website", project_id: "n1",
         allowed_origins_json: '["https://n1.care","https://www.n1.care"]',
@@ -47,7 +47,7 @@ describe("anonymous browser activity", () => {
       name: "website.demo_clicked", value: 1,
     }), env);
     expect(response.status).toBe(202);
-    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("cue_tracked_events"))).toBe(true);
+    expect(prepare.mock.calls.some(([sql]) => String(sql).includes("telemetry_tracked_events"))).toBe(true);
   });
 
   it("rejects identity and unregistered browser events", async () => {

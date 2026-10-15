@@ -47,7 +47,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const db = getNoxDb(context.env);
   try {
     await db.prepare(
-      `INSERT INTO cue_custom_features
+      `INSERT INTO telemetry_custom_features
          (id, org_id, project_id, source_id, feature_key, label, failure_message, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(crypto.randomUUID(), orgId, scope.projectId, scope.projectId ? null : scope.sourceId,

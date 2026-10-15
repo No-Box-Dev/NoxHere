@@ -11,8 +11,8 @@ export async function loadTelemetryCustomMetrics(db: D1Database, orgId: number, 
   const result = await db.prepare(
     `SELECT metric.metric_key, metric.label, metric.enabled,
             MAX(activity.received_at) AS last_event_at
-       FROM cue_custom_metrics metric
-       LEFT JOIN cue_activity_events activity
+       FROM telemetry_custom_metrics metric
+       LEFT JOIN telemetry_activity_events activity
          ON activity.source_id = ? AND activity.metric_key = metric.metric_key
       WHERE metric.org_id = ?
         AND ((? IS NOT NULL AND metric.project_id = ?)

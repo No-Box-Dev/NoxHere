@@ -10,7 +10,7 @@ describe("Telemetry project dashboard", () => {
         queries.push(sql);
         const statement = {
           bind(...values: unknown[]) { bindings.push(values); return statement; },
-          async first() { return sql.includes("cue_engagement_settings") ? { window_days: 14 } : null; },
+          async first() { return sql.includes("telemetry_engagement_settings") ? { window_days: 14 } : null; },
           async all() {
             if (sql.includes("WITH RECURSIVE periods")) return { results: [
               { period: "2026-10-02", metric_key: "custom.comments.written", label: "Comments written", daily_events: 4, weekly_events: 80, weekly_active: 20, weekly_participants: 8, previous_weekly_events: 60, previous_weekly_active: 20 },
@@ -31,7 +31,7 @@ describe("Telemetry project dashboard", () => {
     } as never);
     const body = await response.json() as { stats: Array<{ id: string; name: string; value: string; context: string; points: number[] }> };
 
-    expect(queries.find((sql) => sql.includes("FROM cue_daily_metrics"))).toContain("metric.metric_key NOT LIKE 'custom.%'");
+    expect(queries.find((sql) => sql.includes("FROM telemetry_daily_metrics"))).toContain("metric.metric_key NOT LIKE 'custom.%'");
     const customSql = queries.find((sql) => sql.includes("WITH RECURSIVE periods")) ?? "";
     expect(customSql).toContain("activity.period BETWEEN date(periods.period, ?) AND periods.period");
     expect(customSql).toContain("COUNT(DISTINCT active.subject_hash)");

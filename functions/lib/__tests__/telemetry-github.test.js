@@ -45,10 +45,10 @@ function environment(row, incidentBuilder) {
     prepare(sql) {
       const statement = {
         sql, args: [], bind(...args) { this.args = args; return this; },
-        async run() { return { meta: { changes: sql.startsWith("UPDATE cue_github_incidents\n        SET status = 'processing'") ? 1 : 1 } }; },
+        async run() { return { meta: { changes: sql.startsWith("UPDATE telemetry_github_incidents\n        SET status = 'processing'") ? 1 : 1 } }; },
         async first() {
           if (sql.includes("SELECT incident.*")) return row;
-          if (sql.includes("SELECT status FROM cue_github_incidents")) return { status: "open" };
+          if (sql.includes("SELECT status FROM telemetry_github_incidents")) return { status: "open" };
           return null;
         },
       };

@@ -25,17 +25,17 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const rows = await context.env.DB.prepare(
     `SELECT source_id || ':registered:' || subject_hash AS id, 'users.new' AS type,
             subject_hash AS subject, occurred_at, source.environment
-       FROM cue_user_registrations event JOIN cue_sources source ON source.id = event.source_id
+       FROM telemetry_user_registrations event JOIN telemetry_sources source ON source.id = event.source_id
       WHERE source.org_id = ? AND source.project_id = ?
      UNION ALL
      SELECT source_id || ':active:' || period || ':' || subject_hash, 'users.active',
             subject_hash, occurred_at, source.environment
-       FROM cue_user_active_days event JOIN cue_sources source ON source.id = event.source_id
+       FROM telemetry_user_active_days event JOIN telemetry_sources source ON source.id = event.source_id
       WHERE source.org_id = ? AND source.project_id = ?
      UNION ALL
      SELECT source_id || ':custom:' || event_id, metric_key,
             subject_hash, occurred_at, source.environment
-       FROM cue_activity_events event JOIN cue_sources source ON source.id = event.source_id
+       FROM telemetry_activity_events event JOIN telemetry_sources source ON source.id = event.source_id
       WHERE source.org_id = ? AND source.project_id = ?
       ORDER BY occurred_at DESC LIMIT 100`,
   ).bind(orgId, projectId, orgId, projectId, orgId, projectId).all();

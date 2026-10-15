@@ -27,7 +27,7 @@ export async function findTelemetryFeatureScope(
   const row = await db.prepare(
     `SELECT source.id AS source_id, source.name AS source_name,
             source.project_id, project.name AS project_name
-       FROM cue_sources source
+       FROM telemetry_sources source
        LEFT JOIN projects project ON project.id = source.project_id
       WHERE source.id = ? AND source.org_id = ? AND source.owner_id = ?${projectId ? " AND source.project_id = ?" : ""}`,
   ).bind(...(projectId ? [sourceId, orgId, orgLogin, projectId] : [sourceId, orgId, orgLogin])).first<{
@@ -39,7 +39,7 @@ export async function findTelemetryFeatureScope(
 async function loadCustomTelemetryFeatures(db: D1Database, orgId: number, scope: TelemetryFeatureScope): Promise<TelemetryCustomFeatureRow[]> {
   const result = await db.prepare(
     `SELECT feature_key, label, failure_message, enabled
-       FROM cue_custom_features
+       FROM telemetry_custom_features
       WHERE org_id = ?
         AND ((? IS NOT NULL AND project_id = ?)
           OR (? IS NULL AND source_id = ?))
@@ -66,7 +66,7 @@ export async function loadTelemetryFeatureCatalog(db: D1Database, orgId: number,
     db.prepare(
       `SELECT feature_key, status, consecutive_failures, consecutive_successes, last_result_at,
               last_success_at, last_failure_at, last_reason, incident_started_at
-         FROM cue_feature_states WHERE source_id = ?`,
+         FROM telemetry_feature_states WHERE source_id = ?`,
     ).bind(scope.sourceId).all<FeatureStateRow>(),
     db.prepare(
       `SELECT feature_key,
@@ -74,7 +74,7 @@ export async function loadTelemetryFeatureCatalog(db: D1Database, orgId: number,
               SUM(CASE WHEN is_test = 0 AND outcome = 'rejected' AND datetime(received_at) >= datetime('now', '-24 hours') THEN 1 ELSE 0 END) AS rejections_24h,
               SUM(CASE WHEN is_test = 0 AND outcome = 'failure' AND datetime(received_at) >= datetime('now', '-24 hours') THEN 1 ELSE 0 END) AS failures_24h,
               MAX(CASE WHEN is_test = 1 THEN received_at END) AS last_test_at
-         FROM cue_feature_results WHERE source_id = ? GROUP BY feature_key`,
+         FROM telemetry_feature_results WHERE source_id = ? GROUP BY feature_key`,
     ).bind(scope.sourceId).all<FeatureCountRow>(),
   ]);
   const states = new Map((stateResult.results ?? []).map((row) => [row.feature_key, row]));

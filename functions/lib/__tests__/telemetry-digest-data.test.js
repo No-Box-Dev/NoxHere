@@ -24,7 +24,7 @@ describe("Telemetry digest history", () => {
     });
 
     expect(statements).toHaveLength(2);
-    expect(statements[0].sql).toContain("FROM cue_metric_definitions definition");
+    expect(statements[0].sql).toContain("FROM telemetry_metric_definitions definition");
     expect(statements[0].sql).toContain("WHERE definition.key = ?");
     expect(statements[1].args.at(-1)).toBe("future.metric");
   });
@@ -111,8 +111,8 @@ describe("Telemetry digest history", () => {
           bind() { return this; },
           async first() { return null; },
           async all() {
-            if (sql.includes("FROM cue_daily_metrics")) return { results: [] };
-            if (sql.includes("cue_custom_metrics") || sql.includes("cue_tracked_events")) return { results: [] };
+            if (sql.includes("FROM telemetry_daily_metrics")) return { results: [] };
+            if (sql.includes("telemetry_custom_metrics") || sql.includes("telemetry_tracked_events")) return { results: [] };
             return { results: [
               { period: "2026-10-07", new_users: 0, total_users: 214, daily_active: 11, weekly_active: 64, monthly_active: 139 },
               { period: "2026-10-08", new_users: 0, total_users: 214, daily_active: 0, weekly_active: 57, monthly_active: 133 },
@@ -139,7 +139,7 @@ describe("Telemetry digest history", () => {
           bind() { return this; },
           async first() { return null; },
           async all() {
-            if (sql.includes("cue_custom_metrics") || sql.includes("cue_tracked_events")) return { results: [] };
+            if (sql.includes("telemetry_custom_metrics") || sql.includes("telemetry_tracked_events")) return { results: [] };
             return { results: periods };
           },
         };
@@ -160,9 +160,9 @@ describe("Telemetry digest history", () => {
       prepare(sql) {
         return {
           bind() { return this; },
-          async first() { return sql.includes("cue_engagement_settings") ? { window_days: 14 } : null; },
+          async first() { return sql.includes("telemetry_engagement_settings") ? { window_days: 14 } : null; },
           async all() {
-            if (sql.includes("cue_custom_metrics")) return { results: [
+            if (sql.includes("telemetry_custom_metrics")) return { results: [
               { period: "2026-08-27", metric_key: "custom.journals.added", label: "Journals added", daily_events: 2, weekly_events: 40, weekly_active: 20, weekly_participants: 8, previous_weekly_events: 20, previous_weekly_active: 10 },
               { period: "2026-08-28", metric_key: "custom.journals.added", label: "Journals added", daily_events: 4, weekly_events: 44, weekly_active: 20, weekly_participants: 9, previous_weekly_events: 20, previous_weekly_active: 10 },
               { period: "2026-08-29", metric_key: "custom.journals.added", label: "Journals added", daily_events: 6, weekly_events: 50, weekly_active: 20, weekly_participants: 10, previous_weekly_events: 20, previous_weekly_active: 10 },

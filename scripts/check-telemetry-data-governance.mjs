@@ -9,14 +9,16 @@ const migrationsUrl = new URL("../migrations/", import.meta.url);
 const trackingMigration = (await readdir(migrationsUrl)).find((name) => name.endsWith("_unified_tracking.sql"));
 if (!trackingMigration) throw new Error("Unified tracking migration is missing");
 const migration = await readFile(new URL(trackingMigration, migrationsUrl), "utf8");
-const requiredTables = ["cue_tracked_events", "cue_source_keys", "cue_source_key_audit", "cue_source_audit"];
+const schemaMigration = await readFile(new URL("0115_standardize_capability_schema.sql", migrationsUrl), "utf8");
+const requiredTables = ["telemetry_tracked_events", "telemetry_source_keys", "telemetry_source_key_audit", "telemetry_source_audit"];
 for (const table of requiredTables) {
   if (!inventory.stores.some((entry) => entry.table === table)) throw new Error(`Missing ${table} from data inventory`);
+  if (!schemaMigration.includes(`RENAME TO ${table}`)) throw new Error(`Canonical schema migration is missing: ${table}`);
 }
 for (const phrase of ["HMAC-SHA256", "aggregateOnlySlack", "7–730", "contractual/platform decisions"]) {
   if (!governance.includes(phrase)) throw new Error(`Governance documentation is missing: ${phrase}`);
 }
-for (const fragment of ["retention_days", "cue_source_key_audit", "ON DELETE CASCADE"]) {
+for (const fragment of ["retention_days", "ON DELETE CASCADE"]) {
   if (!migration.includes(fragment)) throw new Error(`Governance migration is missing: ${fragment}`);
 }
 console.log(`Telemetry governance inventory verified (${inventory.stores.length} stores).`);

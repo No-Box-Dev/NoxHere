@@ -27,8 +27,8 @@ export async function loadTelemetryProjectMetrics(db, orgId, projectId) {
     db.prepare(
       `SELECT definition.key, definition.label, definition.unit, definition.description,
               COALESCE(setting.enabled, 1) AS enabled
-         FROM cue_metric_definitions definition
-         LEFT JOIN cue_project_metric_settings setting
+         FROM telemetry_metric_definitions definition
+         LEFT JOIN telemetry_project_metric_settings setting
            ON setting.metric_key = definition.key
           AND setting.project_id = ?
           AND setting.org_id = ?
@@ -43,17 +43,17 @@ export async function loadTelemetryProjectMetrics(db, orgId, projectId) {
     ).bind(projectId, orgId, ...TELEMETRY_USER_METRIC_KEYS).all(),
     db.prepare(
       `WITH project_sources AS (
-         SELECT id, enabled FROM cue_sources WHERE org_id = ? AND project_id = ?
+         SELECT id, enabled FROM telemetry_sources WHERE org_id = ? AND project_id = ?
        )
        SELECT
          (SELECT COUNT(*) FROM project_sources) AS source_count,
          (SELECT COUNT(*) FROM project_sources WHERE enabled = 1) AS enabled_source_count,
          (SELECT MAX(registration.received_at)
-            FROM cue_user_registrations registration
+            FROM telemetry_user_registrations registration
             JOIN project_sources source ON source.id = registration.source_id
            WHERE source.enabled = 1) AS registration_last_received_at,
          (SELECT MAX(active.received_at)
-            FROM cue_user_active_days active
+            FROM telemetry_user_active_days active
             JOIN project_sources source ON source.id = active.source_id
            WHERE source.enabled = 1) AS activity_last_received_at`,
     ).bind(orgId, projectId).first(),
@@ -91,7 +91,7 @@ export async function loadTelemetryProjectMetrics(db, orgId, projectId) {
 export async function saveTelemetryProjectMetrics(db, orgId, projectId, enabledMetricKeys, updatedBy) {
   const enabled = new Set(enabledMetricKeys);
   await db.batch(TELEMETRY_USER_METRIC_KEYS.map((metricKey) => db.prepare(
-    `INSERT INTO cue_project_metric_settings
+    `INSERT INTO telemetry_project_metric_settings
        (org_id, project_id, metric_key, enabled, updated_by, updated_at)
      VALUES (?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
      ON CONFLICT(project_id, metric_key) DO UPDATE SET
@@ -109,7 +109,7 @@ export async function saveTelemetryProjectMetrics(db, orgId, projectId, enabledM
  */
 export async function loadEnabledTelemetryMetricKeys(db, orgId, projectId, sourceId = null) {
   const custom = await db.prepare(
-    `SELECT metric_key FROM cue_custom_metrics
+    `SELECT metric_key FROM telemetry_custom_metrics
       WHERE org_id = ? AND enabled = 1
         AND ((? IS NOT NULL AND project_id = ?)
           OR (? IS NULL AND source_id = ?))`,
@@ -119,7 +119,7 @@ export async function loadEnabledTelemetryMetricKeys(db, orgId, projectId, sourc
     return [key, `${key}.per_mau`];
   });
   const sourceSettings = sourceId ? await db.prepare(
-    `SELECT metric_key, enabled, per_active_enabled FROM cue_source_card_settings
+    `SELECT metric_key, enabled, per_active_enabled FROM telemetry_source_card_settings
       WHERE org_id = ? AND source_id = ? ORDER BY position, metric_key`,
   ).bind(orgId, sourceId).all() : { results: [] };
   const sourceRows = sourceSettings.results ?? [];
@@ -136,7 +136,7 @@ export async function loadEnabledTelemetryMetricKeys(db, orgId, projectId, sourc
   }) : [];
   if (!projectId) return new Set([...TELEMETRY_USER_METRIC_KEYS, ...sourceMetricKeys, ...customKeys]);
   const result = await db.prepare(
-    `SELECT metric_key, enabled FROM cue_project_metric_settings
+    `SELECT metric_key, enabled FROM telemetry_project_metric_settings
       WHERE org_id = ? AND project_id = ?`,
   ).bind(orgId, projectId).all();
   if ((result.results ?? []).length === 0) return new Set([...TELEMETRY_USER_METRIC_KEYS, ...sourceMetricKeys, ...customKeys]);
@@ -148,7 +148,7 @@ export async function loadEnabledTelemetryMetricKeys(db, orgId, projectId, sourc
 export async function loadTelemetrySourceCards(db, orgId, sourceId) {
   const result = await db.prepare(
     `SELECT metric_key, daily_label, cumulative_label, position
-       FROM cue_source_card_settings
+       FROM telemetry_source_card_settings
       WHERE org_id = ? AND source_id = ? AND enabled = 1
       ORDER BY position, metric_key LIMIT 14`,
   ).bind(orgId, sourceId).all();

@@ -17,7 +17,7 @@ export async function onRequestGet(context: Ctx) {
   const range = new URL(context.request.url).searchParams.get("range") || "30d";
   const days = DAYS[range] ?? 30;
   const setting = await context.env.DB.prepare(
-    `SELECT window_days FROM cue_engagement_settings WHERE org_id = ? AND project_id = ?`,
+    `SELECT window_days FROM telemetry_engagement_settings WHERE org_id = ? AND project_id = ?`,
   ).bind(orgId, projectId).first<{ window_days: number }>();
   const windowDays = Number(setting?.window_days ?? 7);
   const currentStart = `-${windowDays - 1} days`;
@@ -26,10 +26,10 @@ export async function onRequestGet(context: Ctx) {
   const [storedRows, customRows] = await Promise.all([
     context.env.DB.prepare(
       `SELECT metric.metric_key, definition.label, definition.unit, metric.period, metric.value
-         FROM cue_daily_metrics metric
-         JOIN cue_sources source ON source.id = metric.source_id
-         JOIN cue_metric_definitions definition ON definition.key = metric.metric_key
-         JOIN cue_project_metric_settings setting
+         FROM telemetry_daily_metrics metric
+         JOIN telemetry_sources source ON source.id = metric.source_id
+         JOIN telemetry_metric_definitions definition ON definition.key = metric.metric_key
+         JOIN telemetry_project_metric_settings setting
            ON setting.project_id = source.project_id AND setting.metric_key = metric.metric_key
         WHERE source.org_id = ? AND source.project_id = ? AND source.environment = 'production'
           AND source.enabled = 1 AND setting.enabled = 1
@@ -42,41 +42,41 @@ export async function onRequestGet(context: Ctx) {
          SELECT date('now', ?)
          UNION ALL SELECT date(period, '+1 day') FROM periods WHERE period < date('now')
        ), project_sources(id) AS (
-         SELECT id FROM cue_sources
+         SELECT id FROM telemetry_sources
           WHERE org_id = ? AND project_id = ? AND environment = 'production' AND enabled = 1
        ), definitions(metric_key, label) AS (
          SELECT DISTINCT metric.metric_key, metric.label
-           FROM cue_custom_metrics metric
+           FROM telemetry_custom_metrics metric
           WHERE metric.org_id = ? AND metric.enabled = 1
             AND (metric.project_id = ? OR metric.source_id IN (SELECT id FROM project_sources))
        )
        SELECT periods.period, definitions.metric_key, definitions.label,
-         (SELECT COUNT(*) FROM cue_activity_events activity
+         (SELECT COUNT(*) FROM telemetry_activity_events activity
            WHERE activity.source_id IN (SELECT id FROM project_sources)
              AND activity.metric_key = definitions.metric_key
              AND activity.period = periods.period) AS daily_events,
-         (SELECT COUNT(*) FROM cue_activity_events activity
+         (SELECT COUNT(*) FROM telemetry_activity_events activity
            WHERE activity.source_id IN (SELECT id FROM project_sources)
              AND activity.metric_key = definitions.metric_key
              AND activity.period BETWEEN date(periods.period, ?) AND periods.period) AS weekly_events,
-         (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+         (SELECT COUNT(DISTINCT active.subject_hash) FROM telemetry_user_active_days active
            WHERE active.source_id IN (SELECT id FROM project_sources)
              AND active.period BETWEEN date(periods.period, ?) AND periods.period) AS weekly_active,
-         (SELECT COUNT(DISTINCT activity.subject_hash) FROM cue_activity_events activity
+         (SELECT COUNT(DISTINCT activity.subject_hash) FROM telemetry_activity_events activity
            WHERE activity.source_id IN (SELECT id FROM project_sources)
              AND activity.metric_key = definitions.metric_key
              AND activity.period BETWEEN date(periods.period, ?) AND periods.period
              AND EXISTS (
-               SELECT 1 FROM cue_user_active_days active
+               SELECT 1 FROM telemetry_user_active_days active
                 WHERE active.source_id = activity.source_id
                   AND active.subject_hash = activity.subject_hash
                   AND active.period BETWEEN date(periods.period, ?) AND periods.period
              )) AS weekly_participants,
-         (SELECT COUNT(*) FROM cue_activity_events activity
+         (SELECT COUNT(*) FROM telemetry_activity_events activity
            WHERE activity.source_id IN (SELECT id FROM project_sources)
              AND activity.metric_key = definitions.metric_key
              AND activity.period BETWEEN date(periods.period, ?) AND date(periods.period, ?)) AS previous_weekly_events,
-         (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+         (SELECT COUNT(DISTINCT active.subject_hash) FROM telemetry_user_active_days active
            WHERE active.source_id IN (SELECT id FROM project_sources)
              AND active.period BETWEEN date(periods.period, ?) AND date(periods.period, ?)) AS previous_weekly_active
        FROM periods CROSS JOIN definitions

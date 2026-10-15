@@ -26,14 +26,14 @@ function makeDb({ projectId = "playnist", sourceExists = true }: MockOptions = {
           };
         },
         async all() {
-          if (sql.includes("FROM cue_custom_features")) return { results: [{
+          if (sql.includes("FROM telemetry_custom_features")) return { results: [{
             feature_key: "custom.journal.publish",
             label: "Publish journal",
             failure_message: "A user could not publish a journal.",
             enabled: 1,
           }] };
-          if (sql.includes("FROM cue_feature_states")) return { results: [] };
-          if (sql.includes("FROM cue_feature_results")) return { results: [] };
+          if (sql.includes("FROM telemetry_feature_states")) return { results: [] };
+          if (sql.includes("FROM telemetry_feature_results")) return { results: [] };
           return { results: [] };
         },
         async run() {
@@ -79,7 +79,7 @@ describe("Telemetry governed feature catalog", () => {
       failureMessage: "A user could not complete checkout.",
     }) as never);
     expect(response.status).toBe(201);
-    const write = db.writes.find(({ sql }) => sql.includes("INSERT INTO cue_custom_features"));
+    const write = db.writes.find(({ sql }) => sql.includes("INSERT INTO telemetry_custom_features"));
     expect(write?.binds.slice(1)).toEqual([
       7, "playnist", null, "custom.checkout.pay", "Complete checkout",
       "A user could not complete checkout.", "jasper",
@@ -93,7 +93,7 @@ describe("Telemetry governed feature catalog", () => {
       label: "Complete checkout",
       failureMessage: "A user could not complete checkout.",
     }) as never);
-    const write = db.writes.find(({ sql }) => sql.includes("INSERT INTO cue_custom_features"));
+    const write = db.writes.find(({ sql }) => sql.includes("INSERT INTO telemetry_custom_features"));
     expect(write?.binds.slice(1, 4)).toEqual([7, null, "source-1"]);
   });
 
@@ -107,7 +107,7 @@ describe("Telemetry governed feature catalog", () => {
     const remove = await onRequestDelete(context(db, "DELETE") as never);
     expect(update.status).toBe(200);
     expect(remove.status).toBe(200);
-    const updateWrite = db.writes.find(({ sql }) => sql.includes("UPDATE cue_custom_features"));
+    const updateWrite = db.writes.find(({ sql }) => sql.includes("UPDATE telemetry_custom_features"));
     expect(updateWrite?.binds.slice(-6)).toEqual([7, "custom.journal.publish", "playnist", "playnist", "playnist", "source-1"]);
   });
 

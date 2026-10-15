@@ -49,11 +49,11 @@ export async function onRequestGet(context: Ctx) {
   if (!canReadProjectResource(data)) return errorResponse("Admin required", 403);
   const [configured, setting] = await Promise.all([context.env.DB.prepare(
     `SELECT metric_key, label, template_slot
-       FROM cue_custom_metrics
+       FROM telemetry_custom_metrics
       WHERE org_id = ? AND project_id = ? AND enabled = 1 AND template_slot IS NOT NULL
       ORDER BY template_slot`,
   ).bind(data.orgId, requestedProject).all<ActionRow>(), context.env.DB.prepare(
-    `SELECT window_days FROM cue_engagement_settings WHERE org_id = ? AND project_id = ?`,
+    `SELECT window_days FROM telemetry_engagement_settings WHERE org_id = ? AND project_id = ?`,
   ).bind(data.orgId, requestedProject).first<{ window_days: number }>()]);
   const windowDays = Number(setting?.window_days ?? 7);
   if ((configured.results ?? []).length) return jsonResponse(response(requestedProject, configured.results ?? [], windowDays));
@@ -62,7 +62,7 @@ export async function onRequestGet(context: Ctx) {
   // custom metrics; saving the form makes their ordering explicit.
   const legacy = await context.env.DB.prepare(
     `SELECT metric_key, label, NULL AS template_slot
-       FROM cue_custom_metrics
+       FROM telemetry_custom_metrics
       WHERE org_id = ? AND project_id = ? AND enabled = 1
       ORDER BY created_at, metric_key
       LIMIT 3`,
@@ -81,35 +81,35 @@ export async function onRequestPut(context: Ctx) {
   if (!parsed.ok) return parsed.response;
 
   const previous = await context.env.DB.prepare(
-    `SELECT metric_key FROM cue_custom_metrics
+    `SELECT metric_key FROM telemetry_custom_metrics
       WHERE org_id = ? AND project_id = ? AND template_slot IS NOT NULL`,
   ).bind(data.orgId, requestedProject).all<{ metric_key: string }>();
   const selectedKeys = new Set(parsed.data.actions.map((action) => action.key));
   const statements = [
     context.env.DB.prepare(
-      `INSERT INTO cue_engagement_settings (org_id, project_id, window_days, updated_by)
+      `INSERT INTO telemetry_engagement_settings (org_id, project_id, window_days, updated_by)
        VALUES (?, ?, ?, ?)
        ON CONFLICT(org_id, project_id) DO UPDATE SET
          window_days = excluded.window_days, updated_by = excluded.updated_by,
          updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`,
     ).bind(data.orgId, requestedProject, parsed.data.windowDays, data.userLogin),
     context.env.DB.prepare(
-      `UPDATE cue_custom_metrics SET template_slot = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+      `UPDATE telemetry_custom_metrics SET template_slot = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE org_id = ? AND project_id = ? AND template_slot IS NOT NULL`,
     ).bind(data.orgId, requestedProject),
     ...(previous.results ?? []).filter((row) => !selectedKeys.has(row.metric_key)).map((row) => context.env.DB.prepare(
-      `UPDATE cue_custom_metrics SET enabled = 0, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+      `UPDATE telemetry_custom_metrics SET enabled = 0, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE org_id = ? AND project_id = ? AND metric_key = ?`,
     ).bind(data.orgId, requestedProject, row.metric_key)),
   ];
   parsed.data.actions.forEach((action, index) => {
     statements.push(context.env.DB.prepare(
-      `INSERT OR IGNORE INTO cue_custom_metrics
+      `INSERT OR IGNORE INTO telemetry_custom_metrics
          (id, org_id, project_id, source_id, metric_key, label, created_by)
        VALUES (?, ?, ?, NULL, ?, ?, ?)`,
     ).bind(crypto.randomUUID(), data.orgId, requestedProject, action.key, action.label, data.userLogin));
     statements.push(context.env.DB.prepare(
-      `UPDATE cue_custom_metrics
+      `UPDATE telemetry_custom_metrics
           SET label = ?, enabled = 1, template_slot = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE org_id = ? AND project_id = ? AND metric_key = ?`,
     ).bind(action.label, index + 1, data.orgId, requestedProject, action.key));

@@ -9,7 +9,7 @@ import { publishGitHubTransport } from "./transport-outbox";
 export async function createOrUpdateTelemetryGitHubIssue(env, task) {
   if (!task?.incidentId) throw new Error("Invalid Telemetry GitHub issue task");
   const claimed = await env.DB.prepare(
-    `UPDATE cue_github_incidents
+    `UPDATE telemetry_github_incidents
         SET status = 'processing', processing_occurrence_count = occurrence_count,
             updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
       WHERE id = ? AND status IN ('pending', 'failed')`,
@@ -25,7 +25,7 @@ export async function createOrUpdateTelemetryGitHubIssue(env, task) {
       return { skipped: "invalid_diagnostic_payload" };
     }
     await env.DB.prepare(
-      `UPDATE cue_github_incidents SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?`,
+      `UPDATE telemetry_github_incidents SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?`,
     ).bind(errorMessage(error), new Date().toISOString(), task.incidentId).run();
     throw error;
   }
@@ -35,12 +35,12 @@ async function processIncident(env, incidentId) {
   const row = await env.DB.prepare(
     `SELECT incident.*, setting.enabled, setting.environments_json, setting.comment_on_repeat,
             setting.repeat_interval_minutes, project.repo, org.github_login, source.name AS source_name
-       FROM cue_github_incidents incident
-       JOIN cue_github_issue_settings setting
+       FROM telemetry_github_incidents incident
+       JOIN telemetry_github_issue_settings setting
          ON setting.org_id = incident.org_id AND setting.project_id = incident.project_id
        JOIN orgs org ON org.id = incident.org_id
        JOIN projects project ON project.id = incident.project_id AND project.owner_id = org.github_login
-       JOIN cue_sources source ON source.id = incident.source_id AND source.org_id = incident.org_id
+       JOIN telemetry_sources source ON source.id = incident.source_id AND source.org_id = incident.org_id
       WHERE incident.id = ?`,
   ).bind(incidentId).first();
   if (!row) {
@@ -158,7 +158,7 @@ export async function finalizeTelemetryGitHubIssue(env, { receipt, payload }) {
   if (receipt.provider !== "github") throw new Error("Telemetry callback requires a GitHub receipt");
   if (receipt.status !== "delivered") {
     await env.DB.prepare(
-      "UPDATE cue_github_incidents SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?",
+      "UPDATE telemetry_github_incidents SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?",
     ).bind(receipt.error?.message ?? `GitHub transport ${receipt.status}`, new Date().toISOString(), payload.incidentId).run();
     return { skipped: receipt.status };
   }
@@ -174,18 +174,18 @@ async function completeIncident(env, payload, issue) {
   const now = new Date().toISOString();
   await env.DB.batch([
     ...(payload.previousIssueNumber ? [env.DB.prepare(
-      `UPDATE cue_github_issue_links SET closed_at = COALESCE(closed_at, ?)
+      `UPDATE telemetry_github_issue_links SET closed_at = COALESCE(closed_at, ?)
         WHERE incident_id = ? AND repo = ? AND issue_number = ?`,
     ).bind(now, payload.incidentId, payload.repo, payload.previousIssueNumber)] : []),
     env.DB.prepare(
-      `INSERT INTO cue_github_issue_links
+      `INSERT INTO telemetry_github_issue_links
          (incident_id, repo, issue_number, issue_url, opened_at, closed_at)
        VALUES (?, ?, ?, ?, ?, NULL)
        ON CONFLICT(incident_id, repo, issue_number) DO UPDATE SET
          issue_url = excluded.issue_url, closed_at = NULL`,
     ).bind(payload.incidentId, payload.repo, issue.number, issue.html_url, issue.created_at ?? now),
     env.DB.prepare(
-      `UPDATE cue_github_incidents SET
+      `UPDATE telemetry_github_incidents SET
          status = CASE WHEN occurrence_count > processing_occurrence_count THEN 'pending' ELSE 'open' END,
          github_repo = ?, github_issue_number = ?, github_issue_url = ?, github_issue_state = 'open',
          previous_issue_number = ?, previous_issue_url = ?, last_github_update_at = ?,
@@ -198,7 +198,7 @@ async function completeIncident(env, payload, issue) {
       now, payload.incidentId,
     ),
   ]);
-  const pending = await env.DB.prepare("SELECT status FROM cue_github_incidents WHERE id = ?")
+  const pending = await env.DB.prepare("SELECT status FROM telemetry_github_incidents WHERE id = ?")
     .bind(payload.incidentId).first();
   if (pending?.status === "pending") {
     await env.TASK_QUEUE.send({ type: "telemetry_github_issue", incidentId: payload.incidentId, deliveryId: `telemetry:${payload.incidentId}:${now}` });
@@ -208,7 +208,7 @@ async function completeIncident(env, payload, issue) {
 export async function recoverTelemetryGithubIncidents(env) {
   const result = await env.DB.prepare(
     `SELECT incident.id, org.github_login AS owner_id
-       FROM cue_github_incidents incident JOIN orgs org ON org.id = incident.org_id
+       FROM telemetry_github_incidents incident JOIN orgs org ON org.id = incident.org_id
       WHERE incident.status IN ('pending', 'failed')
         AND (incident.last_queued_at IS NULL OR datetime(incident.last_queued_at) <= datetime('now', '-10 minutes'))
       ORDER BY incident.updated_at LIMIT 50`,
@@ -220,7 +220,7 @@ export async function recoverTelemetryGithubIncidents(env) {
       ownerId: row.owner_id,
       deliveryId: `telemetry:${row.id}:recovery`,
     });
-    await env.DB.prepare("UPDATE cue_github_incidents SET last_queued_at = ? WHERE id = ?")
+    await env.DB.prepare("UPDATE telemetry_github_incidents SET last_queued_at = ? WHERE id = ?")
       .bind(new Date().toISOString(), row.id).run();
   }
 }
@@ -252,6 +252,6 @@ function requirePresentation(value) {
 }
 function errorMessage(error) { return (error instanceof Error ? error.message : String(error)).slice(0, 500); }
 async function markDisabled(db, id, reason) {
-  await db.prepare("UPDATE cue_github_incidents SET status = 'disabled', last_error = ?, updated_at = ? WHERE id = ?")
+  await db.prepare("UPDATE telemetry_github_incidents SET status = 'disabled', last_error = ?, updated_at = ? WHERE id = ?")
     .bind(reason, new Date().toISOString(), id).run();
 }

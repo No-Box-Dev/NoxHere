@@ -88,14 +88,14 @@ export function errorIncidentKey(event: {
 export async function stageGithubIncident(env: Env, source: IncidentSource, incident: GithubIncident): Promise<boolean> {
   if (!source.project_id) return false;
   const setting = await env.NOX_DB.prepare(
-    `SELECT enabled, environments_json FROM cue_github_issue_settings
+    `SELECT enabled, environments_json FROM telemetry_github_issue_settings
       WHERE org_id = ? AND project_id = ?`,
   ).bind(source.org_id, source.project_id).first<{ enabled: number; environments_json: string }>();
   if (!setting || setting.enabled !== 1 || !enabledEnvironment(setting.environments_json, source.environment)) return false;
   const candidateId = crypto.randomUUID();
   const now = new Date().toISOString();
   await env.NOX_DB.prepare(
-    `INSERT INTO cue_github_incidents
+    `INSERT INTO telemetry_github_incidents
        (id, org_id, project_id, source_id, environment, incident_key, kind, title,
         payload_json, first_seen_at, last_seen_at, occurrence_count, status, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'pending', ?)
@@ -105,8 +105,8 @@ export async function stageGithubIncident(env: Env, source: IncidentSource, inci
        title = excluded.title,
        payload_json = excluded.payload_json,
        last_seen_at = excluded.last_seen_at,
-       occurrence_count = cue_github_incidents.occurrence_count + 1,
-       status = CASE WHEN cue_github_incidents.status = 'processing' THEN 'processing' ELSE 'pending' END,
+       occurrence_count = telemetry_github_incidents.occurrence_count + 1,
+       status = CASE WHEN telemetry_github_incidents.status = 'processing' THEN 'processing' ELSE 'pending' END,
        last_error = NULL,
        updated_at = excluded.updated_at`,
   ).bind(
@@ -115,7 +115,7 @@ export async function stageGithubIncident(env: Env, source: IncidentSource, inci
     incident.occurredAt, incident.occurredAt, now,
   ).run();
   const row = await env.NOX_DB.prepare(
-    `SELECT id FROM cue_github_incidents
+    `SELECT id FROM telemetry_github_incidents
       WHERE project_id = ? AND environment = ? AND incident_key = ?`,
   ).bind(source.project_id, source.environment, incident.key).first<{ id: string }>();
   if (!row?.id) return false;
@@ -127,7 +127,7 @@ export async function stageGithubIncident(env: Env, source: IncidentSource, inci
       deliveryId: `telemetry:${row.id}:${now}`,
     });
     await env.NOX_DB.prepare(
-      "UPDATE cue_github_incidents SET last_queued_at = ? WHERE id = ?",
+      "UPDATE telemetry_github_incidents SET last_queued_at = ? WHERE id = ?",
     ).bind(now, row.id).run();
     return true;
   } catch (error) {

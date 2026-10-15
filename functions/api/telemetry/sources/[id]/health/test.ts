@@ -28,7 +28,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   if (!isAdmin) return errorResponse("Admin required", 403);
 
   const source = await getNoxDb(context.env).prepare(
-    `SELECT id FROM cue_sources
+    `SELECT id FROM telemetry_sources
       WHERE id = ? AND org_id = ? AND owner_id = ?${projectId ? " AND project_id = ?" : ""}`,
   ).bind(...(projectId
     ? [context.params.id, orgId, orgLogin, projectId]

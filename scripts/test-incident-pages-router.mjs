@@ -57,7 +57,7 @@ const DB = {
         if (sql.includes("FROM orgs WHERE id")) return { id: 7, github_login: "acme", suspended_at: null };
         if (sql.includes("FROM projects")) return { id: "proj_playnist", name: "Playnist", archived: 0, enabled: 1 };
         if (sql.includes("FROM project_config") || sql.includes("FROM config")) return null;
-        if (sql.includes("FROM cue_error_groups incident")) return {
+        if (sql.includes("FROM telemetry_error_groups incident")) return {
           id: incidentId,
           source_id: "source-1",
           source_name: "Playnist Production",
@@ -75,7 +75,7 @@ const DB = {
           resolved_at: "2026-09-26T00:00:00.000Z",
           resolved_by: "jasper",
         };
-        if (sql.includes("UPDATE cue_error_groups")) return {
+        if (sql.includes("UPDATE telemetry_error_groups")) return {
           id: incidentId,
           source_id: "source-1",
           source_name: null,
@@ -148,7 +148,7 @@ assert.equal(response.status, 200, JSON.stringify(body));
 assert.equal(body.incident.id, incidentId);
 assert.equal(body.incident.status, "resolved");
 assert.equal(body.incident.fingerprint, fingerprint);
-const update = queries.find((query) => query.sql.includes("UPDATE cue_error_groups"));
+const update = queries.find((query) => query.sql.includes("UPDATE telemetry_error_groups"));
 assert.ok(update, "The routed request did not reach the incident update");
 assert.match(update.sql, /WHERE id = \?/);
 assert.doesNotMatch(update.sql, /fingerprint = \?/);

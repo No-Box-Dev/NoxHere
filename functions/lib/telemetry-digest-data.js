@@ -60,7 +60,7 @@ export function summarizeTelemetryDigestRows(rows, period) {
 async function loadStoredTelemetryDigestData(db, sourceId, period) {
   const historyStart = shiftPeriod(period, -30);
   const { results } = await db.prepare(
-    `SELECT period, metric_key, value, origin FROM cue_daily_metrics
+    `SELECT period, metric_key, value, origin FROM telemetry_daily_metrics
       WHERE source_id = ? AND metric_key NOT LIKE 'custom.%'
         AND period >= ? AND period <= ?
       ORDER BY period, metric_key`,
@@ -71,8 +71,8 @@ async function loadStoredTelemetryDigestData(db, sourceId, period) {
 async function loadEventDerivedTelemetryDigestData(db, sourceId, period) {
   const setting = await db.prepare(
     `SELECT setting.window_days
-       FROM cue_sources source
-       LEFT JOIN cue_engagement_settings setting
+       FROM telemetry_sources source
+       LEFT JOIN telemetry_engagement_settings setting
          ON setting.org_id = source.org_id AND setting.project_id = source.project_id
       WHERE source.id = ?`,
   ).bind(sourceId).first();
@@ -87,16 +87,16 @@ async function loadEventDerivedTelemetryDigestData(db, sourceId, period) {
        SELECT date(period, '+1 day') FROM periods WHERE period < date(?)
      )
      SELECT periods.period,
-       (SELECT COUNT(*) FROM cue_user_registrations registration
+       (SELECT COUNT(*) FROM telemetry_user_registrations registration
          WHERE registration.source_id = ? AND registration.period = periods.period) AS new_users,
-       (SELECT COUNT(*) FROM cue_user_registrations registration
+       (SELECT COUNT(*) FROM telemetry_user_registrations registration
          WHERE registration.source_id = ? AND registration.period <= periods.period) AS total_users,
-       (SELECT COUNT(*) FROM cue_user_active_days active
+       (SELECT COUNT(*) FROM telemetry_user_active_days active
          WHERE active.source_id = ? AND active.period = periods.period) AS daily_active,
-       (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+       (SELECT COUNT(DISTINCT active.subject_hash) FROM telemetry_user_active_days active
          WHERE active.source_id = ?
            AND active.period BETWEEN date(periods.period, '-6 days') AND periods.period) AS weekly_active,
-       (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+       (SELECT COUNT(DISTINCT active.subject_hash) FROM telemetry_user_active_days active
          WHERE active.source_id = ?
            AND active.period BETWEEN date(periods.period, '-29 days') AND periods.period) AS monthly_active
      FROM periods ORDER BY periods.period`,
@@ -107,35 +107,35 @@ async function loadEventDerivedTelemetryDigestData(db, sourceId, period) {
        SELECT date(period, '+1 day') FROM periods WHERE period < date(?)
      ), definitions(metric_key, label) AS (
        SELECT metric.metric_key, metric.label
-         FROM cue_custom_metrics metric
-         JOIN cue_sources source ON source.id = ?
+         FROM telemetry_custom_metrics metric
+         JOIN telemetry_sources source ON source.id = ?
         WHERE metric.org_id = source.org_id AND metric.enabled = 1
           AND ((source.project_id IS NOT NULL AND metric.project_id = source.project_id)
             OR (source.project_id IS NULL AND metric.source_id = source.id))
      )
      SELECT periods.period, definitions.metric_key, definitions.label,
-       (SELECT COUNT(*) FROM cue_activity_events activity
+       (SELECT COUNT(*) FROM telemetry_activity_events activity
          WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
            AND activity.period = periods.period) AS daily_events,
-       (SELECT COUNT(*) FROM cue_activity_events activity
+       (SELECT COUNT(*) FROM telemetry_activity_events activity
          WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
            AND activity.period BETWEEN date(periods.period, ?) AND periods.period) AS weekly_events,
-       (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+       (SELECT COUNT(DISTINCT active.subject_hash) FROM telemetry_user_active_days active
          WHERE active.source_id = ?
            AND active.period BETWEEN date(periods.period, ?) AND periods.period) AS weekly_active,
-       (SELECT COUNT(DISTINCT activity.subject_hash) FROM cue_activity_events activity
+       (SELECT COUNT(DISTINCT activity.subject_hash) FROM telemetry_activity_events activity
          WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
            AND activity.period BETWEEN date(periods.period, ?) AND periods.period
            AND EXISTS (
-             SELECT 1 FROM cue_user_active_days active
+             SELECT 1 FROM telemetry_user_active_days active
               WHERE active.source_id = activity.source_id
                 AND active.subject_hash = activity.subject_hash
                 AND active.period BETWEEN date(periods.period, ?) AND periods.period
            )) AS weekly_participants,
-       (SELECT COUNT(*) FROM cue_activity_events activity
+       (SELECT COUNT(*) FROM telemetry_activity_events activity
          WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
            AND activity.period BETWEEN date(periods.period, ?) AND date(periods.period, ?)) AS previous_weekly_events,
-       (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+       (SELECT COUNT(DISTINCT active.subject_hash) FROM telemetry_user_active_days active
          WHERE active.source_id = ?
            AND active.period BETWEEN date(periods.period, ?) AND date(periods.period, ?)) AS previous_weekly_active
      FROM periods CROSS JOIN definitions
@@ -148,31 +148,31 @@ async function loadEventDerivedTelemetryDigestData(db, sourceId, period) {
        UNION ALL SELECT date(period, '+1 day') FROM periods WHERE period < date(?)
      )
      SELECT periods.period,
-       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'subscription.trial_started'
            AND event.period = periods.period) AS trials_new,
-       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'subscription.trial_started'
            AND event.period <= periods.period) AS trials_total,
-       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'subscription.paid_started'
            AND event.period = periods.period) AS paid_new,
-       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'subscription.paid_started'
            AND event.period <= periods.period) AS paid_total,
-       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'subscription.cancelled'
            AND event.period = periods.period) AS churned,
-       (SELECT COALESCE(SUM(event.value), 0) FROM cue_tracked_events event
+       (SELECT COALESCE(SUM(event.value), 0) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'records.parsed'
            AND event.period = periods.period) AS records_parsed,
-       (SELECT COALESCE(SUM(event.value), 0) FROM cue_tracked_events event
+       (SELECT COALESCE(SUM(event.value), 0) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'reports.generated'
            AND event.period = periods.period) AS reports_generated,
-       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'records.parsed'
            AND event.subject_hash IS NOT NULL AND event.period <= periods.period) AS records_users_total,
-       (SELECT COUNT(DISTINCT event.subject_hash) FROM cue_tracked_events event
+       (SELECT COUNT(DISTINCT event.subject_hash) FROM telemetry_tracked_events event
          WHERE event.source_id = ? AND event.name = 'reports.generated'
            AND event.subject_hash IS NOT NULL AND event.period <= periods.period) AS reports_users_total
      FROM periods ORDER BY periods.period`,
@@ -301,10 +301,10 @@ export async function storeTelemetryDerivedMetrics(db, orgId, sourceId, period, 
   const statements = Object.entries(metrics)
     .filter(([metricKey]) => !metricKey.startsWith("custom."))
     .map(([metricKey, value]) => db.prepare(
-    `INSERT INTO cue_daily_metrics
+    `INSERT INTO telemetry_daily_metrics
        (org_id, source_id, period, metric_key, value, origin, formula_version, updated_at)
      SELECT ?, ?, ?, definition.key, ?, 'calculated', 2, ?
-       FROM cue_metric_definitions definition
+       FROM telemetry_metric_definitions definition
       WHERE definition.key = ?
      ON CONFLICT(source_id, period, metric_key) DO UPDATE SET
        value = excluded.value, origin = 'calculated', formula_version = 2,

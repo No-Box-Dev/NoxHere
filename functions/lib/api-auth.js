@@ -11,7 +11,7 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
   pathname = compatibilityApiPath(pathname);
   if (pathname === "/api/telemetry/metrics" && searchParams.get("sourceId")) {
     const row = await db.prepare(
-      "SELECT project_id FROM cue_sources WHERE org_id = ? AND id = ?",
+      "SELECT project_id FROM telemetry_sources WHERE org_id = ? AND id = ?",
     ).bind(orgId, searchParams.get("sourceId")).first();
     return { kind: "resource", projectId: row?.project_id ?? null };
   }
@@ -95,7 +95,7 @@ export async function apiTokenProjectResource(db, pathname, orgId, searchParams 
   match = pathname.match(/^\/api\/telemetry\/sources\/([^/]+)/);
   if (match) {
     const row = await db.prepare(
-      "SELECT project_id FROM cue_sources WHERE org_id = ? AND id = ?",
+      "SELECT project_id FROM telemetry_sources WHERE org_id = ? AND id = ?",
     ).bind(orgId, decodeURIComponent(match[1])).first();
     return { kind: "resource", projectId: row?.project_id ?? null };
   }

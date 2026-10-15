@@ -51,7 +51,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const parsed = validate(QuerySchema, Object.fromEntries(new URL(context.request.url).searchParams.entries()));
   if (!parsed.ok) return parsed.response;
   const source = await context.env.DB.prepare(
-    `SELECT id FROM cue_sources
+    `SELECT id FROM telemetry_sources
       WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""}`,
   ).bind(...(projectId ? [parsed.data.sourceId, orgId, projectId] : [parsed.data.sourceId, orgId])).first();
   if (!source) return errorResponse("Telemetry source not found", 404);
@@ -59,11 +59,11 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const [catalog, metricRows, activityRows, digests, errorGroups] = await Promise.all([
     context.env.DB.prepare(
       `SELECT key, label, domain, unit, origin, description, formula_key, version
-         FROM cue_metric_definitions ORDER BY rowid`,
+         FROM telemetry_metric_definitions ORDER BY rowid`,
     ).all<Record<string, unknown>>(),
     context.env.DB.prepare(
       `SELECT period, metric_key, value, origin, updated_at
-       FROM cue_daily_metrics
+       FROM telemetry_daily_metrics
         WHERE source_id = ?
           AND metric_key NOT LIKE 'custom.%'
           AND period >= date('now', ?)
@@ -75,23 +75,23 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
          UNION ALL SELECT date(period, '+1 day') FROM periods WHERE period < date('now')
        ), definitions(metric_key, label) AS (
          SELECT metric.metric_key, metric.label
-           FROM cue_custom_metrics metric
-           JOIN cue_sources source ON source.id = ?
+           FROM telemetry_custom_metrics metric
+           JOIN telemetry_sources source ON source.id = ?
           WHERE metric.org_id = source.org_id AND metric.enabled = 1
             AND ((source.project_id IS NOT NULL AND metric.project_id = source.project_id)
               OR (source.project_id IS NULL AND metric.source_id = source.id))
        )
        SELECT periods.period, definitions.metric_key, definitions.label,
-         (SELECT COUNT(*) FROM cue_activity_events activity
+         (SELECT COUNT(*) FROM telemetry_activity_events activity
            WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
              AND activity.period = periods.period) AS daily_events,
-         (SELECT COUNT(*) FROM cue_activity_events activity
+         (SELECT COUNT(*) FROM telemetry_activity_events activity
            WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
              AND activity.period BETWEEN date(periods.period, '-29 days') AND periods.period) AS monthly_events,
-         (SELECT COUNT(DISTINCT active.subject_hash) FROM cue_user_active_days active
+         (SELECT COUNT(DISTINCT active.subject_hash) FROM telemetry_user_active_days active
            WHERE active.source_id = ?
              AND active.period BETWEEN date(periods.period, '-29 days') AND periods.period) AS monthly_active,
-         COALESCE((SELECT MAX(activity.received_at) FROM cue_activity_events activity
+         COALESCE((SELECT MAX(activity.received_at) FROM telemetry_activity_events activity
            WHERE activity.source_id = ? AND activity.metric_key = definitions.metric_key
              AND activity.period = periods.period), '') AS updated_at
        FROM periods CROSS JOIN definitions ORDER BY periods.period DESC, definitions.metric_key`,
@@ -99,7 +99,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       parsed.data.sourceId, parsed.data.sourceId, parsed.data.sourceId).all<ActivityMetricRow>(),
     context.env.DB.prepare(
       `SELECT run.period, run.created_at, delivery.status, delivery.delivered_at
-         FROM cue_digest_runs run
+         FROM telemetry_digest_runs run
          LEFT JOIN delivery_outbox delivery ON delivery.id = run.outbox_id
         WHERE run.source_id = ?
         ORDER BY run.period DESC LIMIT ?`,
@@ -109,10 +109,10 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
               first_seen_at, last_seen_at, occurrence_count, last_notified_at,
               grouping_kind, sample_json, first_release, last_release,
               status, acknowledged_at, acknowledged_by, resolved_at, resolved_by,
-              (SELECT COUNT(*) FROM cue_error_group_users affected
-                WHERE affected.source_id = cue_error_groups.source_id
-                  AND affected.fingerprint = cue_error_groups.fingerprint) AS affected_user_count
-         FROM cue_error_groups
+              (SELECT COUNT(*) FROM telemetry_error_group_users affected
+                WHERE affected.source_id = telemetry_error_groups.source_id
+                  AND affected.fingerprint = telemetry_error_groups.fingerprint) AS affected_user_count
+         FROM telemetry_error_groups
         WHERE source_id = ?
         ORDER BY last_seen_at DESC LIMIT 20`,
     ).bind(parsed.data.sourceId).all<Record<string, unknown>>(),
