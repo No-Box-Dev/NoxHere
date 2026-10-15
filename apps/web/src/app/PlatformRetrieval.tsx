@@ -31,7 +31,7 @@ export function PlatformRetrieval({ organizationId, projectId }: PlatformRetriev
             {results.isLoading ? <p>Searching…</p> : null}
             {results.data?.map((result) => {
               const service = serviceById.get(result.serviceId);
-              return <Link to={result.href} key={result.id} onClick={() => setQuery("")}><span style={{ background: service?.softColor, color: service?.color }}>{service?.shortName.at(0)}</span><span><b>{result.title}</b><small>{result.kind} · {result.context}</small></span><em>{service?.name} →</em></Link>;
+              return <Link to={result.href} key={result.id} onClick={() => setQuery("")}><span>{service?.shortName.at(0)}</span><span><b>{result.title}</b><small>{result.kind} · {result.context}</small></span><em>{service?.name} →</em></Link>;
             })}
             {!results.isLoading && results.data?.length === 0 ? <p>No results in this project.</p> : null}
           </div>
