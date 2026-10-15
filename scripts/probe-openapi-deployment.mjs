@@ -89,16 +89,30 @@ export async function probeDeployment({
   fetchImpl = fetch,
   concurrency = 6,
   timeoutMs = 15_000,
+  contractAttempts = 6,
+  contractRetryMs = 5_000,
+  sleepImpl = (delay) => new Promise((resolve) => setTimeout(resolve, delay)),
 }) {
   const base = new URL(origin);
-  const contractResponse = await fetchImpl(new URL("/openapi.json", base), {
-    headers: { "Cache-Control": "no-cache", Accept: "application/json" },
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  if (!contractResponse.ok) {
-    throw new Error(`Deployed OpenAPI contract returned ${contractResponse.status}`);
+  let deployedSpec;
+  let contractStatus = 0;
+  for (let attempt = 1; attempt <= contractAttempts; attempt += 1) {
+    const contractUrl = new URL("/openapi.json", base);
+    contractUrl.searchParams.set("nox_release_probe", `${Date.now()}-${attempt}`);
+    const contractResponse = await fetchImpl(contractUrl, {
+      headers: { "Cache-Control": "no-cache", Accept: "application/json" },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    contractStatus = contractResponse.status;
+    if (contractResponse.ok) {
+      deployedSpec = await contractResponse.json();
+      if (isDeepStrictEqual(deployedSpec, localSpec)) break;
+    }
+    if (attempt < contractAttempts) await sleepImpl(contractRetryMs);
   }
-  const deployedSpec = await contractResponse.json();
+  if (!deployedSpec) {
+    throw new Error(`Deployed OpenAPI contract returned ${contractStatus}`);
+  }
   const operations = operationsFromSpec(localSpec);
   if (!isDeepStrictEqual(deployedSpec, localSpec)) {
     return {

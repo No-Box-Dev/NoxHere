@@ -1,11 +1,11 @@
 name: Deploy feedback widget
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - packages/feedback-widget/**
+      - scripts/assert-main-release.mjs
       - .github/workflows/deploy-feedback-widget.yml
 
 concurrency:
@@ -21,11 +21,16 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DEPLOY_SHA: ${{ github.sha }}
     defaults:
       run:
         working-directory: packages/feedback-widget
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Verify release is the current main commit
+        run: node ../../scripts/assert-main-release.mjs
       - uses: actions/setup-node@v5
         with:
           node-version: 22
