@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { isUrlMatch, init, destroy, identify, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS, reportSubmitFailure } from '../loader.js';
+import { isUrlMatch, init, destroy, identify, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS, reportSubmitFailure, sendReport } from '../loader.js';
 
 describe('isUrlMatch', () => {
   beforeEach(() => {
@@ -209,6 +209,26 @@ describe('init', () => {
       { id: 'capture-element-picker', type: 'element_picker', required: false },
     ]);
     delete window.__FeedbackCore;
+  });
+});
+
+describe('report submission', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('uses the canonical public Feedback API route', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, queued: true }),
+    });
+
+    await expect(sendReport({ siteId: 'test-site', description: 'Broken' }))
+      .resolves.toMatchObject({ success: true, queued: true });
+    expect(fetch).toHaveBeenCalledWith(
+      'https://app.noxhere.com/api/feedback/public/v1/reports',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });
 
