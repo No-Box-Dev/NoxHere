@@ -266,7 +266,14 @@ async function telemetryAcceptance() {
       idempotencyKey: `acceptance-cue-${runId}`,
       occurredAt: new Date().toISOString(),
       url: config.feedbackOrigin,
-      data: { errorCode: "NOX_ACCEPTANCE", environment: "staging", component: "acceptance-suite", fatal: false, unhandled: false },
+      data: {
+        errorCode: "NOX_ACCEPTANCE",
+        environment: "staging",
+        component: "acceptance-suite",
+        fatal: false,
+        unhandled: false,
+        attributes: { notifyEveryOccurrence: true, acceptanceRunId: runId },
+      },
     }),
   });
   if (![200, 201, 202].includes(response.status)) fail(`Telemetry ingest failed: ${response.status} ${await response.text()}`);
