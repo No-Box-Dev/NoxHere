@@ -7,9 +7,11 @@ import { actionableSlackError, resolveSlackInstall, listSlackChannels } from "..
 // to populate the Posts feed / Release notes feed channel dropdowns in
 // Settings. Admin-only because the only consumer is the admin settings UI.
 export async function onRequestGet(context) {
-  const { orgId, isAdmin } = getCtx(context);
+  const { orgId, isAdmin, credentialType, scopes = [] } = getCtx(context);
   if (!orgId) return errorResponse("Missing org context", 400);
-  if (!isAdmin) return errorResponse("Only an organization admin can view Slack channels. Ask an admin to configure this route.", 403);
+  const scopedAutomation = credentialType === "api_token"
+    && (scopes.includes("slack:read") || scopes.includes("slack:write"));
+  if (!isAdmin && !scopedAutomation) return errorResponse("Only an organization admin can view Slack channels. Ask an admin to configure this route.", 403);
 
   const connectionId = new URL(context.request.url).searchParams.get("connectionId");
   const install = await resolveSlackInstall(context.env, orgId, connectionId);

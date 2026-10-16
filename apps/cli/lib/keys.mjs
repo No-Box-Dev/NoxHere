@@ -3,11 +3,12 @@ export const KEY_ENVIRONMENTS = Object.freeze(["production", "staging", "test"])
 export const KEY_PRESETS = Object.freeze({
   ingest: Object.freeze(["telemetry:ingest"]),
   write: Object.freeze(["telemetry:ingest", "slack:send", "developer-feedback:write"]),
-  read: Object.freeze(["services:read", "activity:read", "feedback:read", "telemetry:read"]),
+  read: Object.freeze(["services:read", "planning:read", "activity:read", "feedback:read", "telemetry:read"]),
 });
 
 export const KEY_SCOPES = new Set([
-  "services:read", "developer-feedback:write", "slack:send",
+  "services:read", "developer-feedback:write", "slack:send", "slack:read",
+  "slack:write", "planning:read", "planning:write",
   "activity:read", "activity:write", "feedback:read", "feedback:write",
   "telemetry:ingest", "telemetry:read", "telemetry:write",
 ]);

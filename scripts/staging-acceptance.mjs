@@ -19,7 +19,7 @@ const config = {
   repo: process.env.NOX_ACCEPTANCE_REPO ?? "",
   slackConnectionId: process.env.NOX_ACCEPTANCE_SLACK_CONNECTION_ID ?? "",
   slackChannelId: process.env.NOX_ACCEPTANCE_SLACK_CHANNEL_ID ?? "",
-  accessToken: process.env.NOX_ACCEPTANCE_ACCESS_TOKEN ?? "",
+  apiToken: process.env.NOX_ACCEPTANCE_API_TOKEN ?? "",
   feedbackUrl: process.env.NOX_ACCEPTANCE_FEEDBACK_URL ?? "",
   feedbackOrigin: process.env.NOX_ACCEPTANCE_FEEDBACK_ORIGIN ?? "",
   feedbackSiteId: process.env.NOX_ACCEPTANCE_FEEDBACK_SITE_ID ?? "",
@@ -45,7 +45,7 @@ function pass(name, detail = "") {
 
 async function request(name, path, init = {}, expected = [200]) {
   const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${config.accessToken}`);
+  headers.set("Authorization", `Bearer ${config.apiToken}`);
   headers.set("X-Org", config.org);
   headers.set("Accept", "application/json");
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
@@ -111,11 +111,10 @@ async function preflight() {
   }
   pass("all product service bindings are ready");
 
-  const projects = (await request("project discovery", "/api/v1/projects")).body;
-  const projectItems = Array.isArray(projects) ? projects : projects?.projects;
-  const project = projectItems?.find((item) => item.id === config.projectId && item.repo === config.repo);
-  if (!project) fail(`project discovery: ${config.projectId}/${config.repo} is not enabled`);
-  pass("staging project is enabled", config.projectId);
+  if (catalog?.project?.id !== config.projectId) {
+    fail(`service discovery: expected project ${config.projectId}, received ${catalog?.project?.id ?? "none"}`);
+  }
+  pass("acceptance token is bound to the staging project", config.projectId);
 
   const ticketConfig = (await request("Planning staging config", "/api/v1/services/planning/config")).body?.config;
   if (ticketConfig?.featureRepository !== config.repo) fail("Planning feature repository is not the allowlisted staging repository");

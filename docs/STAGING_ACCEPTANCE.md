@@ -13,7 +13,8 @@ explicitly test-only:
 - the repository is private and not archived on GitHub;
 - the Slack channel name contains the same kind of test marker;
 - the selected Feedback site and Incidents source resolve to that exact channel;
-- a short-lived NoxHere API token and explicit write confirmation are present;
+- a project-scoped `test` or `staging` NoxHere automation token and explicit
+  write confirmation are present;
 - the NoxHere gateway and Feedback capture hosts match the built-in allowlist.
 
 `No-Box-Dev/test` and a channel such as `#nox-acceptance` are the default
@@ -54,8 +55,9 @@ apps or workspaces.
      and acceptance Slack connection/channel;
    - Incidents GitHub issue creation → enabled only for the test project and
      `staging` environment.
-5. Create a source-only Incidents ingest key and a short-lived `nox_at_...`
-   session with the required project/service scopes.
+5. Create a source-only Incidents ingest key and an expiring `nox_sk_test_...`
+   automation token with the required project/service scopes. The scheduled
+   workflow must not depend on a 15-minute interactive login session.
 
 No provider secret needs to be copied into the acceptance file. Existing
 GitHub and Slack credentials stay encrypted inside NoxHere.

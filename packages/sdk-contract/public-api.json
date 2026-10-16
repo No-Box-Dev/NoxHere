@@ -5631,6 +5631,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Assign a tracked GitHub issue",
@@ -5638,6 +5641,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-first-party-client": true,
         "x-organization-optional": false,
@@ -6782,6 +6786,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "List Planning features",
@@ -6789,6 +6796,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       },
@@ -6855,6 +6863,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Create a feature",
@@ -6862,6 +6873,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -6920,6 +6932,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Close a feature",
@@ -6927,6 +6942,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "destructive",
         "x-project-scope": "optional"
       },
@@ -6996,6 +7012,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Partially update a feature",
@@ -7003,6 +7022,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -7054,6 +7074,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "List feature attachments",
@@ -7061,6 +7084,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       },
@@ -7136,6 +7160,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Upload a bounded feature attachment",
@@ -7143,6 +7170,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -7201,6 +7229,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Delete a feature attachment",
@@ -7208,6 +7239,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "destructive",
         "x-project-scope": "optional"
       },
@@ -7264,6 +7296,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Download a feature attachment",
@@ -7271,6 +7306,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       }
@@ -9435,6 +9471,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Send a test message through a saved or candidate route",
@@ -9442,6 +9481,7 @@
           "NoxHere"
         ],
         "x-authentication": "admin",
+        "x-automation-scope": "slack:send",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -9559,6 +9599,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Open or close a tracked GitHub issue",
@@ -9566,6 +9609,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-first-party-client": true,
         "x-organization-optional": false,
@@ -10323,6 +10367,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Draft a Planning feature or task with managed AI",
@@ -10330,6 +10377,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -12690,6 +12738,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "List channels visible to the connected Nox bot",
@@ -12697,6 +12748,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "slack:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       }
@@ -12952,6 +13004,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Send a test message to a Slack destination",
@@ -12959,6 +13014,7 @@
           "NoxHere"
         ],
         "x-authentication": "admin",
+        "x-automation-scope": "slack:send",
         "x-change-safety": "write_not_safe_to_retry",
         "x-first-party-client": true,
         "x-organization-optional": false,
@@ -13028,6 +13084,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "List Planning specifications",
@@ -13035,6 +13094,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       },
@@ -13095,6 +13155,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Create a specification",
@@ -13102,6 +13165,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -13156,6 +13220,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Get one specification",
@@ -13163,6 +13230,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       },
@@ -13229,6 +13297,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Partially update or relink a specification",
@@ -13236,6 +13307,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -13288,6 +13360,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Restore a specification",
@@ -13295,6 +13370,7 @@
           "Planning"
         ],
         "x-authentication": "admin",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "destructive",
         "x-project-scope": "optional",
         "x-required-role": "admin"
@@ -13346,6 +13422,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Archive a specification",
@@ -13353,6 +13432,7 @@
           "Planning"
         ],
         "x-authentication": "admin",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "destructive",
         "x-project-scope": "optional",
         "x-required-role": "admin"
@@ -13405,6 +13485,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "List specification attachments",
@@ -13412,6 +13495,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       },
@@ -13487,6 +13571,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Upload a bounded specification attachment",
@@ -13494,6 +13581,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -13552,6 +13640,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Delete a specification attachment",
@@ -13559,6 +13650,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "destructive",
         "x-project-scope": "optional"
       },
@@ -13615,6 +13707,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Download a specification attachment",
@@ -13622,6 +13717,7 @@
           "Planning"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       }
@@ -13876,6 +13972,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Get a personal task workflow",
@@ -13883,6 +13982,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-guest-access": "read",
         "x-project-scope": "optional"
@@ -13947,6 +14047,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Replace a personal task workflow",
@@ -13954,6 +14057,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -14044,6 +14148,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "List Planning tasks",
@@ -14051,6 +14158,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:read",
         "x-change-safety": "safe_read",
         "x-guest-access": "read",
         "x-project-scope": "optional"
@@ -14115,6 +14223,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Create a Planning task",
@@ -14122,6 +14233,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -14186,6 +14298,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Delete a Planning task",
@@ -14193,6 +14308,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "destructive",
         "x-project-scope": "optional"
       },
@@ -14268,6 +14384,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "summary": "Update a Planning task",
@@ -14275,6 +14394,7 @@
           "NoxHere"
         ],
         "x-authentication": "member",
+        "x-automation-scope": "planning:write",
         "x-change-safety": "write_not_safe_to_retry",
         "x-project-scope": "optional"
       }
@@ -16554,7 +16674,7 @@
     },
     {
       "authentication": "admin",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "destructive",
       "description": "Archive a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "archiveSpec",
@@ -16611,6 +16731,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -16619,7 +16742,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
       "id": "assignIssue",
@@ -16684,6 +16807,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -16853,7 +16979,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "destructive",
       "description": "Close a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "closeFeature",
@@ -16916,6 +17042,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -17084,7 +17213,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Create a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "createFeature",
@@ -17158,6 +17287,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -17315,7 +17447,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Create a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "createPlanningTask",
@@ -17386,6 +17518,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -17467,7 +17602,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Create a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "createSpec",
@@ -17535,6 +17670,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -17875,7 +18013,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "destructive",
       "description": "Delete one attachment from a Planning feature.",
       "id": "deleteFeatureAttachment",
@@ -17938,6 +18076,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -18014,7 +18155,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "destructive",
       "description": "Delete a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "deletePlanningTask",
@@ -18083,6 +18224,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -18091,7 +18235,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "destructive",
       "description": "Delete a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "deleteSpecAttachment",
@@ -18154,6 +18298,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -18516,7 +18663,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "Download one attachment from a Planning feature.",
       "id": "downloadFeatureAttachment",
@@ -18579,6 +18726,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -18678,7 +18828,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "Download a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "downloadSpecAttachment",
@@ -18741,6 +18891,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -18749,7 +18902,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Draft a Planning feature or task with managed AI. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "draftPlanningItem",
@@ -18820,6 +18973,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -20530,7 +20686,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "Get the task columns chosen by a project member, or the standard Getting Things Done workflow when they have not customized them. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "getPersonalTaskWorkflow",
@@ -20595,6 +20751,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -21415,7 +21574,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "Get one specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "getSpec",
@@ -21474,6 +21633,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -22515,7 +22677,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "List attachments for one Planning feature.",
       "id": "listFeatureAttachments",
@@ -22571,6 +22733,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -22579,7 +22744,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "List Planning features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "listFeatures",
@@ -22643,6 +22808,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -23333,7 +23501,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "List Planning tasks. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "listPlanningTasks",
@@ -23428,6 +23596,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -23682,7 +23853,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "slack:read",
       "changeSafety": "safe_read",
       "description": "List channels visible to the connected Nox bot. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "listSlackChannels",
@@ -23735,6 +23906,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -23743,7 +23917,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "List specification attachments. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "listSpecAttachments",
@@ -23799,6 +23973,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -23807,7 +23984,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:read",
       "changeSafety": "safe_read",
       "description": "List Planning specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "listSpecs",
@@ -23878,6 +24055,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -24750,7 +24930,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Replace the signed-in member's personal task columns. Each member can change only their own workflow. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "putPersonalTaskWorkflow",
@@ -24821,6 +25001,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -25453,7 +25636,7 @@
     },
     {
       "authentication": "admin",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "destructive",
       "description": "Restore a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "restoreSpec",
@@ -25510,6 +25693,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -26462,7 +26648,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
       "id": "setIssueState",
@@ -26527,6 +26713,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -27221,7 +27410,7 @@
     },
     {
       "authentication": "admin",
-      "automationScope": null,
+      "automationScope": "slack:send",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
       "id": "testSlackDestination",
@@ -27286,6 +27475,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -27294,7 +27486,7 @@
     },
     {
       "authentication": "admin",
-      "automationScope": null,
+      "automationScope": "slack:send",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Send a test message through a saved or candidate route. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "testSlackRoute",
@@ -27359,6 +27551,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -27531,7 +27726,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Partially update a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "updateFeature",
@@ -27608,6 +27803,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -28176,7 +28374,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Update a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "updatePlanningTask",
@@ -28259,6 +28457,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -28437,7 +28638,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Partially update or relink a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "updateSpec",
@@ -28511,6 +28712,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -29114,7 +29318,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Upload a bounded attachment to one Planning feature.",
       "id": "uploadFeatureAttachment",
@@ -29197,6 +29401,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -29205,7 +29412,7 @@
     },
     {
       "authentication": "member",
-      "automationScope": null,
+      "automationScope": "planning:write",
       "changeSafety": "write_not_safe_to_retry",
       "description": "Upload a bounded specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
       "id": "uploadSpecAttachment",
@@ -29288,6 +29495,9 @@
         {
           "nativeSession": [],
           "organization": []
+        },
+        {
+          "noxApiToken": []
         }
       ],
       "servers": [],
@@ -29296,5 +29506,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "9248eb1bd708ce91f5cb5321286cb6941b715a46c62f86b1d5e3df6811ce5c51"
+  "x-sdk-source-sha256": "3064b4a01cfa60eae5c9b59f03aef9f848859c1796a4b2801549a1a8952ed257"
 }
