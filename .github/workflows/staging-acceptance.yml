@@ -17,8 +17,9 @@ concurrency:
 
 jobs:
   acceptance:
-    # Enable only after the staging-acceptance environment secrets are complete.
-    if: ${{ vars.NOX_STAGING_ACCEPTANCE_ENABLED == 'true' }}
+    # Manual validation remains available while the recurring schedule is
+    # fail-closed. Enable the variable only after a full manual run passes.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.NOX_STAGING_ACCEPTANCE_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: staging-acceptance

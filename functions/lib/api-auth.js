@@ -124,6 +124,7 @@ export function projectScopedApiTokenPathSupported(pathname, method) {
   if ((verb === "GET" || verb === "HEAD") && /^\/api\/feedback\/assets\/[^/]+$/.test(pathname)) return true;
   if (verb === "GET" && /^\/api\/feedback\/reports\/[^/]+$/.test(pathname)) return true;
   if (/^\/api\/telemetry\/sources(?:\/|$)/.test(pathname)) return true;
+  if (verb === "GET" && pathname === "/api/telemetry/github-issues") return true;
   if (verb === "GET" && (pathname === "/api/telemetry/events" || pathname === "/api/telemetry/metrics")) return true;
   if (/^\/api\/telemetry\/projects\/[^/]+\/metrics$/.test(pathname)) return true;
   return false;
