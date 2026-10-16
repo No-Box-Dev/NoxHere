@@ -115,6 +115,38 @@ describe("v1 middleware errors", () => {
     });
   });
 
+  for (const [pathname, method] of [
+    ["/api/v1/services/planning/config", "GET"],
+    ["/api/v1/slack/channels", "GET"],
+    ["/api/v1/slack/test", "POST"],
+    ["/api/v1/features", "GET"],
+    ["/api/v1/features", "POST"],
+    ["/api/v1/features/42", "DELETE"],
+  ]) {
+    it(`admits a project token to ${method} ${pathname}`, async () => {
+      const signed = await signedRequest(pathname, {
+        credentialType: "api_token",
+        credentialId: "acceptance-token",
+        projectId: "project-1",
+        scopes: ["planning:read", "planning:write", "slack:read", "slack:send"],
+      }, { "X-Project-ID": "project-1" }, method);
+      const middlewareContext = {
+        request: signed.request,
+        env: {
+          NOXHERE_INTERNAL_SECRET: signed.secret,
+          DB: { prepare: (sql) => ({ bind: () => ({ first: async () => sql.includes("FROM orgs")
+            ? { id: 7, github_login: "acme", suspended_at: null }
+            : { id: "project-1", archived: 0, enabled: 1 } }) }) },
+        },
+        data: {},
+        next() { return new Response(null, { status: 204 }); },
+      };
+      const response = await onRequest(middlewareContext);
+      expect(response.status).toBe(204);
+      expect(middlewareContext.data.projectId).toBe("project-1");
+    });
+  }
+
   it("lets native onboarding read integration status before selecting a project", async () => {
     const signed = await signedRequest("/api/v1/integrations/status");
     let handlerProjectId = "not-called";
