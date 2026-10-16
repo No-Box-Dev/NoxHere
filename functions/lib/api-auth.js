@@ -109,7 +109,10 @@ export function projectScopedApiTokenPathSupported(pathname, method) {
       || pathname === "/api/telemetry/public/v1/events")) return true;
   if (verb === "POST" && pathname === "/api/v1/developer-feedback") return true;
   if (verb === "POST" && pathname === "/api/v1/integrations/slack/messages") return true;
-  if (verb === "GET" && /^\/api\/v1\/services(?:\/[^/]+(?:\/(?:setup|health))?)?$/.test(pathname)) return true;
+  if (verb === "POST" && pathname === "/api/v1/slack/test") return true;
+  if (verb === "GET" && pathname === "/api/v1/slack/channels") return true;
+  if (verb === "GET" && /^\/api\/v1\/services(?:\/[^/]+(?:\/(?:setup|health|config))?)?$/.test(pathname)) return true;
+  if (/^\/api\/v1\/(?:features|tasks|task-workflows|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return true;
   pathname = compatibilityApiPath(pathname);
   if (verb === "GET" && /^\/api\/projects\/[^/]+\/(?:activity|incidents|issues|feedback)$/.test(pathname)) return true;
   if (verb === "PATCH" && /^\/api\/projects\/[^/]+\/incidents\/inc_[a-f0-9]{32}$/.test(pathname)) return true;

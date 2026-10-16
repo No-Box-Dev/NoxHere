@@ -10,6 +10,8 @@ describe("API authentication primitives", () => {
     expect(projectScopedApiTokenPathSupported("/api/v1/activity", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/developer-feedback", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/integrations/slack/messages", "POST")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/slack/test", "POST")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/slack/channels", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/public/events", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/feedback/sites/site-1", "PATCH")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/feedback/sites/site-1", "PATCH")).toBe(true);
@@ -17,10 +19,13 @@ describe("API authentication primitives", () => {
     expect(projectScopedApiTokenPathSupported("/api/v1/feedback/assets/asset_0123456789abcdef0123456789abcdef", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/telemetry/sources/source-1/keys", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/sources/source-1/keys", "POST")).toBe(true);
-    expect(projectScopedApiTokenPathSupported("/api/v1/services/activity/config", "GET")).toBe(false);
+    expect(projectScopedApiTokenPathSupported("/api/v1/services/activity/config", "GET")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/services/planning/config", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/llm-settings", "GET")).toBe(false);
     expect(projectScopedApiTokenPathSupported("/api/features", "GET")).toBe(false);
-    expect(projectScopedApiTokenPathSupported("/api/v1/features", "GET")).toBe(false);
+    expect(projectScopedApiTokenPathSupported("/api/v1/features", "GET")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/features", "POST")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/features/42", "DELETE")).toBe(true);
   });
 
   it("admits pre-scoped API tokens to project reads without promoting human members", () => {
