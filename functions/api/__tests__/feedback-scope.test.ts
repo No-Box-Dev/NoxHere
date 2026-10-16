@@ -33,4 +33,16 @@ describe("Feedback optional project scope", () => {
     expect(calls[0].sql).toContain("site.project_id = ?");
     expect(calls[0].binds).toEqual([7, "project-1"]);
   });
+
+  it("reads Slack delivery health from the unified transport outbox", async () => {
+    const { calls, ctx } = context(null);
+    expect((await onRequestGet(ctx as never)).status).toBe(200);
+    const query = calls[0].sql;
+    expect(query).toContain("FROM transport_outbox delivery");
+    expect(query).toContain("delivery.operation = 'slack.message.send'");
+    expect(query).toContain("delivery.route = 'feedback'");
+    expect(query).toContain("json_extract(delivery.command_json, '$.routeContext.id') = site.id");
+    expect(query).not.toContain("FROM delivery_outbox delivery");
+    expect(query).not.toContain("blocked_configuration");
+  });
 });
