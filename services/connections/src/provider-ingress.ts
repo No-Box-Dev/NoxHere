@@ -9,11 +9,8 @@ import { onRequestGet as slackStatus } from "../../../functions/api/slack/status
 import { onRequestGet as slackChannels } from "../../../functions/api/slack/channels.js";
 import { onRequestPatch as updateSlackConnection } from "../../../functions/api/slack/connections/[id]";
 import { onRequestPost as disconnectSlack } from "../../../functions/api/slack/disconnect.js";
-import { onRequestPost as testSlack } from "../../../functions/api/slack/test.js";
 import { onRequestPost as startIntegrationConnection } from "../../../functions/api/integrations/connections/[provider]/start.js";
 import { verifyNoxHereAssertion } from "../../../functions/lib/noxhere-assertion";
-import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
-import { sendSlackMessage } from "./slack-message";
 
 type NoxHereAssertion = NonNullable<Awaited<ReturnType<typeof verifyNoxHereAssertion>>>;
 
@@ -59,7 +56,6 @@ const AUTHENTICATED_ROUTES = new Map<string, {
   ["/api/slack/status", { method: "GET", handler: slackStatus }],
   ["/api/slack/channels", { method: "GET", handler: slackChannels }],
   ["/api/slack/disconnect", { method: "POST", handler: disconnectSlack }],
-  ["/api/slack/test", { method: "POST", handler: testSlack }],
 ]);
 
 export async function handleProviderIngress(context: ProviderIngressContext): Promise<Response> {
@@ -104,17 +100,6 @@ export async function handleProviderIngress(context: ProviderIngressContext): Pr
   }
   const authenticatedContext = {
     ...context,
-    // Authenticated Slack routes execute inside the credential-owning
-    // Connections Worker. Supply its local capabilities explicitly instead
-    // of expecting a circular CONNECTIONS service binding back to itself.
-    env: {
-      ...context.env,
-      CONNECTIONS: {
-        checkSlackOrgHealth: (orgId: number, connectionId: string) =>
-          checkSlackOrgHealth(context.env, orgId, connectionId),
-        sendSlackMessage: (input: unknown) => sendSlackMessage(context.env, input),
-      },
-    },
     data: assertion,
     params: connectionMatch
       ? { id: decodeURIComponent(connectionMatch[1]) }
