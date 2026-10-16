@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 export type SearchableOption = { value: string; label: string; keywords?: string };
 
@@ -26,12 +27,12 @@ export function SearchableSelect({ ariaLabel, value, options, onChange, placehol
 
   const choose = (next: SearchableOption) => { onChange(next.value); setQuery(next.label); setOpen(false); };
   return <div className={`searchable-select ${className ?? ""}`} ref={root}>
-    <input role="combobox" aria-label={ariaLabel} aria-controls={listId} aria-expanded={open} aria-autocomplete="list" value={open ? query : selected?.label ?? emptyLabel ?? ""} placeholder={placeholder} onFocus={() => { setOpen(true); setQuery(""); setActiveIndex(0); }} onChange={(event) => { setQuery(event.target.value); setOpen(true); setActiveIndex(0); }} onKeyDown={(event) => {
+    <input role="combobox" aria-label={ariaLabel} aria-controls={listId} aria-expanded={open} aria-autocomplete="list" aria-haspopup="listbox" value={open ? query : selected?.label ?? emptyLabel ?? ""} placeholder={placeholder} onFocus={() => { setOpen(true); setQuery(""); setActiveIndex(0); }} onChange={(event) => { setQuery(event.target.value); setOpen(true); setActiveIndex(0); }} onKeyDown={(event) => {
       if (event.key === "Escape") { setOpen(false); setQuery(selected?.label ?? emptyLabel ?? ""); }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setOpen(true); setActiveIndex((current) => Math.max(0, Math.min(filtered.length - 1, current + (event.key === "ArrowDown" ? 1 : -1)))); }
       if (event.key === "Enter" && open && filtered[activeIndex]) { event.preventDefault(); choose(filtered[activeIndex]); }
     }} />
-    <button type="button" className="searchable-select-toggle" aria-label={`Show ${ariaLabel} options`} onClick={() => setOpen((current) => { if (!current) { setQuery(""); setActiveIndex(0); } return !current; })}>⌄</button>
+    <button type="button" className="searchable-select-toggle" aria-label={`Show ${ariaLabel} options`} aria-controls={listId} aria-expanded={open} onClick={() => setOpen((current) => { if (!current) { setQuery(""); setActiveIndex(0); } return !current; })}><ChevronDown aria-hidden="true" /></button>
     {open ? <div className="searchable-select-options" id={listId} role="listbox">{filtered.length ? filtered.map((option, index) => <button type="button" role="option" aria-selected={option.value === value} className={index === activeIndex ? "active" : ""} key={option.value || "__empty"} onMouseDown={(event) => event.preventDefault()} onClick={() => choose(option)}>{option.label}</button>) : <p>No matches</p>}</div> : null}
   </div>;
 }

@@ -22,4 +22,10 @@ describe("application theme contract", () => {
     expect(themeCss.match(/--control-handle:/g)).toHaveLength(2);
     expect(themeCss.match(/--code-surface:/g)).toHaveLength(2);
   });
+
+  it("keeps searchable selects aligned with the application control system", () => {
+    expect(globalCss).toContain(".searchable-select > input { width: 100%; height: 38px;");
+    expect(globalCss).toContain(".searchable-select > input:focus { border-color: var(--foreground); box-shadow: none; }");
+    expect(globalCss).toContain(".searchable-select-toggle svg");
+  });
 });

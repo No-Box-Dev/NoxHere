@@ -335,15 +335,20 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .ticket-assignee-menu button { padding: 7px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--body); font-size: 8px; text-align: left; }
 .ticket-assignee-menu button:hover { background: var(--soft); }
 .searchable-select { position: relative; min-width: 145px; }
-.searchable-select > input { width: 100%; min-height: 34px; padding-right: 28px; }
+.searchable-select > input { width: 100%; height: 38px; padding: 0 36px 0 11px; border: 1px solid var(--line); border-radius: 0; outline: none; background: var(--card); color: var(--card-foreground); font-size: 12px; font-weight: 600; }
 .ticket-workspace .searchable-select > input { border-color: var(--line); background: var(--card); color: var(--card-foreground); }
-.searchable-select-toggle { position: absolute; top: 1px; right: 1px; width: 26px; height: 32px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.searchable-select > input:hover { border-color: var(--line-strong); }
+.searchable-select > input:focus { border-color: var(--foreground); box-shadow: none; }
+.searchable-select-toggle { position: absolute; top: 1px; right: 1px; display: grid; place-items: center; width: 34px; height: 36px; padding: 0; border: 0; border-left: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
+.searchable-select-toggle:hover, .searchable-select-toggle[aria-expanded="true"] { border-left-color: var(--line); background: var(--secondary); color: var(--foreground); }
+.searchable-select-toggle svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.75; }
 .searchable-select-options { position: absolute; z-index: 90; top: calc(100% + 4px); left: 0; min-width: 100%; max-width: 360px; max-height: 240px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 10px 28px rgb(0 0 0 / 24%); }
 .searchable-select-options button { display: block; width: 100%; padding: 8px; overflow: hidden; border: 0; border-radius: 5px; background: transparent; color: var(--body); text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .searchable-select-options button:hover, .searchable-select-options button.active { background: var(--soft); }
 .searchable-select-options p { margin: 8px; color: var(--muted); }
-.planning-person-picker { display: flex; align-items: center; gap: 7px; }
+.planning-person-picker { display: flex; align-items: center; gap: 9px; }
 .planning-person-picker > span { white-space: nowrap; }
+.planning-person-picker .searchable-select { min-width: 180px; }
 .ticket-assignee-menu .searchable-select { min-width: 190px; }
 .ticket-add { width: 100%; margin-top: 8px; padding: 8px 3px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 9px; text-align: left; }
 .ticket-add:hover { background: color-mix(in srgb, var(--card) 72%, transparent); color: var(--ink); }
