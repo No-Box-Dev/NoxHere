@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
+import { signedAssertionHeaders } from "../../gateway/src/control/assertion";
 import { handleProviderIngress, providerIngressReadiness, type ProviderIngressEnv } from "./provider-ingress";
+
+const sendSlackMessage = vi.hoisted(() => vi.fn());
+vi.mock("./slack-message", () => ({ sendSlackMessage }));
 
 function env(overrides: Partial<ProviderIngressEnv> = {}): ProviderIngressEnv {
   return {
@@ -63,6 +67,63 @@ describe("provider ingress boundary", () => {
     await expect(response.json()).resolves.toMatchObject({
       error: { code: "missing_internal_assertion" },
     });
+  });
+
+  it("executes authenticated Slack tests with the local Connections capability", async () => {
+    sendSlackMessage.mockResolvedValueOnce({
+      ok: true,
+      result: { connectionId: "legacy-2", channelId: "C-DEVELOPERS", messageId: "123.456" },
+    });
+    const unsigned = new Request("https://connections.internal/api/v1/slack/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "planning",
+        connectionId: "legacy-2",
+        channelId: "C-DEVELOPERS",
+      }),
+    });
+    const secret = "internal-secret";
+    const headers = await signedAssertionHeaders(unsigned, {
+      credentialType: "api_token",
+      credentialId: "acceptance-token",
+      principalId: null,
+      userLogin: "acceptance",
+      userId: null,
+      orgId: 7,
+      orgLogin: "acme",
+      isAdmin: false,
+      projectId: "project-1",
+      scopes: ["slack:send"],
+      connectionId: null,
+      accessLevel: "api_token",
+      role: "automation",
+      capabilities: [],
+      membershipVerifiedAt: null,
+      tokenEnvironment: "staging",
+    }, secret);
+    const response = await handleProviderIngress(context(new Request(unsigned, { headers }), {
+      NOXHERE_INTERNAL_SECRET: secret,
+      DB: {
+        prepare: vi.fn(() => ({
+          bind: vi.fn(() => ({ run: vi.fn(async () => ({ success: true })) })),
+        })),
+      } as unknown as D1Database,
+    }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      connectionId: "legacy-2",
+      channelId: "C-DEVELOPERS",
+      messageTs: "123.456",
+    });
+    expect(sendSlackMessage).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({
+      orgId: 7,
+      projectId: "project-1",
+      connectionId: "legacy-2",
+      channelId: "C-DEVELOPERS",
+    }));
   });
 
   it("rejects unsupported methods and paths at the provider boundary", async () => {

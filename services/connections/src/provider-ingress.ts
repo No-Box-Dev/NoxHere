@@ -12,6 +12,8 @@ import { onRequestPost as disconnectSlack } from "../../../functions/api/slack/d
 import { onRequestPost as testSlack } from "../../../functions/api/slack/test.js";
 import { onRequestPost as startIntegrationConnection } from "../../../functions/api/integrations/connections/[provider]/start.js";
 import { verifyNoxHereAssertion } from "../../../functions/lib/noxhere-assertion";
+import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
+import { sendSlackMessage } from "./slack-message";
 
 type NoxHereAssertion = NonNullable<Awaited<ReturnType<typeof verifyNoxHereAssertion>>>;
 
@@ -102,6 +104,17 @@ export async function handleProviderIngress(context: ProviderIngressContext): Pr
   }
   const authenticatedContext = {
     ...context,
+    // Authenticated Slack routes execute inside the credential-owning
+    // Connections Worker. Supply its local capabilities explicitly instead
+    // of expecting a circular CONNECTIONS service binding back to itself.
+    env: {
+      ...context.env,
+      CONNECTIONS: {
+        checkSlackOrgHealth: (orgId: number, connectionId: string) =>
+          checkSlackOrgHealth(context.env, orgId, connectionId),
+        sendSlackMessage: (input: unknown) => sendSlackMessage(context.env, input),
+      },
+    },
     data: assertion,
     params: connectionMatch
       ? { id: decodeURIComponent(connectionMatch[1]) }

@@ -17,9 +17,7 @@ import {
 } from "../../../functions/lib/feedback-resolution.js";
 import { checkSlackOrgHealth } from "../../../functions/lib/slack.js";
 import {
-  deliverResolvedSlackMessage,
   deliverSlackTransport,
-  type SlackMessagePayload,
 } from "../../../functions/lib/transports/slack.ts";
 import { deliverGitHubTransport } from "../../../functions/lib/transports/github.ts";
 import { TransportExecutionError } from "../../../functions/lib/transport-outbox.ts";
@@ -32,7 +30,8 @@ import {
   discoverGitHubInstallation,
   listGitHubInstallationRepositories,
 } from "./github-installations";
-import { resolveSlackDestination, validateSlackDestination } from "./slack-destination";
+import { validateSlackDestination } from "./slack-destination";
+import { sendSlackMessage } from "./slack-message";
 
 interface Env {
   DB: D1Database;
@@ -128,38 +127,8 @@ export default class NoxHereCapabilities extends WorkerEntrypoint<Env> {
     return validateSlackDestination(this.env, input);
   }
 
-  async sendSlackMessage(input: unknown) {
-    const candidate = input && typeof input === "object" && !Array.isArray(input)
-      ? input as Record<string, unknown>
-      : {};
-    const orgId = Number(candidate.orgId);
-    const projectId = typeof candidate.projectId === "string" && candidate.projectId.trim()
-      ? candidate.projectId.trim()
-      : null;
-    const connectionId = typeof candidate.connectionId === "string" ? candidate.connectionId.trim() : "";
-    const channelId = typeof candidate.channelId === "string" ? candidate.channelId.trim() : "";
-    const message = candidate.message && typeof candidate.message === "object" && !Array.isArray(candidate.message)
-      ? candidate.message as SlackMessagePayload
-      : null;
-    if (!Number.isSafeInteger(orgId) || orgId < 1 || !connectionId || !channelId || !message) {
-      return { ok: false as const, error: { code: "invalid_request", message: "Slack delivery input is invalid" } };
-    }
-
-    const destination = await resolveSlackDestination(this.env, { orgId, projectId, connectionId, channelId });
-    if (!destination.ok) return destination;
-
-    try {
-      const receipt = await deliverResolvedSlackMessage(this.env, { orgId, connectionId, channelId, message });
-      return { ok: true as const, result: { connectionId: destination.install.id, ...receipt } };
-    } catch (error) {
-      return {
-        ok: false as const,
-        error: {
-          code: String((error as { code?: unknown })?.code ?? "slack_delivery_failed"),
-          message: error instanceof Error ? error.message : "Slack delivery failed",
-        },
-      };
-    }
+  sendSlackMessage(input: unknown) {
+    return sendSlackMessage(this.env, input);
   }
 
   async deliverTransport(input: unknown) {
