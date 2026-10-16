@@ -119,6 +119,7 @@ describe("v1 middleware errors", () => {
     ["/api/v1/services/planning/config", "GET"],
     ["/api/v1/slack/channels", "GET"],
     ["/api/v1/slack/test", "POST"],
+    ["/api/v1/telemetry/github-issues", "GET"],
     ["/api/v1/features", "GET"],
     ["/api/v1/features", "POST"],
     ["/api/v1/features/42", "DELETE"],

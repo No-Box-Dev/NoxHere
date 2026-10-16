@@ -19,6 +19,8 @@ describe("API authentication primitives", () => {
     expect(projectScopedApiTokenPathSupported("/api/v1/feedback/assets/asset_0123456789abcdef0123456789abcdef", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/telemetry/sources/source-1/keys", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/sources/source-1/keys", "POST")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/github-issues", "GET")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/telemetry/github-issues", "PUT")).toBe(false);
     expect(projectScopedApiTokenPathSupported("/api/v1/services/activity/config", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/services/planning/config", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/llm-settings", "GET")).toBe(false);
