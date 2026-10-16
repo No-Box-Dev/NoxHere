@@ -9,7 +9,7 @@ const CreateToken = z.object({
   name: z.string().trim().min(1).max(80),
   environment: z.enum(API_TOKEN_ENVIRONMENTS).default("production"),
   projectId: z.string().trim().min(1).max(240),
-  scopes: z.array(z.enum(API_TOKEN_SCOPES)).min(1).max(12),
+  scopes: z.array(z.enum(API_TOKEN_SCOPES)).min(1).max(16),
   expiresInDays: z.number().int().min(1).max(365).default(90),
 }).strict();
 

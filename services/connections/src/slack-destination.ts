@@ -45,7 +45,13 @@ export async function resolveSlackDestination(
       },
     };
   }
-  if (install.projectId && install.projectId !== projectId) {
+  const explicitlyRouted = install.projectId && install.projectId !== projectId && projectId
+    ? await env.DB.prepare(
+      `SELECT 1 FROM project_slack_routes
+        WHERE org_id = ? AND project_id = ? AND connection_id = ? LIMIT 1`,
+    ).bind(orgId, projectId, install.id).first().then(Boolean).catch(() => false)
+    : false;
+  if (install.projectId && install.projectId !== projectId && !explicitlyRouted) {
     return {
       ok: false,
       error: {

@@ -20,9 +20,11 @@ import { buildPlanningTestResponse } from "../../products/planning/response.js";
 // verify the bot is installed in the right workspace + the channel routes
 // correctly before saving the channel selection.
 export async function onRequestPost(context) {
-  const { orgId, orgLogin, projectId, isAdmin } = getCtx(context);
+  const { orgId, orgLogin, projectId, isAdmin, credentialType, scopes = [] } = getCtx(context);
   if (!orgId || !orgLogin) return errorResponse("Missing org context", 400);
-  if (!isAdmin) return errorResponse("Only an organization admin can test Slack delivery. Ask an admin to send this test.", 403);
+  const scopedAutomation = credentialType === "api_token"
+    && (scopes.includes("slack:send") || scopes.includes("slack:write"));
+  if (!isAdmin && !scopedAutomation) return errorResponse("Only an organization admin can test Slack delivery. Ask an admin to send this test.", 403);
 
   let body;
   try { body = await context.request.json(); }

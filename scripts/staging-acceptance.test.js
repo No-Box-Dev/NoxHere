@@ -10,7 +10,7 @@ const safe = {
   slackConnectionId: "connection-1",
   slackChannelId: "C123456",
   projectId: "project-1",
-  accessToken: "nox_at_redacted",
+  apiToken: "nox_sk_test_redacted",
   telemetrySourceId: "source-1",
   telemetryIngestKey: "cue-redacted",
   feedbackSiteId: "site-1",
@@ -52,6 +52,15 @@ describe("staging acceptance safety", () => {
   it("requires an explicit write confirmation", () => {
     expect(validateSafety({ ...safe, confirm: "" }, { writes: true })).toContain(
       `Set NOX_ACCEPTANCE_CONFIRM=${WRITE_CONFIRMATION} to enable provider writes`,
+    );
+  });
+
+  it("rejects production and interactive credentials", () => {
+    expect(validateSafety({ ...safe, apiToken: "nox_sk_live_redacted" })).toContain(
+      "NOX_ACCEPTANCE_API_TOKEN must be a staging or test project automation token",
+    );
+    expect(validateSafety({ ...safe, apiToken: "nox_at_redacted" })).toContain(
+      "NOX_ACCEPTANCE_API_TOKEN must be a staging or test project automation token",
     );
   });
 });

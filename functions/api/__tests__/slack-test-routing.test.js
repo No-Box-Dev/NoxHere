@@ -7,7 +7,7 @@ vi.mock("../../lib/slack.js", () => ({
 import { onRequestPost } from "../slack/test.js";
 import { actionableSlackError } from "../../lib/slack.js";
 
-function context(body) {
+function context(body, data = {}) {
   const calls = [];
   const checkSlackOrgHealth = vi.fn(async () => ({ status: "ok", recovered: false }));
   const sendSlackMessage = vi.fn(async ({ connectionId, channelId }) => ({
@@ -20,7 +20,7 @@ function context(body) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }),
-    data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
+    data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true, ...data },
     env: {
       CONNECTIONS: { checkSlackOrgHealth, sendSlackMessage },
       TELEMETRY_RESPONSE: {
@@ -90,6 +90,15 @@ describe("Slack route tests", () => {
       channelId: "C-ALERT",
       message: expect.objectContaining({ text: "Telemetry delivery test for acme" }),
     }));
+  });
+
+  it("allows a project automation token carrying the Slack send scope", async () => {
+    const ctx = context(
+      { kind: "planning", connectionId: "conn-2", channelId: "C-ACCEPTANCE" },
+      { isAdmin: false, credentialType: "api_token", scopes: ["slack:send"] },
+    );
+    expect((await onRequestPost(ctx)).status).toBe(200);
+    expect(ctx.sendSlackMessage).toHaveBeenCalledOnce();
   });
 
   it("sends a dedicated Telemetry alert-route test", async () => {

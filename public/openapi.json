@@ -1383,6 +1383,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "parameters": [
@@ -1391,7 +1394,8 @@
           }
         ],
         "description": "List channels visible to the connected Nox bot. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "slack:read"
       }
     },
     "/api/v1/integrations/slack/routing": {
@@ -1650,6 +1654,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "parameters": [
@@ -1658,7 +1665,8 @@
           }
         ],
         "description": "Send a test message through a saved or candidate route. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "slack:send"
       }
     },
     "/api/v1/projects": {
@@ -4207,10 +4215,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Draft a Planning feature or task with managed AI. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/tasks": {
@@ -4304,11 +4316,15 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "List Planning tasks. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-guest-access": "read",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "post": {
         "operationId": "createPlanningTask",
@@ -4375,10 +4391,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Create a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/task-workflows": {
@@ -4442,11 +4462,15 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Get the task columns chosen by a project member, or the standard Getting Things Done workflow when they have not customized them. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
         "x-guest-access": "read",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "put": {
         "operationId": "putPersonalTaskWorkflow",
@@ -4513,10 +4537,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Replace the signed-in member's personal task columns. Each member can change only their own workflow. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/tasks/{id}": {
@@ -4597,10 +4625,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Update a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       },
       "delete": {
         "operationId": "deletePlanningTask",
@@ -4666,10 +4698,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Delete a Planning task. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/features": {
@@ -4732,10 +4768,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "List Planning features. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "post": {
         "operationId": "createFeature",
@@ -4800,6 +4840,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "parameters": [
@@ -4808,7 +4851,8 @@
           }
         ],
         "description": "Create a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/features/{number}": {
@@ -4883,10 +4927,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Partially update a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       },
       "delete": {
         "operationId": "closeFeature",
@@ -4946,10 +4994,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Close a feature. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/specs": {
@@ -5019,10 +5071,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "List Planning specifications. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "post": {
         "operationId": "createSpec",
@@ -5081,6 +5137,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "parameters": [
@@ -5089,7 +5148,8 @@
           }
         ],
         "description": "Create a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/specs/{specId}": {
@@ -5147,10 +5207,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Get one specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "patch": {
         "operationId": "updateSpec",
@@ -5220,10 +5284,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Partially update or relink a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/specs/{specId}/archive": {
@@ -5280,10 +5348,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Archive a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       },
       "delete": {
         "operationId": "restoreSpec",
@@ -5338,10 +5410,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Restore a specification. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/specs/{specId}/attachments": {
@@ -5396,10 +5472,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "List specification attachments. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "post": {
         "operationId": "uploadSpecAttachment",
@@ -5478,10 +5558,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Upload a bounded specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/specs/{specId}/attachments/{attachmentId}": {
@@ -5543,10 +5627,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Download a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "delete": {
         "operationId": "deleteSpecAttachment",
@@ -5606,10 +5694,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Delete a specification attachment. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/issues": {
@@ -7215,6 +7307,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "x-change-safety": "write_not_safe_to_retry",
@@ -7223,7 +7318,8 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/bootstrap-status": {
@@ -7979,6 +8075,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "x-change-safety": "write_not_safe_to_retry",
@@ -7987,7 +8086,8 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/me": {
@@ -8761,6 +8861,9 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "x-change-safety": "write_not_safe_to_retry",
@@ -8769,7 +8872,8 @@
             "$ref": "#/components/parameters/projectContext"
           }
         ],
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "slack:send"
       }
     },
     "/api/v1/sync": {
@@ -10260,10 +10364,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "List attachments for one Planning feature.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "post": {
         "operationId": "uploadFeatureAttachment",
@@ -10342,10 +10450,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Upload a bounded attachment to one Planning feature.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/features/{number}/attachments/{attachmentId}": {
@@ -10407,10 +10519,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Download one attachment from a Planning feature.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:read"
       },
       "delete": {
         "operationId": "deleteFeatureAttachment",
@@ -10470,10 +10586,14 @@
           {
             "nativeSession": [],
             "organization": []
+          },
+          {
+            "noxApiToken": []
           }
         ],
         "description": "Delete one attachment from a Planning feature.",
-        "x-project-scope": "optional"
+        "x-project-scope": "optional",
+        "x-automation-scope": "planning:write"
       }
     },
     "/api/v1/projects/{projectId}/activity": {

@@ -39,7 +39,9 @@ export function validateSafety(config, { writes = false } = {}) {
   if (!config.slackConnectionId?.trim()) errors.push("NOX_ACCEPTANCE_SLACK_CONNECTION_ID is required");
   if (!/^[CG][A-Z0-9]{5,20}$/.test(config.slackChannelId ?? "")) errors.push("NOX_ACCEPTANCE_SLACK_CHANNEL_ID must be a Slack channel ID");
   if (!config.projectId) errors.push("NOX_ACCEPTANCE_PROJECT_ID is required");
-  if (!config.accessToken?.startsWith("nox_at_")) errors.push("NOX_ACCEPTANCE_ACCESS_TOKEN must be a short-lived NoxHere native access token");
+  if (!/^nox_sk_(?:staging|test)_/.test(config.apiToken ?? "")) {
+    errors.push("NOX_ACCEPTANCE_API_TOKEN must be a staging or test project automation token");
+  }
   if (!config.telemetrySourceId) errors.push("NOX_ACCEPTANCE_TELEMETRY_SOURCE_ID is required");
   if (!config.telemetryIngestKey) errors.push("NOX_ACCEPTANCE_TELEMETRY_INGEST_KEY is required");
   if (!config.feedbackSiteId) errors.push("NOX_ACCEPTANCE_FEEDBACK_SITE_ID is required");

@@ -50,9 +50,27 @@ describe("Connections Slack destination validation", () => {
       projectId: "proj-other",
       botToken: "xoxb-secret",
     } as never);
-    const result = await validateSlackDestination({ DB: {} as D1Database }, input);
+    const result = await validateSlackDestination({
+      DB: {
+        prepare: () => ({ bind: () => ({ first: async () => null }) }),
+      } as unknown as D1Database,
+    }, input);
     expect(result).toMatchObject({ ok: false, error: { code: "slack_workspace_project_mismatch", status: 409 } });
     expect(getSlackChannel).not.toHaveBeenCalled();
+  });
+
+  it("allows a workspace explicitly routed to an additional project", async () => {
+    vi.mocked(resolveSlackInstall).mockResolvedValue({
+      id: "conn-1",
+      projectId: "proj-owner",
+      botToken: "xoxb-secret",
+    } as never);
+    const first = vi.fn(async () => ({ authorized: 1 }));
+    const bind = vi.fn(() => ({ first }));
+    const prepare = vi.fn(() => ({ bind }));
+    const result = await validateSlackDestination({ DB: { prepare } as unknown as D1Database }, input);
+    expect(result).toEqual({ ok: true, result: { connectionId: "conn-1" } });
+    expect(bind).toHaveBeenCalledWith(7, "proj-playnist", "conn-1");
   });
 
   it("rejects archived and inaccessible private channels", async () => {

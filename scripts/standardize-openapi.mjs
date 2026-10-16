@@ -731,11 +731,14 @@ function automationScope(path, method) {
   const access = method === "get" ? "read" : "write";
   if (method === "post" && path === "/api/v1/developer-feedback") return "developer-feedback:write";
   if (method === "post" && path === "/api/v1/integrations/slack/messages") return "slack:send";
+  if (method === "post" && ["/api/v1/slack/test", "/api/v1/integrations/slack/test"].includes(path)) return "slack:send";
+  if (method === "get" && path === "/api/v1/slack/channels") return "slack:read";
   if (method === "post" && path === "/api/v1/telemetry/public/events") return "telemetry:ingest";
   if (method === "get" && path === "/api/v1/services") return "services:read";
   const service = path.match(/^\/api\/v1\/services\/(activity|feedback|telemetry)(?:\/(?:setup|health))?$/)?.[1];
   if (method === "get" && service) return `${service}:read`;
   if (method === "get" && path === "/api/v1/activity") return "activity:read";
+  if (/^\/api\/v1\/(?:features|tasks|task-workflows|specs|assign|issue-state|planning)(?:\/|$)/.test(path)) return `planning:${access}`;
   path = compatibilityApiPath(path);
   if (method === "get" && /^\/api\/(?:issues|prs)(?:\/|$)/.test(path)) return "activity:read";
   if (/^\/api\/feedback\/sites(?:\/|$)/.test(path)) return `feedback:${access}`;

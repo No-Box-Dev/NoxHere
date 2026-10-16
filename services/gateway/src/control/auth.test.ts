@@ -14,6 +14,18 @@ describe("Slack message automation authorization", () => {
     expect(API_TOKEN_SCOPES).toContain("slack:send");
     expect(requiredScope("/api/v1/integrations/slack/messages", "POST")).toBe("slack:send");
     expect(requiredScope("/api/v1/integrations/slack/messages", "GET")).toBeNull();
+    expect(requiredScope("/api/v1/slack/test", "POST")).toBe("slack:send");
+    expect(requiredScope("/api/v1/slack/channels", "GET")).toBe("slack:read");
+  });
+});
+
+describe("Planning automation authorization", () => {
+  it("supports project-scoped acceptance reads and writes", () => {
+    expect(API_TOKEN_SCOPES).toContain("planning:read");
+    expect(API_TOKEN_SCOPES).toContain("planning:write");
+    expect(requiredScope("/api/v1/features", "GET")).toBe("planning:read");
+    expect(requiredScope("/api/v1/features", "POST")).toBe("planning:write");
+    expect(requiredScope("/api/v1/services/planning/config", "GET")).toBe("planning:read");
   });
 });
 

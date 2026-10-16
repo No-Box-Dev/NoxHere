@@ -12,7 +12,8 @@ export const NATIVE_REFRESH_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const API_TOKEN_SCOPES = [
   "services:read",
   "developer-feedback:write",
-  "slack:send", "slack:write",
+  "slack:send", "slack:read", "slack:write",
+  "planning:read", "planning:write",
   "activity:read", "activity:write",
   "feedback:read", "feedback:write",
   "telemetry:ingest", "telemetry:read", "telemetry:write",
@@ -423,11 +424,14 @@ export function requiredScope(pathname: string, method: string): string | null {
   const access = ["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase()) ? "read" : "write";
   if (pathname === "/api/v1/developer-feedback" && access === "write") return "developer-feedback:write";
   if (pathname === "/api/v1/integrations/slack/messages" && access === "write") return "slack:send";
+  if (pathname === "/api/v1/slack/test" && access === "write") return "slack:send";
+  if (pathname === "/api/v1/slack/channels" && access === "read") return "slack:read";
   if (pathname === "/api/v1/telemetry/public/events" && access === "write") return "telemetry:ingest";
   if (pathname === "/api/telemetry/public/v1/events" && access === "write") return "telemetry:ingest";
   const service = pathname.match(/^\/api\/v1\/services\/([^/]+)/)?.[1];
   if (service && service !== "noxhere") return `${service}:${access}`;
   if (pathname === "/api/v1/services" && access === "read") return "services:read";
+  if (/^\/api\/(?:v1\/)?(?:features|tasks|task-workflows|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return `planning:${access}`;
   if (pathname === "/api/v1/activity" || /^\/api\/v1\/(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|activity)(?:\/|$)/.test(pathname)) return `activity:${access}`;
   if (/^\/api\/v1\/feedback(?:\/|$)/.test(pathname)) return `feedback:${access}`;
   if (/^\/api\/v1\/telemetry(?:\/|$)/.test(pathname)) return `telemetry:${access}`;
