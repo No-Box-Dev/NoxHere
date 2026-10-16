@@ -22,6 +22,7 @@ const incidentInput = {
       environment: "production",
       release: "web-123",
       runtime: "browser",
+      sdkVersion: "0.2.6",
       url: "https://playnist.com/users/private-user/library?token=secret#private",
     },
     diagnosis: {
@@ -45,6 +46,7 @@ describe("Telemetry response policy", () => {
     });
     expect(response.labels.map(({ name }) => name)).toEqual(["telemetry", "incident"]);
     expect(response.body).toContain("Origin: https://playnist\\.com");
+    expect(response.body).toContain("SDK: `0.2.6`");
     expect(response.body).toContain("Previous occurrence: https://github.com/acme/playnist/issues/12");
     expect(response.body).not.toContain("private-user");
     expect(response.body).not.toContain("token=secret");
