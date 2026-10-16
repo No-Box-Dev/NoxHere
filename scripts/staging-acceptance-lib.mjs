@@ -9,7 +9,8 @@ export function acceptanceHostname(hostname, service) {
       || host === "staging.noxhere.com"
       || /^noxhere-staging\.[a-z0-9-]+\.workers\.dev$/.test(host);
   }
-  return /^noxhere-feedback-staging\.[a-z0-9-]+\.workers\.dev$/.test(host);
+  return host === "app.noxhere.com"
+    || /^noxhere-feedback-staging\.[a-z0-9-]+\.workers\.dev$/.test(host);
 }
 
 export function hasTestLabel(value) {

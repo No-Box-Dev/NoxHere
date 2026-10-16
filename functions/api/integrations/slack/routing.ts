@@ -4,9 +4,10 @@ import { z } from "zod";
 import { validate } from "../../../lib/validate";
 import { readSlackSettings } from "../../../lib/slack-settings";
 import { requeueBlockedTransportCommands } from "../../../lib/transport-outbox";
+import { projectSlackDestinationErrorStatus, validateProjectSlackDestination } from "../../../lib/project-routing";
 
 interface Ctx {
-  env: Pick<Env, "DB" | "TASK_QUEUE">;
+  env: Pick<Env, "DB" | "TASK_QUEUE"> & { CONNECTIONS?: { validateSlackDestination(input: unknown): Promise<unknown> } };
   data: { orgId: number; projectId?: string | null; isAdmin: boolean };
   request: Request;
   params?: Record<string, string>;
@@ -195,6 +196,26 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     if (channelId && !connectionId) return errorResponse(`Choose a Slack workspace for the ${route} channel`, 409);
     slack[fields.connection] = connectionId;
   }
+  const useConnectionsValidation = Boolean(projectId && context.env.CONNECTIONS?.validateSlackDestination);
+  if (useConnectionsValidation) {
+    const changedRoutes = new Set([...Object.keys(body.routes), ...Object.keys(body.connections ?? {})]);
+    for (const route of changedRoutes) {
+      const fields = ROUTES[route];
+      const channelId = typeof slack[fields.channel] === "string" ? String(slack[fields.channel]).trim() : "";
+      const connectionId = typeof slack[fields.connection] === "string" ? String(slack[fields.connection]).trim() : "";
+      if (!channelId) continue;
+      try {
+        slack[fields.connection] = await validateProjectSlackDestination(
+          context.env,
+          orgId,
+          projectId ?? null,
+          { connectionId, channelId },
+        );
+      } catch (error) {
+        return errorResponse(error instanceof Error ? error.message : "Slack channel validation failed", projectSlackDestinationErrorStatus(error));
+      }
+    }
+  }
   // Once either split Activity route is managed through the canonical API,
   // retire the old combined value so it cannot silently override a cleared
   // posts or release-notes route during the compatibility window.
@@ -215,6 +236,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     data: {
       ...context.data,
       configCompareAndSwap: { expectedRaw: stored.raw },
+      slackValidationCompleted: useConnectionsValidation,
     },
   } as never);
   if (!response.ok) return response;

@@ -11,15 +11,17 @@ explicitly test-only:
 - the GitHub repository name contains `staging`, `sandbox`, `acceptance`,
   `test`, or `cert`;
 - the repository is private and not archived on GitHub;
-- the Slack channel name contains the same kind of test marker;
+- the Slack connection and active channel are selected by immutable IDs;
 - the selected Feedback site and Incidents source resolve to that exact channel;
 - a project-scoped `test` or `staging` NoxHere automation token and explicit
   write confirmation are present;
 - the NoxHere gateway and Feedback capture hosts match the built-in allowlist.
 
-`No-Box-Dev/test` and a channel such as `#nox-acceptance` are the default
-destinations. Production product repositories and ordinary Slack channels are
-rejected before the first write.
+`No-Box-Dev/test` is the default repository. A dedicated channel such as
+`#nox-acceptance` is recommended but not required: an existing team channel can
+be selected explicitly, and generated content carries a unique
+`[nox-acceptance:...]` marker. Production product repositories are rejected
+before the first write.
 
 ## What remains isolated
 
@@ -29,7 +31,7 @@ explicit parameter:
 | Resource | Acceptance boundary |
 |---|---|
 | GitHub | Existing App installation → private `No-Box-Dev/test` repository |
-| Slack | Existing App installation → selected connection and `#nox-acceptance` channel |
+| Slack | Existing App installation → explicitly selected connection and active channel |
 | Nox project | Dedicated project linked only to the test repository |
 | Feedback | Dedicated site with a test-labelled origin and the acceptance channel |
 | Incidents | Dedicated source, `staging` environment, acceptance channel, and source-only ingest key |
@@ -44,8 +46,8 @@ apps or workspaces.
    private `No-Box-Dev/test` repository.
 2. In Nox, restore/enable the existing `proj_no-box-dev_test` project if it is
    archived and keep it linked only to the `test` repository.
-3. Create `#nox-acceptance` (or another explicitly test-labelled channel) in
-   the existing Slack workspace and invite the NoxHere bot.
+3. Select an active channel in the existing Slack workspace. A dedicated
+   `#nox-acceptance` channel is optional. Ensure the NoxHere bot can post there.
 4. Configure the test project:
    - Planning feature repository → `test`;
    - Activity release notes → the acceptance Slack connection/channel;

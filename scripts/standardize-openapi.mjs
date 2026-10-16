@@ -331,7 +331,7 @@ document.components.schemas.ApiTokenCreate = {
     name: { type: "string", minLength: 1, maxLength: 80 },
     environment: { type: "string", enum: ["production", "staging", "test"], default: "production" },
     projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxHere project. The token cannot access resources assigned to another project." },
-    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:(send|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$" } },
+    scopes: { type: "array", minItems: 1, maxItems: 16, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:(send|read|write)|planning:(read|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$" } },
     expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
   },
 };
