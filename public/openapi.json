@@ -15092,11 +15092,11 @@
           "scopes": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 12,
+            "maxItems": 16,
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(services:read|developer-feedback:write|slack:(send|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$"
+              "pattern": "^(services:read|developer-feedback:write|slack:(send|read|write)|planning:(read|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$"
             }
           },
           "expiresInDays": {

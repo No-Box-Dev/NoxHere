@@ -489,10 +489,10 @@
           },
           "scopes": {
             "items": {
-              "pattern": "^(services:read|developer-feedback:write|slack:(send|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$",
+              "pattern": "^(services:read|developer-feedback:write|slack:(send|read|write)|planning:(read|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$",
               "type": "string"
             },
-            "maxItems": 12,
+            "maxItems": 16,
             "minItems": 1,
             "type": "array",
             "uniqueItems": true
@@ -29506,5 +29506,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "3064b4a01cfa60eae5c9b59f03aef9f848859c1796a4b2801549a1a8952ed257"
+  "x-sdk-source-sha256": "c0443bdc11f44fd7bd331b529c64fa502881409c48e0d2879728aef1fe1c2242"
 }

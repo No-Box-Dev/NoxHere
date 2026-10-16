@@ -107,6 +107,27 @@ describe("agent setup APIs", () => {
     });
   });
 
+  it("delegates project route validation to the Connections service", async () => {
+    const DB = dbWithSettings({ slack: {} });
+    const validateSlackDestination = vi.fn(async () => ({ ok: true, result: { connectionId: "conn-shared" } }));
+    const response = await patchRouting({
+      request: new Request("https://app.noxhere.com/api/integrations/slack/routing", {
+        method: "PATCH",
+        body: JSON.stringify({ routes: { planning: "C-DEVELOPERS" }, connections: { planning: "conn-shared" } }),
+      }),
+      env: { DB, CONNECTIONS: { validateSlackDestination } },
+      data: { orgId: 7, orgLogin: "acme", projectId: "project-1", isAdmin: true },
+      params: {},
+    });
+    expect(response.status).toBe(200);
+    expect(validateSlackDestination).toHaveBeenCalledWith({
+      orgId: 7,
+      projectId: "project-1",
+      connectionId: "conn-shared",
+      channelId: "C-DEVELOPERS",
+    });
+  });
+
   it("infers a legacy client's workspace from a verified channel pair", async () => {
     const DB = dbWithSettings({ slack: {} }, {
       connectionRows: [
