@@ -587,8 +587,8 @@ export function buildSubmitBody(data, ctx) {
   };
 }
 
-async function sendReport(body) {
-  const response = await fetch(`${API_URL}/report`, {
+export async function sendReport(body) {
+  const response = await fetch(`${API_URL}/api/feedback/public/v1/reports`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

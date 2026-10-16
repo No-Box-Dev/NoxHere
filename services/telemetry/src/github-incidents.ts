@@ -18,7 +18,13 @@ interface IncidentPayload {
   impact: string;
   message?: string | undefined;
   error?: { name?: string | undefined; message: string; code?: string | undefined; status?: number | undefined; stack?: string | undefined } | undefined;
-  context?: { environment?: string | undefined; release?: string | undefined; runtime?: string | undefined; url?: string | undefined } | undefined;
+  context?: {
+    environment?: string | undefined;
+    release?: string | undefined;
+    runtime?: "browser" | "server" | "edge" | "unknown" | undefined;
+    url?: string | undefined;
+    sdkVersion?: string | undefined;
+  } | undefined;
   diagnosis: FeatureDiagnosis;
 }
 

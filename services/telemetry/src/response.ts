@@ -18,13 +18,14 @@ const IncidentPayloadSchema = z.object({
     message: z.string().max(2_000),
     code: z.string().max(120).optional(),
     status: z.number().int().min(100).max(599).optional(),
-    stack: z.string().max(6_000).optional(),
+    stack: z.string().max(8_000).optional(),
   }).strict().optional(),
   context: z.object({
-    environment: z.string().max(50).optional(),
-    release: z.string().max(200).optional(),
-    runtime: z.string().max(200).optional(),
-    url: z.string().max(1_000).optional(),
+    environment: z.string().max(80).optional(),
+    release: z.string().max(120).optional(),
+    runtime: z.enum(["browser", "server", "edge", "unknown"]).optional(),
+    url: z.string().max(2_048).optional(),
+    sdkVersion: z.string().max(40).optional(),
   }).strict().optional(),
   diagnosis: z.object({
     summary: z.string().max(2_000).optional(),
@@ -103,6 +104,7 @@ export function buildGitHubIncident(
     `- Occurrences: ${input.occurrenceCount}`,
     payload.context?.release ? `- Latest release: \`${codeSpan(payload.context.release)}\`` : null,
     payload.context?.runtime ? `- Runtime: ${markdown(payload.context.runtime)}` : null,
+    payload.context?.sdkVersion ? `- SDK: \`${codeSpan(payload.context.sdkVersion)}\`` : null,
     origin ? `- Origin: ${markdown(origin)}` : null,
     previousUrl ? `- Previous occurrence: ${escapeHtml(previousUrl)}` : null,
   ].filter((value): value is string => Boolean(value)).join("\n");
