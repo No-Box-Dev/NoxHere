@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptanceHostname, findTelemetryEvent, findIssue, findRelease, hasTestLabel, validateSafety, WRITE_CONFIRMATION } from "./staging-acceptance-lib.mjs";
+import { acceptanceHostname, findTelemetryEvent, findIssue, findRelease, hasTestLabel, mergePullRequestWithRefresh, validateSafety, WRITE_CONFIRMATION } from "./staging-acceptance-lib.mjs";
 
 const safe = {
   baseUrl: "https://noxhere-staging.jasper-414.workers.dev",
@@ -72,5 +72,32 @@ describe("staging acceptance receipts", () => {
     expect(findIssue([{ pull_request: {}, title: issue.title }, issue], "[nox-acceptance:abc]")).toBe(issue);
     expect(findRelease([{ repo: "staging-cert", pr: { number: 3, title: "Release [nox-acceptance:abc]" } }], "staging-cert", 3, "[nox-acceptance:abc]")).toBeTruthy();
     expect(findTelemetryEvent([{ title: "Failure [nox-acceptance:abc]" }], "[nox-acceptance:abc]")).toBeTruthy();
+  });
+
+  it("refreshes and retries an Activity pull request when its base moves", async () => {
+    const calls = [];
+    const responses = [
+      new Error("Base branch was modified. Review and try the merge again."),
+      { head: { sha: "head-1" } },
+      { message: "Updating pull request branch" },
+      { merged: true, sha: "merge-1" },
+    ];
+    const api = (name, method, path, fields) => {
+      calls.push({ name, method, path, fields });
+      const response = responses.shift();
+      if (response instanceof Error) throw response;
+      return response;
+    };
+
+    await expect(mergePullRequestWithRefresh(api, "No-Box-Dev", "test", 3, {
+      wait: async () => {},
+    })).resolves.toMatchObject({ merged: true });
+    expect(calls.map((call) => call.path)).toEqual([
+      "repos/No-Box-Dev/test/pulls/3/merge",
+      "repos/No-Box-Dev/test/pulls/3",
+      "repos/No-Box-Dev/test/pulls/3/update-branch",
+      "repos/No-Box-Dev/test/pulls/3/merge",
+    ]);
+    expect(calls[2].fields).toEqual({ expected_head_sha: "head-1" });
   });
 });
