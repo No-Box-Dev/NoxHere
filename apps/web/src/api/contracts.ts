@@ -314,6 +314,20 @@ export const engineerStatsSchema = z.object({
   }).optional(),
 }).loose();
 
+export const engineerActivitySchema = z.object({
+  login: z.string(),
+  month: z.string(),
+  firstMonth: z.string().nullable(),
+  prsOpened: z.record(z.string(), z.number()),
+  prsMerged: z.record(z.string(), z.number()),
+  prsReviewed: z.record(z.string(), z.number()),
+  commits: z.record(z.string(), z.number()),
+  monthlyOpened: z.record(z.string(), z.number()),
+  monthlyMerged: z.record(z.string(), z.number()),
+  monthlyReviewed: z.record(z.string(), z.number()),
+  monthlyCommits: z.record(z.string(), z.number()),
+});
+
 export const telemetryAlertSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -426,6 +440,7 @@ export type GithubMember = z.infer<typeof githubMemberSchema>;
 export type OrganizationMember = z.infer<typeof organizationMemberSchema>;
 export type ProjectSettings = NonNullable<z.infer<typeof projectSettingsSchema>>;
 export type EngineerStats = z.infer<typeof engineerStatsSchema>;
+export type EngineerActivity = z.infer<typeof engineerActivitySchema>;
 export type SlackRouting = z.infer<typeof slackRoutingSchema>;
 export type SlackStatus = z.infer<typeof slackStatusSchema>;
 export type SlackChannels = z.infer<typeof slackChannelsSchema>;

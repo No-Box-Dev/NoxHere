@@ -8,9 +8,9 @@ import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
 import type { PlatformOutletContext } from "../../app/platform-context";
-import { ProductivityView } from "./ProductivityView";
+import { TeamDashboardView } from "./TeamDashboardView";
 
-const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"], ["productivity", "Productivity"]] as const;
+const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"], ["dashboard", "Dashboard"]] as const;
 type WorkItem = { id: number; repo: string; number: number; title: string; state: string; author?: string; author_avatar?: string; assignees?: Array<{ login: string; avatar_url?: string }>; html_url?: string; updated_at?: string; draft?: boolean };
 type CurrentResult = { prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[]; members: GithubMember[]; excludedMembers: string[]; planningEnabled: boolean };
 type CurrentSummary = { prs: WorkItem[]; issues: WorkItem[]; members: GithubMember[]; excludedMembers: string[] };
@@ -20,11 +20,12 @@ type QuickView = "opened" | "merged";
 
 export default function ActivityPage() {
   const { organizationId = "", projectId = "", view = "current", person } = useParams();
-  const { bootstrap, members } = useOutletContext<PlatformOutletContext>();
+  const { bootstrap, members, membersLoading, membersError } = useOutletContext<PlatformOutletContext>();
   const project = bootstrap.projects.find((item) => item.id === projectId);
   const planningEnabled = true;
   const isFeedStream = view === "opened" || view === "merged";
-  const isProductivity = view === "productivity";
+  const isLegacyProductivity = view === "productivity";
+  const isDashboard = view === "dashboard" || isLegacyProductivity;
   const isSettings = view === "settings";
   const scope = { organizationId, projectId };
   const queryClient = useQueryClient();
@@ -41,7 +42,7 @@ export default function ActivityPage() {
       }));
       return { prs: summary.prs ?? [], issues: summary.issues ?? [], features, members: summary.members ?? [], excludedMembers: summary.excludedMembers ?? [], planningEnabled } satisfies CurrentResult;
     },
-    enabled: !isFeedStream && !isSettings && !isProductivity,
+    enabled: !isFeedStream && !isSettings && !isDashboard,
   });
   const stream = useInfiniteQuery({
     queryKey: ["feed-stream", organizationId, projectId, view],
@@ -78,13 +79,14 @@ export default function ActivityPage() {
 
   const base = `/${organizationId}/${projectId}/activity`;
   if (isSettings) return <Navigate replace to={`/${organizationId}/${projectId}/settings/notifications`} />;
+  if (isLegacyProductivity) return <Navigate replace to={`${base}/dashboard`} />;
   const streamEvents = stream.data?.pages.flatMap((page) => page.events ?? []) ?? [];
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
-    {(!isFeedStream && !isProductivity && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}
-    {(!isFeedStream && !isProductivity && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Activity is unavailable" detail="The project activity API could not be reached. No placeholder activity is being shown." /> : null}
+    {(!isFeedStream && !isDashboard && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}
+    {(!isFeedStream && !isDashboard && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Activity is unavailable" detail="The project activity API could not be reached. No placeholder activity is being shown." /> : null}
     {query.data && view === "current" ? <Current data={{ ...(query.data as CurrentResult), members }} base={base} person={person} /> : null}
     {stream.data && isFeedStream ? <Events events={streamEvents} releaseNotes={releaseNotes.data?.events ?? []} label={view} hasNextPage={stream.hasNextPage} loadingMore={stream.isFetchingNextPage} onLoadMore={() => void stream.fetchNextPage()} /> : null}
-    {isProductivity ? <ProductivityView organizationId={organizationId} projectId={projectId} /> : null}
+    {isDashboard ? <TeamDashboardView organizationId={organizationId} projectId={projectId} actorLogin={bootstrap.actor.id} members={members} membersLoading={membersLoading} membersError={membersError} /> : null}
   </div></section>;
 }
 
