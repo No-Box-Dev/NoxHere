@@ -32,6 +32,20 @@ describe("split Growth and Usage ingest", () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
+  it.each([ingestGrowth, ingestUsage])("authenticates public ingest before validating its capability payload", async (ingest) => {
+    const fetch = vi.fn(async () => Response.json({ error: "unauthorized" }, { status: 401 }));
+    const response = await ingest({
+      env: { TELEMETRY_RESPONSE: { fetch } },
+      request: new Request("https://app.noxhere.com/api/v1/growth/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }),
+    } as never);
+    expect(response.status).toBe(401);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it("accepts acquisition events only on Growth", async () => {
     const growth = context({ type: "activity.tracked", name: "website.signup_clicked" });
     expect((await ingestGrowth(growth.value as never)).status).toBe(202);
