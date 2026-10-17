@@ -311,38 +311,6 @@ const CSS = `
   display: none;
 }
 
-/* Metadata display */
-.feedback-metadata {
-  background: #f5f5f5;
-  border-radius: 6px;
-  padding: 10px 12px;
-  font-size: 12px;
-}
-
-.feedback-metadata-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-}
-
-.feedback-metadata-item:not(:last-child) {
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.feedback-metadata-label {
-  color: #666;
-  font-weight: 500;
-}
-
-.feedback-metadata-value {
-  color: #201E1D;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 160px;
-}
-
 .feedback-hint {
   font-size: 11px;
   color: #888;
@@ -665,10 +633,6 @@ const CSS = `
   .feedback-sidebar .feedback-textarea {
     min-height: 60px;
     resize: none;
-  }
-  /* Metadata + hint hidden on mobile — server still captures them, user doesn't need to see them */
-  .feedback-sidebar .feedback-form-group--metadata {
-    display: none;
   }
   /* Screenshot thumbnail redundant on mobile — the user just annotated it on step 1 */
   .feedback-mobile-thumbnail {
