@@ -38,6 +38,10 @@ export async function onRequest(context) {
       && !hasInternalAssertion) {
     return nextApiResponse(context, url);
   }
+  if ((url.pathname === "/api/v1/growth/events" || url.pathname === "/api/v1/usage/events")
+      && !hasInternalAssertion) {
+    return nextApiResponse(context, url);
+  }
   if (url.pathname === "/api/webhook") {
     return nextApiResponse(context, url);
   }
