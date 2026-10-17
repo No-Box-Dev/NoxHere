@@ -60,6 +60,20 @@ describe("v1 middleware errors", () => {
     });
   });
 
+  it.each(["growth", "usage"])("lets public %s ingest authenticate itself", async (capability) => {
+    for (const method of ["OPTIONS", "POST"]) {
+      const next = vi.fn(async () => new Response(null, { status: method === "OPTIONS" ? 204 : 202 }));
+      const response = await onRequest({
+        request: new Request(`https://app.noxhere.com/api/v1/${capability}/events`, { method }),
+        env: {},
+        data: {},
+        next,
+      });
+      expect(response.status).toBe(method === "OPTIONS" ? 204 : 202);
+      expect(next).toHaveBeenCalledOnce();
+    }
+  });
+
   it("rejects provider bearer tokens before calling GitHub or a handler", async () => {
     const request = new Request("https://app.noxhere.com/api/v1/services", {
       headers: { Authorization: "Bearer github_pat_not-a-noxhere-credential" },
