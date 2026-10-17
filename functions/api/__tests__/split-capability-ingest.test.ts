@@ -19,6 +19,19 @@ function context(body: unknown) {
 }
 
 describe("split Growth and Usage ingest", () => {
+  it("forwards browser CORS preflights to the Telemetry service", async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "https://noxhere.com" } }));
+    const response = await ingestGrowth({
+      env: { TELEMETRY_RESPONSE: { fetch } },
+      request: new Request("https://app.noxhere.com/api/v1/growth/events", {
+        method: "OPTIONS",
+        headers: { Origin: "https://noxhere.com", "Access-Control-Request-Method": "POST" },
+      }),
+    } as never);
+    expect(response.status).toBe(204);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it("accepts acquisition events only on Growth", async () => {
     const growth = context({ type: "activity.tracked", name: "website.signup_clicked" });
     expect((await ingestGrowth(growth.value as never)).status).toBe(202);

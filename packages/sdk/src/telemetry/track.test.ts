@@ -34,6 +34,20 @@ describe("unified telemetry track API", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
+  it("carries anonymous attribution and commercial fields into lifecycle events", async () => {
+    const request = vi.fn<typeof fetch>(async () => accepted());
+    const client = createServerTelemetry({ key: serverKey, identityHashKey, environment: "production", fetch: request });
+    await client.events.paidStarted("customer-7", {
+      anonymousId: "anon-browser-7", plan: "pro", amountMinor: 2900, currency: "usd",
+    });
+    const body = JSON.parse(String(request.mock.calls[0]![1]?.body)) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      name: "subscription.paid_started",
+      attributes: { anonymous_id: "anon-browser-7", plan: "pro", amount_minor: 2900, currency: "USD" },
+    });
+    expect(String(body.userId)).toMatch(/^h1_/);
+  });
+
   it("sends an anonymous browser count without storing an identity", async () => {
     const request = vi.fn<typeof fetch>(async () => accepted());
     const client = createBrowserTelemetry({ key: browserKey, fetch: request });

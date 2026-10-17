@@ -223,6 +223,15 @@ const growthMetricSchema = z.object({
   points: z.array(z.number().nonnegative()),
 });
 
+const growthAcquisitionRowSchema = z.object({
+  label: z.string(),
+  visitors: z.number().nonnegative(),
+  trials: z.number().nonnegative(),
+  paid: z.number().nonnegative(),
+  revenueMinor: z.number().nonnegative(),
+  currency: z.string().nullable(),
+});
+
 export const growthDashboardSchema = z.object({
   projectId: z.string(),
   range: z.string(),
@@ -236,6 +245,15 @@ export const growthDashboardSchema = z.object({
     cancelled: z.number().nonnegative(),
     trialToPaidRate: z.number().nonnegative().nullable(),
   }),
+  revenue: z.object({
+    amountMinor: z.number().int().nonnegative(),
+    currency: z.string().nullable(),
+  }).default({ amountMinor: 0, currency: null }),
+  acquisition: z.object({
+    channels: z.array(growthAcquisitionRowSchema),
+    campaigns: z.array(growthAcquisitionRowSchema),
+    landingPages: z.array(growthAcquisitionRowSchema),
+  }).default({ channels: [], campaigns: [], landingPages: [] }),
 });
 
 export const growthEventSchema = z.object({

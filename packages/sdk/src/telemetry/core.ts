@@ -6,6 +6,7 @@ import type {
   DeliveryResult,
   EventOptions,
   FeatureResultOptions,
+  GrowthLifecycleOptions,
   TelemetryAuthFeature,
   TelemetryFeature,
   TelemetryOptions,
@@ -39,6 +40,7 @@ const IDENTITY_TRACK_NAMES = new Set([
   "subscription.trial_started",
   "subscription.paid_started",
   "subscription.cancelled",
+  "subscription.reactivated",
   "records.parsed",
   "reports.generated",
 ]);
@@ -557,6 +559,17 @@ export function createClient(
     });
   }
 
+  function growthLifecycle(name: "subscription.trial_started" | "subscription.paid_started" | "subscription.cancelled" | "subscription.reactivated", userId: string, event: GrowthLifecycleOptions = {}) {
+    const { anonymousId, plan, amountMinor, currency, ...eventOptions } = event;
+    const attributes = primitiveAttributes({
+      ...(anonymousId ? { anonymous_id: anonymousId } : {}),
+      ...(plan ? { plan } : {}),
+      ...(amountMinor !== undefined ? { amount_minor: amountMinor } : {}),
+      ...(currency ? { currency: currency.toUpperCase() } : {}),
+    });
+    return trackEvent(name, { ...eventOptions, userId, ...(attributes ? { attributes } : {}) });
+  }
+
   if (keyKind === "publishable") {
     return {
       ...shared,
@@ -583,9 +596,10 @@ export function createClient(
     events: {
       reportGenerated: (userId: string, reportId?: string, event: EventOptions = {}) => trackEvent("reports.generated", { ...event, userId, ...(reportId ? { attributes: { reportId } } : {}) }),
       recordParsed: (userId: string, recordId?: string, event: EventOptions = {}) => trackEvent("records.parsed", { ...event, userId, ...(recordId ? { attributes: { recordId } } : {}) }),
-      trialStarted: (userId: string, event: EventOptions = {}) => trackEvent("subscription.trial_started", { ...event, userId }),
-      paidStarted: (userId: string, event: EventOptions = {}) => trackEvent("subscription.paid_started", { ...event, userId }),
-      subscriptionCancelled: (userId: string, event: EventOptions = {}) => trackEvent("subscription.cancelled", { ...event, userId }),
+      trialStarted: (userId: string, event: GrowthLifecycleOptions = {}) => growthLifecycle("subscription.trial_started", userId, event),
+      paidStarted: (userId: string, event: GrowthLifecycleOptions = {}) => growthLifecycle("subscription.paid_started", userId, event),
+      subscriptionCancelled: (userId: string, event: GrowthLifecycleOptions = {}) => growthLifecycle("subscription.cancelled", userId, event),
+      subscriptionReactivated: (userId: string, event: GrowthLifecycleOptions = {}) => growthLifecycle("subscription.reactivated", userId, event),
     },
     capturedEvents: () => memoryEvents.map((event) => ({ ...event })),
   };
