@@ -60,6 +60,27 @@ function unavailableResponse(): Response {
   );
 }
 
+function staleMembershipResponse(): Response {
+  return Response.json(
+    {
+      apiVersion: 1,
+      error: {
+        code: "membership_verification_unavailable",
+        message: "GitHub organization membership could not be verified. Try again shortly.",
+        remediation: { action: "retry" },
+      },
+    },
+    {
+      status: 503,
+      headers: {
+        "Cache-Control": "no-store",
+        "Retry-After": "30",
+        "X-Content-Type-Options": "nosniff",
+      },
+    },
+  );
+}
+
 export async function handleRequest(
   request: Request,
   services: PlatformServices,
@@ -204,8 +225,8 @@ export async function handleRequest(
         return profileResponse(control.db, principal.row);
       }
 
-      const { authenticate } = await import("./control/auth");
-      const authenticated = await authenticate(request, control.db);
+      const { authenticate, membershipVerificationIsFresh } = await import("./control/auth");
+      let authenticated = await authenticate(request, control.db);
       if ("response" in authenticated) {
         const authorization = request.headers.get("Authorization") ?? "";
         console.error(JSON.stringify({
@@ -221,6 +242,38 @@ export async function handleRequest(
               : authorization ? "unsupported" : "browser",
         }));
         return authenticated.response;
+      }
+
+      if (authenticated.context.accessLevel === "member"
+          && !membershipVerificationIsFresh(authenticated.context)) {
+        const connectionId = authenticated.context.connectionId;
+        const principalId = authenticated.context.principalId;
+        if (!connectionId || !principalId || !control.identity.refreshGitHubIdentity) {
+          return staleMembershipResponse();
+        }
+        try {
+          const { refreshStoredGitHubMemberships } = await import("./control/oauth");
+          const refreshed = await refreshStoredGitHubMemberships(
+            control.db,
+            control.identity,
+            principalId,
+            connectionId,
+          );
+          if (!refreshed) return staleMembershipResponse();
+        } catch (error) {
+          console.error(JSON.stringify({
+            event: "github_membership_verification_failed",
+            principalId,
+            error: error instanceof Error ? error.message : String(error),
+          }));
+          return staleMembershipResponse();
+        }
+
+        // Authorize again from the claims just persisted above. If GitHub no
+        // longer reports this organization, authenticate now denies access or
+        // applies an independently granted guest scope.
+        authenticated = await authenticate(request, control.db);
+        if ("response" in authenticated) return authenticated.response;
       }
 
       const { context: auth } = authenticated;

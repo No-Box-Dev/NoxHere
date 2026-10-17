@@ -50,6 +50,7 @@ const config = {
   members: [],
   blocks: DEFAULT_BLOCKS,
   captureMode: 'dom',
+  branding: null,
 };
 
 // Same env-scope rule as categories: NULL/empty environments means "all envs".
@@ -193,8 +194,9 @@ export function init(options = {}) {
   if (config.siteId) destroy();
 
   config.siteId = options.siteId;
-  config.color = options.color || '#FE795D';
-  config.text = options.text || 'Report issue';
+  config.color = options.buttonColor || options.color || '#FE795D';
+  config.text = options.buttonText || options.text || 'Report issue';
+  config.branding = options.branding && typeof options.branding === 'object' ? options.branding : null;
   config.getContext = typeof options.getContext === 'function' ? options.getContext : null;
   const reporterProvider = options.getUser ?? options.getReporter;
   config.getUser = typeof reporterProvider === 'function' ? reporterProvider : null;
@@ -270,6 +272,7 @@ export function destroy() {
   config.members = [];
   config.categories = [];
   config.blocks = DEFAULT_BLOCKS;
+  config.branding = null;
 }
 
 function normalizeReporter(reporter) {
@@ -348,6 +351,10 @@ async function fetchConfig(siteId, generation) {
 
     const data = await response.json();
     if (generation !== bootstrapGeneration) return false;
+    config.color = data.buttonColor || config.color;
+    config.text = data.buttonText || config.text;
+    config.branding = data.branding && typeof data.branding === 'object' ? data.branding : config.branding;
+    updateTrigger({ color: config.color, text: config.text });
     config.autoErrorLogging = !!data.autoErrorLogging;
     config.captureMode = data.captureMode === 'screenshot' ? 'screenshot' : 'dom';
     const rawCategories = Array.isArray(data.categories) ? data.categories : [];
@@ -411,6 +418,7 @@ function overlayCallbacks() {
     categories: config.categories,
     blocks: config.blocks,
     reporter,
+    branding: config.branding,
     onCaptureError: (error) => {
       console.error('[Feedback] Capture failed', {
         code: error?.code || 'capture_failed',

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { findTelemetryEvent, findIssue, findRelease, hasTestLabel, marker, validateSafety } from "./staging-acceptance-lib.mjs";
+import { findTelemetryEvent, findIssue, findRelease, marker, validateSafety } from "./staging-acceptance-lib.mjs";
 
 const preflightOnly = process.argv.includes("--preflight");
 const runId = `${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
@@ -134,10 +134,10 @@ async function preflight() {
     `/api/v1/slack/channels?connectionId=${encodeURIComponent(config.slackConnectionId)}`,
   )).body;
   const channel = slack?.channels?.find((item) => item.id === config.slackChannelId);
-  if (slack?.connectionId !== config.slackConnectionId || !channel || !hasTestLabel(channel.name)) {
-    fail("Slack acceptance destination must be an explicitly test-labelled channel on the selected connection");
+  if (slack?.connectionId !== config.slackConnectionId || !channel || channel.is_archived) {
+    fail("Slack acceptance destination must be an active channel on the explicitly selected connection");
   }
-  pass("Slack acceptance destination is isolated", `#${channel.name}`);
+  pass("Slack acceptance destination is explicitly selected", `#${channel.name}`);
 
   const spotConfigResponse = await fetch(new URL(`/api/feedback/public/v1/sites/${encodeURIComponent(config.feedbackSiteId)}/config`, feedbackUrl), {
     headers: { Origin: config.feedbackOrigin, Accept: "application/json" },

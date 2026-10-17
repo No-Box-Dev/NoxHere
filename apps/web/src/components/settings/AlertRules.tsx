@@ -6,8 +6,8 @@ import { StatusTag } from "../StatusTag";
 
 export function AlertRules({ organizationId, projectId }: { organizationId: string; projectId: string }) {
   const rules = useQuery({
-    queryKey: ["telemetry", organizationId, projectId, "alert-rules"],
-    queryFn: ({ signal }) => platformApi.telemetryAlertRules(organizationId, projectId, signal),
+    queryKey: ["issues", organizationId, projectId, "alert-rules"],
+    queryFn: ({ signal }) => platformApi.issueAlertRules(organizationId, projectId, signal),
   });
   const enabledCount = rules.data?.filter((rule) => rule.enabled).length ?? 0;
   const stagingEnabled = rules.data?.some((rule) => rule.enabled && rule.environment.toLowerCase() === "staging") ?? false;

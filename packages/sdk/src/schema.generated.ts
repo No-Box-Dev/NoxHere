@@ -977,6 +977,138 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/growth/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest a Growth event
+         * @description Ingest a Growth event. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["ingestGrowthEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/growth/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Growth sources
+         * @description List Growth sources. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listGrowthSources"];
+        put?: never;
+        /**
+         * Create a Growth source
+         * @description Create a Growth source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createGrowthSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/growth/sources/{sourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update a Growth source
+         * @description Update a Growth source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateGrowthSource"];
+        post?: never;
+        /**
+         * Delete a Growth source
+         * @description Delete a Growth source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["deleteGrowthSource"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/growth/sources/{sourceId}/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Growth ingest keys
+         * @description List Growth ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listGrowthKeys"];
+        put?: never;
+        /**
+         * Create a Growth ingest key
+         * @description Create a Growth ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createGrowthKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/growth/sources/{sourceId}/keys/{keyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a Growth ingest key
+         * @description Revoke a Growth ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["revokeGrowthKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/growth/sources/{sourceId}/keys/{keyId}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate a Growth ingest key
+         * @description Rotate a Growth ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["rotateGrowthKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/guests": {
         parameters: {
             query?: never;
@@ -1611,6 +1743,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectId}/growth/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the project Growth dashboard
+         * @description Read the project Growth dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getGrowthProjectDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/growth/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project Growth events
+         * @description Read project Growth events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getGrowthProjectEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectId}/incidents": {
         parameters: {
             query?: never;
@@ -1667,6 +1839,46 @@ export interface paths {
          * @description Read project issues. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
         get: operations["getProjectIssues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/issues/alert-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project alert rules
+         * @description Read project alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getProjectIssueAlertRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/issues/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project incidents
+         * @description Read project incidents. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getProjectIssueIncidents"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1813,6 +2025,70 @@ export interface paths {
          * @description Read project Telemetry statistic events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
          */
         get: operations["getTelemetryProjectStatEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/usage/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project Usage actions
+         * @description Read project Usage actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getUsageProjectActions"];
+        /**
+         * Update project Usage actions
+         * @description Update project Usage actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateUsageProjectActions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/usage/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the project Usage dashboard
+         * @description Read the project Usage dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getUsageProjectDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/usage/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read project Usage events
+         * @description Read project Usage events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["getUsageProjectEvents"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2823,6 +3099,162 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usage/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest a Usage event
+         * @description Ingest a Usage event. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["ingestUsageEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usage/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Usage sources
+         * @description List Usage sources. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listUsageSources"];
+        put?: never;
+        /**
+         * Create a Usage source
+         * @description Create a Usage source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createUsageSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usage/sources/{sourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update a Usage source
+         * @description Update a Usage source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateUsageSource"];
+        post?: never;
+        /**
+         * Delete a Usage source
+         * @description Delete a Usage source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["deleteUsageSource"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usage/sources/{sourceId}/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Usage metric cards
+         * @description List Usage metric cards. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listUsageCards"];
+        /**
+         * Update Usage metric cards
+         * @description Update Usage metric cards. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        put: operations["updateUsageCards"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usage/sources/{sourceId}/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Usage ingest keys
+         * @description List Usage ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        get: operations["listUsageKeys"];
+        put?: never;
+        /**
+         * Create a Usage ingest key
+         * @description Create a Usage ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["createUsageKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usage/sources/{sourceId}/keys/{keyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a Usage ingest key
+         * @description Revoke a Usage ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        delete: operations["revokeUsageKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usage/sources/{sourceId}/keys/{keyId}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate a Usage ingest key
+         * @description Rotate a Usage ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.
+         */
+        post: operations["rotateUsageKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3106,6 +3538,63 @@ export interface components {
             /** @enum {string} */
             widgetMode?: "development" | "release";
         };
+        GrowthDashboard: {
+            dateLabel: string;
+            funnel: components["schemas"]["GrowthFunnel"];
+            metrics: components["schemas"]["GrowthMetric"][];
+            projectId: string;
+            /** @enum {string} */
+            range: "7d" | "30d" | "90d" | "1y";
+        };
+        GrowthEvent: {
+            environment: string;
+            id: string;
+            name: string;
+            /** Format: date-time */
+            occurredAt: string;
+            subject: string | null;
+            value: number;
+        };
+        /** @description Acquisition or subscription event accepted by Growth. */
+        GrowthEventInput: {
+            attributes?: {
+                [key: string]: string | number | boolean;
+            };
+            context?: components["schemas"]["JsonValue"];
+            environment?: string;
+            /** Format: uuid */
+            eventId: string;
+            idempotencyKey?: string;
+            name: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** @constant */
+            type: "activity.tracked";
+            /** @description Required for trusted non-website events and forbidden for public browser events. */
+            userId?: string;
+            /** @default 1 */
+            value: number;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
+        GrowthEventList: components["schemas"]["GrowthEvent"][];
+        GrowthFunnel: {
+            cancelled: number;
+            paid: number;
+            signupIntents: number;
+            trialToPaidRate: number | null;
+            trials: number;
+            visits: number;
+        };
+        GrowthMetric: {
+            id: string;
+            label: string;
+            points: number[];
+            value: number;
+        };
         IncidentAlert: {
             environment: string;
             fingerprint: string;
@@ -3150,6 +3639,7 @@ export interface components {
             [key: string]: unknown;
         };
         NoxHereConfigPatch: {
+            branding?: components["schemas"]["ProjectBranding"];
             enabledServices?: {
                 activity?: boolean;
                 feedback?: boolean;
@@ -3258,6 +3748,15 @@ export interface components {
             /** @enum {string} */
             status?: "open" | "completed";
             title?: string;
+        };
+        ProjectBranding: {
+            accentColor: string;
+            buttonText: string;
+            /** @enum {string} */
+            fontPreset: "system" | "playnist" | "humanist" | "editorial" | "mono";
+            /** Format: uri */
+            logoUrl: string | null;
+            name: string;
         };
         ProjectDestination: {
             channelId: string;
@@ -3858,6 +4357,33 @@ export interface components {
             type: "user.registered" | "user.active";
             /** @description SDK-generated HMAC pseudonym; raw application identifiers are rejected. */
             userId: string;
+            /**
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
+        /** @description User lifecycle or product-engagement event accepted by Usage. */
+        UsageEventInput: components["schemas"]["TelemetryUserEvent"] | components["schemas"]["TelemetryActivityEvent"] | components["schemas"]["UsageTrackedEvent"];
+        /** @description Custom product-engagement event accepted by Usage. */
+        UsageTrackedEvent: {
+            attributes?: {
+                [key: string]: string | number | boolean;
+            };
+            context?: components["schemas"]["JsonValue"];
+            environment?: string;
+            /** Format: uuid */
+            eventId: string;
+            idempotencyKey?: string;
+            name: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** @constant */
+            type: "activity.tracked";
+            /** @description Required for trusted non-website events and forbidden for public browser events. */
+            userId?: string;
+            /** @default 1 */
+            value: number;
             /**
              * @default 1
              * @constant
@@ -5909,6 +6435,297 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
+    ingestGrowthEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+                /** @description Selects the destination source for a project-scoped NoxHere API token. It may be omitted when exactly one enabled source matches the token project and environment. Publishable source keys already identify their source. */
+                "X-Nox-Source-ID"?: components["parameters"]["telemetrySourceContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrowthEventInput"];
+            };
+        };
+        responses: {
+            /** @description Event accepted and deduplicated */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryIngestResponse"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
+            415: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listGrowthSources: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sources */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createGrowthSource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetrySourceInput"];
+            };
+        };
+        responses: {
+            /** @description Source created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateGrowthSource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetrySourceInput"];
+            };
+        };
+        responses: {
+            /** @description Source updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    deleteGrowthSource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Source deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listGrowthKeys: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key lifecycle metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createGrowthKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "publishable" | "secret";
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Key created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    revokeGrowthKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                keyId: components["parameters"]["keyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    rotateGrowthKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                keyId: components["parameters"]["keyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Replacement key shown once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
     listGuestAccess: {
         parameters: {
             query?: never;
@@ -7027,6 +7844,68 @@ export interface operations {
             429: components["responses"]["RateLimited"];
         };
     };
+    getGrowthProjectDashboard: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrowthDashboard"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getGrowthProjectEvents: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrowthEventList"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
     getProjectIncidents: {
         parameters: {
             query?: never;
@@ -7147,6 +8026,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiRecord"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getProjectIssueAlertRules: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentAlertRuleList"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getProjectIssueIncidents: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentAlertList"];
                 };
             };
             400: components["responses"]["V1Error"];
@@ -7383,6 +8324,134 @@ export interface operations {
         };
     };
     getTelemetryProjectStatEvents: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatEventList"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getUsageProjectActions: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryActions"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateUsageProjectActions: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiRecord"];
+            };
+        };
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryActions"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getUsageProjectDashboard: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                projectId: components["parameters"]["projectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capability response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatsDashboard"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getUsageProjectEvents: {
         parameters: {
             query?: never;
             header?: {
@@ -9537,6 +10606,363 @@ export interface operations {
         };
     };
     rotateTelemetryKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                keyId: components["parameters"]["keyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Replacement key shown once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    ingestUsageEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+                /** @description Selects the destination source for a project-scoped NoxHere API token. It may be omitted when exactly one enabled source matches the token project and environment. Publishable source keys already identify their source. */
+                "X-Nox-Source-ID"?: components["parameters"]["telemetrySourceContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsageEventInput"];
+            };
+        };
+        responses: {
+            /** @description Event accepted and deduplicated */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryIngestResponse"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            413: components["responses"]["PayloadTooLarge"];
+            415: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listUsageSources: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sources */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createUsageSource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetrySourceInput"];
+            };
+        };
+        responses: {
+            /** @description Source created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateUsageSource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetrySourceInput"];
+            };
+        };
+        responses: {
+            /** @description Source updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    deleteUsageSource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Source deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listUsageCards: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configured report cards */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    updateUsageCards: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryCardSelection"];
+            };
+        };
+        responses: {
+            /** @description Cards updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    listUsageKeys: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key lifecycle metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    createUsageKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "publishable" | "secret";
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Key created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    revokeUsageKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path: {
+                sourceId: components["parameters"]["sourceId"];
+                keyId: components["parameters"]["keyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    rotateUsageKey: {
         parameters: {
             query?: never;
             header?: {

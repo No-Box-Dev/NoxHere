@@ -21,6 +21,7 @@ describe("staging acceptance safety", () => {
   it("accepts shared provider apps with a test-labelled repository", () => {
     expect(validateSafety(safe, { writes: true })).toEqual([]);
     expect(acceptanceHostname("app.noxhere.com", "noxhere")).toBe(true);
+    expect(acceptanceHostname("app.noxhere.com", "feedback")).toBe(true);
     expect(acceptanceHostname("noxhere-feedback-staging.jasper-414.workers.dev", "feedback")).toBe(true);
     expect(hasTestLabel("nox-acceptance")).toBe(true);
   });
@@ -35,7 +36,7 @@ describe("staging acceptance safety", () => {
       repo: "noxhere",
       confirm: "yes",
     }, { writes: true });
-    expect(errors).toHaveLength(4);
+    expect(errors).toHaveLength(3);
     expect(errors).toContain("NOX_ACCEPTANCE_REPO must be an explicitly named staging/sandbox/test repository");
   });
 

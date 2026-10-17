@@ -8,6 +8,7 @@ export const CSRF_COOKIE = "nox_csrf";
 export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const NATIVE_ACCESS_MAX_AGE_SECONDS = 15 * 60;
 export const NATIVE_REFRESH_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+export const MEMBERSHIP_VERIFICATION_MAX_AGE_MS = 15 * 60 * 1000;
 
 export const API_TOKEN_SCOPES = [
   "services:read",
@@ -16,6 +17,9 @@ export const API_TOKEN_SCOPES = [
   "planning:read", "planning:write",
   "activity:read", "activity:write",
   "feedback:read", "feedback:write",
+  "growth:ingest", "growth:read", "growth:write",
+  "usage:ingest", "usage:read", "usage:write",
+  "issues:read", "issues:write",
   "telemetry:ingest", "telemetry:read", "telemetry:write",
 ] as const;
 export const API_TOKEN_ENVIRONMENTS = ["production", "staging", "test"] as const;
@@ -24,6 +28,8 @@ export type ApiTokenEnvironment = (typeof API_TOKEN_ENVIRONMENTS)[number];
 const API_TOKEN_SCOPE_ALIASES: Readonly<Record<string, readonly string[]>> = {
   "slack:send": ["slack:write"],
   "telemetry:ingest": ["telemetry:write"],
+  "growth:ingest": ["growth:write"],
+  "usage:ingest": ["usage:write"],
 };
 
 type CredentialType = "session" | "native_session" | "api_token";
@@ -82,6 +88,19 @@ interface ApiTokenRow {
 export type AuthResult =
   | { context: AuthContext; session?: PrincipalCredentialRow }
   | { response: Response };
+
+/**
+ * Cached GitHub membership is only an authentication hint. Keep its maximum
+ * trust window aligned with the native access-token lifetime so removing a
+ * person from the organization reliably removes NoxHere access as well.
+ */
+export function membershipVerificationIsFresh(auth: AuthContext, now = Date.now()): boolean {
+  if (auth.accessLevel !== "member" || !auth.membershipVerifiedAt) return false;
+  const verifiedAt = Date.parse(auth.membershipVerifiedAt);
+  return Number.isFinite(verifiedAt)
+    && verifiedAt <= now
+    && now - verifiedAt <= MEMBERSHIP_VERIFICATION_MAX_AGE_MS;
+}
 
 export async function resolvePrincipalCredential(
   request: Request,
@@ -427,6 +446,8 @@ export function requiredScope(pathname: string, method: string): string | null {
   if (pathname === "/api/v1/slack/test" && access === "write") return "slack:send";
   if (pathname === "/api/v1/slack/channels" && access === "read") return "slack:read";
   if (pathname === "/api/v1/telemetry/public/events" && access === "write") return "telemetry:ingest";
+  if (pathname === "/api/v1/growth/events" && access === "write") return "growth:ingest";
+  if (pathname === "/api/v1/usage/events" && access === "write") return "usage:ingest";
   if (pathname === "/api/telemetry/public/v1/events" && access === "write") return "telemetry:ingest";
   const service = pathname.match(/^\/api\/v1\/services\/([^/]+)/)?.[1];
   if (service && service !== "noxhere") return `${service}:${access}`;
@@ -434,11 +455,19 @@ export function requiredScope(pathname: string, method: string): string | null {
   if (/^\/api\/(?:v1\/)?(?:features|tasks|task-workflows|specs|assign|issue-state|planning)(?:\/|$)/.test(pathname)) return `planning:${access}`;
   if (pathname === "/api/v1/activity" || /^\/api\/v1\/(issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|activity)(?:\/|$)/.test(pathname)) return `activity:${access}`;
   if (/^\/api\/v1\/feedback(?:\/|$)/.test(pathname)) return `feedback:${access}`;
+  if (/^\/api\/v1\/growth(?:\/|$)/.test(pathname)) return `growth:${access}`;
+  if (/^\/api\/v1\/usage(?:\/|$)/.test(pathname)) return `usage:${access}`;
+  if (/^\/api\/v1\/projects\/[^/]+\/growth(?:\/|$)/.test(pathname)) return `growth:${access}`;
+  if (/^\/api\/v1\/projects\/[^/]+\/usage(?:\/|$)/.test(pathname)) return `usage:${access}`;
+  if (/^\/api\/v1\/projects\/[^/]+\/(?:issues\/(?:alerts|alert-rules)|incidents)(?:\/|$)/.test(pathname)) return `issues:${access}`;
   if (/^\/api\/v1\/telemetry(?:\/|$)/.test(pathname)) return `telemetry:${access}`;
   return null;
 }
 
 export function serviceForPath(pathname: string): string | null {
+  if (/^\/api\/v1\/projects\/[^/]+\/growth(?:\/|$)/.test(pathname) || /^\/api\/v1\/growth(?:\/|$)/.test(pathname)) return "growth";
+  if (/^\/api\/v1\/projects\/[^/]+\/usage(?:\/|$)/.test(pathname) || /^\/api\/v1\/usage(?:\/|$)/.test(pathname)) return "usage";
+  if (/^\/api\/v1\/projects\/[^/]+\/(?:issues\/(?:alerts|alert-rules)|incidents)(?:\/|$)/.test(pathname)) return "issues";
   const service = serviceForApiPath(pathname);
   return service;
 }
@@ -447,7 +476,7 @@ export function capabilitiesForRole(role: "owner" | "admin" | "member" | "viewer
   const read = ["content.read", "settings.read"];
   if (role === "viewer") return read;
   if (role === "member") return [...read, "content.write"];
-  return [...read, "content.write", "organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "stats.configure", "planning.configure"];
+  return [...read, "content.write", "organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "growth.configure", "usage.configure", "issues.configure", "planning.configure"];
 }
 
 export function requestProjectId(request: Request): string | null {
@@ -458,7 +487,7 @@ export function requestProjectId(request: Request): string | null {
   // as though the collection name were a project ID. Keep path extraction
   // tied to the project-resource routes the platform actually exposes.
   const path = url.pathname.match(
-    /^\/api\/(?:v1\/)?projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|telemetry)(?:\/|$)/,
+    /^\/api\/(?:v1\/)?projects\/([^/]+)\/(?:archive|routing|backfill-prs|retrieval|activity|incidents|issues|feedback|telemetry|growth|usage)(?:\/|$)/,
   )?.[1] ?? url.pathname.match(/^\/api\/(?:v1\/)?telemetry\/projects\/([^/]+)(?:\/|$)/)?.[1];
   return header || query || (path ? decodeURIComponent(path) : null);
 }

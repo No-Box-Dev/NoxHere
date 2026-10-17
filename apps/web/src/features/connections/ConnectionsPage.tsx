@@ -10,7 +10,8 @@ import type { PlatformOutletContext } from "../../app/platform-context";
 import { useConfirmDialog } from "../../components/ConfirmDialog";
 
 type ConnectionsSection = "services" | "connections" | "people" | "repositories";
-const serviceRows = [["planning", "P", "Planning", "Planning and delivery"], ["activity", "A", "Activity", "Engineering activity and releases"], ["feedback", "F", "Feedback", "Reports and reporter messaging"], ["stats", "S", "Stats", "Product metrics and telemetry sources"], ["incidents", "I", "Issues and Incidents", "Repository issues, product health and alerts"]] as const;
+type GuestCapability = "planning" | "activity" | "feedback" | "growth" | "usage" | "issues";
+const serviceRows = [["planning", "P", "Planning", "Planning and delivery"], ["activity", "A", "Activity", "Engineering activity and releases"], ["feedback", "F", "Feedback", "Reports and reporter messaging"], ["growth", "G", "Growth", "Acquisition, conversion and churn"], ["usage", "U", "Usage", "Product adoption and engagement"], ["issues", "I", "Issues", "Repository issues, incidents and alerts"]] as const;
 
 export default function ConnectionsPage() {
   const { organizationId = "", projectId = "", view = "overview" } = useParams();
@@ -60,7 +61,7 @@ function Connections({ project, projectName }: { project?: Project; projectName:
 function People({ members, membersLoading, membersError, retryMembers, organizationId, projectId, canInvite }: { members: GithubMember[]; membersLoading: boolean; membersError: Error | null; retryMembers: () => void; organizationId: string; projectId: string; canInvite: boolean }) {
   const [showInvite, setShowInvite] = useState(false);
   const [email, setEmail] = useState("");
-  const [serviceId, setServiceId] = useState<"all" | "planning" | "activity" | "feedback" | "telemetry">("all");
+  const [serviceId, setServiceId] = useState<"all" | GuestCapability>("all");
   const queryClient = useQueryClient();
   const access = useQuery({ queryKey: ["platform", "guest-access", organizationId], queryFn: ({ signal }) => platformApi.guestAccess(organizationId, signal), enabled: canInvite });
   const roleMembers = useQuery({ queryKey: ["platform", "memberships", organizationId], queryFn: ({ signal }) => platformApi.organizationMembers(organizationId, signal) });
@@ -83,7 +84,7 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "guest-access", organizationId] }),
   });
   const updateGuest = useMutation({
-    mutationFn: ({ kind, id, serviceId }: { kind: "invites" | "grants"; id: string; serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry" }) => platformApi.setGuestScope(organizationId, projectId, kind, id, serviceId),
+    mutationFn: ({ kind, id, serviceId }: { kind: "invites" | "grants"; id: string; serviceId: "all" | GuestCapability }) => platformApi.setGuestScope(organizationId, projectId, kind, id, serviceId),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "guest-access", organizationId] }),
   });
   const resend = useMutation({
@@ -95,7 +96,7 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
     if (email.trim()) invite.mutate();
   };
 
-  const guestServices = ["planning", "activity", "feedback", "telemetry"] as const;
+  const guestServices = ["planning", "activity", "feedback", "growth", "usage", "issues"] as const;
   const invitations = (access.data?.invitations ?? []).filter((item) => item.projectId === projectId || item.scopeType === "organization");
   const grants = (access.data?.grants ?? []).filter((item) => item.projectId === projectId || item.scopeType === "organization");
   const directory = [...members, ...(roleMembers.data ?? []).filter((managed) => !members.some((member) => member.login.toLowerCase() === managed.login.toLowerCase())).map((managed) => ({ login: managed.login, avatar_url: managed.avatarUrl ?? "", kind: "human" as const }))];
@@ -124,20 +125,20 @@ function MemberRow({ member, managed, canManage, busy, onRole }: { member: Githu
   return <div className="list-row">{member.avatar_url ? <img className="member-avatar" src={member.avatar_url} alt="" /> : <span className="list-symbol">M</span>}<span className="list-copy"><b>{member.login}</b><small>{managed ? `${roleLabel(role)} · ${managed.roleSource === "github" ? "Verified by GitHub" : "Managed in NoxHere"} · verified ${new Date(managed.verifiedAt).toLocaleDateString()}` : "GitHub organization member · role available after first sign-in"}</small></span><span className="list-meta">{canManage && managed && role !== "owner" ? <select aria-label={`Role for ${member.login}`} value={role} disabled={busy} onChange={(event) => onRole(managed.principalId, event.target.value as "admin" | "member" | "viewer")}><option value="admin">Admin</option><option value="member">Member</option><option value="viewer">Viewer</option></select> : <StatusTag tone={role === "owner" || role === "admin" ? "positive" : "neutral"}>{roleLabel(role)}</StatusTag>}</span></div>;
 }
 
-function GuestRow({ guest, status, pending = false, busy, onScope, onResend, onRevoke }: { guest: GuestInvite; status: string; pending?: boolean; busy: boolean; onScope: (serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry") => void; onResend?: () => void; onRevoke: () => void }) {
+function GuestRow({ guest, status, pending = false, busy, onScope, onResend, onRevoke }: { guest: GuestInvite; status: string; pending?: boolean; busy: boolean; onScope: (serviceId: "all" | GuestCapability) => void; onResend?: () => void; onRevoke: () => void }) {
   const { confirm, confirmation } = useConfirmDialog();
   const current = guest.service ?? "all";
-  return <><div className="list-row"><span className="list-symbol">G</span><span className="list-copy"><b>{guest.email}</b><small>Guest · {guest.service ? serviceNameFromApi(guest.service) : "All capabilities"} · {guest.projectName ?? "Organization"}{guest.expiresAt ? ` · expires ${new Date(guest.expiresAt).toLocaleDateString()}` : ""}</small></span><span className="list-meta">{guest.scopeType !== "organization" ? <select aria-label={`Access for ${guest.email}`} value={current} disabled={busy} onChange={(event) => onScope(event.target.value as typeof current)}><option value="all">All capabilities</option><option value="planning">Planning</option><option value="activity">Activity</option><option value="feedback">Feedback</option><option value="telemetry">Stats and Incidents</option></select> : null}<StatusTag tone={pending ? "warning" : "positive"}>{status}</StatusTag>{pending && onResend ? <button type="button" className="mini-button" disabled={busy} onClick={onResend}>Resend</button> : null}<button type="button" className="mini-button destructive" disabled={busy} onClick={() => void confirm({ title: pending ? "Cancel guest invitation?" : "Revoke guest access?", detail: pending ? `${guest.email} will no longer be able to accept this invitation.` : `${guest.email} will immediately lose this guest access.`, confirmLabel: pending ? "Cancel invitation" : "Revoke access", destructive: true }).then((confirmed) => { if (confirmed) onRevoke(); })}>{pending ? "Cancel invite" : "Revoke"}</button></span></div>{confirmation}</>;
+  return <><div className="list-row"><span className="list-symbol">G</span><span className="list-copy"><b>{guest.email}</b><small>Guest · {guest.service ? serviceNameFromApi(guest.service) : "All capabilities"} · {guest.projectName ?? "Organization"}{guest.expiresAt ? ` · expires ${new Date(guest.expiresAt).toLocaleDateString()}` : ""}</small></span><span className="list-meta">{guest.scopeType !== "organization" ? <select aria-label={`Access for ${guest.email}`} value={current} disabled={busy} onChange={(event) => onScope(event.target.value as "all" | GuestCapability)}><option value="all">All capabilities</option><option value="planning">Planning</option><option value="activity">Activity</option><option value="feedback">Feedback</option><option value="growth">Growth</option><option value="usage">Usage</option><option value="issues">Issues</option>{guest.service === "telemetry" ? <option value="telemetry" disabled>Legacy analytics access</option> : null}</select> : null}<StatusTag tone={pending ? "warning" : "positive"}>{status}</StatusTag>{pending && onResend ? <button type="button" className="mini-button" disabled={busy} onClick={onResend}>Resend</button> : null}<button type="button" className="mini-button destructive" disabled={busy} onClick={() => void confirm({ title: pending ? "Cancel guest invitation?" : "Revoke guest access?", detail: pending ? `${guest.email} will no longer be able to accept this invitation.` : `${guest.email} will immediately lose this guest access.`, confirmLabel: pending ? "Cancel invitation" : "Revoke access", destructive: true }).then((confirmed) => { if (confirmed) onRevoke(); })}>{pending ? "Cancel invite" : "Revoke"}</button></span></div>{confirmation}</>;
 }
 
 function roleLabel(role: OrganizationMember["role"]) { return role[0].toUpperCase() + role.slice(1); }
 
-function serviceName(id: "planning" | "activity" | "feedback" | "telemetry") {
-  return ({ planning: "Planning", activity: "Activity", feedback: "Feedback", telemetry: "Stats and Incidents" } as const)[id];
+function serviceName(id: GuestCapability) {
+  return ({ planning: "Planning", activity: "Activity", feedback: "Feedback", growth: "Growth", usage: "Usage", issues: "Issues" } as const)[id];
 }
 
 function serviceNameFromApi(id: NonNullable<GuestInvite["service"]>) {
-  return ({ planning: "Planning", activity: "Activity", feedback: "Feedback", telemetry: "Stats and Incidents" } as const)[id];
+  return ({ planning: "Planning", activity: "Activity", feedback: "Feedback", growth: "Growth", usage: "Usage", issues: "Issues", telemetry: "Legacy analytics access" } as const)[id];
 }
 
 function repositoryNames(project?: Project) { return project?.connections.filter((connection) => connection.provider === "github").map((connection) => connection.label.split("/").at(-1) ?? connection.label) ?? []; }

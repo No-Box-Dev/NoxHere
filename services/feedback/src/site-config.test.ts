@@ -57,6 +57,23 @@ describe("site configuration", () => {
     expect(config.blocks.map((block) => block.id)).toEqual(["all", "prod"]);
   });
 
+  it("uses central project branding for the widget while retaining environment overrides", () => {
+    const branded = {
+      ...site,
+      branding_config: JSON.stringify({ branding: {
+        name: "Playnist", logoUrl: "https://example.com/logo.svg", accentColor: "#ABCDEF",
+        buttonText: "Send feedback", fontPreset: "playnist",
+      } }),
+    };
+    const defaultConfig = publicWidgetConfig(branded, null);
+    expect(defaultConfig).toMatchObject({
+      buttonColor: "#ABCDEF",
+      buttonText: "Send feedback",
+      branding: { name: "Playnist", fontPreset: "playnist" },
+    });
+    expect(publicWidgetConfig(branded, "https://app.example.com").buttonColor).toBe("#222222");
+  });
+
   it("keeps DOM selection enabled for existing environments", () => {
     const config = publicWidgetConfig({ ...site, widget_config: JSON.stringify({ environments: [{ name: "Production", url: "app.example.com" }] }) }, "https://app.example.com");
     expect(config.captureMode).toBe("dom");

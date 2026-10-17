@@ -57,6 +57,18 @@ export function showOverlay(captureOrPromise, options = {}) {
 
   overlayElement = document.createElement('div');
   overlayElement.className = 'feedback-overlay';
+  const branding = options.branding && typeof options.branding === 'object' ? options.branding : null;
+  if (typeof branding?.accentColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(branding.accentColor)) {
+    overlayElement.style.setProperty('--feedback-accent', branding.accentColor);
+  }
+  const fontStacks = {
+    system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    playnist: "'Familjen Grotesk', 'Avenir Next', Arial, sans-serif",
+    humanist: "'Trebuchet MS', 'Segoe UI', sans-serif",
+    editorial: "Georgia, 'Times New Roman', serif",
+    mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+  };
+  overlayElement.style.setProperty('--feedback-font', fontStacks[branding?.fontPreset] || fontStacks.system);
   if (isMobile) overlayElement.classList.add('feedback-mobile');
 
   overlayElement.innerHTML = `
@@ -95,6 +107,7 @@ export function showOverlay(captureOrPromise, options = {}) {
             members: options.members,
             categories: options.categories,
             reporter: options.reporter,
+            branding,
           })}
         </div>
       </div>

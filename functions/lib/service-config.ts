@@ -8,9 +8,18 @@ const Stage = z.object({
   color: z.string(),
 }).strict();
 
+const Branding = z.object({
+  name: z.string().trim().min(1).max(120),
+  logoUrl: z.string().trim().url().max(2048).refine((value) => new URL(value).protocol === "https:", "Logo URLs must use HTTPS").nullable(),
+  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  buttonText: z.string().trim().min(1).max(40),
+  fontPreset: z.enum(["system", "playnist", "humanist", "editorial", "mono"]),
+}).strict();
+
 const PATCH_SCHEMAS = {
   noxhere: z.object({
     newRepositoryPolicy: z.enum(["include", "exclude"]).optional(),
+    branding: Branding.optional(),
   }).strict(),
   planning: z.object({
     featureRepository: z.string().trim().min(1).max(100).nullable().optional(),
@@ -28,6 +37,7 @@ export type NoxSettings = Record<string, unknown> & {
   planningRepo?: string;
   boardStages?: Array<{ id: string; label: string; color: string }>;
   releaseNotesPrompt?: string;
+  branding?: z.infer<typeof Branding>;
   slack?: Record<string, unknown> & { activityProjectId?: string };
 };
 
@@ -45,6 +55,7 @@ export function serviceConfig(service: ServiceId, settings: NoxSettings) {
     case "noxhere":
       return {
         newRepositoryPolicy: settings.newRepoDefault ?? "include",
+        branding: settings.branding ?? null,
       };
     case "planning":
       return {
@@ -69,6 +80,7 @@ export function applyServiceConfigPatch(service: ServiceId, current: NoxSettings
   const next: NoxSettings = structuredClone(current);
   if (service === "noxhere") {
     if (patch.newRepositoryPolicy) next.newRepoDefault = patch.newRepositoryPolicy as "include" | "exclude";
+    if (patch.branding) next.branding = patch.branding as NoxSettings["branding"];
   }
   if (service === "planning") {
     if (Object.hasOwn(patch, "featureRepository")) {
@@ -101,7 +113,7 @@ export function serviceConfigLinks(service: ServiceId) {
 
 export function serviceConfigMetadata(service: ServiceId) {
   const fields: Record<ServiceId, string[]> = {
-    noxhere: ["newRepositoryPolicy"],
+    noxhere: ["newRepositoryPolicy", "branding"],
     planning: ["featureRepository", "workflow.stages"],
     activity: ["releaseNotesPrompt"],
     feedback: [],

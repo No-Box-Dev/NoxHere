@@ -19,6 +19,9 @@ describe("guest access", () => {
     planning: "/api/v1/features",
     activity: "/api/v1/activity",
     feedback: "/api/v1/feedback/sites",
+    growth: "/api/v1/projects/p1/growth/dashboard",
+    usage: "/api/v1/projects/p1/usage/dashboard",
+    issues: "/api/v1/projects/p1/issues/alerts",
     telemetry: "/api/v1/telemetry/sources",
   } as const;
 
@@ -45,6 +48,18 @@ describe("guest access", () => {
     expect(guestCanAccess(loaded!.access, "any-project", "activity")).toBe(true);
   });
 
+  it("keeps split analytics grants independent and treats legacy telemetry as an umbrella", () => {
+    const split = { organizationWide: false, projects: { p1: ["growth"] as (typeof GUEST_SERVICES)[number][] } };
+    expect(guestCanAccess(split, "p1", "growth")).toBe(true);
+    expect(guestCanAccess(split, "p1", "usage")).toBe(false);
+    expect(guestCanAccess(split, "p1", "issues")).toBe(false);
+
+    const legacy = { organizationWide: false, projects: { p1: ["telemetry"] as (typeof GUEST_SERVICES)[number][] } };
+    expect(guestCanAccess(legacy, "p1", "growth")).toBe(true);
+    expect(guestCanAccess(legacy, "p1", "usage")).toBe(true);
+    expect(guestCanAccess(legacy, "p1", "issues")).toBe(true);
+  });
+
   it("returns null when the identity has no active invitation grants", async () => {
     await expect(loadGuestAccess(dbWithGrants([]), "principal", 7)).resolves.toBeNull();
   });
@@ -61,8 +76,10 @@ describe("guest access", () => {
       const path = servicePaths[service];
       const access = { organizationWide: false, projects: { p1: null } };
       const missing = validateGuestRequest(new Request(`https://app.noxhere.com${path}`), access);
-      expect(missing?.status).toBe(400);
-      await expect(missing?.json()).resolves.toMatchObject({ error: { code: "project_required" } });
+      if (!path.includes("/projects/p1/")) {
+        expect(missing?.status).toBe(400);
+        await expect(missing?.json()).resolves.toMatchObject({ error: { code: "project_required" } });
+      }
 
       const granted = new Request(`https://app.noxhere.com${path}`, { headers: { "X-Project-ID": "p1" } });
       expect(validateGuestRequest(granted, access)).toBeNull();

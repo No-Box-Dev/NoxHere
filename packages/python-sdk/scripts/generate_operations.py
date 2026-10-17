@@ -224,7 +224,7 @@ def render_method(operation: dict[str, Any], groups: dict[str, tuple[str, bool]]
 
 
 def render_client_stub() -> str:
-    grouped = {namespace: [] for namespace in ("workspace", "activity", "planning", "feedback", "stats", "incidents")}
+    grouped = {namespace: [] for namespace in ("workspace", "activity", "planning", "feedback", "growth", "usage", "issues", "stats", "incidents")}
     for details in operation_details:
         grouped[details[0]["namespace"]].append(details)
     lines = [
@@ -271,6 +271,9 @@ def render_client_stub() -> str:
         "    activity: ActivityClient",
         "    planning: PlanningClient",
         "    feedback: FeedbackClient",
+        "    growth: GrowthClient",
+        "    usage: UsageClient",
+        "    issues: IssuesClient",
         "    stats: StatsClient",
         "    incidents: IncidentsClient",
         "    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Transport | None = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ..., sleep: Callable[[float], None] = ...) -> None: ...",
@@ -284,6 +287,9 @@ def render_client_stub() -> str:
         "    activity: AsyncActivityClient",
         "    planning: AsyncPlanningClient",
         "    feedback: AsyncFeedbackClient",
+        "    growth: AsyncGrowthClient",
+        "    usage: AsyncUsageClient",
+        "    issues: AsyncIssuesClient",
         "    stats: AsyncStatsClient",
         "    incidents: AsyncIncidentsClient",
         "    def __init__(self, *, base_url: str = ..., token: str | None = ..., organization: str | None = ..., project_id: str | None = ..., csrf_token: str | None = ..., headers: Mapping[str, str] | None = ..., transport: Any = ..., timeout: float = ..., max_retries: int = ..., retry_delay: float = ..., on_request: Callable[[Mapping[str, object]], None] | None = ..., on_response: Callable[[Mapping[str, object]], None] | None = ...) -> None: ...",

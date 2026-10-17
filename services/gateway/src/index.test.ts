@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { handleRequest, type PlatformServices } from "./index";
 
-function controlDb(options: { apiToken?: Record<string, unknown>; nativeSession?: Record<string, unknown> } = {}): D1Database {
+function controlDb(options: {
+  apiToken?: Record<string, unknown>;
+  nativeSession?: Record<string, unknown>;
+  membershipVerifiedAt?: string;
+} = {}): D1Database {
   return {
     prepare(sql: string) {
       const statement = {
@@ -20,6 +24,8 @@ function controlDb(options: { apiToken?: Record<string, unknown>; nativeSession?
             org_id: 7,
             github_login: "acme",
             role: "admin",
+            managed_role: null,
+            verified_at: options.membershipVerifiedAt ?? new Date().toISOString(),
             suspended_at: null,
           };
           if (sql.includes("FROM api_tokens")) return options.apiToken ?? null;
@@ -411,6 +417,23 @@ describe("NoxHere gateway", () => {
       error: { code: "revision_conflict" },
     });
     expect(connector.fetch).toHaveBeenCalledOnce();
+  });
+
+  it("fails closed when cached organization membership is stale and cannot be verified", async () => {
+    const connector = { fetch: vi.fn(async () => Response.json({ private: true })) };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/api/v1/activity", {
+        headers: { Cookie: "__Host-nox_session=opaque", "X-Org": "acme" },
+      }),
+      controlledServices(connector, controlDb({ membershipVerifiedAt: "2020-01-01T00:00:00Z" })),
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Retry-After")).toBe("30");
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "membership_verification_unavailable" },
+    });
+    expect(connector.fetch).not.toHaveBeenCalled();
   });
 
   it("passes only a short-lived signed identity assertion to NoxHere", async () => {

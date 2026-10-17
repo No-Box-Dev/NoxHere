@@ -84,6 +84,10 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "get_person", method: "GET", path: "/api/v1/actors/{actorId}", authentication: "member", description: "Read one organization identity." },
         { id: "update_person", method: "PATCH", path: "/api/v1/actors/{actorId}", authentication: "admin", description: "Update one organization identity overlay." },
       ] },
+      { id: "branding", name: "Branding", description: "Read and manage the shared product identity used by widgets and other customer-facing surfaces.", access: "admin", operations: [
+        { id: "get_project_branding", method: "GET", path: "/api/v1/services/noxhere/config", authentication: "member", description: "Read the project branding contract and its revision." },
+        { id: "update_project_branding", method: "PATCH", path: "/api/v1/services/noxhere/config", authentication: "admin", description: "Update project branding with If-Match concurrency protection." },
+      ] },
       { id: "repositories", name: "Repositories", description: "Discover repositories and choose which projects Nox tracks.", access: "admin", requires: ["github"], operations: [
         { id: "list_repositories", method: "GET", path: "/api/v1/repos", authentication: "member", description: "List tracked or discovered repositories." },
         { id: "list_projects", method: "GET", path: "/api/v1/projects", authentication: "member", description: "List project scopes backed by GitHub repositories." },
@@ -103,7 +107,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
     ],
     setupSections: [
       { id: "connections", name: "Connections", capabilityIds: ["connections"] },
-      { id: "workspace", name: "Workspace", capabilityIds: ["people", "repositories"] },
+      { id: "workspace", name: "Workspace", capabilityIds: ["people", "repositories", "branding"] },
       { id: "delivery", name: "Delivery", capabilityIds: ["shared_delivery"] },
     ],
   },

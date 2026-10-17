@@ -11,11 +11,19 @@ interface Ctx {
   request: Request;
 }
 
+function requestedCapability(request: Request): "growth" | "usage" | null {
+  const pathname = new URL(request.url).pathname;
+  if (pathname.startsWith("/api/v1/growth/")) return "growth";
+  if (pathname.startsWith("/api/v1/usage/")) return "usage";
+  return null;
+}
+
 export async function onRequestPut(context: Ctx): Promise<Response> {
   const { orgId, projectId, orgLogin, userLogin, isAdmin } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
+  const capability = requestedCapability(context.request);
   let raw: unknown;
   try { raw = await context.request.json(); }
   catch { return errorResponse("Invalid JSON body", 400); }
@@ -30,10 +38,10 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
             EXISTS(SELECT 1 FROM telemetry_source_keys key
                     WHERE key.source_id = source.id AND key.last_used_at IS NOT NULL) AS has_events
        FROM telemetry_sources source
-      WHERE source.id = ? AND source.org_id = ?${projectId ? " AND source.project_id = ?" : ""} AND source.owner_id = ?`,
+      WHERE source.id = ? AND source.org_id = ?${projectId ? " AND source.project_id = ?" : ""} AND source.owner_id = ?${capability ? " AND source.capability = ?" : ""}`,
   ).bind(...(projectId
-    ? [context.params.id, orgId, projectId, orgLogin]
-    : [context.params.id, orgId, orgLogin])).first<{ environment: string; project_id: string; has_events: number }>();
+    ? [context.params.id, orgId, projectId, orgLogin, ...(capability ? [capability] : [])]
+    : [context.params.id, orgId, orgLogin, ...(capability ? [capability] : [])])).first<{ environment: string; project_id: string; has_events: number }>();
   if (!existing) return errorResponse("Telemetry source not found", 404);
   const targetProjectId = projectId || parsed.data.projectId || existing.project_id;
   if (targetProjectId !== existing.project_id) {
@@ -67,7 +75,7 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
        report_title = ?, production_stats = ?, retention_days = ?, aggregate_only_slack = ?, slack_channel_id = ?,
        slack_connection_id = ?,
        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-     WHERE id = ? AND org_id = ? AND project_id = ? AND owner_id = ?`,
+     WHERE id = ? AND org_id = ? AND project_id = ? AND owner_id = ?${capability ? " AND capability = ?" : ""}`,
   ).bind(
     parsed.data.name, parsed.data.environment, targetProjectId, parsed.data.enabled ? 1 : 0,
     parsed.data.alertsEnabled ? 1 : 0,
@@ -76,6 +84,7 @@ export async function onRequestPut(context: Ctx): Promise<Response> {
     JSON.stringify(parsed.data.allowedEvents), parsed.data.reportTitle, parsed.data.productionStats ? 1 : 0,
     parsed.data.retentionDays, parsed.data.aggregateOnlySlack ? 1 : 0,
     parsed.data.slackChannelId, slackConnectionId, context.params.id, orgId, existing.project_id, orgLogin,
+    ...(capability ? [capability] : []),
   ).run();
   if (!result.meta.changes) return errorResponse("Telemetry source not found", 404);
   await db.prepare(
@@ -111,12 +120,13 @@ export async function onRequestDelete(context: Ctx): Promise<Response> {
   const { orgId, projectId, orgLogin, userLogin, isAdmin } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
+  const capability = requestedCapability(context.request);
   const result = await getNoxDb(context.env).prepare(
     `DELETE FROM telemetry_sources
-      WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""} AND owner_id = ?`,
+      WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""} AND owner_id = ?${capability ? " AND capability = ?" : ""}`,
   ).bind(...(projectId
-    ? [context.params.id, orgId, projectId, orgLogin]
-    : [context.params.id, orgId, orgLogin])).run();
+    ? [context.params.id, orgId, projectId, orgLogin, ...(capability ? [capability] : [])]
+    : [context.params.id, orgId, orgLogin, ...(capability ? [capability] : [])])).run();
   if (!result.meta.changes) return errorResponse("Telemetry source not found", 404);
   await getNoxDb(context.env).prepare(
     `INSERT INTO telemetry_source_audit (id, org_id, source_id, action, actor)

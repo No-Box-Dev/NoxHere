@@ -24,8 +24,9 @@ const services = await response.json();
 See the repository's [direct HTTP guide](../../public/docs/direct-api.md) and the
 OpenAPI-generated operation examples in the developer reference.
 
-Namespaces are `workspace`, `activity`, `planning`, `feedback`, `stats`, and
-`incidents`. These unified namespaces are the only supported resource names.
+Namespaces are `workspace`, `activity`, `planning`, `feedback`, `growth`,
+`usage`, and `issues`. The legacy `stats` and `incidents` namespaces remain for
+clients migrating from the former Telemetry surface.
 Every operation is also available by its
 OpenAPI operation ID through `nox.operations` and `nox.request()`.
 
@@ -33,11 +34,14 @@ Path parameters, queries, request bodies, responses, and exported component
 models are generated from the same checked OpenAPI contract. Invalid operation
 names and malformed inputs fail during TypeScript compilation.
 
-Use `@noxhere/sdk/stats` or `@noxhere/sdk/incidents` for focused clients, or
-`@noxhere/sdk/feedback` for a focused public feedback client.
+Use `@noxhere/sdk/growth`, `@noxhere/sdk/usage`, or `@noxhere/sdk/issues` for
+focused clients. `@noxhere/sdk/feedback` remains the focused public feedback
+client.
 
-Telemetry is part of the same SDK, with runtime-specific entry points so a
-secret ingest key can never be included in a browser bundle:
+The low-level event transport retains its Telemetry name for compatibility,
+with runtime-specific entry points so a secret ingest key can never be included
+in a browser bundle. Send acquisition and subscription events through Growth;
+send user lifecycle and product engagement events through Usage:
 
 ```ts
 import { createTelemetryFromEnv } from "@noxhere/sdk/telemetry/server";

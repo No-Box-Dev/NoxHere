@@ -182,6 +182,40 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "createGrowthKey",
+    "method": "POST",
+    "path": "/api/v1/growth/sources/{sourceId}/keys",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "createGrowthSource",
+    "method": "POST",
+    "path": "/api/v1/growth/sources",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "createGuestInvitation",
     "method": "POST",
     "path": "/api/v1/guests/invites",
@@ -318,6 +352,40 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "createUsageKey",
+    "method": "POST",
+    "path": "/api/v1/usage/sources/{sourceId}/keys",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "createUsageSource",
+    "method": "POST",
+    "path": "/api/v1/usage/sources",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "deleteFeatureAttachment",
     "method": "DELETE",
     "path": "/api/v1/features/{number}/attachments/{attachmentId}",
@@ -339,6 +407,21 @@ export const operationDefinitions = [
     "namespace": "feedback",
     "authentication": "admin",
     "automationScope": "feedback:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "deleteGrowthSource",
+    "method": "DELETE",
+    "path": "/api/v1/growth/sources/{sourceId}",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "destructive",
     "requestContentTypes": [],
@@ -414,6 +497,21 @@ export const operationDefinitions = [
     "namespace": "stats",
     "authentication": "admin",
     "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "deleteUsageSource",
+    "method": "DELETE",
+    "path": "/api/v1/usage/sources/{sourceId}",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "destructive",
     "requestContentTypes": [],
@@ -776,6 +874,36 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "getGrowthProjectDashboard",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/growth/dashboard",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getGrowthProjectEvents",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/growth/events",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "getIdentityProfile",
     "method": "GET",
     "path": "/api/v1/auth/profile",
@@ -960,6 +1088,36 @@ export const operationDefinitions = [
     "method": "GET",
     "path": "/api/v1/projects/{projectId}/incidents",
     "namespace": "incidents",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getProjectIssueAlertRules",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/issues/alert-rules",
+    "namespace": "issues",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getProjectIssueIncidents",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/issues/alerts",
+    "namespace": "issues",
     "authentication": "member",
     "automationScope": null,
     "projectScope": "optional",
@@ -1264,6 +1422,51 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "getUsageProjectActions",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/usage/actions",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getUsageProjectDashboard",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/usage/dashboard",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "getUsageProjectEvents",
+    "method": "GET",
+    "path": "/api/v1/projects/{projectId}/usage/events",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "getWorkspaceConfig",
     "method": "GET",
     "path": "/api/v1/config/{key}",
@@ -1279,6 +1482,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "ingestGrowthEvent",
+    "method": "POST",
+    "path": "/api/v1/growth/events",
+    "namespace": "growth",
+    "authentication": "ingest_key",
+    "automationScope": "growth:ingest",
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "ingestTelemetryEvent",
     "method": "POST",
     "path": "/api/v1/telemetry/public/events",
@@ -1287,6 +1507,23 @@ export const operationDefinitions = [
     "automationScope": "telemetry:ingest",
     "projectScope": "none",
     "changeSafety": "idempotent_with_event_key",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "ingestUsageEvent",
+    "method": "POST",
+    "path": "/api/v1/usage/events",
+    "namespace": "usage",
+    "authentication": "ingest_key",
+    "automationScope": "usage:ingest",
+    "projectScope": "none",
+    "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [
       "application/json"
     ],
@@ -1405,6 +1642,36 @@ export const operationDefinitions = [
     "method": "GET",
     "path": "/api/v1/teams",
     "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listGrowthKeys",
+    "method": "GET",
+    "path": "/api/v1/growth/sources/{sourceId}/keys",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listGrowthSources",
+    "method": "GET",
+    "path": "/api/v1/growth/sources",
+    "namespace": "growth",
     "authentication": "member",
     "automationScope": null,
     "projectScope": "optional",
@@ -1707,6 +1974,51 @@ export const operationDefinitions = [
     "namespace": "stats",
     "authentication": "admin",
     "automationScope": "telemetry:read",
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listUsageCards",
+    "method": "GET",
+    "path": "/api/v1/usage/sources/{sourceId}/cards",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listUsageKeys",
+    "method": "GET",
+    "path": "/api/v1/usage/sources/{sourceId}/keys",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "listUsageSources",
+    "method": "GET",
+    "path": "/api/v1/usage/sources",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "safe_read",
     "requestContentTypes": [],
@@ -2033,6 +2345,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "revokeGrowthKey",
+    "method": "DELETE",
+    "path": "/api/v1/growth/sources/{sourceId}/keys/{keyId}",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "revokeGuestGrant",
     "method": "DELETE",
     "path": "/api/v1/guests/grants/{grantId}",
@@ -2095,11 +2422,41 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "revokeUsageKey",
+    "method": "DELETE",
+    "path": "/api/v1/usage/sources/{sourceId}/keys/{keyId}",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "rotateApiToken",
     "method": "POST",
     "path": "/api/v1/api-tokens/{id}/rotate",
     "namespace": "workspace",
     "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "rotateGrowthKey",
+    "method": "POST",
+    "path": "/api/v1/growth/sources/{sourceId}/keys/{keyId}/rotate",
+    "namespace": "growth",
+    "authentication": "member",
     "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
@@ -2116,6 +2473,21 @@ export const operationDefinitions = [
     "namespace": "stats",
     "authentication": "member",
     "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "rotateUsageKey",
+    "method": "POST",
+    "path": "/api/v1/usage/sources/{sourceId}/keys/{keyId}/rotate",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [],
@@ -2454,6 +2826,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "updateGrowthSource",
+    "method": "PUT",
+    "path": "/api/v1/growth/sources/{sourceId}",
+    "namespace": "growth",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "updateGuestGrantScope",
     "method": "PATCH",
     "path": "/api/v1/guests/grants/{grantId}",
@@ -2681,6 +3070,57 @@ export const operationDefinitions = [
     "namespace": "stats",
     "authentication": "admin",
     "automationScope": "telemetry:write",
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateUsageCards",
+    "method": "PUT",
+    "path": "/api/v1/usage/sources/{sourceId}/cards",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateUsageProjectActions",
+    "method": "PUT",
+    "path": "/api/v1/projects/{projectId}/usage/actions",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
+    "id": "updateUsageSource",
+    "method": "PUT",
+    "path": "/api/v1/usage/sources/{sourceId}",
+    "namespace": "usage",
+    "authentication": "member",
+    "automationScope": null,
     "projectScope": "optional",
     "changeSafety": "write_not_safe_to_retry",
     "requestContentTypes": [

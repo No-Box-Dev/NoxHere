@@ -50,7 +50,7 @@ export function ProjectRepositories({ organizationId, projectId, projectName, ca
       : [...selected, repo] });
   };
   return <div className="project-repository-editor">
-    <div className="connect-inline-action"><p>These repositories define <b>{projectName}</b> everywhere in Nox—Planning, Activity, Feedback, Stats, Issues and Incidents, API access, and Slack routing.</p><StatusTag tone="positive">Platform-wide</StatusTag></div>
+    <div className="connect-inline-action"><p>These repositories define <b>{projectName}</b> everywhere in Nox—Planning, Activity, Feedback, Growth, Usage, Issues, API access, and Slack routing.</p><StatusTag tone="positive">Platform-wide</StatusTag></div>
     <div className="repository-editor-toolbar">
       <input type="search" aria-label="Search repositories" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search repositories…" />
       <button type="button" className="mini-button" onClick={() => { setDraft({ projectId, repositories }); setSavedProjectId(null); }}>Select all</button>

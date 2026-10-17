@@ -295,12 +295,15 @@ class NoxHereClient:
         }
         resources = {
             namespace: ResourceClient(self, [operation for operation in self._operations.values() if operation.namespace == namespace])
-            for namespace in ("workspace", "activity", "planning", "feedback", "stats", "incidents")
+            for namespace in ("workspace", "activity", "planning", "feedback", "growth", "usage", "issues", "stats", "incidents")
         }
         self.workspace = resources["workspace"]
         self.activity = resources["activity"]
         self.planning = resources["planning"]
         self.feedback = resources["feedback"]
+        self.growth = resources["growth"]
+        self.usage = resources["usage"]
+        self.issues = resources["issues"]
         self.stats = resources["stats"]
         self.incidents = resources["incidents"]
 
@@ -410,12 +413,15 @@ class AsyncNoxHereClient:
         }
         resources = {
             namespace: AsyncResourceClient(self, [operation for operation in self._operations.values() if operation.namespace == namespace])
-            for namespace in ("workspace", "activity", "planning", "feedback", "stats", "incidents")
+            for namespace in ("workspace", "activity", "planning", "feedback", "growth", "usage", "issues", "stats", "incidents")
         }
         self.workspace = resources["workspace"]
         self.activity = resources["activity"]
         self.planning = resources["planning"]
         self.feedback = resources["feedback"]
+        self.growth = resources["growth"]
+        self.usage = resources["usage"]
+        self.issues = resources["issues"]
         self.stats = resources["stats"]
         self.incidents = resources["incidents"]
 

@@ -30,6 +30,18 @@
       "types": "./dist/feedback.d.ts",
       "import": "./dist/feedback.js"
     },
+    "./growth": {
+      "types": "./dist/growth.d.ts",
+      "import": "./dist/growth.js"
+    },
+    "./usage": {
+      "types": "./dist/usage.d.ts",
+      "import": "./dist/usage.js"
+    },
+    "./issues": {
+      "types": "./dist/issues.d.ts",
+      "import": "./dist/issues.js"
+    },
     "./incidents": {
       "types": "./dist/incidents.d.ts",
       "import": "./dist/incidents.js"

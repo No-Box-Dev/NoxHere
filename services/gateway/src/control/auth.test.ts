@@ -1,5 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { API_TOKEN_ENVIRONMENTS, API_TOKEN_SCOPES, createApiTokenValue, requiredScope } from "./auth";
+import { API_TOKEN_ENVIRONMENTS, API_TOKEN_SCOPES, createApiTokenValue, membershipVerificationIsFresh, requiredScope, type AuthContext } from "./auth";
+
+const memberAuth = (verifiedAt: string | null): AuthContext => ({
+  credentialType: "native_session",
+  credentialId: "session",
+  principalId: "github:42",
+  userLogin: "octocat",
+  userId: 42,
+  orgId: 7,
+  orgLogin: "acme",
+  isAdmin: false,
+  projectId: null,
+  scopes: [],
+  connectionId: "noxic_connection",
+  accessLevel: "member",
+  guestAccess: null,
+  role: "member",
+  membershipVerifiedAt: verifiedAt,
+});
+
+describe("organization membership verification", () => {
+  it("expires cached membership after the native access-token window", () => {
+    const now = Date.parse("2026-10-17T00:00:00Z");
+    expect(membershipVerificationIsFresh(memberAuth("2026-10-16T23:46:00Z"), now)).toBe(true);
+    expect(membershipVerificationIsFresh(memberAuth("2026-10-16T23:44:59Z"), now)).toBe(false);
+    expect(membershipVerificationIsFresh(memberAuth(null), now)).toBe(false);
+  });
+
+  it("never treats guests as verified members", () => {
+    expect(membershipVerificationIsFresh({
+      ...memberAuth("2026-10-17T00:00:00Z"),
+      accessLevel: "guest",
+      role: "guest",
+    }, Date.parse("2026-10-17T00:00:00Z"))).toBe(false);
+  });
+});
 
 describe("developer feedback automation authorization", () => {
   it("exposes a dedicated least-privilege token scope", () => {

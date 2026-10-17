@@ -10,7 +10,7 @@ export function serviceForApiPath(input) {
       || /^\/api\/(activity|issues|prs|events|engineer-activity|engineer-stats|search|llm-settings)(?:\/|$)/.test(pathname)
       || /^\/api\/github\/(comments|details)$/.test(pathname)) return "activity";
   if (/^\/api\/projects\/[^/]+\/feedback(?:\/|$)/.test(pathname) || /^\/api\/feedback(?:\/|$)/.test(pathname)) return "feedback";
-  if (/^\/api\/projects\/[^/]+\/(telemetry|incidents)(?:\/|$)/.test(pathname) || /^\/api\/telemetry(?:\/|$)/.test(pathname)) return "telemetry";
+  if (/^\/api\/projects\/[^/]+\/(telemetry|growth|usage|incidents)(?:\/|$)/.test(pathname) || /^\/api\/(telemetry|growth|usage)(?:\/|$)/.test(pathname)) return "telemetry";
   if (/^\/api\/config(?:\/|$)/.test(pathname)) return "noxhere";
   return null;
 }

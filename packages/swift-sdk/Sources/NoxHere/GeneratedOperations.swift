@@ -4,9 +4,12 @@ import Foundation
 public enum NoxHereResource: String, CaseIterable, Sendable {
     case activity
     case feedback
+    case growth
     case incidents
+    case issues
     case planning
     case stats
+    case usage
     case workspace
 }
 
@@ -29,7 +32,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 171
+    public static let operationCount = 199
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -42,6 +45,8 @@ public enum NoxHereOperations {
         "createApiToken": .init(id: "createApiToken", method: "POST", path: "/api/v1/api-tokens", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "createFeature": .init(id: "createFeature", method: "POST", path: "/api/v1/features", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
         "createFeedbackSite": .init(id: "createFeedbackSite", method: "POST", path: "/api/v1/feedback/sites", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
+        "createGrowthKey": .init(id: "createGrowthKey", method: "POST", path: "/api/v1/growth/sources/{sourceId}/keys", resource: .growth, changeSafety: .writeNotSafeToRetry, servers: []),
+        "createGrowthSource": .init(id: "createGrowthSource", method: "POST", path: "/api/v1/growth/sources", resource: .growth, changeSafety: .writeNotSafeToRetry, servers: []),
         "createGuestInvitation": .init(id: "createGuestInvitation", method: "POST", path: "/api/v1/guests/invites", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "createPlanningTask": .init(id: "createPlanningTask", method: "POST", path: "/api/v1/tasks", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "createProject": .init(id: "createProject", method: "POST", path: "/api/v1/projects", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
@@ -50,13 +55,17 @@ public enum NoxHereOperations {
         "createTelemetryCustomMetric": .init(id: "createTelemetryCustomMetric", method: "POST", path: "/api/v1/telemetry/sources/{sourceId}/custom-metrics", resource: .stats, changeSafety: .writeNotSafeToRetry, servers: []),
         "createTelemetryKey": .init(id: "createTelemetryKey", method: "POST", path: "/api/v1/telemetry/sources/{sourceId}/keys", resource: .stats, changeSafety: .writeNotSafeToRetry, servers: []),
         "createTelemetrySource": .init(id: "createTelemetrySource", method: "POST", path: "/api/v1/telemetry/sources", resource: .stats, changeSafety: .writeNotSafeToRetry, servers: []),
+        "createUsageKey": .init(id: "createUsageKey", method: "POST", path: "/api/v1/usage/sources/{sourceId}/keys", resource: .usage, changeSafety: .writeNotSafeToRetry, servers: []),
+        "createUsageSource": .init(id: "createUsageSource", method: "POST", path: "/api/v1/usage/sources", resource: .usage, changeSafety: .writeNotSafeToRetry, servers: []),
         "deleteFeatureAttachment": .init(id: "deleteFeatureAttachment", method: "DELETE", path: "/api/v1/features/{number}/attachments/{attachmentId}", resource: .planning, changeSafety: .destructive, servers: []),
         "deleteFeedbackSite": .init(id: "deleteFeedbackSite", method: "DELETE", path: "/api/v1/feedback/sites/{siteId}", resource: .feedback, changeSafety: .destructive, servers: []),
+        "deleteGrowthSource": .init(id: "deleteGrowthSource", method: "DELETE", path: "/api/v1/growth/sources/{sourceId}", resource: .growth, changeSafety: .destructive, servers: []),
         "deletePlanningTask": .init(id: "deletePlanningTask", method: "DELETE", path: "/api/v1/tasks/{id}", resource: .workspace, changeSafety: .destructive, servers: []),
         "deleteSpecAttachment": .init(id: "deleteSpecAttachment", method: "DELETE", path: "/api/v1/specs/{specId}/attachments/{attachmentId}", resource: .planning, changeSafety: .destructive, servers: []),
         "deleteTelemetryCustomFeature": .init(id: "deleteTelemetryCustomFeature", method: "DELETE", path: "/api/v1/telemetry/sources/{sourceId}/features/{featureKey}", resource: .incidents, changeSafety: .destructive, servers: []),
         "deleteTelemetryCustomMetric": .init(id: "deleteTelemetryCustomMetric", method: "DELETE", path: "/api/v1/telemetry/sources/{sourceId}/custom-metrics/{metricKey}", resource: .stats, changeSafety: .destructive, servers: []),
         "deleteTelemetrySource": .init(id: "deleteTelemetrySource", method: "DELETE", path: "/api/v1/telemetry/sources/{sourceId}", resource: .stats, changeSafety: .destructive, servers: []),
+        "deleteUsageSource": .init(id: "deleteUsageSource", method: "DELETE", path: "/api/v1/usage/sources/{sourceId}", resource: .usage, changeSafety: .destructive, servers: []),
         "disconnectConnection": .init(id: "disconnectConnection", method: "POST", path: "/api/v1/integrations/connections/{provider}/disconnect", resource: .workspace, changeSafety: .destructive, servers: []),
         "disconnectSlackWorkspace": .init(id: "disconnectSlackWorkspace", method: "POST", path: "/api/v1/slack/disconnect", resource: .workspace, changeSafety: .destructive, servers: []),
         "downloadFeatureAttachment": .init(id: "downloadFeatureAttachment", method: "GET", path: "/api/v1/features/{number}/attachments/{attachmentId}", resource: .planning, changeSafety: .safeRead, servers: []),
@@ -80,6 +89,8 @@ public enum NoxHereOperations {
         "getGitHubComments": .init(id: "getGitHubComments", method: "GET", path: "/api/v1/github/comments", resource: .activity, changeSafety: .safeRead, servers: []),
         "getGitHubDetails": .init(id: "getGitHubDetails", method: "GET", path: "/api/v1/github/details", resource: .activity, changeSafety: .safeRead, servers: []),
         "getGitHubRateLimit": .init(id: "getGitHubRateLimit", method: "GET", path: "/api/v1/github/rate-limit", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "getGrowthProjectDashboard": .init(id: "getGrowthProjectDashboard", method: "GET", path: "/api/v1/projects/{projectId}/growth/dashboard", resource: .growth, changeSafety: .safeRead, servers: []),
+        "getGrowthProjectEvents": .init(id: "getGrowthProjectEvents", method: "GET", path: "/api/v1/projects/{projectId}/growth/events", resource: .growth, changeSafety: .safeRead, servers: []),
         "getIdentityProfile": .init(id: "getIdentityProfile", method: "GET", path: "/api/v1/auth/profile", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getIntegrationStatus": .init(id: "getIntegrationStatus", method: "GET", path: "/api/v1/integrations/status", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getIssue": .init(id: "getIssue", method: "GET", path: "/api/v1/issues/{repo}/{number}", resource: .activity, changeSafety: .safeRead, servers: []),
@@ -93,6 +104,8 @@ public enum NoxHereOperations {
         "getProjectFeedback": .init(id: "getProjectFeedback", method: "GET", path: "/api/v1/projects/{projectId}/feedback", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getProjectIncident": .init(id: "getProjectIncident", method: "GET", path: "/api/v1/projects/{projectId}/incidents/{incidentId}", resource: .incidents, changeSafety: .safeRead, servers: []),
         "getProjectIncidents": .init(id: "getProjectIncidents", method: "GET", path: "/api/v1/projects/{projectId}/incidents", resource: .incidents, changeSafety: .safeRead, servers: []),
+        "getProjectIssueAlertRules": .init(id: "getProjectIssueAlertRules", method: "GET", path: "/api/v1/projects/{projectId}/issues/alert-rules", resource: .issues, changeSafety: .safeRead, servers: []),
+        "getProjectIssueIncidents": .init(id: "getProjectIssueIncidents", method: "GET", path: "/api/v1/projects/{projectId}/issues/alerts", resource: .issues, changeSafety: .safeRead, servers: []),
         "getProjectIssues": .init(id: "getProjectIssues", method: "GET", path: "/api/v1/projects/{projectId}/issues", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getProjectRouting": .init(id: "getProjectRouting", method: "GET", path: "/api/v1/projects/routing", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getPublicFeedbackConfig": .init(id: "getPublicFeedbackConfig", method: "GET", path: "/api/feedback/public/v1/sites/{siteId}/config", resource: .feedback, changeSafety: .safeRead, servers: ["https://app.noxhere.com"]),
@@ -112,8 +125,13 @@ public enum NoxHereOperations {
         "getTelemetryProjectMetrics": .init(id: "getTelemetryProjectMetrics", method: "GET", path: "/api/v1/telemetry/projects/{projectId}/metrics", resource: .stats, changeSafety: .safeRead, servers: []),
         "getTelemetryProjectOverview": .init(id: "getTelemetryProjectOverview", method: "GET", path: "/api/v1/telemetry/project-overview", resource: .stats, changeSafety: .safeRead, servers: []),
         "getTelemetryProjectStatEvents": .init(id: "getTelemetryProjectStatEvents", method: "GET", path: "/api/v1/projects/{projectId}/telemetry/stat-events", resource: .stats, changeSafety: .safeRead, servers: []),
+        "getUsageProjectActions": .init(id: "getUsageProjectActions", method: "GET", path: "/api/v1/projects/{projectId}/usage/actions", resource: .usage, changeSafety: .safeRead, servers: []),
+        "getUsageProjectDashboard": .init(id: "getUsageProjectDashboard", method: "GET", path: "/api/v1/projects/{projectId}/usage/dashboard", resource: .usage, changeSafety: .safeRead, servers: []),
+        "getUsageProjectEvents": .init(id: "getUsageProjectEvents", method: "GET", path: "/api/v1/projects/{projectId}/usage/events", resource: .usage, changeSafety: .safeRead, servers: []),
         "getWorkspaceConfig": .init(id: "getWorkspaceConfig", method: "GET", path: "/api/v1/config/{key}", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "ingestGrowthEvent": .init(id: "ingestGrowthEvent", method: "POST", path: "/api/v1/growth/events", resource: .growth, changeSafety: .writeNotSafeToRetry, servers: []),
         "ingestTelemetryEvent": .init(id: "ingestTelemetryEvent", method: "POST", path: "/api/v1/telemetry/public/events", resource: .stats, changeSafety: .idempotentWithEventKey, servers: []),
+        "ingestUsageEvent": .init(id: "ingestUsageEvent", method: "POST", path: "/api/v1/usage/events", resource: .usage, changeSafety: .writeNotSafeToRetry, servers: []),
         "listActors": .init(id: "listActors", method: "GET", path: "/api/v1/actors", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listApiTokens": .init(id: "listApiTokens", method: "GET", path: "/api/v1/api-tokens", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listConnections": .init(id: "listConnections", method: "GET", path: "/api/v1/integrations/connections", resource: .workspace, changeSafety: .safeRead, servers: []),
@@ -122,6 +140,8 @@ public enum NoxHereOperations {
         "listFeedbackSites": .init(id: "listFeedbackSites", method: "GET", path: "/api/v1/feedback/sites", resource: .feedback, changeSafety: .safeRead, servers: []),
         "listFeedEvents": .init(id: "listFeedEvents", method: "GET", path: "/api/v1/events", resource: .activity, changeSafety: .safeRead, servers: []),
         "listGitHubTeams": .init(id: "listGitHubTeams", method: "GET", path: "/api/v1/teams", resource: .workspace, changeSafety: .safeRead, servers: []),
+        "listGrowthKeys": .init(id: "listGrowthKeys", method: "GET", path: "/api/v1/growth/sources/{sourceId}/keys", resource: .growth, changeSafety: .safeRead, servers: []),
+        "listGrowthSources": .init(id: "listGrowthSources", method: "GET", path: "/api/v1/growth/sources", resource: .growth, changeSafety: .safeRead, servers: []),
         "listGuestAccess": .init(id: "listGuestAccess", method: "GET", path: "/api/v1/guests", resource: .workspace, changeSafety: .safeRead, servers: []),
         "listIssues": .init(id: "listIssues", method: "GET", path: "/api/v1/issues", resource: .activity, changeSafety: .safeRead, servers: []),
         "listMembers": .init(id: "listMembers", method: "GET", path: "/api/v1/members", resource: .workspace, changeSafety: .safeRead, servers: []),
@@ -142,6 +162,9 @@ public enum NoxHereOperations {
         "listTelemetryFeatures": .init(id: "listTelemetryFeatures", method: "GET", path: "/api/v1/telemetry/sources/{sourceId}/features", resource: .incidents, changeSafety: .safeRead, servers: []),
         "listTelemetryKeys": .init(id: "listTelemetryKeys", method: "GET", path: "/api/v1/telemetry/sources/{sourceId}/keys", resource: .stats, changeSafety: .safeRead, servers: []),
         "listTelemetrySources": .init(id: "listTelemetrySources", method: "GET", path: "/api/v1/telemetry/sources", resource: .stats, changeSafety: .safeRead, servers: []),
+        "listUsageCards": .init(id: "listUsageCards", method: "GET", path: "/api/v1/usage/sources/{sourceId}/cards", resource: .usage, changeSafety: .safeRead, servers: []),
+        "listUsageKeys": .init(id: "listUsageKeys", method: "GET", path: "/api/v1/usage/sources/{sourceId}/keys", resource: .usage, changeSafety: .safeRead, servers: []),
+        "listUsageSources": .init(id: "listUsageSources", method: "GET", path: "/api/v1/usage/sources", resource: .usage, changeSafety: .safeRead, servers: []),
         "patchNoxServiceConfig": .init(id: "patchNoxServiceConfig", method: "PATCH", path: "/api/v1/services/{service}/config", resource: .workspace, changeSafety: .conditionalWrite, servers: []),
         "patchSlackRouting": .init(id: "patchSlackRouting", method: "PATCH", path: "/api/v1/integrations/slack/routing", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "pollNativeDeviceAuthorization": .init(id: "pollNativeDeviceAuthorization", method: "POST", path: "/api/v1/auth/native/device/poll", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
@@ -161,12 +184,16 @@ public enum NoxHereOperations {
         "retryFeedbackDeliveries": .init(id: "retryFeedbackDeliveries", method: "POST", path: "/api/v1/feedback/sites/{siteId}/retry-deliveries", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
         "revokeApiToken": .init(id: "revokeApiToken", method: "DELETE", path: "/api/v1/api-tokens/{id}", resource: .workspace, changeSafety: .destructive, servers: []),
         "revokeBrowserSession": .init(id: "revokeBrowserSession", method: "POST", path: "/api/v1/auth/logout", resource: .workspace, changeSafety: .destructive, servers: []),
+        "revokeGrowthKey": .init(id: "revokeGrowthKey", method: "DELETE", path: "/api/v1/growth/sources/{sourceId}/keys/{keyId}", resource: .growth, changeSafety: .destructive, servers: []),
         "revokeGuestGrant": .init(id: "revokeGuestGrant", method: "DELETE", path: "/api/v1/guests/grants/{grantId}", resource: .workspace, changeSafety: .destructive, servers: []),
         "revokeGuestInvitation": .init(id: "revokeGuestInvitation", method: "DELETE", path: "/api/v1/guests/invites/{inviteId}", resource: .workspace, changeSafety: .destructive, servers: []),
         "revokeNativeSession": .init(id: "revokeNativeSession", method: "POST", path: "/api/v1/auth/native/revoke", resource: .workspace, changeSafety: .destructive, servers: []),
         "revokeTelemetryKey": .init(id: "revokeTelemetryKey", method: "DELETE", path: "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}", resource: .stats, changeSafety: .destructive, servers: []),
+        "revokeUsageKey": .init(id: "revokeUsageKey", method: "DELETE", path: "/api/v1/usage/sources/{sourceId}/keys/{keyId}", resource: .usage, changeSafety: .destructive, servers: []),
         "rotateApiToken": .init(id: "rotateApiToken", method: "POST", path: "/api/v1/api-tokens/{id}/rotate", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
+        "rotateGrowthKey": .init(id: "rotateGrowthKey", method: "POST", path: "/api/v1/growth/sources/{sourceId}/keys/{keyId}/rotate", resource: .growth, changeSafety: .writeNotSafeToRetry, servers: []),
         "rotateTelemetryKey": .init(id: "rotateTelemetryKey", method: "POST", path: "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}/rotate", resource: .stats, changeSafety: .writeNotSafeToRetry, servers: []),
+        "rotateUsageKey": .init(id: "rotateUsageKey", method: "POST", path: "/api/v1/usage/sources/{sourceId}/keys/{keyId}/rotate", resource: .usage, changeSafety: .writeNotSafeToRetry, servers: []),
         "searchWorkspace": .init(id: "searchWorkspace", method: "GET", path: "/api/v1/search", resource: .activity, changeSafety: .safeRead, servers: []),
         "sendSlackMessage": .init(id: "sendSlackMessage", method: "POST", path: "/api/v1/integrations/slack/messages", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "setIssueState": .init(id: "setIssueState", method: "POST", path: "/api/v1/issue-state", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
@@ -186,6 +213,7 @@ public enum NoxHereOperations {
         "updateFeedbackReport": .init(id: "updateFeedbackReport", method: "PATCH", path: "/api/v1/feedback/reports/{reportId}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateFeedbackResolutionTemplate": .init(id: "updateFeedbackResolutionTemplate", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}/resolution-template", resource: .feedback, changeSafety: .conditionalWrite, servers: []),
         "updateFeedbackSite": .init(id: "updateFeedbackSite", method: "PATCH", path: "/api/v1/feedback/sites/{siteId}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateGrowthSource": .init(id: "updateGrowthSource", method: "PUT", path: "/api/v1/growth/sources/{sourceId}", resource: .growth, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateGuestGrantScope": .init(id: "updateGuestGrantScope", method: "PATCH", path: "/api/v1/guests/grants/{grantId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateGuestInvitationScope": .init(id: "updateGuestInvitationScope", method: "PATCH", path: "/api/v1/guests/invites/{inviteId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateOrganizationMemberRole": .init(id: "updateOrganizationMemberRole", method: "PATCH", path: "/api/v1/memberships/{principalId}", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
@@ -200,6 +228,9 @@ public enum NoxHereOperations {
         "updateTelemetryProjectActions": .init(id: "updateTelemetryProjectActions", method: "PUT", path: "/api/v1/projects/{projectId}/telemetry/actions", resource: .stats, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateTelemetryProjectMetrics": .init(id: "updateTelemetryProjectMetrics", method: "PUT", path: "/api/v1/telemetry/projects/{projectId}/metrics", resource: .stats, changeSafety: .writeNotSafeToRetry, servers: []),
         "updateTelemetrySource": .init(id: "updateTelemetrySource", method: "PUT", path: "/api/v1/telemetry/sources/{sourceId}", resource: .stats, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateUsageCards": .init(id: "updateUsageCards", method: "PUT", path: "/api/v1/usage/sources/{sourceId}/cards", resource: .usage, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateUsageProjectActions": .init(id: "updateUsageProjectActions", method: "PUT", path: "/api/v1/projects/{projectId}/usage/actions", resource: .usage, changeSafety: .writeNotSafeToRetry, servers: []),
+        "updateUsageSource": .init(id: "updateUsageSource", method: "PUT", path: "/api/v1/usage/sources/{sourceId}", resource: .usage, changeSafety: .writeNotSafeToRetry, servers: []),
         "uploadFeatureAttachment": .init(id: "uploadFeatureAttachment", method: "POST", path: "/api/v1/features/{number}/attachments", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
         "uploadSpecAttachment": .init(id: "uploadSpecAttachment", method: "POST", path: "/api/v1/specs/{specId}/attachments", resource: .planning, changeSafety: .writeNotSafeToRetry, servers: []),
     ]

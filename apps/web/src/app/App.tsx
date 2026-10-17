@@ -4,6 +4,8 @@ import { AuthBoundary } from "./AuthBoundary";
 import { PlatformShell } from "./PlatformShell";
 
 const StatsPage = lazy(() => import("../features/stats/StatsPage"));
+const GrowthPage = lazy(() => import("../features/growth/GrowthPage"));
+const UsagePage = lazy(() => import("../features/usage/UsagePage"));
 const IssuesAndIncidentsPage = lazy(() => import("../features/issues-incidents/IssuesAndIncidentsPage"));
 const ConnectionsPage = lazy(() => import("../features/connections/ConnectionsPage"));
 const PlanningPage = lazy(() => import("../features/planning/PlanningPage"));
@@ -21,7 +23,10 @@ export function App() {
           <Route path="/:organizationId/select/:service/:view" element={<Navigate replace to="/" />} />
           <Route path="/:organizationId/:projectId" element={<PlatformShell />}>
             <Route path="stats/:section" element={<StatsPage />} />
-            <Route path="incidents/:section" element={<IssuesAndIncidentsPage />} />
+            <Route path="growth/:section" element={<GrowthPage />} />
+            <Route path="usage/:section" element={<UsagePage />} />
+            <Route path="issues/:section" element={<IssuesAndIncidentsPage />} />
+            <Route path="incidents/:section" element={<LegacyIncidentsRoute />} />
             <Route path="connections/:view" element={<ConnectionsPage />} />
             <Route path="planning/:view" element={<PlanningPage />} />
             <Route path="activity/issues" element={<LegacyIssuesRoute />} />
@@ -43,7 +48,13 @@ export function App() {
 
 function LegacyIssuesRoute() {
   const { organizationId = "", projectId = "" } = useParams();
-  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/incidents/issues`} />;
+  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/issues/repository`} />;
+}
+
+function LegacyIncidentsRoute() {
+  const { organizationId = "", projectId = "", section = "issues" } = useParams();
+  const destination = section === "alerts" ? "incidents" : section === "rules" ? "alerts" : "repository";
+  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/issues/${destination}`} />;
 }
 
 function ProjectFallback() {

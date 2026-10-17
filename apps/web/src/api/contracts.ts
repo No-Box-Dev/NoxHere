@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const serviceIdSchema = z.enum(["connections", "planning", "activity", "feedback", "stats", "incidents", "mail", "key"]);
+const serviceIdSchema = z.enum(["connections", "planning", "activity", "feedback", "growth", "usage", "issues", "mail", "key"]);
 
 const projectConnectionSchema = z.object({
   id: z.string(),
@@ -26,6 +26,13 @@ export const organizationMemberSchema = z.object({
 export const organizationMembersSchema = z.object({ members: z.array(organizationMemberSchema) });
 
 export const projectSettingsSchema = z.object({
+  branding: z.object({
+    name: z.string(),
+    logoUrl: z.string().nullable(),
+    accentColor: z.string(),
+    buttonText: z.string(),
+    fontPreset: z.enum(["system", "playnist", "humanist", "editorial", "mono"]),
+  }).optional(),
   excludedMembers: z.array(z.string()).optional(),
   boardStages: z.array(z.object({
     id: z.string(),
@@ -137,7 +144,7 @@ const guestInviteSchema = z.object({
   scopeType: z.enum(["organization", "project", "tool"]),
   projectId: z.string().nullable(),
   projectName: z.string().nullable().optional(),
-  service: z.enum(["planning", "activity", "feedback", "telemetry"]).nullable(),
+  service: z.enum(["planning", "activity", "feedback", "growth", "usage", "issues", "telemetry"]).nullable(),
   expiresAt: z.string().optional(),
   createdAt: z.string().optional(),
 });
@@ -207,6 +214,37 @@ export const telemetryDashboardSchema = z.object({
   dateLabel: z.string(),
   reportStatus: z.string(),
   stats: z.array(telemetryStatSchema),
+});
+
+const growthMetricSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  value: z.number().nonnegative(),
+  points: z.array(z.number().nonnegative()),
+});
+
+export const growthDashboardSchema = z.object({
+  projectId: z.string(),
+  range: z.string(),
+  dateLabel: z.string(),
+  metrics: z.array(growthMetricSchema),
+  funnel: z.object({
+    visits: z.number().nonnegative(),
+    signupIntents: z.number().nonnegative(),
+    trials: z.number().nonnegative(),
+    paid: z.number().nonnegative(),
+    cancelled: z.number().nonnegative(),
+    trialToPaidRate: z.number().nonnegative().nullable(),
+  }),
+});
+
+export const growthEventSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  value: z.number().positive(),
+  subject: z.string().nullable(),
+  environment: z.string(),
+  occurredAt: z.string(),
 });
 
 const telemetryActionSchema = z.object({
@@ -376,6 +414,8 @@ export type SlackChannels = z.infer<typeof slackChannelsSchema>;
 export type SlackMessageDelivery = z.infer<typeof slackMessageDeliverySchema>;
 export type ServiceId = z.infer<typeof serviceIdSchema>;
 export type TelemetryDashboard = z.infer<typeof telemetryDashboardSchema>;
+export type GrowthDashboard = z.infer<typeof growthDashboardSchema>;
+export type GrowthEvent = z.infer<typeof growthEventSchema>;
 export type TelemetryAction = z.infer<typeof telemetryActionSchema>;
 export type TelemetryActions = z.infer<typeof telemetryActionsSchema>;
 export type TelemetryStat = z.infer<typeof telemetryStatSchema>;

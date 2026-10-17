@@ -22,16 +22,114 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
   delete document.paths[path];
 }
 
+// Growth, Usage, and Issues are independent public capabilities. Their first
+// implementation reuses the mature telemetry handlers internally, but the
+// canonical contract must not make clients depend on that implementation
+// detail. Keep the old telemetry paths documented as compatibility routes.
+const splitCapabilityPaths = [
+  ["/api/v1/growth/events", "/api/v1/telemetry/public/events", { post: ["ingestGrowthEvent", "Ingest a Growth event", "Growth"] }],
+  ["/api/v1/usage/events", "/api/v1/telemetry/public/events", { post: ["ingestUsageEvent", "Ingest a Usage event", "Usage"] }],
+  ["/api/v1/growth/sources", "/api/v1/telemetry/sources", { get: ["listGrowthSources", "List Growth sources", "Growth"], post: ["createGrowthSource", "Create a Growth source", "Growth"] }],
+  ["/api/v1/growth/sources/{sourceId}", "/api/v1/telemetry/sources/{sourceId}", { put: ["updateGrowthSource", "Update a Growth source", "Growth"], delete: ["deleteGrowthSource", "Delete a Growth source", "Growth"] }],
+  ["/api/v1/growth/sources/{sourceId}/keys", "/api/v1/telemetry/sources/{sourceId}/keys", { get: ["listGrowthKeys", "List Growth ingest keys", "Growth"], post: ["createGrowthKey", "Create a Growth ingest key", "Growth"] }],
+  ["/api/v1/growth/sources/{sourceId}/keys/{keyId}", "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}", { delete: ["revokeGrowthKey", "Revoke a Growth ingest key", "Growth"] }],
+  ["/api/v1/growth/sources/{sourceId}/keys/{keyId}/rotate", "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}/rotate", { post: ["rotateGrowthKey", "Rotate a Growth ingest key", "Growth"] }],
+  ["/api/v1/usage/sources", "/api/v1/telemetry/sources", { get: ["listUsageSources", "List Usage sources", "Usage"], post: ["createUsageSource", "Create a Usage source", "Usage"] }],
+  ["/api/v1/usage/sources/{sourceId}", "/api/v1/telemetry/sources/{sourceId}", { put: ["updateUsageSource", "Update a Usage source", "Usage"], delete: ["deleteUsageSource", "Delete a Usage source", "Usage"] }],
+  ["/api/v1/usage/sources/{sourceId}/keys", "/api/v1/telemetry/sources/{sourceId}/keys", { get: ["listUsageKeys", "List Usage ingest keys", "Usage"], post: ["createUsageKey", "Create a Usage ingest key", "Usage"] }],
+  ["/api/v1/usage/sources/{sourceId}/keys/{keyId}", "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}", { delete: ["revokeUsageKey", "Revoke a Usage ingest key", "Usage"] }],
+  ["/api/v1/usage/sources/{sourceId}/keys/{keyId}/rotate", "/api/v1/telemetry/sources/{sourceId}/keys/{keyId}/rotate", { post: ["rotateUsageKey", "Rotate a Usage ingest key", "Usage"] }],
+  ["/api/v1/usage/sources/{sourceId}/cards", "/api/v1/telemetry/sources/{sourceId}/cards", { get: ["listUsageCards", "List Usage metric cards", "Usage"], put: ["updateUsageCards", "Update Usage metric cards", "Usage"] }],
+  ["/api/v1/projects/{projectId}/usage/dashboard", "/api/v1/projects/{projectId}/telemetry/dashboard", { get: ["getUsageProjectDashboard", "Read the project Usage dashboard", "Usage"] }],
+  ["/api/v1/projects/{projectId}/usage/actions", "/api/v1/projects/{projectId}/telemetry/actions", { get: ["getUsageProjectActions", "Read project Usage actions", "Usage"], put: ["updateUsageProjectActions", "Update project Usage actions", "Usage"] }],
+  ["/api/v1/projects/{projectId}/usage/events", "/api/v1/projects/{projectId}/telemetry/stat-events", { get: ["getUsageProjectEvents", "Read project Usage events", "Usage"] }],
+  ["/api/v1/projects/{projectId}/issues/alerts", "/api/v1/projects/{projectId}/telemetry/alerts", { get: ["getProjectIssueIncidents", "Read project incidents", "Issues"] }],
+  ["/api/v1/projects/{projectId}/issues/alert-rules", "/api/v1/projects/{projectId}/telemetry/alert-rules", { get: ["getProjectIssueAlertRules", "Read project alert rules", "Issues"] }],
+];
+for (const [targetPath, sourcePath, methods] of splitCapabilityPaths) {
+  const source = document.paths[sourcePath];
+  if (!source) throw new Error(`Cannot define ${targetPath}: ${sourcePath} is missing`);
+  const target = {};
+  for (const [method, [operationId, summary, tag]] of Object.entries(methods)) {
+    const operation = structuredClone(source[method]);
+    if (!operation) throw new Error(`Cannot define ${method.toUpperCase()} ${targetPath}: source operation is missing`);
+    operation.operationId = operationId;
+    operation.summary = summary;
+    operation.description = `${summary}. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.`;
+    operation.tags = [tag];
+    target[method] = operation;
+  }
+  document.paths[targetPath] = target;
+}
+
+document.components.schemas.GrowthEventInput = structuredClone(document.components.schemas.TelemetryTrackedEvent);
+document.components.schemas.GrowthEventInput.description = "Acquisition or subscription event accepted by Growth.";
+document.components.schemas.GrowthEventInput.properties.name.pattern = "^(website|subscription)\\.[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){0,4}$";
+document.components.schemas.UsageTrackedEvent = structuredClone(document.components.schemas.TelemetryTrackedEvent);
+document.components.schemas.UsageTrackedEvent.description = "Custom product-engagement event accepted by Usage.";
+document.components.schemas.UsageTrackedEvent.properties.name.pattern = "^custom\\.[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){0,4}$";
+document.components.schemas.UsageEventInput = {
+  description: "User lifecycle or product-engagement event accepted by Usage.",
+  oneOf: [
+    { "$ref": "#/components/schemas/TelemetryUserEvent" },
+    { "$ref": "#/components/schemas/TelemetryActivityEvent" },
+    { "$ref": "#/components/schemas/UsageTrackedEvent" },
+  ],
+};
+const growthIngestBody = document.paths["/api/v1/growth/events"].post.requestBody.content["application/json"];
+growthIngestBody.schema = { "$ref": "#/components/schemas/GrowthEventInput" };
+growthIngestBody.examples = {
+  signupIntent: {
+    summary: "Anonymous signup intent",
+    value: { version: 1, type: "activity.tracked", eventId: "8f7ec5e2-e8d3-4e08-a185-7fd4966e9529", occurredAt: "2026-10-09T08:00:00.000Z", environment: "production", name: "website.signup_clicked", value: 1 },
+  },
+  paidConversion: {
+    summary: "Paid subscription conversion",
+    value: { version: 1, type: "activity.tracked", eventId: "21f7b6ad-3648-4515-b086-b7a2a69de1bf", occurredAt: "2026-10-09T08:00:00.000Z", environment: "production", name: "subscription.paid_started", userId: "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", value: 1 },
+  },
+};
+const usageIngestBody = document.paths["/api/v1/usage/events"].post.requestBody.content["application/json"];
+usageIngestBody.schema = { "$ref": "#/components/schemas/UsageEventInput" };
+usageIngestBody.examples = {
+  activeUser: {
+    summary: "Daily active user",
+    value: { version: 1, type: "user.active", occurredAt: "2026-10-09T08:00:00.000Z", environment: "production", userId: "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40" },
+  },
+  engagementAction: {
+    summary: "Custom product action",
+    value: { version: 1, type: "activity.tracked", eventId: "21f7b6ad-3648-4515-b086-b7a2a69de1bf", occurredAt: "2026-10-09T08:00:00.000Z", environment: "production", name: "custom.comments.written", userId: "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40", value: 1 },
+  },
+};
+
+const growthDashboardOperation = structuredClone(document.paths["/api/v1/projects/{projectId}/telemetry/dashboard"].get);
+growthDashboardOperation.operationId = "getGrowthProjectDashboard";
+growthDashboardOperation.summary = "Read the project Growth dashboard";
+growthDashboardOperation.description = "Read the project Growth dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.";
+growthDashboardOperation.tags = ["Growth"];
+growthDashboardOperation.responses["200"].content["application/json"].schema = { "$ref": "#/components/schemas/GrowthDashboard" };
+document.paths["/api/v1/projects/{projectId}/growth/dashboard"] = { get: growthDashboardOperation };
+
+const growthEventsOperation = structuredClone(document.paths["/api/v1/projects/{projectId}/telemetry/stat-events"].get);
+growthEventsOperation.operationId = "getGrowthProjectEvents";
+growthEventsOperation.summary = "Read project Growth events";
+growthEventsOperation.description = "Read project Growth events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.";
+growthEventsOperation.tags = ["Growth"];
+growthEventsOperation.responses["200"].content["application/json"].schema = { "$ref": "#/components/schemas/GrowthEventList" };
+document.paths["/api/v1/projects/{projectId}/growth/events"] = { get: growthEventsOperation };
+
 document.info.title = "NoxHere API";
-document.info.description = "One API for NoxHere workspace, activity, planning, feedback, statistics, and incident capabilities.";
+document.info.description = "One API for NoxHere workspace, planning, activity, feedback, growth, product usage, and operational issues.";
 document.servers = [{ url: "https://app.noxhere.com", description: "Hosted NoxHere API" }];
 document.tags = [
   { name: "NoxHere", description: "Workspace connections, identity, repositories, projects, and shared delivery." },
   { name: "Planning", description: "Features, workflow, specifications, and attachments." },
   { name: "Activity", description: "Current work, engineering activity, and narratives." },
   { name: "Feedback", description: "Sites, website feedback capture, and screenshots." },
-  { name: "Stats", description: "Telemetry sources, ingest keys, activity events, product metrics, and dashboards." },
-  { name: "Incidents", description: "Feature health, error groups, alerts, and GitHub incident routing." },
+  { name: "Growth", description: "Acquisition, signup intent, trials, paid conversion, cancellation, and growth-event sources." },
+  { name: "Usage", description: "Users, product adoption, engagement actions, and usage-event sources." },
+  { name: "Issues", description: "Repository issues, runtime incidents, alert rules, and incident routing." },
+  { name: "Stats", description: "Legacy compatibility routes superseded by Growth and Usage." },
+  { name: "Incidents", description: "Legacy compatibility routes superseded by Issues." },
 ];
 document.components.schemas.JsonValue = {
   description: "Legacy response whose stable typed schema has not yet been promoted into API v1.",
@@ -231,6 +329,44 @@ document.components.schemas.StatsDashboard = {
     stats: { type: "array", items: { "$ref": "#/components/schemas/StatCard" } },
   },
 };
+document.components.schemas.GrowthMetric = {
+  type: "object", additionalProperties: false, required: ["id", "label", "value", "points"],
+  properties: {
+    id: { type: "string" }, label: { type: "string" }, value: { type: "number" },
+    points: { type: "array", items: { type: "number" } },
+  },
+};
+document.components.schemas.GrowthFunnel = {
+  type: "object", additionalProperties: false,
+  required: ["visits", "signupIntents", "trials", "paid", "cancelled", "trialToPaidRate"],
+  properties: {
+    visits: { type: "number", minimum: 0 }, signupIntents: { type: "number", minimum: 0 },
+    trials: { type: "number", minimum: 0 }, paid: { type: "number", minimum: 0 },
+    cancelled: { type: "number", minimum: 0 }, trialToPaidRate: { type: ["number", "null"], minimum: 0 },
+  },
+};
+document.components.schemas.GrowthDashboard = {
+  type: "object", additionalProperties: false,
+  required: ["projectId", "range", "dateLabel", "metrics", "funnel"],
+  properties: {
+    projectId: { type: "string" }, range: { type: "string", enum: ["7d", "30d", "90d", "1y"] },
+    dateLabel: { type: "string" },
+    metrics: { type: "array", items: { "$ref": "#/components/schemas/GrowthMetric" } },
+    funnel: { "$ref": "#/components/schemas/GrowthFunnel" },
+  },
+};
+document.components.schemas.GrowthEvent = {
+  type: "object", additionalProperties: false,
+  required: ["id", "name", "value", "subject", "environment", "occurredAt"],
+  properties: {
+    id: { type: "string" }, name: { type: "string" }, value: { type: "number" },
+    subject: { type: ["string", "null"] }, environment: { type: "string" },
+    occurredAt: { type: "string", format: "date-time" },
+  },
+};
+document.components.schemas.GrowthEventList = {
+  type: "array", items: { "$ref": "#/components/schemas/GrowthEvent" },
+};
 document.components.schemas.TelemetryAction = {
   type: "object", additionalProperties: false, required: ["slot", "key", "label"],
   properties: {
@@ -331,7 +467,7 @@ document.components.schemas.ApiTokenCreate = {
     name: { type: "string", minLength: 1, maxLength: 80 },
     environment: { type: "string", enum: ["production", "staging", "test"], default: "production" },
     projectId: { type: "string", minLength: 1, maxLength: 240, description: "One enabled NoxHere project. The token cannot access resources assigned to another project." },
-    scopes: { type: "array", minItems: 1, maxItems: 12, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:(send|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$" } },
+    scopes: { type: "array", minItems: 1, maxItems: 16, uniqueItems: true, items: { type: "string", pattern: "^(services:read|developer-feedback:write|slack:(send|read|write)|planning:(read|write)|activity:(read|write)|feedback:(submit|read|write)|growth:(ingest|read|write)|usage:(ingest|read|write)|issues:(read|write)|telemetry:(ingest|read|write))$" } },
     expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
   },
 };
@@ -734,6 +870,8 @@ function automationScope(path, method) {
   if (method === "post" && ["/api/v1/slack/test", "/api/v1/integrations/slack/test"].includes(path)) return "slack:send";
   if (method === "get" && path === "/api/v1/slack/channels") return "slack:read";
   if (method === "post" && path === "/api/v1/telemetry/public/events") return "telemetry:ingest";
+  if (method === "post" && path === "/api/v1/growth/events") return "growth:ingest";
+  if (method === "post" && path === "/api/v1/usage/events") return "usage:ingest";
   if (method === "get" && path === "/api/v1/services") return "services:read";
   const service = path.match(/^\/api\/v1\/services\/(activity|feedback|telemetry)(?:\/(?:setup|health))?$/)?.[1];
   if (method === "get" && service) return `${service}:read`;
@@ -742,6 +880,9 @@ function automationScope(path, method) {
   path = compatibilityApiPath(path);
   if (method === "get" && /^\/api\/(?:issues|prs)(?:\/|$)/.test(path)) return "activity:read";
   if (/^\/api\/feedback\/sites(?:\/|$)/.test(path)) return `feedback:${access}`;
+  if (/^\/api\/v1\/growth(?:\/|$)/.test(path) || /^\/api\/v1\/projects\/[^/]+\/growth(?:\/|$)/.test(path)) return `growth:${access}`;
+  if (/^\/api\/v1\/usage(?:\/|$)/.test(path) || /^\/api\/v1\/projects\/[^/]+\/usage(?:\/|$)/.test(path)) return `usage:${access}`;
+  if (/^\/api\/v1\/projects\/[^/]+\/(?:issues\/(?:alerts|alert-rules)|incidents)(?:\/|$)/.test(path)) return `issues:${access}`;
   if (/^\/api\/telemetry\/sources(?:\/|$)/.test(path)) return `telemetry:${access}`;
   if (method === "get" && (path === "/api/telemetry/events" || path === "/api/telemetry/metrics")) return "telemetry:read";
   if (/^\/api\/telemetry\/projects\/[^/]+\/metrics$/.test(path)) return `telemetry:${access}`;
@@ -1011,7 +1152,7 @@ for (const [path, pathItem] of Object.entries(document.paths)) {
       }
       operation["x-project-scope"] = "optional";
     }
-    if (path === "/api/v1/telemetry/public/events" && method === "post") {
+    if (["/api/v1/telemetry/public/events", "/api/v1/growth/events", "/api/v1/usage/events"].includes(path) && method === "post") {
       operation.parameters ??= [];
       if (!operation.parameters.some((entry) => entry?.$ref === "#/components/parameters/telemetrySourceContext")) {
         operation.parameters.push({ "$ref": "#/components/parameters/telemetrySourceContext" });
@@ -1131,6 +1272,9 @@ function firstPartyClientOperation(operationId, summary, role, organization, met
 
 function serviceTag(path) {
   const compatibilityPath = compatibilityApiPath(path);
+  if (/^\/api\/v1\/(?:growth)(?:\/|$)/.test(path) || /^\/api\/v1\/projects\/[^/]+\/growth(?:\/|$)/.test(path)) return "Growth";
+  if (/^\/api\/v1\/(?:usage)(?:\/|$)/.test(path) || /^\/api\/v1\/projects\/[^/]+\/usage(?:\/|$)/.test(path)) return "Usage";
+  if (/^\/api\/v1\/projects\/[^/]+\/issues\/(?:alerts|alert-rules)(?:\/|$)/.test(path)) return "Issues";
   if (/^\/api\/(?:features|specs|assign|issue-state)(?:\/|$)/.test(compatibilityPath)) return "Planning";
   if (/^\/api\/v1\/activity(?:\/|$)/.test(path)
       || /^\/api\/(?:issues|prs|events|engineer-activity|engineer-stats|search|llm-settings|activity)(?:\/|$)/.test(compatibilityPath)

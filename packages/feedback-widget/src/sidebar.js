@@ -75,7 +75,7 @@ function customBlockDomId(blockId) {
  * @returns {string} HTML string
  */
 export function createSidebarHTML(opts) {
-  const { blocks, metadata, onSubmit, screenshotDataUrl, members, categories, reporter } = opts;
+  const { blocks, metadata, onSubmit, screenshotDataUrl, members, categories, reporter, branding } = opts;
   onSubmitCallback = onSubmit;
   reporterMembers = Array.isArray(members) ? members : [];
   reportCategories = Array.isArray(categories) ? categories.filter(c => c && typeof c.label === 'string' && c.label) : [];
@@ -89,10 +89,14 @@ export function createSidebarHTML(opts) {
   `;
 
   const blocksHTML = formBlocks.map((b) => renderBlock(b, metadata)).join('');
+  const brandName = typeof branding?.name === 'string' ? branding.name.trim().slice(0, 120) : '';
+  const logoUrl = typeof branding?.logoUrl === 'string' && branding.logoUrl.startsWith('https://') ? branding.logoUrl : '';
+  const brandHTML = brandName || logoUrl ? `<div class="feedback-brand">${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="" />` : ''}${brandName ? `<span>${escapeHtml(brandName)}</span>` : ''}</div>` : '';
 
   return `
     <div class="feedback-sidebar-content">
       ${thumbnailHTML}
+      ${brandHTML}
       <div class="feedback-sidebar-header" style="display: flex; align-items: center;">
         <button type="button" class="feedback-mobile-back" style="display:none">&larr; Back</button>
         <h2 class="feedback-sidebar-title">Report Issue</h2>

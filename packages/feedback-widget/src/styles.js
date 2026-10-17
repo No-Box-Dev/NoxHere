@@ -18,7 +18,7 @@ const CSS = `
   height: 100dvh;
   overflow: hidden;
   z-index: 2147483647;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--feedback-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
 }
 
 .feedback-overlay-backdrop {
@@ -173,7 +173,7 @@ const CSS = `
   width: 32px;
   height: 32px;
   border: 3px solid rgba(255, 255, 255, 0.15);
-  border-top-color: #FE795D;
+  border-top-color: var(--feedback-accent, #FE795D);
   border-radius: 50%;
   animation: feedback-spin 0.8s linear infinite;
 }
@@ -236,6 +236,23 @@ const CSS = `
   color: #201E1D;
 }
 
+.feedback-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #201E1D;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.feedback-brand img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 5px;
+}
+
 /* Form */
 .feedback-form {
   display: flex;
@@ -268,8 +285,8 @@ const CSS = `
 .feedback-input:focus,
 .feedback-textarea:focus {
   outline: none;
-  border-color: #FE795D;
-  box-shadow: 0 0 0 3px rgba(254, 121, 93, 0.15);
+  border-color: var(--feedback-accent, #FE795D);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--feedback-accent, #FE795D) 15%, transparent);
 }
 
 .feedback-textarea {
@@ -334,7 +351,7 @@ const CSS = `
 
 /* Submit button */
 .feedback-submit-btn {
-  background: #FE795D;
+  background: var(--feedback-accent, #FE795D);
   color: white;
   border: none;
   padding: 12px 16px;
@@ -347,7 +364,8 @@ const CSS = `
 }
 
 .feedback-submit-btn:hover {
-  background: #e5684d;
+  background: var(--feedback-accent, #FE795D);
+  filter: brightness(.9);
 }
 
 .feedback-submit-btn:disabled {
@@ -688,7 +706,7 @@ const CSS = `
     flex-shrink: 0;
     align-self: stretch;
     margin: 8px 16px calc(8px + env(safe-area-inset-bottom)) 16px;
-    background: #FE795D;
+    background: var(--feedback-accent, #FE795D);
     color: white;
     border: none;
     padding: 10px 16px;
@@ -696,7 +714,7 @@ const CSS = `
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--feedback-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
@@ -724,7 +742,7 @@ const CSS = `
   .feedback-mobile-back {
     background: transparent;
     border: none;
-    color: #FE795D;
+    color: var(--feedback-accent, #FE795D);
     font-size: 15px;
     font-weight: 500;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

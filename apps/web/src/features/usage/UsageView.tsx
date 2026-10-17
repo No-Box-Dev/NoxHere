@@ -8,88 +8,45 @@ import { ServiceTabs } from "../../components/ServiceTabs";
 import { Sparkline } from "../../components/Sparkline";
 import { StatusTag } from "../../components/StatusTag";
 
-type StatsViewProps = { organizationId: string; projectId: string; canConfigure?: boolean };
-type StatsSubview = "dashboard" | "productivity" | "events";
+type UsageViewProps = { organizationId: string; projectId: string; canConfigure?: boolean };
+type UsageSubview = "overview" | "engagement" | "events";
 
 const tabs = [
-  ["dashboard", "Dashboard"],
-  ["productivity", "Productivity"],
-  ["events", "Stat events"],
+  ["overview", "Overview"],
+  ["engagement", "Engagement"],
+  ["events", "Events"],
 ] as const;
 
-export function StatsView({ organizationId, projectId, canConfigure = false, view = "dashboard" }: StatsViewProps & { view?: StatsSubview }) {
-  const base = `/${organizationId}/${projectId}/stats`;
+export function UsageView({ organizationId, projectId, canConfigure = false, view = "overview" }: UsageViewProps & { view?: UsageSubview }) {
+  const base = `/${organizationId}/${projectId}/usage`;
   return (
     <>
       <ServiceTabs base={base} active={view} tabs={tabs} />
       <div className="workspace-view">
-        {view === "dashboard" ? <StatsDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} /> : view === "productivity" ? <ProductivityStats organizationId={organizationId} projectId={projectId} /> : <StatEvents organizationId={organizationId} projectId={projectId} />}
+        {view === "overview" ? <UsageDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} mode="overview" /> : view === "engagement" ? <UsageDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} mode="engagement" /> : <UsageEvents organizationId={organizationId} projectId={projectId} />}
       </div>
     </>
   );
 }
 
-function ProductivityStats({ organizationId, projectId }: StatsViewProps) {
-  const stats = useQuery({
-    queryKey: ["stats", organizationId, projectId, "productivity"],
-    queryFn: ({ signal }) => platformApi.engineerStats(organizationId, projectId, signal),
-  });
-  const people = stats.data ? [...new Set([
-    ...Object.keys(stats.data.openPRs), ...Object.keys(stats.data.reviewing), ...Object.keys(stats.data.approvalsGiven),
-    ...Object.keys(stats.data.mergesOfOthers), ...Object.keys(stats.data.assignedIssues), ...Object.keys(stats.data.prsLast4Weeks),
-    ...Object.keys(stats.data.commitsLast4Weeks), ...Object.keys(stats.data.issuesClosed),
-  ])].sort((left, right) => left.localeCompare(right)) : [];
-  const total = (values: Record<string, number>) => Object.values(values).reduce((sum, value) => sum + value, 0);
-  const coverage = stats.data?.coverage ?? { approvalsGivenSince: null, mergedByKnown: 0, mergedPRs: 0, issuesClosedByKnown: 0, closedIssues: 0 };
-  const audits = Object.entries(stats.data?.prAudits ?? {});
-  const incompleteAudits = audits.filter(([, audit]) => audit.githubPRs !== audit.cachedAllPRs);
-  const knownShare = (known: number, all: number) => all > 0 ? `${Math.round((known / all) * 100)}%` : "No history";
-  return <AsyncState loading={stats.isLoading} error={stats.error}>{stats.data ? <>
-    <div className="stat-grid productivity-summary">
-      <ProductivityCard label="Open pull requests" value={total(stats.data.openPRs)} />
-      <ProductivityCard label="PRs · last 4 weeks" value={total(stats.data.prsLast4Weeks)} />
-      <ProductivityCard label="Commits · last 4 weeks" value={total(stats.data.commitsLast4Weeks)} />
-      <ProductivityCard label="Reviews given" value={total(stats.data.approvalsGiven)} />
-      <ProductivityCard label="Issues closed" value={total(stats.data.issuesClosed)} />
-    </div>
-    <div className="productivity-coverage" aria-label="Productivity data coverage">
-      <div><b>Data coverage</b><p>{stats.data.freshness?.repositories ?? 0} connected repositories. Latest PR data: {formatFreshness(stats.data.freshness?.pullRequestsAt)}.</p></div>
-      <StatusTag tone={coverage.mergedPRs === coverage.mergedByKnown ? "positive" : "warning"}>{knownShare(coverage.mergedByKnown, coverage.mergedPRs)} merge authors</StatusTag>
-      <StatusTag tone={coverage.closedIssues === coverage.issuesClosedByKnown ? "positive" : "warning"}>{knownShare(coverage.issuesClosedByKnown, coverage.closedIssues)} issue closers</StatusTag>
-      <StatusTag tone={incompleteAudits.length ? "warning" : "positive"}>{audits.length ? `${audits.length - incompleteAudits.length}/${audits.length} PR audits match` : "No PR audit run"}</StatusTag>
-    </div>
-    <div className="list-surface productivity-list">{people.map((person) => <ListRow key={person} symbol={person.slice(0, 1).toUpperCase()} title={person} description={`${stats.data!.commitsLast4Weeks[person] ?? 0} commits · ${stats.data!.prsLast4Weeks[person] ?? 0} PRs · ${stats.data!.approvalsGiven[person] ?? 0} approvals · ${stats.data!.issuesClosed[person] ?? 0} issues closed in tracked history`} meta={<><StatusTag>{stats.data!.openPRs[person] ?? 0} open PRs</StatusTag><StatusTag>{stats.data!.reviewing[person] ?? 0} reviews waiting</StatusTag><StatusTag>{stats.data!.assignedIssues[person] ?? 0} assigned issues</StatusTag></>} />)}</div>
-    {!people.length ? <div className="empty-view"><h2>No productivity data yet</h2><p>Connect GitHub and sync project activity to populate engineering statistics.</p></div> : null}
-  </> : null}</AsyncState>;
-}
-
-function formatFreshness(value?: string | null) {
-  if (!value) return "not synced yet";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
-
-function ProductivityCard({ label, value }: { label: string; value: number }) {
-  return <article className="stat-card"><span className="stat-card-head"><b>{label}</b><small>Tracked project data</small></span><span className="stat-value"><strong>{value.toLocaleString()}</strong></span></article>;
-}
-
-function StatsDashboard({ organizationId, projectId, canConfigure = false }: StatsViewProps) {
+function UsageDashboard({ organizationId, projectId, canConfigure = false, mode }: UsageViewProps & { mode: "overview" | "engagement" }) {
   const [configuring, setConfiguring] = useState(false);
   const [range, setRange] = useState("30d");
   const dashboard = useQuery({
-    queryKey: ["telemetry", organizationId, projectId, "dashboard", range],
-    queryFn: ({ signal }) => platformApi.telemetryDashboard(organizationId, projectId, range, signal),
+    queryKey: ["usage", organizationId, projectId, "dashboard", range],
+    queryFn: ({ signal }) => platformApi.usageDashboard(organizationId, projectId, range, signal),
   });
 
   const exportCsv = () => {
     if (!dashboard.data) return;
     const quote = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
-    const rows = [["Metric", "Value", "Change", "Context"], ...dashboard.data.stats.map((stat) => [stat.name, stat.value, stat.change, stat.context])];
+    const visibleStats = dashboard.data.stats.filter((stat) => mode === "engagement" ? stat.id.startsWith("custom.") : !stat.id.startsWith("custom."));
+    const rows = [["Metric", "Value", "Change", "Context"], ...visibleStats.map((stat) => [stat.name, stat.value, stat.change, stat.context])];
     const blob = new Blob([rows.map((row) => row.map(quote).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `noxhere-stats-${projectId}-${range}.csv`;
+    link.download = `noxhere-usage-${mode}-${projectId}-${range}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -99,12 +56,12 @@ function StatsDashboard({ organizationId, projectId, canConfigure = false }: Sta
       {dashboard.data ? <>
         <div className="toolbar">
           <select name="timeRange" aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select>
-          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag>{canConfigure ? <button className="button" onClick={() => setConfiguring(true)}>Configure actions</button> : null}<button className="button" onClick={exportCsv}>Export CSV</button>
+          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag>{mode === "engagement" && canConfigure ? <button className="button" onClick={() => setConfiguring(true)}>Configure actions</button> : null}<button className="button" onClick={exportCsv}>Export CSV</button>
         </div>
         <div className="stat-grid">
-          {dashboard.data.stats.map((stat) => <StatCard key={stat.id} stat={stat} />)}
+          {dashboard.data.stats.filter((stat) => mode === "engagement" ? stat.id.startsWith("custom.") : !stat.id.startsWith("custom.")).map((stat) => <StatCard key={stat.id} stat={stat} />)}
         </div>
-        {configuring && canConfigure ? <EngagementActionsDialog organizationId={organizationId} projectId={projectId} onClose={() => setConfiguring(false)} /> : null}
+        {mode === "engagement" && configuring && canConfigure ? <EngagementActionsDialog organizationId={organizationId} projectId={projectId} onClose={() => setConfiguring(false)} /> : null}
       </> : null}
     </AsyncState>
   );
@@ -121,16 +78,16 @@ function actionKey(label: string) {
   return slug ? `custom.${slug}` : "";
 }
 
-function EngagementActionsDialog({ organizationId, projectId, onClose }: StatsViewProps & { onClose: () => void }) {
+function EngagementActionsDialog({ organizationId, projectId, onClose }: UsageViewProps & { onClose: () => void }) {
   const configured = useQuery({
-    queryKey: ["telemetry", organizationId, projectId, "actions"],
-    queryFn: ({ signal }) => platformApi.telemetryActions(organizationId, projectId, signal),
+    queryKey: ["usage", organizationId, projectId, "actions"],
+    queryFn: ({ signal }) => platformApi.usageActions(organizationId, projectId, signal),
   });
   if (configured.data) return <EngagementActionsEditor organizationId={organizationId} projectId={projectId} onClose={onClose} initialActions={configured.data.actions} initialWindowDays={configured.data.windowDays} />;
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="cue-actions-dialog" role="dialog" aria-modal="true" aria-labelledby="cue-actions-title"><header><div><span className="eyebrow">STANDARD TEMPLATE</span><h2 id="cue-actions-title">Engagement actions</h2><p>Choose the three actions that show how actively people use your product.</p></div><button type="button" className="dialog-close" aria-label="Close action setup" onClick={onClose}>×</button></header><main><div className="cue-actions-loading">{configured.error instanceof Error ? configured.error.message : "Loading actions…"}</div></main><footer><button type="button" className="button" onClick={onClose}>Close</button></footer></div></div>;
 }
 
-function EngagementActionsEditor({ organizationId, projectId, onClose, initialActions, initialWindowDays }: StatsViewProps & { onClose: () => void; initialActions: Array<{ key: string; label: string }>; initialWindowDays: 7 | 14 | 30 }) {
+function EngagementActionsEditor({ organizationId, projectId, onClose, initialActions, initialWindowDays }: UsageViewProps & { onClose: () => void; initialActions: Array<{ key: string; label: string }>; initialWindowDays: 7 | 14 | 30 }) {
   const queryClient = useQueryClient();
   const [actions, setActions] = useState(() => EMPTY_ACTIONS.map((empty, index) => initialActions[index]
     ? { label: initialActions[index].label, key: initialActions[index].key }
@@ -138,11 +95,11 @@ function EngagementActionsEditor({ organizationId, projectId, onClose, initialAc
   const [copied, setCopied] = useState(false);
   const [windowDays, setWindowDays] = useState<7 | 14 | 30>(initialWindowDays);
   const save = useMutation({
-    mutationFn: () => platformApi.setTelemetryActions(organizationId, projectId, actions, windowDays),
+    mutationFn: () => platformApi.setUsageActions(organizationId, projectId, actions, windowDays),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["telemetry", organizationId, projectId, "actions"] }),
-        queryClient.invalidateQueries({ queryKey: ["telemetry", organizationId, projectId, "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["usage", organizationId, projectId, "actions"] }),
+        queryClient.invalidateQueries({ queryKey: ["usage", organizationId, projectId, "dashboard"] }),
       ]);
       onClose();
     },
@@ -170,8 +127,8 @@ function EngagementActionsEditor({ organizationId, projectId, onClose, initialAc
             </section>)}
           </div>
           {actions.length < 3 ? <button type="button" className="button cue-add-action" onClick={() => setActions((current) => [...current, { label: "", key: "" }])}>+ Add activity</button> : null}
-          <aside className="cue-template-output"><div><b>What Stats creates automatically</b><p>Each action gets a daily total plus a rolling {windowDays}-day engagement card with actions per active user, participation, and actions per participant.</p></div><pre><code>{snippet || "Your tracking calls will appear here."}</code></pre><button type="button" className="mini-button" disabled={!snippet} onClick={() => void navigator.clipboard.writeText(snippet).then(() => setCopied(true))}>{copied ? "Copied" : "Copy setup code"}</button></aside>
-          <p className="cue-advanced-note">Need more than three? Additional custom activity metrics remain available through the API and advanced Stats settings.</p>
+          <aside className="cue-template-output"><div><b>What Usage creates automatically</b><p>Each action gets a daily total plus a rolling {windowDays}-day engagement card with actions per active user, participation, and actions per participant.</p></div><pre><code>{snippet || "Your tracking calls will appear here."}</code></pre><button type="button" className="mini-button" disabled={!snippet} onClick={() => void navigator.clipboard.writeText(snippet).then(() => setCopied(true))}>{copied ? "Copied" : "Copy setup code"}</button></aside>
+          <p className="cue-advanced-note">Need more than three? Additional product actions remain available through the Usage API.</p>
           {save.error ? <p className="form-error">{save.error.message}</p> : null}
       </main>
       <footer><button type="button" className="button" onClick={onClose}>Cancel</button><button type="button" className="button primary-button" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save actions"}</button></footer>
@@ -202,12 +159,12 @@ function StatCard({ stat }: { stat: TelemetryStat }) {
   </article>;
 }
 
-function StatEvents({ organizationId, projectId }: StatsViewProps) {
+function UsageEvents({ organizationId, projectId }: UsageViewProps) {
   const [type, setType] = useState("all");
   const [environment, setEnvironment] = useState("all");
   const events = useQuery({
-    queryKey: ["telemetry", organizationId, projectId, "stat-events"],
-    queryFn: ({ signal }) => platformApi.telemetryStatEvents(organizationId, projectId, signal),
+    queryKey: ["usage", organizationId, projectId, "events"],
+    queryFn: ({ signal }) => platformApi.usageEvents(organizationId, projectId, signal),
   });
 
   const filtered = (events.data ?? []).filter((event) => (type === "all" || event.type === type) && (environment === "all" || event.environment.toLowerCase() === environment));
@@ -215,11 +172,11 @@ function StatEvents({ organizationId, projectId }: StatsViewProps) {
   const environments = [...new Set((events.data ?? []).map((event) => event.environment))];
   return (
     <AsyncState loading={events.isLoading} error={events.error}>
-      <div className="toolbar"><select name="eventType" aria-label="Event type" value={type} onChange={(event) => setType(event.target.value)}><option value="all">All stat events</option>{eventTypes.map((value) => <option value={value} key={value}>{value}</option>)}</select><select name="eventEnvironment" aria-label="Environment" value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="all">All environments</option>{environments.map((value) => <option value={value.toLowerCase()} key={value}>{value}</option>)}</select><span className="toolbar-spacer" /><span>{filtered.length} events</span><StatusTag tone="positive">Receiving</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
+      <div className="toolbar"><select name="eventType" aria-label="Event type" value={type} onChange={(event) => setType(event.target.value)}><option value="all">All usage events</option>{eventTypes.map((value) => <option value={value} key={value}>{value}</option>)}</select><select name="eventEnvironment" aria-label="Environment" value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="all">All environments</option>{environments.map((value) => <option value={value.toLowerCase()} key={value}>{value}</option>)}</select><span className="toolbar-spacer" /><span>{filtered.length} events</span><StatusTag tone="positive">Receiving</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
       <div className="list-surface">
         {filtered.map((event) => <ListRow key={event.id} symbol="↗" tone="positive" title={event.name} description={<span className="mono">{event.type} · {event.subject} · {event.environment}</span>} meta={<><StatusTag tone="positive">Accepted</StatusTag><span>{event.receivedAt}</span></>} />)}
       </div>
-      <div className="callout"><div><b>Events become stats</b><p>These accepted triggers feed the aggregated dashboard and daily report. Configure the tracked activities from the dashboard.</p></div></div>
+      <div className="callout"><div><b>Events become usage signals</b><p>Accepted user and product actions feed the Usage overview and engagement reports.</p></div></div>
     </AsyncState>
   );
 }
