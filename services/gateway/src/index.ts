@@ -435,7 +435,9 @@ function isPublicConnectorPath(pathname: string, request: Request): boolean {
     || pathname === "/api/health/ready"
     || pathname.startsWith("/api/public/")
     || ((pathname === "/api/telemetry/public/v1/events"
-      || pathname === "/api/v1/telemetry/public/events") && !isApiTokenRequest(request));
+      || pathname === "/api/v1/telemetry/public/events"
+      || pathname === "/api/v1/growth/events"
+      || pathname === "/api/v1/usage/events") && !isApiTokenRequest(request));
 }
 
 function isProviderIngressPath(pathname: string): boolean {
