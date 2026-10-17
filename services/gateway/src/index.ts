@@ -448,6 +448,7 @@ function isProviderIngressPath(pathname: string): boolean {
 }
 
 function isAuthenticatedProviderPath(pathname: string): boolean {
+  if (pathname === "/api/slack/test" || pathname === "/api/v1/slack/test") return false;
   return pathname.startsWith("/api/slack/")
     || pathname.startsWith("/api/v1/slack/")
     || /^\/api\/(?:v1\/)?integrations\/connections\/[^/]+\/start$/.test(pathname);

@@ -69,6 +69,25 @@ describe("Feedback Slack site settings", () => {
     expect(requeueBlockedForSite).toHaveBeenCalledWith(expect.objectContaining({ DB: db }), 7, "site-1");
   });
 
+  it("delegates channel validation to the Connections service when available", async () => {
+    vi.mocked(resolveSlackInstall).mockResolvedValue(null);
+    const validateSlackDestination = vi.fn(async () => ({ ok: true, result: { connectionId: "conn-shared" } }));
+    const db = database();
+    const ctx = context(db, { slackChannelId: "C123", slackConnectionId: "conn-shared" }) as ReturnType<typeof context> & {
+      env: ReturnType<typeof context>["env"] & { CONNECTIONS: { validateSlackDestination: typeof validateSlackDestination } };
+    };
+    ctx.env.CONNECTIONS = { validateSlackDestination };
+    const response = await onRequestPatch(ctx as never);
+    expect(response.status).toBe(200);
+    expect(validateSlackDestination).toHaveBeenCalledWith({
+      orgId: 7,
+      projectId: "playnist",
+      connectionId: "conn-shared",
+      channelId: "C123",
+    });
+    expect(resolveSlackInstall).not.toHaveBeenCalled();
+  });
+
   it("rejects a private channel until the bot is invited", async () => {
     vi.mocked(resolveSlackInstall).mockResolvedValue({ botToken: "xoxb-test" } as never);
     vi.mocked(getSlackChannel).mockResolvedValue({ id: "C123", is_archived: false, is_private: true, is_member: false } as never);

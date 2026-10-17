@@ -24,6 +24,7 @@
     "health:feedback-runtime": "node scripts/check-feedback-runtime.mjs",
     "health:api-surface": "node scripts/probe-openapi-deployment.mjs",
     "health:boundaries": "node scripts/check-product-boundaries.mjs",
+    "health:legacy-names": "node scripts/check-legacy-product-names.mjs",
     "e2e:local": "npm run build:web && node scripts/local-e2e.mjs",
     "e2e:provider": "node --env-file-if-exists=.env.staging-acceptance scripts/staging-acceptance.mjs",
     "e2e:provider:preflight": "node --env-file-if-exists=.env.staging-acceptance scripts/staging-acceptance.mjs --preflight",

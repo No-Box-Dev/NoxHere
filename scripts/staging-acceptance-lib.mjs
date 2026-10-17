@@ -69,3 +69,39 @@ export function findRelease(events, repo, prNumber, titleMarker) {
 export function findTelemetryEvent(events, titleMarker) {
   return (events ?? []).find((event) => String(event.title ?? event.event?.title ?? "").includes(titleMarker)) ?? null;
 }
+
+export async function mergePullRequestWithRefresh(api, owner, repo, pullNumber, {
+  attempts = 3,
+  wait = () => new Promise((resolve) => setTimeout(resolve, 2_000)),
+} = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const merged = api(
+        `merge Activity acceptance pull request (attempt ${attempt})`,
+        "PUT",
+        `repos/${owner}/${repo}/pulls/${pullNumber}/merge`,
+        { merge_method: "squash" },
+      );
+      if (merged?.merged) return merged;
+      lastError = new Error(merged?.message ?? "GitHub did not merge the pull request");
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+    if (!/base branch was modified|not up to date/i.test(lastError.message) || attempt === attempts) break;
+
+    const pull = api(
+      "refresh Activity acceptance pull request",
+      "GET",
+      `repos/${owner}/${repo}/pulls/${pullNumber}`,
+    );
+    api(
+      "update Activity acceptance branch",
+      "PUT",
+      `repos/${owner}/${repo}/pulls/${pullNumber}/update-branch`,
+      { expected_head_sha: pull?.head?.sha ?? "" },
+    );
+    await wait();
+  }
+  throw lastError ?? new Error("GitHub did not merge the pull request");
+}

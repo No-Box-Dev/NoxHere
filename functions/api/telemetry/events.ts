@@ -23,8 +23,10 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   let sql = `SELECT event.delivery_id, event.type, event.summary, event.payload_json, event.created_at,
                     delivery.status AS delivery_status, delivery.delivered_at
                FROM events event
-               LEFT JOIN delivery_outbox delivery
-                 ON delivery.source = 'telemetry' AND delivery.source_id = event.delivery_id
+               LEFT JOIN transport_outbox delivery
+                 ON delivery.provider = 'slack'
+                AND delivery.operation = 'slack.message.send'
+                AND delivery.idempotency_key = 'telemetry:error:' || event.delivery_id
               WHERE event.org_id = ? AND event.source = 'telemetry'`;
   const binds: Array<string | number> = [orgId];
   sql += ` AND EXISTS (

@@ -6,9 +6,15 @@ import { getSlackChannel, resolveSlackChannels, resolveSlackInstall } from "../.
 import { requeueBlockedForSite } from "../../../../lib/delivery-outbox.js";
 import { requeueBlockedTransportCommands } from "../../../../lib/transport-outbox";
 import { feedbackAuditStatement } from "../../../../lib/feedback-audit";
+import { projectSlackDestinationErrorStatus, validateProjectSlackDestination } from "../../../../lib/project-routing";
 
 interface Ctx {
-  env: NoxDatabaseEnv & { ENCRYPTION_KEY?: string; TASK_QUEUE?: Queue; FEEDBACK_ASSETS?: R2Bucket };
+  env: NoxDatabaseEnv & {
+    ENCRYPTION_KEY?: string;
+    TASK_QUEUE?: Queue;
+    FEEDBACK_ASSETS?: R2Bucket;
+    CONNECTIONS?: { validateSlackDestination(input: unknown): Promise<unknown> };
+  };
   data: { orgId: number; projectId?: string | null; userLogin: string; isAdmin: boolean };
   request: Request;
   params: { id: string };
@@ -113,17 +119,31 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     ).bind(targetProjectId, orgId, existing.repo, existing.repo).first<{ id: string }>();
     if (!target) return errorResponse("The target project must be active and include this site's repository", 409);
   }
+  let validatedSlackConnectionId = input.slackConnectionId !== undefined
+    ? input.slackConnectionId : existing.slack_connection_id;
   if (input.slackChannelId) {
-    const connectionId = input.slackConnectionId !== undefined
-      ? input.slackConnectionId : existing.slack_connection_id;
-    const slack = await resolveSlackInstall({ ...context.env, DB: db }, orgId, String(connectionId || "") || null);
-    if (!slack) return errorResponse("Connect Slack in Integrations before selecting a channel", 409);
-    try {
-      const channel = await getSlackChannel(slack.botToken, input.slackChannelId);
-      if (!channel || channel.is_archived) return errorResponse("Slack channel is archived or unavailable", 409);
-      if (channel.is_private && !channel.is_member) return errorResponse("Invite the Feedback bot to this private channel first", 409);
-    } catch (error) {
-      return errorResponse(error instanceof Error ? error.message : "Slack channel is unavailable", 409);
+    const connectionId = validatedSlackConnectionId;
+    if (context.env.CONNECTIONS?.validateSlackDestination) {
+      try {
+        validatedSlackConnectionId = await validateProjectSlackDestination(
+          context.env,
+          orgId,
+          targetProjectId,
+          { connectionId: String(connectionId || "") || null, channelId: input.slackChannelId },
+        );
+      } catch (error) {
+        return errorResponse(error instanceof Error ? error.message : "Slack channel validation failed", projectSlackDestinationErrorStatus(error));
+      }
+    } else {
+      const slack = await resolveSlackInstall({ ...context.env, DB: db }, orgId, String(connectionId || "") || null);
+      if (!slack) return errorResponse("Connect Slack in Integrations before selecting a channel", 409);
+      try {
+        const channel = await getSlackChannel(slack.botToken, input.slackChannelId);
+        if (!channel || channel.is_archived) return errorResponse("Slack channel is archived or unavailable", 409);
+        if (channel.is_private && !channel.is_member) return errorResponse("Invite the Feedback bot to this private channel first", 409);
+      } catch (error) {
+        return errorResponse(error instanceof Error ? error.message : "Slack channel is unavailable", 409);
+      }
     }
   }
   let config: Record<string, unknown> = {};
@@ -147,7 +167,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
   ).bind(
     targetProjectId,
     input.slackChannelId !== undefined ? input.slackChannelId || null : existing.slack_channel_id,
-    input.slackConnectionId !== undefined ? input.slackConnectionId || null : existing.slack_connection_id,
+    input.slackConnectionId !== undefined ? validatedSlackConnectionId || null : existing.slack_connection_id,
     JSON.stringify(config),
     context.params.id,
     orgId,
@@ -191,7 +211,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
            updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
          WHERE org_id = ? AND site_id = ? AND source = 'feedback'
            AND destination = 'slack' AND status != 'delivered'`,
-      ).bind(input.slackChannelId, input.slackConnectionId ?? existing.slack_connection_id ?? null, orgId, context.params.id).run();
+      ).bind(input.slackChannelId, validatedSlackConnectionId ?? null, orgId, context.params.id).run();
       await requeueBlockedForSite({ ...context.env, DB: db }, orgId, context.params.id);
     } else {
       const channels = await resolveSlackChannels(db, orgId, targetProjectId);

@@ -212,7 +212,7 @@ export async function onRequestPut(context) {
     }
   }
 
-  if (slackWasSupplied && body?.slack && typeof body.slack === "object") {
+  if (slackWasSupplied && body?.slack && typeof body.slack === "object" && context.data?.slackValidationCompleted !== true) {
     const routes = SLACK_ROUTES.flatMap(([channelKey, connectionKey]) => {
       const channelId = typeof body.slack[channelKey] === "string" ? body.slack[channelKey].trim() : "";
       const connectionId = connectionKey && typeof body.slack[connectionKey] === "string"

@@ -270,6 +270,34 @@ describe("NoxHere gateway", () => {
     await expect(response.json()).resolves.toEqual({ configured: true });
   });
 
+  it("composes Slack test messages in Core API before provider delivery", async () => {
+    const apiToken = {
+      id: "noxkey_slack", org_id: 7, project_id: "project-a",
+      scopes_json: JSON.stringify(["slack:send"]), org_login: "acme", project_enabled: 1,
+    };
+    const connector = { fetch: vi.fn(async (request: Request) => Response.json({
+      signed: Boolean(request.headers.get("X-NoxHere-Internal-Assertion")),
+    })) };
+    const provider = { fetch: vi.fn(async () => Response.json({ wrong: true })) };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/api/v1/slack/test", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer nox_sk_live_example",
+          "Content-Type": "application/json",
+          "X-Project-ID": "project-a",
+        },
+        body: JSON.stringify({ kind: "activity_release_notes", connectionId: "legacy-2", channelId: "C-DEVELOPERS" }),
+      }),
+      controlledServices(connector, controlDb({ apiToken }), provider),
+    );
+
+    expect(response.status).toBe(200);
+    expect(connector.fetch).toHaveBeenCalledOnce();
+    expect(provider.fetch).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({ signed: true });
+  });
+
   it("relays reporter resolution links without requiring a user session", async () => {
     const connector = { fetch: vi.fn(async () => new Response("private connector")) };
     const feedback = { fetch: vi.fn(async () => new Response("resolution form")) };

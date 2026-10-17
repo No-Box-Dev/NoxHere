@@ -91,19 +91,34 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
               WHERE config.org_id = site.org_id AND config.key = 'settings') AS slack_fallback_channel_id,
             (SELECT json_extract(config.data, '$.slack.fallbackConnectionId') FROM config
               WHERE config.org_id = site.org_id AND config.key = 'settings') AS slack_fallback_connection_id,
-            (SELECT COUNT(*) FROM delivery_outbox delivery
-              WHERE delivery.site_id = site.id AND delivery.destination = 'slack'
+            (SELECT COUNT(*) FROM transport_outbox delivery
+              WHERE delivery.org_id = site.org_id AND delivery.provider = 'slack'
+                AND delivery.operation = 'slack.message.send' AND delivery.route = 'feedback'
+                AND json_extract(delivery.command_json, '$.routeContext.kind') = 'site'
+                AND json_extract(delivery.command_json, '$.routeContext.id') = site.id
                 AND delivery.status IN ('pending', 'queued', 'processing', 'retrying')) AS slack_pending_count,
-            (SELECT COUNT(*) FROM delivery_outbox delivery
-              WHERE delivery.site_id = site.id AND delivery.destination = 'slack'
-                AND delivery.status = 'blocked_configuration') AS slack_blocked_count,
-            (SELECT COUNT(*) FROM delivery_outbox delivery
-              WHERE delivery.site_id = site.id AND delivery.destination = 'slack'
+            (SELECT COUNT(*) FROM transport_outbox delivery
+              WHERE delivery.org_id = site.org_id AND delivery.provider = 'slack'
+                AND delivery.operation = 'slack.message.send' AND delivery.route = 'feedback'
+                AND json_extract(delivery.command_json, '$.routeContext.kind') = 'site'
+                AND json_extract(delivery.command_json, '$.routeContext.id') = site.id
+                AND delivery.status = 'blocked') AS slack_blocked_count,
+            (SELECT COUNT(*) FROM transport_outbox delivery
+              WHERE delivery.org_id = site.org_id AND delivery.provider = 'slack'
+                AND delivery.operation = 'slack.message.send' AND delivery.route = 'feedback'
+                AND json_extract(delivery.command_json, '$.routeContext.kind') = 'site'
+                AND json_extract(delivery.command_json, '$.routeContext.id') = site.id
                 AND delivery.status = 'failed') AS slack_failed_count,
-            (SELECT MAX(delivery.delivered_at) FROM delivery_outbox delivery
-              WHERE delivery.site_id = site.id AND delivery.destination = 'slack') AS slack_last_delivered_at,
-            (SELECT delivery.last_error FROM delivery_outbox delivery
-              WHERE delivery.site_id = site.id AND delivery.destination = 'slack'
+            (SELECT MAX(delivery.delivered_at) FROM transport_outbox delivery
+              WHERE delivery.org_id = site.org_id AND delivery.provider = 'slack'
+                AND delivery.operation = 'slack.message.send' AND delivery.route = 'feedback'
+                AND json_extract(delivery.command_json, '$.routeContext.kind') = 'site'
+                AND json_extract(delivery.command_json, '$.routeContext.id') = site.id) AS slack_last_delivered_at,
+            (SELECT delivery.last_error FROM transport_outbox delivery
+              WHERE delivery.org_id = site.org_id AND delivery.provider = 'slack'
+                AND delivery.operation = 'slack.message.send' AND delivery.route = 'feedback'
+                AND json_extract(delivery.command_json, '$.routeContext.kind') = 'site'
+                AND json_extract(delivery.command_json, '$.routeContext.id') = site.id
                 AND delivery.last_error IS NOT NULL
               ORDER BY delivery.updated_at DESC LIMIT 1) AS slack_last_error
        FROM spot_sites site

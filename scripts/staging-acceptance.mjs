@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { findTelemetryEvent, findIssue, findRelease, marker, validateSafety } from "./staging-acceptance-lib.mjs";
+import { findTelemetryEvent, findIssue, findRelease, marker, mergePullRequestWithRefresh, validateSafety } from "./staging-acceptance-lib.mjs";
 
 const preflightOnly = process.argv.includes("--preflight");
 const runId = `${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
@@ -36,6 +36,8 @@ const feedbackUrl = new URL(config.feedbackUrl);
 const checks = [];
 let telemetryIssue = null;
 let spotIssue = null;
+let activityPull = null;
+let activityBranch = null;
 
 function fail(message) { throw new Error(message); }
 function pass(name, detail = "") {
@@ -89,6 +91,20 @@ function githubIssues() {
 function closeGithubIssue(issue) {
   if (!issue?.number) return;
   gh(`close GitHub issue #${issue.number}`, "PATCH", `repos/${config.org}/${config.repo}/issues/${issue.number}`, { state: "closed" });
+}
+
+function cleanupActivityFixture() {
+  if (activityPull?.number) {
+    const pull = gh(`read Activity acceptance pull request #${activityPull.number}`, "GET", `repos/${config.org}/${config.repo}/pulls/${activityPull.number}`);
+    if (pull?.state === "open") {
+      gh(`close Activity acceptance pull request #${activityPull.number}`, "PATCH", `repos/${config.org}/${config.repo}/pulls/${activityPull.number}`, { state: "closed" });
+    }
+  }
+  if (activityBranch) {
+    gh(`delete Activity acceptance branch ${activityBranch}`, "DELETE", `repos/${config.org}/${config.repo}/git/refs/heads/${activityBranch}`);
+  }
+  activityPull = null;
+  activityBranch = null;
 }
 
 async function preflight() {
@@ -210,6 +226,7 @@ async function activityAcceptance() {
   const base = repository.default_branch;
   const baseRef = gh("read Activity base ref", "GET", `repos/${config.org}/${config.repo}/git/ref/heads/${base}`);
   const branch = `nox-acceptance/${runId}`;
+  activityBranch = branch;
   gh("create Activity acceptance branch", "POST", `repos/${config.org}/${config.repo}/git/refs`, {
     ref: `refs/heads/${branch}`,
     sha: baseRef.object.sha,
@@ -225,10 +242,8 @@ async function activityAcceptance() {
     base,
     body: `Automated staging-only provider acceptance. ${markers.feed}`,
   });
-  const merged = gh("merge Activity acceptance pull request", "PUT", `repos/${config.org}/${config.repo}/pulls/${pull.number}/merge`, {
-    merge_method: "squash",
-  });
-  if (!merged?.merged) fail(`Activity fixture PR #${pull.number} was not merged: ${merged?.message ?? "unknown reason"}`);
+  activityPull = pull;
+  await mergePullRequestWithRefresh(gh, config.org, config.repo, pull.number);
   pass("Activity staging pull request merged", `#${pull.number}`);
   await poll("Activity release note observed through the public API", async () => (
     await request("poll Activity release notes", `/api/v1/activity?mode=release-notes&repo=${encodeURIComponent(config.repo)}&limit=50`)
@@ -251,7 +266,14 @@ async function telemetryAcceptance() {
       idempotencyKey: `acceptance-cue-${runId}`,
       occurredAt: new Date().toISOString(),
       url: config.feedbackOrigin,
-      data: { errorCode: "NOX_ACCEPTANCE", environment: "staging", component: "acceptance-suite", fatal: false, unhandled: false },
+      data: {
+        errorCode: "NOX_ACCEPTANCE",
+        environment: "staging",
+        component: "acceptance-suite",
+        fatal: false,
+        unhandled: false,
+        attributes: { notifyEveryOccurrence: true, acceptanceRunId: runId },
+      },
     }),
   });
   if (![200, 201, 202].includes(response.status)) fail(`Telemetry ingest failed: ${response.status} ${await response.text()}`);
@@ -299,6 +321,7 @@ async function feedbackAcceptance() {
 async function cleanup() {
   closeGithubIssue(telemetryIssue);
   closeGithubIssue(spotIssue);
+  cleanupActivityFixture();
 }
 
 try {
