@@ -1403,9 +1403,80 @@
         },
         "type": "object"
       },
+      "GrowthAcquisition": {
+        "additionalProperties": false,
+        "properties": {
+          "campaigns": {
+            "items": {
+              "$ref": "#/components/schemas/GrowthAcquisitionRow"
+            },
+            "type": "array"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/GrowthAcquisitionRow"
+            },
+            "type": "array"
+          },
+          "landingPages": {
+            "items": {
+              "$ref": "#/components/schemas/GrowthAcquisitionRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "channels",
+          "campaigns",
+          "landingPages"
+        ],
+        "type": "object"
+      },
+      "GrowthAcquisitionRow": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "paid": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "revenueMinor": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "trials": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "visitors": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "visitors",
+          "trials",
+          "paid",
+          "revenueMinor",
+          "currency"
+        ],
+        "type": "object"
+      },
       "GrowthDashboard": {
         "additionalProperties": false,
         "properties": {
+          "acquisition": {
+            "$ref": "#/components/schemas/GrowthAcquisition"
+          },
           "dateLabel": {
             "type": "string"
           },
@@ -1429,6 +1500,26 @@
               "1y"
             ],
             "type": "string"
+          },
+          "revenue": {
+            "additionalProperties": false,
+            "properties": {
+              "amountMinor": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "currency": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "amountMinor",
+              "currency"
+            ],
+            "type": "object"
           }
         },
         "required": [
@@ -1436,7 +1527,9 @@
           "range",
           "dateLabel",
           "metrics",
-          "funnel"
+          "funnel",
+          "revenue",
+          "acquisition"
         ],
         "type": "object"
       },
@@ -33763,5 +33856,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "3b5d7463c09fdb58e952e13aa53142f41ff9760827c7b4c2ef9b0843c360e0b6"
+  "x-sdk-source-sha256": "25ce8e10c04192b4df1c34213370755121a4477cc557948118d8e4706fd1615d"
 }

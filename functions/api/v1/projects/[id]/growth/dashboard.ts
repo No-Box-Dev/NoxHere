@@ -11,6 +11,7 @@ const EVENT_NAMES = [
   "subscription.trial_started",
   "subscription.paid_started",
   "subscription.cancelled",
+  "subscription.reactivated",
 ] as const;
 
 interface Ctx {
@@ -21,6 +22,40 @@ interface Ctx {
 }
 
 interface GrowthRow { period: string; name: string; value: number }
+interface GrowthUniqueRow { name: string; value: number }
+interface GrowthAcquisitionRow {
+  label: string;
+  visitors: number;
+  trials: number;
+  paid: number;
+  revenueMinor: number;
+  currency: string | null;
+}
+
+function acquisitionSql(dimension: "channel" | "campaign" | "landing_path") {
+  const label = dimension === "channel" ? "dimension.channel"
+    : dimension === "campaign" ? "COALESCE(dimension.campaign, 'Unattributed')"
+      : "COALESCE(dimension.landing_path, 'Unknown landing page')";
+  return `SELECT ${label} AS label,
+      COUNT(DISTINCT CASE WHEN dimension.name = 'website.page_visited'
+        THEN COALESCE(dimension.visitor_hash, dimension.event_id) END) AS visitors,
+      COUNT(DISTINCT CASE WHEN dimension.name = 'subscription.trial_started'
+        THEN COALESCE(dimension.user_hash, dimension.visitor_hash, dimension.event_id) END) AS trials,
+      COUNT(DISTINCT CASE WHEN dimension.name = 'subscription.paid_started'
+        THEN COALESCE(dimension.user_hash, dimension.visitor_hash, dimension.event_id) END) AS paid,
+      COALESCE(SUM(CASE WHEN dimension.name = 'subscription.paid_started'
+        THEN dimension.amount_minor ELSE 0 END), 0) AS revenueMinor,
+      CASE WHEN COUNT(DISTINCT dimension.currency) <= 1 THEN MAX(dimension.currency) END AS currency
+    FROM growth_event_dimensions dimension
+    JOIN telemetry_sources source ON source.id = dimension.source_id
+   WHERE source.org_id = ? AND source.project_id = ? AND source.capability = 'growth'
+     AND source.environment = 'production' AND source.enabled = 1
+     AND dimension.occurred_at >= datetime('now', ?)
+   GROUP BY ${label}
+   HAVING visitors > 0 OR trials > 0 OR paid > 0
+   ORDER BY paid DESC, revenueMinor DESC, visitors DESC
+   LIMIT 12`;
+}
 
 export async function onRequestGet(context: Ctx): Promise<Response> {
   const { orgId, projectId } = getCtx(context);
@@ -46,6 +81,23 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
      ORDER BY periods.period, names.name`,
   ).bind(`-${days - 1} days`, orgId, projectId, ...EVENT_NAMES).all<GrowthRow>();
 
+  const since = `-${days - 1} days`;
+  const [uniqueResult, channelsResult, campaignsResult, landingPagesResult] = await context.env.DB.batch([
+    context.env.DB.prepare(
+      `SELECT dimension.name,
+          COUNT(DISTINCT COALESCE(dimension.user_hash, dimension.visitor_hash, dimension.event_id)) AS value
+         FROM growth_event_dimensions dimension
+         JOIN telemetry_sources source ON source.id = dimension.source_id
+        WHERE source.org_id = ? AND source.project_id = ? AND source.capability = 'growth'
+          AND source.environment = 'production' AND source.enabled = 1
+          AND dimension.occurred_at >= datetime('now', ?)
+        GROUP BY dimension.name`,
+    ).bind(orgId, projectId, since),
+    context.env.DB.prepare(acquisitionSql("channel")).bind(orgId, projectId, since),
+    context.env.DB.prepare(acquisitionSql("campaign")).bind(orgId, projectId, since),
+    context.env.DB.prepare(acquisitionSql("landing_path")).bind(orgId, projectId, since),
+  ]);
+
   const byName = new Map<string, GrowthRow[]>();
   for (const row of rows.results ?? []) {
     const records = byName.get(row.name) ?? [];
@@ -54,28 +106,50 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   }
   const total = (name: string) => (byName.get(name) ?? []).reduce((sum, row) => sum + row.value, 0);
   const series = (name: string) => (byName.get(name) ?? []).map((row) => row.value);
-  const trials = total("subscription.trial_started");
-  const paid = total("subscription.paid_started");
+  const unique = new Map((uniqueResult.results as unknown as GrowthUniqueRow[] | undefined)?.map((row) => [row.name, Number(row.value)]) ?? []);
+  const count = (name: string) => unique.get(name) ?? total(name);
+  const trials = count("subscription.trial_started");
+  const paid = count("subscription.paid_started");
+  const acquisitionRows = (result: D1Result<unknown>) => ((result.results ?? []) as unknown as GrowthAcquisitionRow[]).map((row) => ({
+    label: row.label,
+    visitors: Number(row.visitors ?? 0),
+    trials: Number(row.trials ?? 0),
+    paid: Number(row.paid ?? 0),
+    revenueMinor: Number(row.revenueMinor ?? 0),
+    currency: row.currency,
+  }));
+  const channels = acquisitionRows(channelsResult);
+  const revenueCurrencies = [...new Set(channels.map((row) => row.currency).filter((currency): currency is string => Boolean(currency)))];
   const latestPeriod = (rows.results ?? []).at(-1)?.period ?? "No events";
   return jsonResponse({
     projectId,
     range,
     dateLabel: latestPeriod,
     metrics: [
-      { id: "website.page_visited", label: "Page visits", value: total("website.page_visited"), points: series("website.page_visited") },
-      { id: "website.demo_clicked", label: "Demo clicks", value: total("website.demo_clicked"), points: series("website.demo_clicked") },
-      { id: "website.signup_clicked", label: "Signup clicks", value: total("website.signup_clicked"), points: series("website.signup_clicked") },
+      { id: "website.page_visited", label: "Unique visitors", value: count("website.page_visited"), points: series("website.page_visited") },
+      { id: "website.demo_clicked", label: "Demo clicks", value: count("website.demo_clicked"), points: series("website.demo_clicked") },
+      { id: "website.signup_clicked", label: "Signup intent", value: count("website.signup_clicked"), points: series("website.signup_clicked") },
       { id: "subscription.trial_started", label: "Trials started", value: trials, points: series("subscription.trial_started") },
       { id: "subscription.paid_started", label: "Paid conversions", value: paid, points: series("subscription.paid_started") },
-      { id: "subscription.cancelled", label: "Cancellations", value: total("subscription.cancelled"), points: series("subscription.cancelled") },
+      { id: "subscription.cancelled", label: "Cancellations", value: count("subscription.cancelled"), points: series("subscription.cancelled") },
+      { id: "subscription.reactivated", label: "Reactivations", value: count("subscription.reactivated"), points: series("subscription.reactivated") },
     ],
     funnel: {
-      visits: total("website.page_visited"),
-      signupIntents: total("website.signup_clicked"),
+      visits: count("website.page_visited"),
+      signupIntents: count("website.signup_clicked"),
       trials,
       paid,
-      cancelled: total("subscription.cancelled"),
+      cancelled: count("subscription.cancelled"),
       trialToPaidRate: trials > 0 ? paid / trials : null,
+    },
+    revenue: {
+      amountMinor: channels.reduce((sum, row) => sum + row.revenueMinor, 0),
+      currency: revenueCurrencies.length === 1 ? revenueCurrencies[0] : null,
+    },
+    acquisition: {
+      channels,
+      campaigns: acquisitionRows(campaignsResult),
+      landingPages: acquisitionRows(landingPagesResult),
     },
   });
 }

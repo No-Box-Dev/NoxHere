@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import type { GrowthDashboard as GrowthDashboardData } from "../../api/contracts";
 import { platformApi } from "../../api/platform";
 import { AsyncState } from "../../components/AsyncState";
 import { ListRow } from "../../components/ListRow";
@@ -7,10 +8,10 @@ import { ServiceTabs } from "../../components/ServiceTabs";
 import { Sparkline } from "../../components/Sparkline";
 import { StatusTag } from "../../components/StatusTag";
 
-type GrowthSubview = "overview" | "funnel" | "events";
+type GrowthSubview = "overview" | "funnel" | "acquisition" | "events";
 type GrowthViewProps = { organizationId: string; projectId: string; view: GrowthSubview };
 
-const tabs = [["overview", "Overview"], ["funnel", "Funnel"], ["events", "Events"]] as const;
+const tabs = [["overview", "Overview"], ["funnel", "Funnel"], ["acquisition", "Acquisition"], ["events", "Events"]] as const;
 
 export function GrowthView({ organizationId, projectId, view }: GrowthViewProps) {
   const base = `/${organizationId}/${projectId}/growth`;
@@ -27,8 +28,26 @@ function GrowthDashboard({ organizationId, projectId, view }: GrowthViewProps) {
   });
   return <AsyncState loading={dashboard.isLoading} error={dashboard.error}>{dashboard.data ? <>
     <div className="toolbar"><select aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select><span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">Growth data</StatusTag></div>
-    {view === "overview" ? <div className="stat-grid">{dashboard.data.metrics.map((metric) => <article className="stat-card" key={metric.id}><span className="stat-card-head"><b>{metric.label}</b><small>{dashboard.data.range}</small></span><span className="stat-value"><strong>{metric.value.toLocaleString()}</strong></span><Sparkline points={metric.points} /></article>)}</div> : <Funnel funnel={dashboard.data.funnel} />}
+    {view === "overview" ? <div className="stat-grid">{dashboard.data.metrics.map((metric) => <article className="stat-card" key={metric.id}><span className="stat-card-head"><b>{metric.label}</b><small>{dashboard.data.range}</small></span><span className="stat-value"><strong>{metric.value.toLocaleString()}</strong></span><Sparkline points={metric.points} /></article>)}<article className="stat-card"><span className="stat-card-head"><b>Revenue</b><small>{dashboard.data.range}</small></span><span className="stat-value"><strong>{formatRevenue(dashboard.data.revenue.amountMinor, dashboard.data.revenue.currency)}</strong></span></article></div> : null}
+    {view === "funnel" ? <Funnel funnel={dashboard.data.funnel} /> : null}
+    {view === "acquisition" ? <Acquisition acquisition={dashboard.data.acquisition} /> : null}
   </> : null}</AsyncState>;
+}
+
+function Acquisition({ acquisition }: { acquisition: GrowthDashboardData["acquisition"] }) {
+  const [dimension, setDimension] = useState<keyof typeof acquisition>("channels");
+  const rows = acquisition[dimension];
+  return <>
+    <div className="toolbar"><label>Group by <select value={dimension} onChange={(event) => setDimension(event.target.value as keyof typeof acquisition)}><option value="channels">Channel</option><option value="campaigns">Campaign</option><option value="landingPages">Landing page</option></select></label><span className="toolbar-spacer" /><span>{rows.length} acquisition groups</span></div>
+    <div className="list-surface">{rows.map((row) => <ListRow key={row.label} symbol="↗" title={row.label} description={`${row.visitors.toLocaleString()} visitors · ${row.trials.toLocaleString()} trials`} meta={<><StatusTag tone="positive">{row.paid.toLocaleString()} paid</StatusTag><span>{formatRevenue(row.revenueMinor, row.currency)}</span></>} />)}</div>
+    {!rows.length ? <div className="empty-view"><h2>No attributed visits yet</h2><p>Install the Growth browser client to populate channels, campaigns, and landing pages.</p></div> : null}
+  </>;
+}
+
+function formatRevenue(amountMinor: number, currency: string | null) {
+  if (!amountMinor) return "No revenue recorded";
+  if (!currency) return `${(amountMinor / 100).toLocaleString()} revenue`;
+  return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amountMinor / 100);
 }
 
 function Funnel({ funnel }: { funnel: { visits: number; signupIntents: number; trials: number; paid: number; cancelled: number; trialToPaidRate: number | null } }) {

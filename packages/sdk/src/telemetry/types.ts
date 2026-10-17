@@ -86,6 +86,7 @@ export type TelemetryTrackName =
   | "subscription.trial_started"
   | "subscription.paid_started"
   | "subscription.cancelled"
+  | "subscription.reactivated"
   | "records.parsed"
   | "reports.generated"
   | TelemetryWebsiteEvent
@@ -102,6 +103,13 @@ export interface AnonymousTrackOptions extends EventOptions {
   eventId?: string;
   value?: number;
   attributes?: Record<string, string | number | boolean>;
+}
+
+export interface GrowthLifecycleOptions extends EventOptions {
+  anonymousId?: string;
+  plan?: string;
+  amountMinor?: number;
+  currency?: string;
 }
 
 interface FeatureResultCommon extends EventOptions {
@@ -179,9 +187,10 @@ export interface ServerTelemetryClient extends BaseTelemetryClient<ServerErrorOp
   events: {
     reportGenerated(userId: string, reportId?: string, options?: EventOptions): Promise<DeliveryResult>;
     recordParsed(userId: string, recordId?: string, options?: EventOptions): Promise<DeliveryResult>;
-    trialStarted(userId: string, options?: EventOptions): Promise<DeliveryResult>;
-    paidStarted(userId: string, options?: EventOptions): Promise<DeliveryResult>;
-    subscriptionCancelled(userId: string, options?: EventOptions): Promise<DeliveryResult>;
+    trialStarted(userId: string, options?: GrowthLifecycleOptions): Promise<DeliveryResult>;
+    paidStarted(userId: string, options?: GrowthLifecycleOptions): Promise<DeliveryResult>;
+    subscriptionCancelled(userId: string, options?: GrowthLifecycleOptions): Promise<DeliveryResult>;
+    subscriptionReactivated(userId: string, options?: GrowthLifecycleOptions): Promise<DeliveryResult>;
   };
   /** Returns protected wire events when mode is memory. */
   capturedEvents(): ReadonlyArray<Readonly<Record<string, unknown>>>;

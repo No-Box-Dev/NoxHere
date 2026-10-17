@@ -3538,13 +3538,31 @@ export interface components {
             /** @enum {string} */
             widgetMode?: "development" | "release";
         };
+        GrowthAcquisition: {
+            campaigns: components["schemas"]["GrowthAcquisitionRow"][];
+            channels: components["schemas"]["GrowthAcquisitionRow"][];
+            landingPages: components["schemas"]["GrowthAcquisitionRow"][];
+        };
+        GrowthAcquisitionRow: {
+            currency: string | null;
+            label: string;
+            paid: number;
+            revenueMinor: number;
+            trials: number;
+            visitors: number;
+        };
         GrowthDashboard: {
+            acquisition: components["schemas"]["GrowthAcquisition"];
             dateLabel: string;
             funnel: components["schemas"]["GrowthFunnel"];
             metrics: components["schemas"]["GrowthMetric"][];
             projectId: string;
             /** @enum {string} */
             range: "7d" | "30d" | "90d" | "1y";
+            revenue: {
+                amountMinor: number;
+                currency: string | null;
+            };
         };
         GrowthEvent: {
             environment: string;

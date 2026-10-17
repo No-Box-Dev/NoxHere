@@ -345,14 +345,37 @@ document.components.schemas.GrowthFunnel = {
     cancelled: { type: "number", minimum: 0 }, trialToPaidRate: { type: ["number", "null"], minimum: 0 },
   },
 };
+document.components.schemas.GrowthAcquisitionRow = {
+  type: "object", additionalProperties: false,
+  required: ["label", "visitors", "trials", "paid", "revenueMinor", "currency"],
+  properties: {
+    label: { type: "string" }, visitors: { type: "integer", minimum: 0 },
+    trials: { type: "integer", minimum: 0 }, paid: { type: "integer", minimum: 0 },
+    revenueMinor: { type: "integer", minimum: 0 }, currency: { type: ["string", "null"] },
+  },
+};
+document.components.schemas.GrowthAcquisition = {
+  type: "object", additionalProperties: false,
+  required: ["channels", "campaigns", "landingPages"],
+  properties: {
+    channels: { type: "array", items: { "$ref": "#/components/schemas/GrowthAcquisitionRow" } },
+    campaigns: { type: "array", items: { "$ref": "#/components/schemas/GrowthAcquisitionRow" } },
+    landingPages: { type: "array", items: { "$ref": "#/components/schemas/GrowthAcquisitionRow" } },
+  },
+};
 document.components.schemas.GrowthDashboard = {
   type: "object", additionalProperties: false,
-  required: ["projectId", "range", "dateLabel", "metrics", "funnel"],
+  required: ["projectId", "range", "dateLabel", "metrics", "funnel", "revenue", "acquisition"],
   properties: {
     projectId: { type: "string" }, range: { type: "string", enum: ["7d", "30d", "90d", "1y"] },
     dateLabel: { type: "string" },
     metrics: { type: "array", items: { "$ref": "#/components/schemas/GrowthMetric" } },
     funnel: { "$ref": "#/components/schemas/GrowthFunnel" },
+    revenue: {
+      type: "object", additionalProperties: false, required: ["amountMinor", "currency"],
+      properties: { amountMinor: { type: "integer", minimum: 0 }, currency: { type: ["string", "null"] } },
+    },
+    acquisition: { "$ref": "#/components/schemas/GrowthAcquisition" },
   },
 };
 document.components.schemas.GrowthEvent = {

@@ -18397,7 +18397,9 @@
           "range",
           "dateLabel",
           "metrics",
-          "funnel"
+          "funnel",
+          "revenue",
+          "acquisition"
         ],
         "properties": {
           "projectId": {
@@ -18423,6 +18425,29 @@
           },
           "funnel": {
             "$ref": "#/components/schemas/GrowthFunnel"
+          },
+          "revenue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "amountMinor",
+              "currency"
+            ],
+            "properties": {
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "currency": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "acquisition": {
+            "$ref": "#/components/schemas/GrowthAcquisition"
           }
         }
       },
@@ -18607,6 +18632,74 @@
             "$ref": "#/components/schemas/UsageTrackedEvent"
           }
         ]
+      },
+      "GrowthAcquisitionRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "visitors",
+          "trials",
+          "paid",
+          "revenueMinor",
+          "currency"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "visitors": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "trials": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "paid": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "revenueMinor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "GrowthAcquisition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "channels",
+          "campaigns",
+          "landingPages"
+        ],
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthAcquisitionRow"
+            }
+          },
+          "campaigns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthAcquisitionRow"
+            }
+          },
+          "landingPages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthAcquisitionRow"
+            }
+          }
+        }
       }
     },
     "responses": {

@@ -9,7 +9,8 @@ interface IngestContext {
 const GROWTH_EVENT = /^(website\.|subscription\.)/;
 
 export async function onRequest(context: IngestContext): Promise<Response> {
-  if (context.request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
+  if (context.request.method === "OPTIONS") return ingestTelemetryEvent(context as Parameters<typeof ingestTelemetryEvent>[0]);
+  if (context.request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST, OPTIONS" } });
   const payload = await context.request.clone().json().catch(() => null) as { type?: unknown; name?: unknown } | null;
   if (!payload || payload.type !== "activity.tracked" || typeof payload.name !== "string" || !GROWTH_EVENT.test(payload.name)) {
     return Response.json({ error: "growth_event_required" }, { status: 422 });

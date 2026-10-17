@@ -217,6 +217,165 @@ async function hash(value: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+interface GrowthTouch {
+  channel: string;
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  content: string | null;
+  term: string | null;
+  referrerHost: string | null;
+  landingPath: string | null;
+}
+
+interface StoredGrowthVisitor {
+  visitor_hash: string;
+  first_channel: string;
+  first_source: string | null;
+  first_medium: string | null;
+  first_campaign: string | null;
+  first_referrer_host: string | null;
+  first_landing_path: string | null;
+}
+
+function growthAttribute(attributes: Record<string, string | number | boolean> | undefined, key: string, max = 300): string | null {
+  const value = attributes?.[key];
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const normalized = String(value).trim();
+  return normalized ? normalized.slice(0, max) : null;
+}
+
+export function classifyGrowthChannel(input: { source?: string | null; medium?: string | null; referrerHost?: string | null }): string {
+  const source = input.source?.toLowerCase() ?? "";
+  const medium = input.medium?.toLowerCase() ?? "";
+  const referrer = input.referrerHost?.toLowerCase() ?? "";
+  if (["cpc", "ppc", "paid", "paid_search", "paidsearch", "sem"].includes(medium)) return "Paid search";
+  if (["paid_social", "paidsocial"].includes(medium)) return "Paid social";
+  if (["email", "newsletter"].includes(medium)) return "Email";
+  if (["social", "social_media", "organic_social"].includes(medium)) return "Organic social";
+  if (["affiliate", "partner"].includes(medium)) return "Partner";
+  if (["organic", "search"].includes(medium)
+    || /(^|\.)(google|bing|duckduckgo|yahoo|baidu|yandex)\./.test(referrer)) return "Organic search";
+  if (/facebook|instagram|linkedin|tiktok|twitter|x\.com|reddit|youtube/.test(`${source} ${referrer}`)) return "Organic social";
+  if (source || medium) return "Campaign";
+  if (referrer) return "Referral";
+  return "Direct";
+}
+
+function growthTouch(attributes: Record<string, string | number | boolean> | undefined): GrowthTouch {
+  const source = growthAttribute(attributes, "utm_source", 120);
+  const medium = growthAttribute(attributes, "utm_medium", 120);
+  const referrerHost = growthAttribute(attributes, "referrer_host", 240);
+  return {
+    channel: classifyGrowthChannel({ source, medium, referrerHost }),
+    source,
+    medium,
+    campaign: growthAttribute(attributes, "utm_campaign", 160),
+    content: growthAttribute(attributes, "utm_content", 160),
+    term: growthAttribute(attributes, "utm_term", 160),
+    referrerHost,
+    landingPath: growthAttribute(attributes, "landing_path", 500),
+  };
+}
+
+function visitorTouch(visitor: StoredGrowthVisitor): GrowthTouch {
+  return {
+    channel: visitor.first_channel,
+    source: visitor.first_source,
+    medium: visitor.first_medium,
+    campaign: visitor.first_campaign,
+    content: null,
+    term: null,
+    referrerHost: visitor.first_referrer_host,
+    landingPath: visitor.first_landing_path,
+  };
+}
+
+async function storeGrowthDimensions(
+  env: Env,
+  source: TelemetrySourceRow,
+  event: TelemetryTrackedEvent,
+  eventId: string,
+  subjectHash: string | null,
+  occurredAt: Date,
+): Promise<void> {
+  const attributes = event.attributes;
+  const anonymousId = growthAttribute(attributes, "anonymous_id", 200);
+  const sessionId = growthAttribute(attributes, "session_id", 200);
+  const visitorHash = anonymousId ? await hash(`${source.source_id}\u0000visitor\u0000${anonymousId}`) : null;
+  const sessionHash = sessionId ? await hash(`${source.source_id}\u0000session\u0000${sessionId}`) : null;
+  const explicitTouch = growthTouch(attributes);
+  const hasExplicitTouch = Boolean(explicitTouch.source || explicitTouch.medium || explicitTouch.campaign
+    || explicitTouch.referrerHost || explicitTouch.landingPath);
+
+  if (visitorHash) {
+    await env.NOX_DB.prepare(
+      `INSERT INTO growth_visitors
+         (org_id, source_id, visitor_hash, user_hash, first_seen_at, last_seen_at,
+          first_channel, first_source, first_medium, first_campaign, first_referrer_host, first_landing_path,
+          last_channel, last_source, last_medium, last_campaign, last_referrer_host, last_landing_path)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(source_id, visitor_hash) DO UPDATE SET
+         user_hash = COALESCE(excluded.user_hash, growth_visitors.user_hash),
+         last_seen_at = excluded.last_seen_at,
+         first_channel = CASE WHEN growth_visitors.first_channel = 'Direct' AND excluded.first_channel != 'Direct'
+           THEN excluded.first_channel ELSE growth_visitors.first_channel END,
+         first_source = CASE WHEN growth_visitors.first_channel = 'Direct' AND excluded.first_channel != 'Direct'
+           THEN excluded.first_source ELSE growth_visitors.first_source END,
+         first_medium = CASE WHEN growth_visitors.first_channel = 'Direct' AND excluded.first_channel != 'Direct'
+           THEN excluded.first_medium ELSE growth_visitors.first_medium END,
+         first_campaign = CASE WHEN growth_visitors.first_channel = 'Direct' AND excluded.first_channel != 'Direct'
+           THEN excluded.first_campaign ELSE growth_visitors.first_campaign END,
+         first_referrer_host = CASE WHEN growth_visitors.first_channel = 'Direct' AND excluded.first_channel != 'Direct'
+           THEN excluded.first_referrer_host ELSE growth_visitors.first_referrer_host END,
+         first_landing_path = CASE WHEN growth_visitors.first_channel = 'Direct' AND excluded.first_channel != 'Direct'
+           THEN excluded.first_landing_path ELSE growth_visitors.first_landing_path END,
+         last_channel = CASE WHEN excluded.last_channel = 'Direct' THEN growth_visitors.last_channel ELSE excluded.last_channel END,
+         last_source = CASE WHEN excluded.last_channel = 'Direct' THEN growth_visitors.last_source ELSE excluded.last_source END,
+         last_medium = CASE WHEN excluded.last_channel = 'Direct' THEN growth_visitors.last_medium ELSE excluded.last_medium END,
+         last_campaign = CASE WHEN excluded.last_channel = 'Direct' THEN growth_visitors.last_campaign ELSE excluded.last_campaign END,
+         last_referrer_host = CASE WHEN excluded.last_channel = 'Direct' THEN growth_visitors.last_referrer_host ELSE excluded.last_referrer_host END,
+         last_landing_path = CASE WHEN excluded.last_channel = 'Direct' THEN growth_visitors.last_landing_path ELSE excluded.last_landing_path END`,
+    ).bind(
+      source.org_id, source.source_id, visitorHash, subjectHash, occurredAt.toISOString(), occurredAt.toISOString(),
+      explicitTouch.channel, explicitTouch.source, explicitTouch.medium, explicitTouch.campaign,
+      explicitTouch.referrerHost, explicitTouch.landingPath,
+      explicitTouch.channel, explicitTouch.source, explicitTouch.medium, explicitTouch.campaign,
+      explicitTouch.referrerHost, explicitTouch.landingPath,
+    ).run();
+  }
+
+  const visitor = subjectHash || visitorHash
+    ? await env.NOX_DB.prepare(
+      `SELECT visitor_hash, first_channel, first_source, first_medium, first_campaign,
+              first_referrer_host, first_landing_path
+         FROM growth_visitors
+        WHERE source_id = ? AND (${subjectHash ? "user_hash = ?" : "visitor_hash = ?"})
+        ORDER BY first_seen_at LIMIT 1`,
+    ).bind(source.source_id, subjectHash ?? visitorHash).first<StoredGrowthVisitor>()
+    : null;
+  const attribution = hasExplicitTouch || !visitor ? explicitTouch : visitorTouch(visitor);
+  const amountMinorValue = attributes?.amount_minor;
+  const amountMinor = typeof amountMinorValue === "number" && Number.isSafeInteger(amountMinorValue) && amountMinorValue >= 0
+    ? amountMinorValue : null;
+  const currencyValue = growthAttribute(attributes, "currency", 3)?.toUpperCase() ?? null;
+  const currency = currencyValue && /^[A-Z]{3}$/.test(currencyValue) ? currencyValue : null;
+
+  await env.NOX_DB.prepare(
+    `INSERT OR IGNORE INTO growth_event_dimensions
+       (org_id, source_id, event_id, name, visitor_hash, session_hash, user_hash,
+        channel, source, medium, campaign, content, term, referrer_host, landing_path,
+        plan, amount_minor, currency, occurred_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    source.org_id, source.source_id, eventId, event.name, visitorHash ?? visitor?.visitor_hash ?? null,
+    sessionHash, subjectHash, attribution.channel, attribution.source, attribution.medium,
+    attribution.campaign, attribution.content, attribution.term, attribution.referrerHost,
+    attribution.landingPath, growthAttribute(attributes, "plan", 120), amountMinor, currency,
+    occurredAt.toISOString(),
+  ).run();
+}
+
 async function findSource(env: Env, providedKey: string): Promise<TelemetrySourceRow | null> {
   if (!/^nox_(?:pub|secret)_[a-z0-9_-]{30,}$/i.test(providedKey)) return null;
   const keyHash = await hash(providedKey);
@@ -530,6 +689,9 @@ async function storeTrackedEvent(
     source.org_id, source.source_id, eventId, event.name, event.value, subjectHash, period,
     JSON.stringify(event.attributes ?? {}), occurredAt.toISOString(), new Date().toISOString(),
   ).run();
+  if (source.capability === "growth" && Number(result.meta.changes ?? 0) > 0) {
+    await storeGrowthDimensions(env, source, event, eventId, subjectHash, occurredAt);
+  }
   return { eventId, queued: false, duplicate: Number(result.meta.changes ?? 0) === 0, period };
 }
 

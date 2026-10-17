@@ -118,12 +118,12 @@ function Login() {
     <p>Open your projects, product activity, feedback, and alerts.</p>
     <form onSubmit={requestLink}>
       <label>Email address<input type="email" autoComplete="email" required value={email} onChange={(event) => { setEmail(event.target.value); setSent(false); }} placeholder="you@company.com" /></label>
-      <Button variant="cut" size="lg" disabled={sending || !email.trim()}>{sending ? "Sending…" : "Email me a sign-in link"}</Button>
+      <Button variant="cut" size="lg" data-nox-growth="website.login_clicked" disabled={sending || !email.trim()}>{sending ? "Sending…" : "Email me a sign-in link"}</Button>
       {sent ? <small className="login-success">If this email has access, the link is on its way.</small> : null}
       {error ? <small className="login-error" role="alert">{error}</small> : null}
     </form>
     <div className="login-divider"><span />or<span /></div>
-    <Button variant="secondary" size="lg" type="button" onClick={githubLogin}>Continue with GitHub</Button>
+    <Button variant="secondary" size="lg" type="button" data-nox-growth="website.login_clicked" onClick={githubLogin}>Continue with GitHub</Button>
     <small>Guests use email. Verified GitHub members get their organization access automatically.</small>
   </section></main>;
 }

@@ -7,7 +7,8 @@ interface IngestContext {
 }
 
 export async function onRequest(context: IngestContext): Promise<Response> {
-  if (context.request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
+  if (context.request.method === "OPTIONS") return ingestTelemetryEvent(context as Parameters<typeof ingestTelemetryEvent>[0]);
+  if (context.request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST, OPTIONS" } });
   const payload = await context.request.clone().json().catch(() => null) as { type?: unknown; name?: unknown } | null;
   const accepted = payload?.type === "user.registered"
     || payload?.type === "user.active"

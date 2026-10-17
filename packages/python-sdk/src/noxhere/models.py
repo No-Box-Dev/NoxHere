@@ -193,12 +193,27 @@ class FeedbackSitePatch(TypedDict, total=False):
     slackConnectionId: NotRequired[Union[str, None]]
     widgetMode: NotRequired[Literal['development', 'release']]
 
+class GrowthAcquisition(TypedDict, total=False):
+    campaigns: Required[list["GrowthAcquisitionRow"]]
+    channels: Required[list["GrowthAcquisitionRow"]]
+    landingPages: Required[list["GrowthAcquisitionRow"]]
+
+class GrowthAcquisitionRow(TypedDict, total=False):
+    currency: Required[Union[str, None]]
+    label: Required[str]
+    paid: Required[int]
+    revenueMinor: Required[int]
+    trials: Required[int]
+    visitors: Required[int]
+
 class GrowthDashboard(TypedDict, total=False):
+    acquisition: Required["GrowthAcquisition"]
     dateLabel: Required[str]
     funnel: Required["GrowthFunnel"]
     metrics: Required[list["GrowthMetric"]]
     projectId: Required[str]
     range: Required[Literal['7d', '30d', '90d', '1y']]
+    revenue: Required["GrowthDashboardRevenue"]
 
 class GrowthEvent(TypedDict, total=False):
     environment: Required[str]
@@ -1257,6 +1272,10 @@ class FeedbackResolutionTemplateAppearance(TypedDict, total=False):
     mutedColor: Required[str]
     surfaceColor: Required[str]
     textColor: Required[str]
+
+class GrowthDashboardRevenue(TypedDict, total=False):
+    amountMinor: Required[int]
+    currency: Required[Union[str, None]]
 
 class NoxHereConfigPatchEnabledServices(TypedDict, total=False):
     activity: NotRequired[bool]
