@@ -89,6 +89,20 @@ beforeEach(() => {
     ]);
     if (url === "/api/v1/config/settings" && init?.method === "PUT") return json({ ok: true });
     if (url === "/api/v1/config/settings") return json({ excludedMembers: ["memenoboxdev"] });
+    if (url === "/api/v1/engineer-stats") return json({
+      openPRs: { JasperNoBoxDev: 2, memenoboxdev: 1 }, openNonDraftPRs: { JasperNoBoxDev: 2, memenoboxdev: 1 },
+      reviewing: { JasperNoBoxDev: 1 }, assignedIssues: { JasperNoBoxDev: 3 }, approvalsGiven: { JasperNoBoxDev: 4 },
+      mergesOfOthers: { JasperNoBoxDev: 1 }, lifetimePRs: { JasperNoBoxDev: 20 }, prsLast4Weeks: { JasperNoBoxDev: 5 },
+      lifetimeCommits: { JasperNoBoxDev: 80 }, commitsLast4Weeks: { JasperNoBoxDev: 12 }, issuesClosed: { JasperNoBoxDev: 6 },
+      coverage: { approvalsGivenSince: "2026-09-01T00:00:00Z", mergedByKnown: 10, mergedPRs: 10, issuesClosedByKnown: 8, closedIssues: 8 },
+      freshness: { repositories: 3, pullRequestsAt: "2026-10-17T00:00:00Z", issuesAt: "2026-10-17T00:00:00Z", commitsAt: "2026-10-17T00:00:00Z", eventsAt: "2026-10-17T00:00:00Z" },
+    });
+    if (url.startsWith("/api/v1/engineer-activity?")) {
+      const query = new URL(`https://app.noxhere.com${url}`).searchParams;
+      const login = query.get("login") ?? "unknown";
+      const month = query.get("month") ?? "2026-10";
+      return json({ login, month, firstMonth: "2026-01", prsOpened: { [`${month}-01`]: 2 }, prsMerged: {}, prsReviewed: {}, commits: { [`${month}-01`]: 3 }, monthlyOpened: { "2026-09": 4, "2026-10": 5 }, monthlyMerged: {}, monthlyReviewed: {}, monthlyCommits: { "2026-09": 9, "2026-10": 12 } });
+    }
     if (url === "/api/v1/activity/current-summary") return json({
       prs: [],
       issues: [],
@@ -843,6 +857,31 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByText("0 open items")).toBeInTheDocument();
     expect(screen.queryByText("memenoboxdev")).not.toBeInTheDocument();
     expect(screen.queryByText("repo-guest")).not.toBeInTheDocument();
+  });
+
+  it("shows the native team Stats experience as the Activity dashboard", async () => {
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/dashboard");
+
+    expect(await screen.findByRole("heading", { name: "Team pulse" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveClass("active");
+    expect(screen.getByLabelText("Open PRs, 2, ready for review")).toBeInTheDocument();
+    expect(screen.getByLabelText("Contributors, 1, verified members")).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: "Activity chart with 30 periods" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Contribution distribution" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Developer contribution" })).toBeInTheDocument();
+    expect(screen.getByText("3", { selector: ".team-data-coverage b" })).toBeInTheDocument();
+    expect(screen.queryByText("@memenoboxdev")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Person" }));
+    expect(screen.getByRole("combobox", { name: "Developer" })).toHaveValue("JasperNoBoxDev");
+    await user.click(screen.getByRole("button", { name: "Month" }));
+    expect(screen.getByRole("img", { name: "Activity chart with 12 periods" })).toBeInTheDocument();
+  });
+
+  it("redirects the former Activity productivity URL to Dashboard", async () => {
+    renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/proj_no-box-dev_playnist/activity/productivity");
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/no-box-dev/proj_no-box-dev_playnist/activity/dashboard"));
   });
 
   it("prefetches Activity data before a user selects another tab", async () => {

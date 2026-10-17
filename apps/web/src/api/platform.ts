@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { bootstrapSchema, growthDashboardSchema, growthEventSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, organizationMembersSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
-import type { Bootstrap, GrowthDashboard, GrowthEvent, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, OrganizationMember, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
+import { bootstrapSchema, engineerActivitySchema, growthDashboardSchema, growthEventSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, organizationMembersSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
+import type { Bootstrap, EngineerActivity, GrowthDashboard, GrowthEvent, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, OrganizationMember, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
@@ -29,6 +29,7 @@ export interface PlatformApi {
   setUsageActions(organizationId: string, projectId: string, actions: Array<Pick<TelemetryAction, "key" | "label">>, windowDays: 7 | 14 | 30): Promise<TelemetryActions>;
   usageEvents(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryStatEvent[]>;
   engineerStats(organizationId: string, projectId: string, signal?: AbortSignal): Promise<EngineerStats>;
+  engineerActivity(organizationId: string, projectId: string, login: string, month: string, signal?: AbortSignal): Promise<EngineerActivity>;
   issueIncidents(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlert[]>;
   issueAlertRules(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlertRule[]>;
   retrieve(organizationId: string, projectId: string, query: string, signal?: AbortSignal): Promise<RetrievalResult[]>;
@@ -132,6 +133,7 @@ export const platformApi: PlatformApi = {
   setUsageActions: (organizationId, projectId, actions, windowDays) => putJson(`/api/v1/projects/${encodeURIComponent(projectId)}/usage/actions`, { actions, windowDays }, telemetryActionsSchema, { organizationId, projectId }),
   usageEvents: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/usage/events`, telemetryStatEventSchema.array(), signal, { organizationId, projectId }),
   engineerStats: (organizationId, projectId, signal) => getJson("/api/v1/engineer-stats", engineerStatsSchema, signal, { organizationId, projectId }),
+  engineerActivity: (organizationId, projectId, login, month, signal) => getJson(`/api/v1/engineer-activity?login=${encodeURIComponent(login)}&month=${encodeURIComponent(month)}`, engineerActivitySchema, signal, { organizationId, projectId }),
   issueIncidents: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/issues/alerts`, telemetryAlertSchema.array(), signal, { organizationId, projectId }),
   issueAlertRules: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/issues/alert-rules`, telemetryAlertRuleSchema.array(), signal, { organizationId, projectId }),
   retrieve: (organizationId, projectId, query, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/retrieval?q=${encodeURIComponent(query)}`, retrievalResultSchema.array(), signal, { organizationId, projectId }),
