@@ -247,10 +247,11 @@ const CSS = `
 }
 
 .feedback-brand img {
-  width: 24px;
+  width: auto;
   height: 24px;
+  max-width: 72px;
   object-fit: contain;
-  border-radius: 5px;
+  border-radius: 0;
 }
 
 /* Form */
