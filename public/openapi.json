@@ -3,7 +3,7 @@
   "info": {
     "title": "NoxHere API",
     "version": "1.0.0",
-    "description": "One API for NoxHere workspace, activity, planning, feedback, statistics, and incident capabilities.",
+    "description": "One API for NoxHere workspace, planning, activity, feedback, growth, product usage, and operational issues.",
     "license": {
       "name": "Proprietary",
       "identifier": "LicenseRef-Proprietary"
@@ -12050,6 +12050,1862 @@
         "x-change-safety": "safe_read",
         "x-project-scope": "optional"
       }
+    },
+    "/api/v1/growth/events": {
+      "post": {
+        "operationId": "ingestGrowthEvent",
+        "summary": "Ingest a Growth event",
+        "security": [
+          {
+            "telemetryKey": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrowthEventInput"
+              },
+              "examples": {
+                "signupIntent": {
+                  "summary": "Anonymous signup intent",
+                  "value": {
+                    "version": 1,
+                    "type": "activity.tracked",
+                    "eventId": "8f7ec5e2-e8d3-4e08-a185-7fd4966e9529",
+                    "occurredAt": "2026-10-09T08:00:00.000Z",
+                    "environment": "production",
+                    "name": "website.signup_clicked",
+                    "value": 1
+                  }
+                },
+                "paidConversion": {
+                  "summary": "Paid subscription conversion",
+                  "value": {
+                    "version": 1,
+                    "type": "activity.tracked",
+                    "eventId": "21f7b6ad-3648-4515-b086-b7a2a69de1bf",
+                    "occurredAt": "2026-10-09T08:00:00.000Z",
+                    "environment": "production",
+                    "name": "subscription.paid_started",
+                    "userId": "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40",
+                    "value": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Event accepted and deduplicated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryIngestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "description": "Ingest a Growth event. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "ingest_key",
+        "x-change-safety": "write_not_safe_to_retry",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/telemetrySourceContext"
+          }
+        ],
+        "x-automation-scope": "growth:ingest"
+      }
+    },
+    "/api/v1/usage/events": {
+      "post": {
+        "operationId": "ingestUsageEvent",
+        "summary": "Ingest a Usage event",
+        "security": [
+          {
+            "telemetryKey": []
+          },
+          {
+            "noxApiToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsageEventInput"
+              },
+              "examples": {
+                "activeUser": {
+                  "summary": "Daily active user",
+                  "value": {
+                    "version": 1,
+                    "type": "user.active",
+                    "occurredAt": "2026-10-09T08:00:00.000Z",
+                    "environment": "production",
+                    "userId": "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40"
+                  }
+                },
+                "engagementAction": {
+                  "summary": "Custom product action",
+                  "value": {
+                    "version": 1,
+                    "type": "activity.tracked",
+                    "eventId": "21f7b6ad-3648-4515-b086-b7a2a69de1bf",
+                    "occurredAt": "2026-10-09T08:00:00.000Z",
+                    "environment": "production",
+                    "name": "custom.comments.written",
+                    "userId": "h1_primary_6fdbBuPK_-WNdWq5PMZJ5I9UF9NYsZ_YYRn2WZxPj40",
+                    "value": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Event accepted and deduplicated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryIngestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "description": "Ingest a Usage event. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "ingest_key",
+        "x-change-safety": "write_not_safe_to_retry",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/telemetrySourceContext"
+          }
+        ],
+        "x-automation-scope": "usage:ingest"
+      }
+    },
+    "/api/v1/growth/sources": {
+      "get": {
+        "operationId": "listGrowthSources",
+        "summary": "List Growth sources",
+        "responses": {
+          "200": {
+            "description": "Sources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "List Growth sources. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "createGrowthSource",
+        "summary": "Create a Growth source",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetrySourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Source created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Create a Growth source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/growth/sources/{sourceId}": {
+      "put": {
+        "operationId": "updateGrowthSource",
+        "summary": "Update a Growth source",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetrySourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Source updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Update a Growth source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "delete": {
+        "operationId": "deleteGrowthSource",
+        "summary": "Delete a Growth source",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "destructive",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Delete a Growth source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/growth/sources/{sourceId}/keys": {
+      "get": {
+        "operationId": "listGrowthKeys",
+        "summary": "List Growth ingest keys",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key lifecycle metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "List Growth ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "createGrowthKey",
+        "summary": "Create a Growth ingest key",
+        "description": "Create a Growth ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "kind"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "publishable",
+                      "secret"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Key created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/growth/sources/{sourceId}/keys/{keyId}": {
+      "delete": {
+        "operationId": "revokeGrowthKey",
+        "summary": "Revoke a Growth ingest key",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          },
+          {
+            "$ref": "#/components/parameters/keyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "destructive",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Revoke a Growth ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/growth/sources/{sourceId}/keys/{keyId}/rotate": {
+      "post": {
+        "operationId": "rotateGrowthKey",
+        "summary": "Rotate a Growth ingest key",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          },
+          {
+            "$ref": "#/components/parameters/keyId"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Replacement key shown once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Rotate a Growth ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/usage/sources": {
+      "get": {
+        "operationId": "listUsageSources",
+        "summary": "List Usage sources",
+        "responses": {
+          "200": {
+            "description": "Sources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "List Usage sources. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "createUsageSource",
+        "summary": "Create a Usage source",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetrySourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Source created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Create a Usage source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/usage/sources/{sourceId}": {
+      "put": {
+        "operationId": "updateUsageSource",
+        "summary": "Update a Usage source",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetrySourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Source updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Update a Usage source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "delete": {
+        "operationId": "deleteUsageSource",
+        "summary": "Delete a Usage source",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "destructive",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Delete a Usage source. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/usage/sources/{sourceId}/keys": {
+      "get": {
+        "operationId": "listUsageKeys",
+        "summary": "List Usage ingest keys",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key lifecycle metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "List Usage ingest keys. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "post": {
+        "operationId": "createUsageKey",
+        "summary": "Create a Usage ingest key",
+        "description": "Create a Usage ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "kind"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "publishable",
+                      "secret"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Key created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/usage/sources/{sourceId}/keys/{keyId}": {
+      "delete": {
+        "operationId": "revokeUsageKey",
+        "summary": "Revoke a Usage ingest key",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          },
+          {
+            "$ref": "#/components/parameters/keyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "destructive",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Revoke a Usage ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/usage/sources/{sourceId}/keys/{keyId}/rotate": {
+      "post": {
+        "operationId": "rotateUsageKey",
+        "summary": "Rotate a Usage ingest key",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          },
+          {
+            "$ref": "#/components/parameters/keyId"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Replacement key shown once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Rotate a Usage ingest key. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/usage/sources/{sourceId}/cards": {
+      "get": {
+        "operationId": "listUsageCards",
+        "summary": "List Usage metric cards",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured report cards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "List Usage metric cards. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      },
+      "put": {
+        "operationId": "updateUsageCards",
+        "summary": "Update Usage metric cards",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/sourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetryCardSelection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cards updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "write_not_safe_to_retry",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "description": "Update Usage metric cards. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/usage/dashboard": {
+      "get": {
+        "operationId": "getUsageProjectDashboard",
+        "summary": "Read the project Usage dashboard",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsDashboard"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "description": "Read the project Usage dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/usage/actions": {
+      "get": {
+        "operationId": "getUsageProjectActions",
+        "summary": "Read project Usage actions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryActions"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "description": "Read project Usage actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      },
+      "put": {
+        "operationId": "updateUsageProjectActions",
+        "summary": "Update project Usage actions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRecord"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryActions"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "description": "Update project Usage actions. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": [],
+            "csrfProof": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/usage/events": {
+      "get": {
+        "operationId": "getUsageProjectEvents",
+        "summary": "Read project Usage events",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatEventList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Usage"
+        ],
+        "description": "Read project Usage events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/issues/alerts": {
+      "get": {
+        "operationId": "getProjectIssueIncidents",
+        "summary": "Read project incidents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentAlertList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Issues"
+        ],
+        "description": "Read project incidents. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/issues/alert-rules": {
+      "get": {
+        "operationId": "getProjectIssueAlertRules",
+        "summary": "Read project alert rules",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentAlertRuleList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Issues"
+        ],
+        "description": "Read project alert rules. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/growth/dashboard": {
+      "get": {
+        "operationId": "getGrowthProjectDashboard",
+        "summary": "Read the project Growth dashboard",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrowthDashboard"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "description": "Read the project Growth dashboard. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
+    },
+    "/api/v1/projects/{projectId}/growth/events": {
+      "get": {
+        "operationId": "getGrowthProjectEvents",
+        "summary": "Read project Growth events",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          },
+          {
+            "$ref": "#/components/parameters/projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capability response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrowthEventList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "tags": [
+          "Growth"
+        ],
+        "description": "Read project Growth events. This canonical NoxHere operation uses the authentication, project scope, and retry-safety metadata shown below.",
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "x-project-scope": "optional"
+      }
     }
   },
   "components": {
@@ -14096,6 +15952,55 @@
               "include",
               "exclude"
             ]
+          },
+          "branding": {
+            "$ref": "#/components/schemas/ProjectBranding"
+          }
+        }
+      },
+      "ProjectBranding": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "logoUrl",
+          "accentColor",
+          "buttonText",
+          "fontPreset"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri",
+            "pattern": "^https://",
+            "maxLength": 2048
+          },
+          "accentColor": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "buttonText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "fontPreset": {
+            "type": "string",
+            "enum": [
+              "system",
+              "playnist",
+              "humanist",
+              "editorial",
+              "mono"
+            ]
           }
         }
       },
@@ -15096,7 +17001,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(services:read|developer-feedback:write|slack:(send|read|write)|planning:(read|write)|activity:(read|write)|feedback:(submit|read|write)|telemetry:(ingest|read|write))$"
+              "pattern": "^(services:read|developer-feedback:write|slack:(send|read|write)|planning:(read|write)|activity:(read|write)|feedback:(submit|read|write)|growth:(ingest|read|write)|usage:(ingest|read|write)|issues:(read|write)|telemetry:(ingest|read|write))$"
             }
           },
           "expiresInDays": {
@@ -16415,6 +18320,293 @@
             ]
           }
         }
+      },
+      "GrowthMetric": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "value",
+          "points"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "GrowthFunnel": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "visits",
+          "signupIntents",
+          "trials",
+          "paid",
+          "cancelled",
+          "trialToPaidRate"
+        ],
+        "properties": {
+          "visits": {
+            "type": "number",
+            "minimum": 0
+          },
+          "signupIntents": {
+            "type": "number",
+            "minimum": 0
+          },
+          "trials": {
+            "type": "number",
+            "minimum": 0
+          },
+          "paid": {
+            "type": "number",
+            "minimum": 0
+          },
+          "cancelled": {
+            "type": "number",
+            "minimum": 0
+          },
+          "trialToPaidRate": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        }
+      },
+      "GrowthDashboard": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "projectId",
+          "range",
+          "dateLabel",
+          "metrics",
+          "funnel"
+        ],
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "range": {
+            "type": "string",
+            "enum": [
+              "7d",
+              "30d",
+              "90d",
+              "1y"
+            ]
+          },
+          "dateLabel": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthMetric"
+            }
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/GrowthFunnel"
+          }
+        }
+      },
+      "GrowthEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "value",
+          "subject",
+          "environment",
+          "occurredAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "environment": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GrowthEventList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GrowthEvent"
+        }
+      },
+      "GrowthEventInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "eventId",
+          "name"
+        ],
+        "properties": {
+          "version": {
+            "const": 1,
+            "default": 1
+          },
+          "type": {
+            "const": "activity.tracked"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "environment": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^(website|subscription)\\.[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){0,4}$"
+          },
+          "value": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1000000000,
+            "default": 1
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "Required for trusted non-website events and forbidden for public browser events."
+          },
+          "attributes": {
+            "type": "object",
+            "maxProperties": 96,
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        "description": "Acquisition or subscription event accepted by Growth."
+      },
+      "UsageTrackedEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "eventId",
+          "name"
+        ],
+        "properties": {
+          "version": {
+            "const": 1,
+            "default": 1
+          },
+          "type": {
+            "const": "activity.tracked"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "environment": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^custom\\.[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){0,4}$"
+          },
+          "value": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1000000000,
+            "default": 1
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^h1_[a-z0-9-]{1,32}_[A-Za-z0-9_-]{43}$",
+            "description": "Required for trusted non-website events and forbidden for public browser events."
+          },
+          "attributes": {
+            "type": "object",
+            "maxProperties": 96,
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        "description": "Custom product-engagement event accepted by Usage."
+      },
+      "UsageEventInput": {
+        "description": "User lifecycle or product-engagement event accepted by Usage.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TelemetryUserEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TelemetryActivityEvent"
+          },
+          {
+            "$ref": "#/components/schemas/UsageTrackedEvent"
+          }
+        ]
       }
     },
     "responses": {
@@ -16501,12 +18693,24 @@
       "description": "Sites, website feedback capture, and screenshots."
     },
     {
+      "name": "Growth",
+      "description": "Acquisition, signup intent, trials, paid conversion, cancellation, and growth-event sources."
+    },
+    {
+      "name": "Usage",
+      "description": "Users, product adoption, engagement actions, and usage-event sources."
+    },
+    {
+      "name": "Issues",
+      "description": "Repository issues, runtime incidents, alert rules, and incident routing."
+    },
+    {
       "name": "Stats",
-      "description": "Telemetry sources, ingest keys, activity events, product metrics, and dashboards."
+      "description": "Legacy compatibility routes superseded by Growth and Usage."
     },
     {
       "name": "Incidents",
-      "description": "Feature health, error groups, alerts, and GitHub incident routing."
+      "description": "Legacy compatibility routes superseded by Issues."
     }
   ]
 }

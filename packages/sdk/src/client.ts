@@ -137,6 +137,9 @@ export interface NoxHereClient {
   readonly activity: ResourceClient<"activity">;
   readonly planning: ResourceClient<"planning">;
   readonly feedback: ResourceClient<"feedback">;
+  readonly growth: ResourceClient<"growth">;
+  readonly usage: ResourceClient<"usage">;
+  readonly issues: ResourceClient<"issues">;
   readonly stats: ResourceClient<"stats">;
   readonly incidents: ResourceClient<"incidents">;
   request<K extends OperationId>(operationId: K, ...args: OperationArguments<K>): Promise<OperationOutput<K>>;
@@ -310,7 +313,7 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
 
   const operations: Record<string, (input?: RuntimeOperationInput) => Promise<unknown>> = {};
   const resources: Record<ResourceNamespace, Record<string, (input?: RuntimeOperationInput) => Promise<unknown>>> = {
-    workspace: {}, activity: {}, planning: {}, feedback: {}, stats: {}, incidents: {},
+    workspace: {}, activity: {}, planning: {}, feedback: {}, growth: {}, usage: {}, issues: {}, stats: {}, incidents: {},
   };
   for (const definition of operationDefinitions) {
     const operation = (input?: RuntimeOperationInput) => (request as (id: OperationId, input?: RuntimeOperationInput) => Promise<unknown>)(definition.id, input);

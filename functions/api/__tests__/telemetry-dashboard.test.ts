@@ -57,4 +57,36 @@ describe("Telemetry project dashboard", () => {
       }),
     ]));
   });
+
+  it("keeps subscription conversion metrics out of the Usage dashboard", async () => {
+    const queries: string[] = [];
+    const db = {
+      prepare(sql: string) {
+        queries.push(sql);
+        const statement = {
+          bind() { return statement; },
+          async first() { return null; },
+          async all() {
+            if (sql.includes("WITH RECURSIVE periods")) return { results: [] };
+            return { results: [
+              { metric_key: "users.active.monthly", label: "Monthly active", unit: "count", period: "2026-10-03", value: 20 },
+              { metric_key: "subscriptions.paid.new", label: "Paid conversions", unit: "count", period: "2026-10-03", value: 4 },
+            ] };
+          },
+        };
+        return statement;
+      },
+    };
+
+    const response = await onRequestGet({
+      env: { DB: db },
+      request: new Request("https://app.noxhere.com/api/v1/projects/playnist/usage/dashboard?range=30d"),
+      params: { id: "playnist" },
+      data: { orgId: 7, projectId: "playnist" },
+    } as never);
+    const body = await response.json() as { stats: Array<{ id: string }> };
+
+    expect(queries.filter((sql) => sql.includes("telemetry_sources")).every((sql) => sql.includes("capability = 'usage'"))).toBe(true);
+    expect(body.stats.map((stat) => stat.id)).toEqual(["users.active.monthly"]);
+  });
 });

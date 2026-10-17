@@ -104,6 +104,34 @@ export async function onRequestPut(context) {
     if (!body.releaseNotesPrompt.trim()) delete body.releaseNotesPrompt;
   }
 
+  if (key === "settings" && body && typeof body === "object" && body.branding !== undefined) {
+    const branding = body.branding;
+    const validFontPresets = new Set(["system", "playnist", "humanist", "editorial", "mono"]);
+    if (!branding || typeof branding !== "object" || Array.isArray(branding)
+        || typeof branding.name !== "string" || !branding.name.trim() || branding.name.trim().length > 120
+        || (branding.logoUrl !== null && (typeof branding.logoUrl !== "string" || branding.logoUrl.length > 2048))
+        || typeof branding.accentColor !== "string" || !/^#[0-9a-fA-F]{6}$/.test(branding.accentColor)
+        || typeof branding.buttonText !== "string" || !branding.buttonText.trim() || branding.buttonText.trim().length > 40
+        || !validFontPresets.has(branding.fontPreset)) {
+      return errorResponse("Branding must include a name, valid accent color, button text, font preset, and optional logo URL.", 422);
+    }
+    if (branding.logoUrl !== null) {
+      try {
+        const logo = new URL(branding.logoUrl);
+        if (logo.protocol !== "https:") throw new Error("Logo URLs must use HTTPS");
+      } catch {
+        return errorResponse("Branding logo URL must be a valid HTTPS URL.", 422);
+      }
+    }
+    body.branding = {
+      name: branding.name.trim(),
+      logoUrl: branding.logoUrl?.trim() || null,
+      accentColor: branding.accentColor.toUpperCase(),
+      buttonText: branding.buttonText.trim(),
+      fontPreset: branding.fontPreset,
+    };
+  }
+
   if (key === "settings" && body && typeof body === "object" && body.activityDailySummary !== undefined) {
     const summary = body.activityDailySummary;
     if (!summary || typeof summary !== "object" || Array.isArray(summary)) {

@@ -6,6 +6,14 @@ interface Ctx {
   env: NoxDatabaseEnv;
   data: { orgId: number; projectId?: string | null; userLogin: string; isAdmin: boolean };
   params: { id: string; keyId: string };
+  request: Request;
+}
+
+function requestedCapability(request: Request): "growth" | "usage" | null {
+  const pathname = new URL(request.url).pathname;
+  if (pathname.startsWith("/api/v1/growth/")) return "growth";
+  if (pathname.startsWith("/api/v1/usage/")) return "usage";
+  return null;
 }
 
 export async function onRequestPost(context: Ctx): Promise<Response> {
@@ -13,14 +21,15 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
+  const capability = requestedCapability(context.request);
   const current = await db.prepare(
     `SELECT key.name, key.kind FROM telemetry_source_keys key
       JOIN telemetry_sources source ON source.id = key.source_id
      WHERE key.id = ? AND key.source_id = ? AND key.org_id = ? AND key.revoked_at IS NULL
-       ${projectId ? "AND source.project_id = ?" : ""}`,
+       ${projectId ? "AND source.project_id = ?" : ""}${capability ? " AND source.capability = ?" : ""}`,
   ).bind(...(projectId
-    ? [context.params.keyId, context.params.id, orgId, projectId]
-    : [context.params.keyId, context.params.id, orgId])).first<{ name: string; kind: "publishable" | "secret" }>();
+    ? [context.params.keyId, context.params.id, orgId, projectId, ...(capability ? [capability] : [])]
+    : [context.params.keyId, context.params.id, orgId, ...(capability ? [capability] : [])])).first<{ name: string; kind: "publishable" | "secret" }>();
   if (!current) return errorResponse("Ingest key not found", 404);
 
   const value = createTelemetryKey(current.kind);

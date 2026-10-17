@@ -6,6 +6,7 @@ interface TelemetryServiceBinding extends Fetcher {
       environment: "production" | "staging" | "test";
       tokenId: string;
       sourceId: string | null;
+      capability?: "growth" | "usage";
     };
     body: string;
     contentType: string;
@@ -72,6 +73,7 @@ export async function onRequest(context: TelemetryIngestContext): Promise<Respon
           environment: auth.tokenEnvironment,
           tokenId: auth.id,
           sourceId: context.request.headers.get("X-Nox-Source-ID")?.trim() || null,
+          capability: context.request.headers.get("X-Nox-Capability") === "growth" ? "growth" : context.request.headers.get("X-Nox-Capability") === "usage" ? "usage" : undefined,
         },
         body,
         contentType: context.request.headers.get("Content-Type") ?? "",

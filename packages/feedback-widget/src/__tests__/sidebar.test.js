@@ -56,6 +56,19 @@ describe('escapeHtml', () => {
   });
 });
 
+describe('central branding', () => {
+  it('renders the configured product identity without allowing markup injection', () => {
+    const html = createSidebarHTML({
+      blocks: [{ id: 'description', type: 'description' }],
+      metadata: {}, onSubmit: () => {},
+      branding: { name: 'Playnist <script>', logoUrl: 'https://playnist.com/logo.svg' },
+    });
+    expect(html).toContain('Playnist &lt;script&gt;');
+    expect(html).toContain('https://playnist.com/logo.svg');
+    expect(html).not.toContain('Playnist <script>');
+  });
+});
+
 describe('validateFormData', () => {
   const ok = { title: 'Bug', description: 'Steps', reporter: 'jasper' };
 

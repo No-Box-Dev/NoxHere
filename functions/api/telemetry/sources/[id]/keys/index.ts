@@ -10,14 +10,22 @@ interface Ctx {
   request: Request;
 }
 
+function requestedCapability(request: Request): "growth" | "usage" | null {
+  const pathname = new URL(request.url).pathname;
+  if (pathname.startsWith("/api/v1/growth/")) return "growth";
+  if (pathname.startsWith("/api/v1/usage/")) return "usage";
+  return null;
+}
+
 export async function onRequestGet(context: Ctx): Promise<Response> {
   const { orgId, projectId, isAdmin } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
+  const capability = requestedCapability(context.request);
   const source = await db.prepare(
-    `SELECT id FROM telemetry_sources WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""}`,
-  ).bind(...(projectId ? [context.params.id, orgId, projectId] : [context.params.id, orgId])).first();
+    `SELECT id FROM telemetry_sources WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""}${capability ? " AND capability = ?" : ""}`,
+  ).bind(...(projectId ? [context.params.id, orgId, projectId, ...(capability ? [capability] : [])] : [context.params.id, orgId, ...(capability ? [capability] : [])])).first();
   if (!source) return errorResponse("Telemetry source not found", 404);
   const [keys, usage, audit] = await Promise.all([
     db.prepare(
@@ -48,6 +56,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
+  const capability = requestedCapability(context.request);
   let raw: unknown;
   try { raw = await context.request.json(); }
   catch { return errorResponse("Invalid JSON body", 400); }
@@ -56,8 +65,8 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
 
   const source = await db.prepare(
     `SELECT id FROM telemetry_sources
-      WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""}`,
-  ).bind(...(projectId ? [context.params.id, orgId, projectId] : [context.params.id, orgId])).first<{ id: string }>();
+      WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""}${capability ? " AND capability = ?" : ""}`,
+  ).bind(...(projectId ? [context.params.id, orgId, projectId, ...(capability ? [capability] : [])] : [context.params.id, orgId, ...(capability ? [capability] : [])])).first<{ id: string }>();
   if (!source) return errorResponse("Telemetry source not found", 404);
 
   const value = createTelemetryKey(parsed.data.kind);

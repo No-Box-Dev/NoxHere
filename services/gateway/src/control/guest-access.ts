@@ -1,4 +1,4 @@
-export const GUEST_SERVICES = ["planning", "activity", "feedback", "telemetry"] as const;
+export const GUEST_SERVICES = ["planning", "activity", "feedback", "growth", "usage", "issues", "telemetry"] as const;
 export type GuestService = typeof GUEST_SERVICES[number];
 export type GuestScopeType = "organization" | "project" | "tool";
 
@@ -53,7 +53,11 @@ export function guestCanAccess(
 ): boolean {
   if (access.organizationWide) return true;
   const services = access.projects[projectId];
-  return services === null || Boolean(services?.includes(service as GuestService));
+  if (services === null) return true;
+  if (services?.includes(service as GuestService)) return true;
+  // Existing telemetry grants predate the product split and remain an umbrella
+  // over the three replacement capabilities until an administrator narrows them.
+  return Boolean(services?.includes("telemetry") && ["growth", "usage", "issues"].includes(service));
 }
 
 export function isGuestService(value: unknown): value is GuestService {

@@ -116,8 +116,6 @@ function WidgetSiteCard({ site, scope, projects, isAdmin }: { site: WidgetSite; 
 }
 
 function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pending: boolean; error: unknown; onSave: (body: unknown) => void }) {
-  const [buttonText, setButtonText] = useState(site.buttonText || "Report issue");
-  const [buttonColor, setButtonColor] = useState(site.buttonColor || "#FE795D");
   const [widgetMode, setWidgetMode] = useState(site.widgetMode || "development");
   const [autoErrorLogging, setAutoErrorLogging] = useState(site.autoErrorLogging === true);
   const [dailySummaryEnabled, setDailySummaryEnabled] = useState(site.dailySummaryEnabled !== false);
@@ -127,10 +125,9 @@ function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pend
     && new Set(environments.map((environment) => environment.name.trim().toLowerCase())).size === environments.length;
   return <details className="widget-editor">
     <summary>Behavior and allowed environments <span>⌄</span></summary>
-    <form onSubmit={(event) => { event.preventDefault(); onSave({ buttonText, buttonColor, widgetMode, autoErrorLogging, dailySummaryEnabled, environments, blocks }); }}>
+    <form onSubmit={(event) => { event.preventDefault(); onSave({ widgetMode, autoErrorLogging, dailySummaryEnabled, environments, blocks }); }}>
+      <p className="widget-warning">Button text and accent color now come from Settings → Branding.</p>
       <div className="widget-fields">
-        <label>Button text<input value={buttonText} required maxLength={40} onChange={(event) => setButtonText(event.target.value)} /></label>
-        <label>Button color<input type="color" value={buttonColor} onChange={(event) => setButtonColor(event.target.value)} /></label>
         <label>Reporter experience<select value={widgetMode} onChange={(event) => setWidgetMode(event.target.value as "development" | "release")}><option value="development">Development</option><option value="release">Release</option></select></label>
         <label className="widget-check"><input type="checkbox" checked={autoErrorLogging} onChange={(event) => setAutoErrorLogging(event.target.checked)} /> Automatically report browser errors</label>
         <label className="widget-check"><input type="checkbox" checked={dailySummaryEnabled} onChange={(event) => setDailySummaryEnabled(event.target.checked)} /> Send daily Slack summary</label>

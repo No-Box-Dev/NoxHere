@@ -154,6 +154,31 @@ describe("PUT /api/config/settings — Activity daily summary", () => {
   });
 });
 
+describe("PUT /api/config/settings — branding", () => {
+  const branding = {
+    name: " Playnist ", logoUrl: "https://playnist.com/logo.svg", accentColor: "#abcdef",
+    buttonText: " Send feedback ", fontPreset: "playnist",
+  };
+
+  it("validates and normalizes central branding", async () => {
+    const db = makeDb();
+    const res = await onRequestPut(makeCtx({ db, params: { key: "settings" }, method: "PUT", body: { branding } }));
+    expect(res.status).toBe(200);
+    expect(JSON.parse(db._calls.run[0].binds[3]).branding).toEqual({
+      ...branding, name: "Playnist", buttonText: "Send feedback", accentColor: "#ABCDEF",
+    });
+  });
+
+  it("rejects non-HTTPS logo URLs", async () => {
+    const res = await onRequestPut(makeCtx({
+      db: makeDb(), params: { key: "settings" }, method: "PUT",
+      body: { branding: { ...branding, logoUrl: "http://playnist.com/logo.svg" } },
+    }));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toContain("HTTPS");
+  });
+});
+
 describe("PUT /api/config/settings — boardStages validation", () => {
   const validStages = [
     { id: "todo", label: "To do", color: "#94a3b8" },

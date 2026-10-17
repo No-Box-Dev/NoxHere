@@ -7,6 +7,7 @@ const LABELS: Record<string, string> = {
 
 interface Ctx {
   env: { DB: D1Database };
+  request: Request;
   params: { id: string };
   data: { orgId: number; projectId?: string | null };
 }
@@ -22,21 +23,23 @@ interface EventRow {
 export async function onRequestGet(context: Ctx): Promise<Response> {
   const { orgId, projectId } = getCtx(context);
   if (!projectId || projectId !== String(context.params.id || "")) return errorResponse("Project scope mismatch", 403);
+  const usageOnly = new URL(context.request.url).pathname.includes("/usage/");
+  const capabilityFilter = usageOnly ? " AND source.capability = 'usage'" : "";
   const rows = await context.env.DB.prepare(
     `SELECT source_id || ':registered:' || subject_hash AS id, 'users.new' AS type,
             subject_hash AS subject, occurred_at, source.environment
        FROM telemetry_user_registrations event JOIN telemetry_sources source ON source.id = event.source_id
-      WHERE source.org_id = ? AND source.project_id = ?
+      WHERE source.org_id = ? AND source.project_id = ?${capabilityFilter}
      UNION ALL
      SELECT source_id || ':active:' || period || ':' || subject_hash, 'users.active',
             subject_hash, occurred_at, source.environment
        FROM telemetry_user_active_days event JOIN telemetry_sources source ON source.id = event.source_id
-      WHERE source.org_id = ? AND source.project_id = ?
+      WHERE source.org_id = ? AND source.project_id = ?${capabilityFilter}
      UNION ALL
      SELECT source_id || ':custom:' || event_id, metric_key,
             subject_hash, occurred_at, source.environment
        FROM telemetry_activity_events event JOIN telemetry_sources source ON source.id = event.source_id
-      WHERE source.org_id = ? AND source.project_id = ?
+      WHERE source.org_id = ? AND source.project_id = ?${capabilityFilter}
       ORDER BY occurred_at DESC LIMIT 100`,
   ).bind(orgId, projectId, orgId, projectId, orgId, projectId).all();
   return jsonResponse(((rows.results ?? []) as unknown as EventRow[]).map((row) => ({

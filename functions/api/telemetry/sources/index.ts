@@ -66,11 +66,19 @@ interface KeyRow {
   revoked_at: string | null;
 }
 
+function requestedCapability(request: Request): "growth" | "usage" | null {
+  const pathname = new URL(request.url).pathname;
+  if (pathname.startsWith("/api/v1/growth/")) return "growth";
+  if (pathname.startsWith("/api/v1/usage/")) return "usage";
+  return null;
+}
+
 export async function onRequestGet(context: Ctx): Promise<Response> {
   const { orgId, orgLogin, projectId } = getCtx(context) as Ctx["data"];
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!canReadProjectResource(context.data)) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
+  const capability = requestedCapability(context.request);
 
   const [sourcesResult, keysResult, projectsResult] = await Promise.all([
     db.prepare(
@@ -151,19 +159,19 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
                AND alert_routing_settings.project_id = source.project_id
                AND alert_routing_settings.enabled = 1
           )
-        WHERE source.org_id = ? AND source.owner_id = ?${projectId ? " AND source.project_id = ?" : ""}
+        WHERE source.org_id = ? AND source.owner_id = ?${projectId ? " AND source.project_id = ?" : ""}${capability ? " AND source.capability = ?" : ""}
         ORDER BY source.created_at DESC`,
-    ).bind(...(projectId ? [orgId, orgLogin, projectId] : [orgId, orgLogin])).all<SourceRow>(),
+    ).bind(...(projectId ? [orgId, orgLogin, projectId, ...(capability ? [capability] : [])] : [orgId, orgLogin, ...(capability ? [capability] : [])])).all<SourceRow>(),
     db.prepare(
       `SELECT id, source_id, name, kind, key_prefix, created_at, last_used_at, revoked_at
          FROM telemetry_source_keys source_key
         WHERE source_key.org_id = ?
           AND EXISTS (
             SELECT 1 FROM telemetry_sources source
-             WHERE source.id = source_key.source_id${projectId ? " AND source.project_id = ?" : ""}
+             WHERE source.id = source_key.source_id${projectId ? " AND source.project_id = ?" : ""}${capability ? " AND source.capability = ?" : ""}
           )
         ORDER BY source_key.created_at DESC`,
-    ).bind(...(projectId ? [orgId, projectId] : [orgId])).all<KeyRow>(),
+    ).bind(...(projectId ? [orgId, projectId, ...(capability ? [capability] : [])] : [orgId, ...(capability ? [capability] : [])])).all<KeyRow>(),
     db.prepare(
       `SELECT project.id, project.name, project.repo FROM projects project
         JOIN project_routing_settings routing ON routing.project_id = project.id
@@ -233,6 +241,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   if (!orgId) return errorResponse("Missing org context", 400);
   if (!isAdmin) return errorResponse("Admin required", 403);
   const db = getNoxDb(context.env);
+  const capability = requestedCapability(context.request) ?? "usage";
   let raw: unknown;
   try { raw = await context.request.json(); }
   catch { return errorResponse("Invalid JSON body", 400); }
@@ -272,13 +281,13 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const id = crypto.randomUUID();
   await db.prepare(
     `INSERT INTO telemetry_sources
-       (id, org_id, owner_id, project_id, name, environment, enabled, alerts_enabled, allowed_origins_json,
+       (id, org_id, owner_id, project_id, capability, name, environment, enabled, alerts_enabled, allowed_origins_json,
         allowed_events_json, report_title, production_stats, retention_days, aggregate_only_slack, timezone,
         digest_enabled, digest_time_local, error_cooldown_minutes, slack_channel_id,
         slack_connection_id, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 15, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 15, ?, ?, ?)`,
   ).bind(
-    id, orgId, orgLogin, targetProjectId, parsed.data.name, parsed.data.environment,
+    id, orgId, orgLogin, targetProjectId, capability, parsed.data.name, parsed.data.environment,
     parsed.data.enabled ? 1 : 0, parsed.data.alertsEnabled ? 1 : 0,
     JSON.stringify(parsed.data.allowedOrigins), JSON.stringify(parsed.data.allowedEvents), parsed.data.reportTitle,
     parsed.data.productionStats ? 1 : 0, parsed.data.retentionDays, parsed.data.aggregateOnlySlack ? 1 : 0,

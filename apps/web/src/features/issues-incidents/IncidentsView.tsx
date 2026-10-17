@@ -17,8 +17,8 @@ export function IncidentsView({ organizationId, projectId, view = "alerts" }: In
 function AlertLog({ organizationId, projectId }: IncidentsViewProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const alerts = useQuery({
-    queryKey: ["telemetry", organizationId, projectId, "alerts"],
-    queryFn: ({ signal }) => platformApi.telemetryAlerts(organizationId, projectId, signal),
+    queryKey: ["issues", organizationId, projectId, "incidents"],
+    queryFn: ({ signal }) => platformApi.issueIncidents(organizationId, projectId, signal),
   });
   const activeCount = alerts.data?.filter((alert) => alert.status === "active").length ?? 0;
 

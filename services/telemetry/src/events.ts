@@ -115,6 +115,7 @@ interface TelemetrySourceRow {
   owner_id: string;
   source_id: string;
   source_name: string;
+  capability: "growth" | "usage" | "incidents";
   project_id: string | null;
   allowed_origins_json: string;
   allowed_events_json: string;
@@ -133,6 +134,7 @@ export interface TrustedTelemetryIngest {
   environment: "production" | "staging" | "test";
   tokenId: string;
   sourceId?: string | null;
+  capability?: "growth" | "usage";
 }
 
 interface StoredResult {
@@ -220,7 +222,7 @@ async function findSource(env: Env, providedKey: string): Promise<TelemetrySourc
   const keyHash = await hash(providedKey);
   return env.NOX_DB.prepare(
     `SELECT key.id AS key_id, key.kind AS key_kind, source.org_id, source.owner_id,
-            source.id AS source_id, source.name AS source_name, source.project_id,
+            source.id AS source_id, source.name AS source_name, source.capability, source.project_id,
             source.allowed_origins_json, source.allowed_events_json, source.timezone, source.error_cooldown_minutes,
             source.environment, source.alerts_enabled, source.aggregate_only_slack,
             CASE WHEN source.alerts_enabled = 1 THEN COALESCE(
@@ -269,7 +271,7 @@ async function findSourcesForApiToken(
   const sourceFilter = auth.sourceId ? "AND source.id = ?" : "";
   const statement = env.NOX_DB.prepare(
     `SELECT NULL AS key_id, 'api_token' AS key_kind, source.org_id, source.owner_id,
-            source.id AS source_id, source.name AS source_name, source.project_id,
+            source.id AS source_id, source.name AS source_name, source.capability, source.project_id,
             source.allowed_origins_json, source.allowed_events_json, source.timezone, source.error_cooldown_minutes,
             source.environment, source.alerts_enabled, source.aggregate_only_slack,
             CASE WHEN source.alerts_enabled = 1 THEN COALESCE(
@@ -304,6 +306,7 @@ async function findSourcesForApiToken(
         AND legacy_project_route.route_key = 'telemetry'
         AND routing_settings.enabled = 1
       WHERE source.org_id = ? AND source.project_id = ? AND source.environment = ?
+        ${auth.capability ? "AND source.capability = ?" : ""}
         AND source.enabled = 1
         AND COALESCE(json_extract(config.data, '$.apps.telemetry'), 1) != 0
         ${sourceFilter}
@@ -311,8 +314,8 @@ async function findSourcesForApiToken(
       LIMIT 2`,
   );
   const query = auth.sourceId
-    ? statement.bind(auth.orgId, auth.projectId, auth.environment, auth.sourceId)
-    : statement.bind(auth.orgId, auth.projectId, auth.environment);
+    ? statement.bind(auth.orgId, auth.projectId, auth.environment, ...(auth.capability ? [auth.capability] : []), auth.sourceId)
+    : statement.bind(auth.orgId, auth.projectId, auth.environment, ...(auth.capability ? [auth.capability] : []));
   const result = await query.all<TelemetrySourceRow>();
   return result.results ?? [];
 }
@@ -753,6 +756,10 @@ export async function handleTelemetryEvent(
     source = await findSource(env, providedKey);
   }
   if (!source) return jsonResponse({ error: trustedAuth ? "source_not_found" : "invalid_ingest_key" }, trustedAuth ? 404 : 401, origin);
+  const expectedCapability = trustedAuth?.capability ?? request.headers.get("X-Nox-Capability");
+  if ((expectedCapability === "growth" || expectedCapability === "usage") && source.capability !== expectedCapability) {
+    return jsonResponse({ error: "source_capability_mismatch" }, 403, origin);
+  }
   if (origin && source.key_kind === "secret") {
     return jsonResponse({ error: "secret_key_not_allowed_from_browser" }, 403, origin);
   }

@@ -193,6 +193,50 @@ class FeedbackSitePatch(TypedDict, total=False):
     slackConnectionId: NotRequired[Union[str, None]]
     widgetMode: NotRequired[Literal['development', 'release']]
 
+class GrowthDashboard(TypedDict, total=False):
+    dateLabel: Required[str]
+    funnel: Required["GrowthFunnel"]
+    metrics: Required[list["GrowthMetric"]]
+    projectId: Required[str]
+    range: Required[Literal['7d', '30d', '90d', '1y']]
+
+class GrowthEvent(TypedDict, total=False):
+    environment: Required[str]
+    id: Required[str]
+    name: Required[str]
+    occurredAt: Required[str]
+    subject: Required[Union[str, None]]
+    value: Required[float]
+
+class GrowthEventInput(TypedDict, total=False):
+    attributes: NotRequired[dict[str, Union[str, float, bool]]]
+    context: NotRequired["JsonValue"]
+    environment: NotRequired[str]
+    eventId: Required[str]
+    idempotencyKey: NotRequired[str]
+    name: Required[str]
+    occurredAt: NotRequired[str]
+    type: Required[Literal['activity.tracked']]
+    userId: NotRequired[str]
+    value: NotRequired[float]
+    version: NotRequired[Literal[1]]
+
+GrowthEventList: TypeAlias = list["GrowthEvent"]
+
+class GrowthFunnel(TypedDict, total=False):
+    cancelled: Required[float]
+    paid: Required[float]
+    signupIntents: Required[float]
+    trialToPaidRate: Required[Union[float, None]]
+    trials: Required[float]
+    visits: Required[float]
+
+class GrowthMetric(TypedDict, total=False):
+    id: Required[str]
+    label: Required[str]
+    points: Required[list[float]]
+    value: Required[float]
+
 class IncidentAlert(TypedDict, total=False):
     environment: Required[str]
     fingerprint: Required[str]
@@ -233,6 +277,7 @@ class MutationReceipt(TypedDict, total=False):
     updatedAt: NotRequired[str]
 
 class NoxHereConfigPatch(TypedDict, total=False):
+    branding: NotRequired["ProjectBranding"]
     enabledServices: NotRequired["NoxHereConfigPatchEnabledServices"]
     newRepositoryPolicy: NotRequired[Literal['include', 'exclude']]
 
@@ -309,6 +354,13 @@ class PlanningTaskPatch(TypedDict, total=False):
     stageId: NotRequired[str]
     status: NotRequired[Literal['open', 'completed']]
     title: NotRequired[str]
+
+class ProjectBranding(TypedDict, total=False):
+    accentColor: Required[str]
+    buttonText: Required[str]
+    fontPreset: Required[Literal['system', 'playnist', 'humanist', 'editorial', 'mono']]
+    logoUrl: Required[Union[str, None]]
+    name: Required[str]
 
 class ProjectDestination(TypedDict, total=False):
     channelId: Required[str]
@@ -684,6 +736,21 @@ class TelemetryUserEvent(TypedDict, total=False):
     userId: Required[str]
     version: NotRequired[Literal[1]]
 
+UsageEventInput: TypeAlias = Union["TelemetryUserEvent", "TelemetryActivityEvent", "UsageTrackedEvent"]
+
+class UsageTrackedEvent(TypedDict, total=False):
+    attributes: NotRequired[dict[str, Union[str, float, bool]]]
+    context: NotRequired["JsonValue"]
+    environment: NotRequired[str]
+    eventId: Required[str]
+    idempotencyKey: NotRequired[str]
+    name: Required[str]
+    occurredAt: NotRequired[str]
+    type: Required[Literal['activity.tracked']]
+    userId: NotRequired[str]
+    value: NotRequired[float]
+    version: NotRequired[Literal[1]]
+
 class UserAction(TypedDict, total=False):
     provider: Required[str]
     resume: Required[dict[str, Any]]
@@ -712,6 +779,13 @@ class ClosePullRequestBody(TypedDict, total=False):
     number: Required[int]
     repo: Required[str]
 
+class CreateGrowthKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+
+class CreateGrowthKeyBody(TypedDict, total=False):
+    kind: Required[Literal['publishable', 'secret']]
+    name: Required[str]
+
 class CreateTelemetryCustomFeaturePath(TypedDict, total=False):
     sourceId: Required[str]
 
@@ -725,12 +799,22 @@ class CreateTelemetryKeyBody(TypedDict, total=False):
     kind: Required[Literal['publishable', 'secret']]
     name: Required[str]
 
+class CreateUsageKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+
+class CreateUsageKeyBody(TypedDict, total=False):
+    kind: Required[Literal['publishable', 'secret']]
+    name: Required[str]
+
 class DeleteFeatureAttachmentPath(TypedDict, total=False):
     number: Required[int]
     attachmentId: Required[int]
 
 class DeleteFeedbackSitePath(TypedDict, total=False):
     siteId: Required[str]
+
+class DeleteGrowthSourcePath(TypedDict, total=False):
+    sourceId: Required[str]
 
 class DeletePlanningTaskPath(TypedDict, total=False):
     id: Required[str]
@@ -748,6 +832,9 @@ class DeleteTelemetryCustomMetricPath(TypedDict, total=False):
     metricKey: Required[str]
 
 class DeleteTelemetrySourcePath(TypedDict, total=False):
+    sourceId: Required[str]
+
+class DeleteUsageSourcePath(TypedDict, total=False):
     sourceId: Required[str]
 
 class DisconnectConnectionPath(TypedDict, total=False):
@@ -792,6 +879,12 @@ class GetFeedbackResolutionTemplatePath(TypedDict, total=False):
 class GetFeedEventPath(TypedDict, total=False):
     id: Required[str]
 
+class GetGrowthProjectDashboardPath(TypedDict, total=False):
+    projectId: Required[str]
+
+class GetGrowthProjectEventsPath(TypedDict, total=False):
+    projectId: Required[str]
+
 class GetIssuePath(TypedDict, total=False):
     repo: Required[str]
     number: Required[int]
@@ -822,6 +915,12 @@ class GetProjectIncidentPath(TypedDict, total=False):
     incidentId: Required[str]
 
 class GetProjectIncidentsPath(TypedDict, total=False):
+    projectId: Required[str]
+
+class GetProjectIssueAlertRulesPath(TypedDict, total=False):
+    projectId: Required[str]
+
+class GetProjectIssueIncidentsPath(TypedDict, total=False):
     projectId: Required[str]
 
 class GetProjectIssuesPath(TypedDict, total=False):
@@ -864,6 +963,15 @@ class GetTelemetryProjectMetricsPath(TypedDict, total=False):
 class GetTelemetryProjectStatEventsPath(TypedDict, total=False):
     projectId: Required[str]
 
+class GetUsageProjectActionsPath(TypedDict, total=False):
+    projectId: Required[str]
+
+class GetUsageProjectDashboardPath(TypedDict, total=False):
+    projectId: Required[str]
+
+class GetUsageProjectEventsPath(TypedDict, total=False):
+    projectId: Required[str]
+
 class GetWorkspaceConfigPath(TypedDict, total=False):
     key: Required[str]
 
@@ -872,6 +980,9 @@ class ListFeatureAttachmentsPath(TypedDict, total=False):
 
 class ListFeaturesQuery(TypedDict, total=False):
     state: NotRequired[str]
+
+class ListGrowthKeysPath(TypedDict, total=False):
+    sourceId: Required[str]
 
 class ListIssuesQuery(TypedDict, total=False):
     state: NotRequired[str]
@@ -919,6 +1030,12 @@ class ListTelemetryFeaturesPath(TypedDict, total=False):
 class ListTelemetryKeysPath(TypedDict, total=False):
     sourceId: Required[str]
 
+class ListUsageCardsPath(TypedDict, total=False):
+    sourceId: Required[str]
+
+class ListUsageKeysPath(TypedDict, total=False):
+    sourceId: Required[str]
+
 class PatchNoxServiceConfigPath(TypedDict, total=False):
     service: Required[Literal['noxhere', 'planning', 'activity', 'feedback', 'telemetry']]
 
@@ -962,6 +1079,10 @@ class RetryFeedbackDeliveriesPath(TypedDict, total=False):
 class RevokeApiTokenPath(TypedDict, total=False):
     id: Required[str]
 
+class RevokeGrowthKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+    keyId: Required[str]
+
 class RevokeGuestGrantPath(TypedDict, total=False):
     grantId: Required[str]
 
@@ -975,10 +1096,22 @@ class RevokeTelemetryKeyPath(TypedDict, total=False):
     sourceId: Required[str]
     keyId: Required[str]
 
+class RevokeUsageKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+    keyId: Required[str]
+
 class RotateApiTokenPath(TypedDict, total=False):
     id: Required[str]
 
+class RotateGrowthKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+    keyId: Required[str]
+
 class RotateTelemetryKeyPath(TypedDict, total=False):
+    sourceId: Required[str]
+    keyId: Required[str]
+
+class RotateUsageKeyPath(TypedDict, total=False):
     sourceId: Required[str]
     keyId: Required[str]
 
@@ -1023,6 +1156,9 @@ class UpdateFeedbackResolutionTemplateBody(TypedDict, total=False):
 
 class UpdateFeedbackSitePath(TypedDict, total=False):
     siteId: Required[str]
+
+class UpdateGrowthSourcePath(TypedDict, total=False):
+    sourceId: Required[str]
 
 class UpdateGuestGrantScopePath(TypedDict, total=False):
     grantId: Required[str]
@@ -1071,6 +1207,15 @@ class UpdateTelemetryProjectMetricsPath(TypedDict, total=False):
     projectId: Required[str]
 
 class UpdateTelemetrySourcePath(TypedDict, total=False):
+    sourceId: Required[str]
+
+class UpdateUsageCardsPath(TypedDict, total=False):
+    sourceId: Required[str]
+
+class UpdateUsageProjectActionsPath(TypedDict, total=False):
+    projectId: Required[str]
+
+class UpdateUsageSourcePath(TypedDict, total=False):
     sourceId: Required[str]
 
 class UploadFeatureAttachmentPath(TypedDict, total=False):

@@ -16,6 +16,7 @@ export async function onRequestGet(context: Ctx) {
   if (!projectId || projectId !== requestedProject) return errorResponse("Project scope mismatch", 403);
   const range = new URL(context.request.url).searchParams.get("range") || "30d";
   const days = DAYS[range] ?? 30;
+  const usageOnly = new URL(context.request.url).pathname.includes("/usage/");
   const setting = await context.env.DB.prepare(
     `SELECT window_days FROM telemetry_engagement_settings WHERE org_id = ? AND project_id = ?`,
   ).bind(orgId, projectId).first<{ window_days: number }>();
@@ -33,6 +34,7 @@ export async function onRequestGet(context: Ctx) {
            ON setting.project_id = source.project_id AND setting.metric_key = metric.metric_key
         WHERE source.org_id = ? AND source.project_id = ? AND source.environment = 'production'
           AND source.enabled = 1 AND setting.enabled = 1
+          ${usageOnly ? "AND source.capability = 'usage'" : ""}
           AND metric.metric_key NOT LIKE 'custom.%'
           AND metric.period >= date('now', ?)
         ORDER BY metric.metric_key, metric.period ASC`,
@@ -43,7 +45,8 @@ export async function onRequestGet(context: Ctx) {
          UNION ALL SELECT date(period, '+1 day') FROM periods WHERE period < date('now')
        ), project_sources(id) AS (
          SELECT id FROM telemetry_sources
-          WHERE org_id = ? AND project_id = ? AND environment = 'production' AND enabled = 1
+          WHERE org_id = ? AND project_id = ?${usageOnly ? " AND capability = 'usage'" : ""}
+            AND environment = 'production' AND enabled = 1
        ), definitions(metric_key, label) AS (
          SELECT DISTINCT metric.metric_key, metric.label
            FROM telemetry_custom_metrics metric
@@ -115,7 +118,7 @@ export async function onRequestGet(context: Ctx) {
     records.push(row);
     grouped.set(String(row.metric_key), records);
   }
-  const stats = [...grouped.entries()].map(([id, records]) => {
+  const stats = [...grouped.entries()].filter(([id]) => !usageOnly || /^(users\.|records\.|reports\.|custom\.)/.test(id)).map(([id, records]) => {
     const latest = records.at(-1)!;
     const previous = records.at(-2) ?? latest;
     const value = Number(latest.value);

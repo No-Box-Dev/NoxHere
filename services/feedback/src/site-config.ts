@@ -29,6 +29,14 @@ export interface WidgetConfig {
   blocks?: WidgetBlock[];
 }
 
+export interface BrandingConfig {
+  name: string;
+  logoUrl: string | null;
+  accentColor: string;
+  buttonText: string;
+  fontPreset: "system" | "playnist" | "humanist" | "editorial" | "mono";
+}
+
 export interface CaptureSite {
   id: string;
   org_id: number;
@@ -36,6 +44,7 @@ export interface CaptureSite {
   repo: string;
   site_name: string;
   widget_config: string | null;
+  branding_config?: string | null;
   slack_channel_id: string | null;
   slack_connection_id: string | null;
   github_login: string;
@@ -58,6 +67,7 @@ export async function getCaptureSite(db: D1Database, siteId: string): Promise<Ca
   return db.prepare(
     `SELECT site.id, site.org_id, site.project_id, site.repo, site.name AS site_name,
             site.widget_config, site.slack_channel_id, site.slack_connection_id,
+            COALESCE(project_settings.data, settings.data) AS branding_config,
             org.github_login,
             CASE
               WHEN settings.data IS NULL OR json_valid(settings.data) = 0 THEN 1
@@ -71,9 +81,35 @@ export async function getCaptureSite(db: D1Database, siteId: string): Promise<Ca
             END AS noxalert_enabled
        FROM spot_sites site
        JOIN orgs org ON org.id = site.org_id
+       LEFT JOIN project_config project_settings
+         ON project_settings.org_id = site.org_id AND project_settings.project_id = site.project_id
+        AND project_settings.key = 'settings'
        LEFT JOIN config settings ON settings.org_id = site.org_id AND settings.key = 'settings'
       WHERE site.id = ?`,
   ).bind(siteId).first<CaptureSite>();
+}
+
+export function parseBrandingConfig(value: string | null | undefined): BrandingConfig | null {
+  try {
+    const settings: unknown = JSON.parse(value || "{}");
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) return null;
+    const branding = (settings as { branding?: unknown }).branding;
+    if (!branding || typeof branding !== "object" || Array.isArray(branding)) return null;
+    const candidate = branding as Record<string, unknown>;
+    if (typeof candidate.name !== "string" || !candidate.name.trim()
+        || typeof candidate.accentColor !== "string" || !/^#[0-9a-fA-F]{6}$/.test(candidate.accentColor)
+        || typeof candidate.buttonText !== "string" || !candidate.buttonText.trim()
+        || !["system", "playnist", "humanist", "editorial", "mono"].includes(String(candidate.fontPreset))) return null;
+    return {
+      name: candidate.name.trim(),
+      logoUrl: typeof candidate.logoUrl === "string" && candidate.logoUrl ? candidate.logoUrl : null,
+      accentColor: candidate.accentColor,
+      buttonText: candidate.buttonText.trim(),
+      fontPreset: candidate.fontPreset as BrandingConfig["fontPreset"],
+    };
+  } catch {
+    return null;
+  }
 }
 
 function configuredHost(value: string): { hostname: string; port: string } | null {
@@ -120,6 +156,7 @@ export function originAllowed(config: WidgetConfig, origin: string | null): bool
 
 export function publicWidgetConfig(site: CaptureSite, origin: string | null) {
   const stored = parseWidgetConfig(site.widget_config);
+  const branding = parseBrandingConfig(site.branding_config);
   const matched = environmentForOrigin(stored, origin);
   const environmentName = matched?.name ?? null;
   const configuredBlocks: readonly WidgetBlock[] = Array.isArray(stored.blocks) && stored.blocks.length
@@ -133,8 +170,9 @@ export function publicWidgetConfig(site: CaptureSite, origin: string | null) {
   return {
     version: 1,
     siteId: site.id,
-    buttonColor: matched?.buttonColor || stored.buttonColor || "#FE795D",
-    buttonText: matched?.buttonText || stored.buttonText || "Report issue",
+    buttonColor: matched?.buttonColor || branding?.accentColor || stored.buttonColor || "#FE795D",
+    buttonText: matched?.buttonText || branding?.buttonText || stored.buttonText || "Report issue",
+    branding,
     widgetMode: matched?.widgetMode || (stored.widgetMode === "release" ? "release" : "development"),
     captureMode: matched?.captureMode === "screenshot" ? "screenshot" : "dom",
     autoErrorLogging: stored.autoErrorLogging === true,
@@ -148,11 +186,13 @@ export function publicWidgetConfig(site: CaptureSite, origin: string | null) {
 
 export function legacyWidgetConfig(site: CaptureSite) {
   const stored = parseWidgetConfig(site.widget_config);
+  const branding = parseBrandingConfig(site.branding_config);
   return {
     version: 1,
     siteId: site.id,
-    buttonColor: stored.buttonColor || "#FE795D",
-    buttonText: stored.buttonText || "Report issue",
+    buttonColor: branding?.accentColor || stored.buttonColor || "#FE795D",
+    buttonText: branding?.buttonText || stored.buttonText || "Report issue",
+    branding,
     widgetMode: stored.widgetMode === "release" ? "release" : "development",
     captureMode: "dom" as CaptureMode,
     autoErrorLogging: stored.autoErrorLogging === true,

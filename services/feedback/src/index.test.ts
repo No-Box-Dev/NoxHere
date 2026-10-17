@@ -11,6 +11,7 @@ beforeAll(async () => {
   await env.DB.batch([
     env.DB.prepare("CREATE TABLE orgs (id INTEGER PRIMARY KEY, github_login TEXT NOT NULL)"),
     env.DB.prepare("CREATE TABLE config (org_id INTEGER NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (org_id, key))"),
+    env.DB.prepare("CREATE TABLE project_config (org_id INTEGER NOT NULL, project_id TEXT NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT, PRIMARY KEY (org_id, project_id, key))"),
     env.DB.prepare(`CREATE TABLE members (
       id INTEGER PRIMARY KEY, org_id INTEGER NOT NULL, login TEXT NOT NULL,
       avatar_url TEXT, kind TEXT NOT NULL DEFAULT 'human'

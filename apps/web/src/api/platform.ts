@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { bootstrapSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, organizationMembersSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
-import type { Bootstrap, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, OrganizationMember, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
+import { bootstrapSchema, growthDashboardSchema, growthEventSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, organizationMembersSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
+import type { Bootstrap, GrowthDashboard, GrowthEvent, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, OrganizationMember, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
 import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
@@ -22,19 +22,21 @@ export interface PlatformApi {
   uploadPlanningFeatureAttachment(organizationId: string, projectId: string, featureId: number, file: File): Promise<PlanningFeatureAttachment>;
   planningFeatureAttachmentBlob(organizationId: string, projectId: string, featureId: number, attachmentId: number, signal?: AbortSignal): Promise<Blob>;
   deletePlanningFeatureAttachment(organizationId: string, projectId: string, featureId: number, attachmentId: number): Promise<void>;
-  telemetryDashboard(organizationId: string, projectId: string, range: string, signal?: AbortSignal): Promise<TelemetryDashboard>;
-  telemetryActions(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryActions>;
-  setTelemetryActions(organizationId: string, projectId: string, actions: Array<Pick<TelemetryAction, "key" | "label">>, windowDays: 7 | 14 | 30): Promise<TelemetryActions>;
-  telemetryStatEvents(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryStatEvent[]>;
+  growthDashboard(organizationId: string, projectId: string, range: string, signal?: AbortSignal): Promise<GrowthDashboard>;
+  growthEvents(organizationId: string, projectId: string, signal?: AbortSignal): Promise<GrowthEvent[]>;
+  usageDashboard(organizationId: string, projectId: string, range: string, signal?: AbortSignal): Promise<TelemetryDashboard>;
+  usageActions(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryActions>;
+  setUsageActions(organizationId: string, projectId: string, actions: Array<Pick<TelemetryAction, "key" | "label">>, windowDays: 7 | 14 | 30): Promise<TelemetryActions>;
+  usageEvents(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryStatEvent[]>;
   engineerStats(organizationId: string, projectId: string, signal?: AbortSignal): Promise<EngineerStats>;
-  telemetryAlerts(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlert[]>;
-  telemetryAlertRules(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlertRule[]>;
+  issueIncidents(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlert[]>;
+  issueAlertRules(organizationId: string, projectId: string, signal?: AbortSignal): Promise<TelemetryAlertRule[]>;
   retrieve(organizationId: string, projectId: string, query: string, signal?: AbortSignal): Promise<RetrievalResult[]>;
   guestAccess(organizationId: string, signal?: AbortSignal): Promise<GuestAccess>;
-  inviteGuest(organizationId: string, projectId: string, email: string, serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry"): Promise<GuestInvite>;
+  inviteGuest(organizationId: string, projectId: string, email: string, serviceId: "all" | "planning" | "activity" | "feedback" | "growth" | "usage" | "issues"): Promise<GuestInvite>;
   revokeGuest(organizationId: string, kind: "invites" | "grants", id: string): Promise<void>;
   resendGuestInvite(organizationId: string, id: string): Promise<void>;
-  setGuestScope(organizationId: string, projectId: string, kind: "invites" | "grants", id: string, serviceId: "all" | "planning" | "activity" | "feedback" | "telemetry"): Promise<void>;
+  setGuestScope(organizationId: string, projectId: string, kind: "invites" | "grants", id: string, serviceId: "all" | "planning" | "activity" | "feedback" | "growth" | "usage" | "issues"): Promise<void>;
   organizationMembers(organizationId: string, signal?: AbortSignal): Promise<OrganizationMember[]>;
   setMemberRole(organizationId: string, principalId: string, role: "admin" | "member" | "viewer"): Promise<void>;
   auditLog(organizationId: string, signal?: AbortSignal): Promise<Array<{ id: number; actorType: string; actorId: string; action: string; targetId: string | null; createdAt: string }>>;
@@ -63,7 +65,7 @@ export const platformApi: PlatformApi = {
     const projectRows = (projectsRaw as { projects?: Array<{ id: string; name: string; org?: string | null; repo?: string | null; repositories?: string[]; description?: string | null; archived?: number; routing_enabled?: number }> }).projects ?? [];
     const integration = connectionsRaw as { github?: { connected?: boolean }; slack?: { connected?: boolean; teamName?: string | null } } | null;
     const guestServices = profile.accessLevel === "guest" ? new Set((profile.allowedServices ?? []).flatMap((id) => {
-      const mapped = ({ planning: ["planning"], activity: ["activity"], feedback: ["feedback"], telemetry: ["stats", "incidents"] } as Record<string, ServiceId[] | undefined>)[id];
+      const mapped = ({ planning: ["planning"], activity: ["activity"], feedback: ["feedback"], growth: ["growth"], usage: ["usage"], issues: ["issues"], telemetry: ["growth", "usage", "issues"] } as Record<string, ServiceId[] | undefined>)[id];
       return mapped ?? [];
     })) : null;
     const projects: Project[] = projectRows.flatMap((row) => {
@@ -80,7 +82,7 @@ export const platformApi: PlatformApi = {
     });
     const login = profile.login ?? "Member";
     return bootstrapSchema.parse({
-      actor: { id: login, name: login, initials: login.slice(0, 2).toUpperCase(), accessLevel: profile.accessLevel ?? "member", role: profile.role ?? (profile.accessLevel === "guest" ? "guest" : profile.isAdmin ? "admin" : "member"), capabilities: profile.capabilities ?? (profile.isAdmin ? ["organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "stats.configure", "planning.configure"] : ["content.read", "content.write"]), isAdmin: Boolean(profile.isAdmin), allowedServiceIds: guestServices ? [...guestServices] : [] },
+      actor: { id: login, name: login, initials: login.slice(0, 2).toUpperCase(), accessLevel: profile.accessLevel ?? "member", role: profile.role ?? (profile.accessLevel === "guest" ? "guest" : profile.isAdmin ? "admin" : "member"), capabilities: profile.capabilities ?? (profile.isAdmin ? ["organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "growth.configure", "usage.configure", "issues.configure", "planning.configure"] : ["content.read", "content.write"]), isAdmin: Boolean(profile.isAdmin), allowedServiceIds: guestServices ? [...guestServices] : [] },
       organization: { id: organizationId, name: profile.org ?? organizationId },
       projects,
     });
@@ -123,13 +125,15 @@ export const platformApi: PlatformApi = {
   deletePlanningFeatureAttachment: async (organizationId, projectId, featureId, attachmentId) => {
     await deleteJson(`/api/v1/features/${featureId}/attachments/${attachmentId}`, z.object({ ok: z.literal(true) }).loose(), { organizationId, projectId });
   },
-  telemetryDashboard: (organizationId, projectId, range, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/dashboard?range=${encodeURIComponent(range)}`, telemetryDashboardSchema, signal, { organizationId, projectId }),
-  telemetryActions: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/actions`, telemetryActionsSchema, signal, { organizationId, projectId }),
-  setTelemetryActions: (organizationId, projectId, actions, windowDays) => putJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/actions`, { actions, windowDays }, telemetryActionsSchema, { organizationId, projectId }),
-  telemetryStatEvents: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/stat-events`, telemetryStatEventSchema.array(), signal, { organizationId, projectId }),
+  growthDashboard: (organizationId, projectId, range, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/growth/dashboard?range=${encodeURIComponent(range)}`, growthDashboardSchema, signal, { organizationId, projectId }),
+  growthEvents: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/growth/events`, growthEventSchema.array(), signal, { organizationId, projectId }),
+  usageDashboard: (organizationId, projectId, range, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/usage/dashboard?range=${encodeURIComponent(range)}`, telemetryDashboardSchema, signal, { organizationId, projectId }),
+  usageActions: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/usage/actions`, telemetryActionsSchema, signal, { organizationId, projectId }),
+  setUsageActions: (organizationId, projectId, actions, windowDays) => putJson(`/api/v1/projects/${encodeURIComponent(projectId)}/usage/actions`, { actions, windowDays }, telemetryActionsSchema, { organizationId, projectId }),
+  usageEvents: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/usage/events`, telemetryStatEventSchema.array(), signal, { organizationId, projectId }),
   engineerStats: (organizationId, projectId, signal) => getJson("/api/v1/engineer-stats", engineerStatsSchema, signal, { organizationId, projectId }),
-  telemetryAlerts: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/alerts`, telemetryAlertSchema.array(), signal, { organizationId, projectId }),
-  telemetryAlertRules: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/telemetry/alert-rules`, telemetryAlertRuleSchema.array(), signal, { organizationId, projectId }),
+  issueIncidents: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/issues/alerts`, telemetryAlertSchema.array(), signal, { organizationId, projectId }),
+  issueAlertRules: (organizationId, projectId, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/issues/alert-rules`, telemetryAlertRuleSchema.array(), signal, { organizationId, projectId }),
   retrieve: (organizationId, projectId, query, signal) => getJson(`/api/v1/projects/${encodeURIComponent(projectId)}/retrieval?q=${encodeURIComponent(query)}`, retrievalResultSchema.array(), signal, { organizationId, projectId }),
   guestAccess: (organizationId, signal) => getJson("/api/v1/guests", guestAccessSchema, signal, { organizationId }),
   inviteGuest: async (organizationId, projectId, email, serviceId) => {

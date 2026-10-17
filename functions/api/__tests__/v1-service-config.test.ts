@@ -137,6 +137,25 @@ describe("service-scoped configuration API", () => {
     expect((await response.json() as any).config.newRepositoryPolicy).toBe("exclude");
   });
 
+  it("makes central branding readable and writable through the agent-facing NoxHere config", async () => {
+    const raw = JSON.stringify({ branding: {
+      name: "Old product", logoUrl: null, accentColor: "#FE795D", buttonText: "Report issue", fontPreset: "system",
+    } });
+    const initial = context({ service: "noxhere", raw });
+    const getResponse = await onRequestGet(initial.ctx as never);
+    expect((await getResponse.clone().json() as any).config.branding.name).toBe("Old product");
+
+    const branding = {
+      name: "Playnist", logoUrl: "https://playnist.com/logo.svg", accentColor: "#123456",
+      buttonText: "Send feedback", fontPreset: "playnist",
+    };
+    const update = context({ service: "noxhere", raw, method: "PATCH", body: { branding }, etag: getResponse.headers.get("ETag")! });
+    const response = await onRequestPatch(update.ctx as never);
+    expect(response.status).toBe(200);
+    expect((await response.json() as any).config.branding).toEqual(branding);
+    expect(JSON.parse(String(update.db.calls.runs[0].binds[0])).branding).toEqual(branding);
+  });
+
   it("patches only fields owned by the selected service using compare-and-swap", async () => {
     const raw = JSON.stringify({ planningRepo: "old", releaseNotesPrompt: "keep me", custom: { retained: true } });
     const initial = context({ raw });
