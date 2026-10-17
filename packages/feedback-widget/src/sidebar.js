@@ -75,7 +75,7 @@ function customBlockDomId(blockId) {
  * @returns {string} HTML string
  */
 export function createSidebarHTML(opts) {
-  const { blocks, metadata, onSubmit, screenshotDataUrl, members, categories, reporter, branding } = opts;
+  const { blocks, onSubmit, screenshotDataUrl, members, categories, reporter, branding } = opts;
   onSubmitCallback = onSubmit;
   reporterMembers = Array.isArray(members) ? members : [];
   reportCategories = Array.isArray(categories) ? categories.filter(c => c && typeof c.label === 'string' && c.label) : [];
@@ -88,7 +88,7 @@ export function createSidebarHTML(opts) {
     </div>
   `;
 
-  const blocksHTML = formBlocks.map((b) => renderBlock(b, metadata)).join('');
+  const blocksHTML = formBlocks.map((b) => renderBlock(b)).join('');
   const brandName = typeof branding?.name === 'string' ? branding.name.trim().slice(0, 120) : '';
   const logoUrl = typeof branding?.logoUrl === 'string' && branding.logoUrl.startsWith('https://') ? branding.logoUrl : '';
   const brandHTML = brandName || logoUrl ? `<div class="feedback-brand">${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="" />` : ''}${brandName ? `<span>${escapeHtml(brandName)}</span>` : ''}</div>` : '';
@@ -115,7 +115,7 @@ export function createSidebarHTML(opts) {
   `;
 }
 
-function renderBlock(block, metadata) {
+function renderBlock(block) {
   if (!block || typeof block.type !== 'string') return '';
   switch (block.type) {
     case 'title':           return renderTitle(block);
@@ -127,7 +127,9 @@ function renderBlock(block, metadata) {
     case 'custom_textarea': return renderCustomTextarea(block);
     case 'custom_select':   return renderCustomSelect(block);
     case 'element_picker':  return renderElementsSection();
-    case 'metadata':        return renderMetadataSection(metadata);
+    // Metadata is diagnostic context, not a question for the reporter.
+    // Its block still controls whether the loader includes it in the payload.
+    case 'metadata':        return '';
     // console_logs has no sidebar UI — its presence only controls whether
     // captured logs ship in the submit body (handled by the loader).
     case 'console_logs':    return '';
@@ -302,34 +304,6 @@ function renderElementsSection() {
     <div class="feedback-form-group feedback-elements-section" style="display: none;">
       <label class="feedback-label">Selected Elements</label>
       <div class="feedback-elements-list"></div>
-    </div>
-  `;
-}
-
-function renderMetadataSection(metadata) {
-  if (!metadata) return '';
-  return `
-    <div class="feedback-form-group feedback-form-group--metadata">
-      <label class="feedback-label">Captured Info</label>
-      <div class="feedback-metadata">
-        <div class="feedback-metadata-item">
-          <span class="feedback-metadata-label">URL</span>
-          <span class="feedback-metadata-value" title="${escapeHtml(metadata.url)}">${escapeHtml(truncate(metadata.url, 35))}</span>
-        </div>
-        <div class="feedback-metadata-item">
-          <span class="feedback-metadata-label">Browser</span>
-          <span class="feedback-metadata-value">${escapeHtml(metadata.browser)}</span>
-        </div>
-        <div class="feedback-metadata-item">
-          <span class="feedback-metadata-label">OS</span>
-          <span class="feedback-metadata-value">${escapeHtml(metadata.os)}</span>
-        </div>
-        <div class="feedback-metadata-item">
-          <span class="feedback-metadata-label">Viewport</span>
-          <span class="feedback-metadata-value">${escapeHtml(metadata.viewport)}</span>
-        </div>
-      </div>
-      <p class="feedback-hint">Screenshot issues? Try disabling browser extensions.</p>
     </div>
   `;
 }

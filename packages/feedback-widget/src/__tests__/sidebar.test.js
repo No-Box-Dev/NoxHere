@@ -257,14 +257,15 @@ describe('createSidebarHTML', () => {
     expect(html).not.toContain('Captured Info');
   });
 
-  it('renders Captured Info when metadata block + metadata cache both present', () => {
+  it('keeps captured metadata out of the reporter-facing form', () => {
     const html = createSidebarHTML({
       ...ctx,
       metadata: { url: 'https://x', browser: 'Chrome', os: 'macOS', viewport: '100x100' },
       blocks: [{ type: 'title' }, { type: 'metadata' }],
     });
-    expect(html).toContain('Captured Info');
-    expect(html).toContain('Chrome');
+    expect(html).not.toContain('Captured Info');
+    expect(html).not.toContain('Chrome');
+    expect(html).not.toContain('feedback-form-group--metadata');
   });
 
   it('console_logs block produces no sidebar markup', () => {
