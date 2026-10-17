@@ -589,16 +589,16 @@ describe("NoxHere gateway", () => {
 
   it.each(["growth", "usage"])("forwards public %s key ingestion without a browser session", async (capability) => {
     for (const method of ["OPTIONS", "POST"]) {
-      const connector = { fetch: vi.fn(async (_request: Request) => new Response(null, {
-        status: method === "OPTIONS" ? 204 : 202,
-      })) };
+      const connector = { fetch: vi.fn(async (request: Request) => {
+        expect(request.headers.get("X-NoxHere-Internal-Assertion")).toBeNull();
+        return new Response(null, { status: method === "OPTIONS" ? 204 : 202 });
+      }) };
       const response = await handleRequest(new Request(`https://app.noxhere.com/api/v1/${capability}/events`, {
         method,
         headers: { "X-Nox-Ingest-Key": `nox_pub_${"a".repeat(43)}` },
       }), controlledServices(connector));
       expect(response.status).toBe(method === "OPTIONS" ? 204 : 202);
       expect(connector.fetch).toHaveBeenCalledOnce();
-      expect(connector.fetch.mock.calls[0]?.[0].headers.get("X-NoxHere-Internal-Assertion")).toBeNull();
     }
   });
 
