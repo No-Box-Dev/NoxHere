@@ -56,12 +56,13 @@ describe("Feedback response service adapter", () => {
     await getFeedbackSlackResponse({ FEEDBACK_RESPONSE: service }, capture, {
       number: 42,
       html_url: "https://github.com/acme/web/issues/42",
+      delivery_status: "delivered",
       token: "must-not-cross",
     });
 
     expect(service.buildSlackResponse).toHaveBeenCalledWith(
       expect.objectContaining({ captureId: "capture-1", screenshotPreviewUrl: "https://capture.example/preview.png" }),
-      { number: 42, url: "https://github.com/acme/web/issues/42" },
+      { number: 42, url: "https://github.com/acme/web/issues/42", deliveryStatus: "delivered" },
     );
   });
 

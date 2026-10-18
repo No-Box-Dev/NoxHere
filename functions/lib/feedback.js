@@ -26,16 +26,30 @@ export async function createFeedbackGitHubIssue(env, capture) {
 
 export async function finalizeFeedbackGitHubIssue(env, { receipt, payload }) {
   if (receipt.provider !== "github") throw new Error("Feedback callback requires a GitHub receipt");
+  if (receipt.status === "blocked" || receipt.status === "failed") {
+    await stageFeedbackSlack(env, payload, {
+      number: null,
+      html_url: null,
+      delivery_status: receipt.status,
+    });
+    return { slackOnly: true, githubStatus: receipt.status };
+  }
   if (receipt.status !== "delivered") return { skipped: receipt.status };
   if (receipt.result?.resourceType !== "issue") throw new Error("Feedback callback requires an issue receipt");
   const issue = {
     number: Number(receipt.result.resourceId),
     html_url: receipt.result.url,
     state: receipt.result.state ?? "open",
+    delivery_status: receipt.status,
   };
   if (!Number.isInteger(issue.number) || issue.number <= 0 || !issue.html_url) throw new Error("Feedback issue receipt is incomplete");
   await storeFeedbackReport(env, payload, issue);
   await storeEvent(env.DB, payload, issue);
+  await stageFeedbackSlack(env, payload, issue);
+  return { number: issue.number, url: issue.html_url };
+}
+
+async function stageFeedbackSlack(env, payload, issue) {
   const slackResponse = await getFeedbackSlackResponse(env, payload, issue);
   await publishSlackTransport(env, {
     orgId: payload.orgId,
@@ -45,7 +59,6 @@ export async function finalizeFeedbackGitHubIssue(env, { receipt, payload }) {
     idempotencyKey: `feedback:${payload.captureId}`,
     message: slackResponse.message,
   });
-  return { number: issue.number, url: issue.html_url };
 }
 
 async function resolveCaptureFromSetup(db, capture) {

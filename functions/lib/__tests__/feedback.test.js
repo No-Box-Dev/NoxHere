@@ -220,6 +220,26 @@ describe("createFeedbackGitHubIssue", () => {
     expect(vi.mocked(publishGitHubTransport).mock.calls.at(-1)[1].callback.payload.ownerId).toBe("acme");
   });
 
+  it.each(["blocked", "failed"])("still stages Slack when GitHub is %s", async (status) => {
+    const database = db({ slack_channel_id: "C123", slack_connection_id: "conn-2" });
+    const env = { DB: database, TASK_QUEUE: { send: vi.fn() } };
+
+    const result = await finalizeFeedbackGitHubIssue(env, {
+      payload: capture,
+      receipt: { provider: "github", status, error: { code: "github_project_not_found" } },
+    });
+
+    expect(result).toEqual({ slackOnly: true, githubStatus: status });
+    expect(publishSlackTransport).toHaveBeenCalledWith(env, expect.objectContaining({
+      route: "feedback",
+      routeContext: { kind: "site", id: "site-1" },
+      idempotencyKey: "feedback:cap-1",
+    }));
+    expect(database._calls).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ sql: expect.stringContaining("INSERT INTO events") }),
+    ]));
+  });
+
   it("keeps automatic errors on the configured Feedback site channel", async () => {
     globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
