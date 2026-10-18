@@ -106,6 +106,7 @@ const CAPTURE_STYLE_PROPS = [
 ];
 
 const IMAGE_FETCH_TIMEOUT_MS = 3000;
+const WEBKIT_IMAGE_PRIME_TIMEOUT_MS = 1500;
 const RASTERIZE_TIMEOUT_MS = 10_000;
 const CAPTURE_NODE_LIMIT = 8_000;
 const CAPTURE_SYNC_TIME_LIMIT_MS = 1_500;
@@ -193,7 +194,7 @@ export async function captureViewport(options = {}) {
   ].join(';');
   wrapper.appendChild(bodyClone);
 
-  const [, fontCss] = await Promise.all([
+  const [primedImages, fontCss] = await Promise.all([
     inlineExternalResources(pairs, budget),
     collectInlinedFontCss(),
   ]);
@@ -236,6 +237,7 @@ export async function captureViewport(options = {}) {
     nodes: pairs.length,
     compactedSubtrees: budget.compactedSubtrees,
     compactedDescendants: budget.compactedDescendants,
+    primedImages: primedImages.length,
     size: Math.round(dataUrl.length / 1024) + 'kb',
   });
 
@@ -797,6 +799,47 @@ async function inlineExternalResources(pairs, budget) {
   }
 
   debugLog('[Feedback] External resources resolved', { inlined, dropped, offscreen, unique: urls.size });
+
+  // WebKit does not reliably discover nested data-URI image resources while
+  // an SVG is itself being loaded through an <img>. The outer foreignObject
+  // still renders, but its <img> and CSS background-image pixels are omitted.
+  // Loading the exact data URLs once first puts their decoded resources in
+  // WebKit's image cache. Keep the Image objects alive until rasterizeSvg has
+  // drawn the outer SVG (the caller holds this returned array across await).
+  return primeWebKitImageResources([...urlMap.values()].filter(Boolean));
+}
+
+function usesWebKitImageLoader() {
+  const userAgent = globalThis.navigator?.userAgent || '';
+  if (!/AppleWebKit/i.test(userAgent)) return false;
+  // Desktop Chromium also contains AppleWebKit in its compatibility string,
+  // but does not use WebKit's SVG image loader. iOS browsers intentionally
+  // remain included because they all use WebKit, including CriOS and FxiOS.
+  return !/(?:Chrome|Chromium|Edg|OPR)\//i.test(userAgent);
+}
+
+async function primeWebKitImageResources(dataUrls) {
+  if (!usesWebKitImageLoader() || !dataUrls.length) return [];
+  const images = [];
+  await Promise.all([...new Set(dataUrls)].map((dataUrl) => new Promise((resolve) => {
+    const image = new Image();
+    images.push(image);
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      image.onload = null;
+      image.onerror = null;
+      resolve();
+    };
+    const timer = setTimeout(finish, WEBKIT_IMAGE_PRIME_TIMEOUT_MS);
+    image.onload = finish;
+    image.onerror = finish;
+    image.src = dataUrl;
+  })));
+  debugLog('[Feedback] Primed embedded images for WebKit SVG rasterization', { count: images.length });
+  return images;
 }
 
 // Block-comment regex tolerant of nested url(...) parens; spans the whole
