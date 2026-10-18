@@ -16,6 +16,7 @@ export interface CaptureInput extends Record<string, unknown> {
   environment?: string | null;
   screenshotUrl?: string | null;
   screenshotAssetId?: string | null;
+  screenshotPreviewUrl?: string | null;
   rating?: number | null;
   blockValues?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
@@ -79,6 +80,8 @@ export function buildSlackResponse(capture: CaptureInput, issue: IssueInput) {
     { type: "section", fields },
   ];
   if (capture.description) blocks.push({ type: "section", text: { type: "mrkdwn", text: truncate(escapeMrkdwn(capture.description), 2_800) } });
+  const previewUrl = safeHttpUrl(capture.screenshotPreviewUrl);
+  if (previewUrl) blocks.push({ type: "image", image_url: previewUrl, alt_text: "Feedback issue screenshot" });
   const actions: Record<string, unknown>[] = [];
   if (pageUrl) actions.push({ type: "button", text: { type: "plain_text", text: "Open reported page" }, url: pageUrl });
   const evidenceUrl = safeHttpUrl(capture.screenshotUrl);

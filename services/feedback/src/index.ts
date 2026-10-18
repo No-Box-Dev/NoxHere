@@ -160,11 +160,21 @@ async function submitReport(context: AppContext) {
   const effectiveConfig = publicWidgetConfig(site, origin);
 
   const captureId = params.attemptId || crypto.randomUUID();
-  const target = await screenshotTarget(site.org_id, params.siteId, captureId, params.screenshot, context.env.PUBLIC_API_BASE_URL);
+  const target = await screenshotTarget(
+    site.org_id,
+    params.siteId,
+    captureId,
+    params.screenshot,
+    context.env.PUBLIC_API_BASE_URL,
+    site.github_login,
+    context.env.PUBLIC_ASSET_BASE_URL,
+  );
   let screenshotStored = false;
+  let screenshotPreviewUrl: string | null = null;
   try {
     if (target && params.screenshot) {
       const stored = await putScreenshot(context.env.ASSETS, target, params.screenshot);
+      screenshotPreviewUrl = stored.slackPreviewUrl;
       await recordEvidence(context.env.DB, target, {
         orgId: site.org_id,
         projectId: site.project_id,
@@ -178,6 +188,7 @@ async function submitReport(context: AppContext) {
       captureId,
       screenshotUrl: target?.url ?? null,
       screenshotAssetId: target?.id ?? null,
+      screenshotPreviewUrl,
     }));
     await context.env.TASK_QUEUE.send(task);
   } catch (error) {
@@ -429,12 +440,55 @@ async function serveSiteScreenshot(context: AppContext, siteId: string, key: str
   return serveObject(context, key);
 }
 
+const PRIVATE_ASSET_ID = /^asset_[a-f0-9]{32}$/;
+const SLACK_PREVIEW_TOKEN = /^[a-f0-9]{64}$/;
+
+async function serveSlackPreview(context: AppContext) {
+  const assetId = context.req.param("assetId") ?? "";
+  const token = context.req.param("token") ?? "";
+  if (!PRIVATE_ASSET_ID.test(assetId) || !SLACK_PREVIEW_TOKEN.test(token)) return context.notFound();
+  const row = await context.env.DB.prepare(
+    `SELECT r2_key, media_type, expires_at, deleted_at
+       FROM feedback_assets
+      WHERE id = ? AND role IN ('screenshot', 'follow_up_screenshot')
+      LIMIT 1`,
+  ).bind(assetId).first<{ r2_key: string; media_type: string; expires_at: string | null; deleted_at: string | null }>();
+  if (!row || row.deleted_at || (row.expires_at && Date.parse(row.expires_at) <= Date.now())) return context.notFound();
+  const object = await context.env.ASSETS.get(row.r2_key);
+  const expected = object?.customMetadata?.slackPreviewToken;
+  const previewExpiresAt = object?.customMetadata?.slackPreviewExpiresAt;
+  if (!object || !expected || !previewExpiresAt || Date.parse(previewExpiresAt) <= Date.now() || !sameToken(token, expected)) {
+    return context.notFound();
+  }
+  return new Response(object.body, {
+    headers: {
+      "Content-Type": row.media_type,
+      "Content-Length": String(object.size),
+      "Cache-Control": "private, max-age=300",
+      "Content-Disposition": "inline",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox;",
+      "Referrer-Policy": "no-referrer",
+    },
+  });
+}
+
+function sameToken(left: string, right: string): boolean {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
 app.get("/r2/:key{.+}", async (context) => {
   const key = context.req.param("key");
   if (key.startsWith("evidence/")) return context.notFound();
   const screenshot = key.match(/^screenshots\/([^/]+)\//);
   return screenshot ? serveSiteScreenshot(context, screenshot[1], key) : serveObject(context, key);
 });
+app.get("/api/feedback/public/v1/assets/slack-preview/:assetId/:token", serveSlackPreview);
 app.get("/api/feedback/public/v1/assets/:key{.+}", async (context) => {
   const key = context.req.param("key");
   if (key.startsWith("evidence/")) return context.notFound();

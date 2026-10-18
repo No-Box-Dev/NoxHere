@@ -8,6 +8,7 @@ const capture = {
   issueType: "bug",
   title: "Broken button",
   description: "It does nothing",
+  screenshotPreviewUrl: "https://capture.example/preview.png",
   orgId: 7,
   ownerId: "must-not-cross",
   repo: "must-not-cross",
@@ -59,7 +60,7 @@ describe("Feedback response service adapter", () => {
     });
 
     expect(service.buildSlackResponse).toHaveBeenCalledWith(
-      expect.objectContaining({ captureId: "capture-1" }),
+      expect.objectContaining({ captureId: "capture-1", screenshotPreviewUrl: "https://capture.example/preview.png" }),
       { number: 42, url: "https://github.com/acme/web/issues/42" },
     );
   });
