@@ -354,7 +354,7 @@ describe("public capture Worker", () => {
     expect(await response.json()).toEqual({ error: "Idempotency key does not match attempt ID" });
   });
 
-  it("stores new screenshots as private evidence and queues only the authenticated API link", async () => {
+  it("stores screenshots privately, queues an org-aware link, and exposes only a scoped Slack preview", async () => {
     const send = vi.fn<(task: unknown) => Promise<void>>(async () => undefined);
     const response = await app.request("/api/feedback/public/v1/reports", {
       method: "POST",
@@ -368,14 +368,19 @@ describe("public capture Worker", () => {
     }, { ...env, TASK_QUEUE: { send } } as never);
 
     expect(response.status).toBe(200);
-    const task = send.mock.calls[0][0] as { screenshotAssetId: string; screenshotUrl: string };
+    const task = send.mock.calls[0][0] as { screenshotAssetId: string; screenshotUrl: string; screenshotPreviewUrl: string };
     expect(task.screenshotAssetId).toMatch(/^asset_[a-f0-9]{32}$/);
-    expect(task.screenshotUrl).toBe(`https://app.noxhere.com/api/v1/feedback/assets/${task.screenshotAssetId}`);
+    expect(task.screenshotUrl).toBe(`https://app.noxhere.com/api/v1/feedback/assets/${task.screenshotAssetId}?org=acme`);
+    expect(task.screenshotPreviewUrl).toMatch(new RegExp(
+      `/api/feedback/public/v1/assets/slack-preview/${task.screenshotAssetId}/[a-f0-9]{64}$`,
+    ));
     const asset = await env.DB.prepare("SELECT r2_key FROM feedback_assets WHERE id = ?")
       .bind(task.screenshotAssetId).first<{ r2_key: string }>();
     expect(asset?.r2_key).toBe(`evidence/${task.screenshotAssetId}`);
     expect(await env.ASSETS.head(asset!.r2_key)).not.toBeNull();
     expect((await app.request(`/api/feedback/public/v1/assets/${asset!.r2_key}`, {}, env as never)).status).toBe(404);
+    expect((await app.request(task.screenshotPreviewUrl, {}, env as never)).status).toBe(200);
+    expect((await app.request(`${task.screenshotPreviewUrl.slice(0, -1)}0`, {}, env as never)).status).toBe(404);
   });
 
   it("does not expose retired generic widget routes", async () => {

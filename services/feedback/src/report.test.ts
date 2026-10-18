@@ -83,8 +83,17 @@ describe("capture validation", () => {
   });
 
   it("creates deterministic private evidence targets", async () => {
-    const target = await screenshotTarget(site.org_id, site.id, "capture-1", "data:image/png;base64,AA==", "https://app.example.com");
+    const target = await screenshotTarget(
+      site.org_id,
+      site.id,
+      "capture-1",
+      "data:image/png;base64,AA==",
+      "https://app.example.com",
+      site.github_login,
+      "https://capture.example.com/api/feedback/public/v1/assets",
+    );
     expect(target?.key).toMatch(/^evidence\/asset_[a-f0-9]{32}$/);
-    expect(target?.url).toBe(`https://app.example.com/api/v1/feedback/assets/${target?.id}`);
+    expect(target?.url).toBe(`https://app.example.com/api/v1/feedback/assets/${target?.id}?org=acme`);
+    expect(target?.slackPreview?.token).toMatch(/^[a-f0-9]{64}$/);
   });
 });

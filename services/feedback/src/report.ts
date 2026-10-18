@@ -50,6 +50,7 @@ export interface CaptureTask {
   environment: string | null;
   screenshotUrl: string | null;
   screenshotAssetId: string | null;
+  screenshotPreviewUrl: string | null;
   metadata: Record<string, unknown> | null;
   elements: Record<string, unknown>[] | null;
   context: Record<string, unknown> | null;
@@ -167,6 +168,8 @@ export async function screenshotTarget(
   captureId: string,
   screenshot: string | null,
   apiBaseUrl: string,
+  orgLogin?: string | null,
+  slackPreviewBaseUrl?: string | null,
 ): Promise<EvidenceTarget | null> {
   if (!screenshot) return null;
   const match = screenshot.match(/^data:image\/(png|jpeg|webp);base64,/);
@@ -180,6 +183,8 @@ export async function screenshotTarget(
     role: "screenshot",
     contentType: `image/${type}`,
     apiBaseUrl,
+    orgLogin,
+    slackPreviewBaseUrl,
   });
 }
 
@@ -195,6 +200,7 @@ export function buildCaptureTask(args: {
   captureId: string;
   screenshotUrl: string | null;
   screenshotAssetId?: string | null;
+  screenshotPreviewUrl?: string | null;
   issueType?: CaptureTask["issueType"];
 }): CaptureTask {
   const { site, params, captureId, screenshotUrl } = args;
@@ -220,6 +226,7 @@ export function buildCaptureTask(args: {
     environment: params.environment,
     screenshotUrl,
     screenshotAssetId: args.screenshotAssetId ?? null,
+    screenshotPreviewUrl: args.screenshotPreviewUrl ?? null,
     metadata: params.metadata,
     elements: params.elements,
     context: params.context,

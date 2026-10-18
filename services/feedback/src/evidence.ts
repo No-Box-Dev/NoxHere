@@ -15,14 +15,21 @@ export interface EvidenceTarget {
   url: string;
   contentType: string;
   role: EvidenceRole;
+  slackPreview?: {
+    baseUrl: string;
+    token: string;
+    expiresAt: string;
+  };
 }
 
 export interface StoredEvidence {
   size: number;
   sha256: string;
+  slackPreviewUrl: string | null;
 }
 
 const encoder = new TextEncoder();
+const SLACK_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1_000;
 
 export async function evidenceTarget(input: {
   orgId: number;
@@ -32,30 +39,60 @@ export async function evidenceTarget(input: {
   role: EvidenceRole;
   contentType: string;
   apiBaseUrl: string;
+  orgLogin?: string | null;
+  slackPreviewBaseUrl?: string | null;
 }): Promise<EvidenceTarget> {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     encoder.encode(`${input.orgId}:${input.siteId}:${input.sourceId}:${input.role}`),
   );
   const id = `asset_${hex(digest).slice(0, 32)}`;
+  const url = new URL(`${input.apiBaseUrl.replace(/\/$/, "")}/api/v1/feedback/assets/${id}`);
+  if (input.orgLogin?.trim()) url.searchParams.set("org", input.orgLogin.trim());
   return {
     id,
     reportId: input.reportId,
     key: `evidence/${id}`,
-    url: `${input.apiBaseUrl.replace(/\/$/, "")}/api/v1/feedback/assets/${id}`,
+    url: url.toString(),
     contentType: input.contentType,
     role: input.role,
+    ...(input.slackPreviewBaseUrl ? {
+      slackPreview: {
+        baseUrl: input.slackPreviewBaseUrl.replace(/\/$/, ""),
+        token: previewToken(),
+        expiresAt: new Date(Date.now() + SLACK_PREVIEW_TTL_MS).toISOString(),
+      },
+    } : {}),
   };
 }
 
 export async function putEvidence(bucket: R2Bucket, target: EvidenceTarget, bytes: ArrayBuffer | Uint8Array): Promise<StoredEvidence> {
   const data = Uint8Array.from(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
   const digest = await crypto.subtle.digest("SHA-256", data);
+  if (target.slackPreview) {
+    const existing = await bucket.head(target.key);
+    const token = existing?.customMetadata?.slackPreviewToken;
+    const expiresAt = existing?.customMetadata?.slackPreviewExpiresAt;
+    if (token && expiresAt && Date.parse(expiresAt) > Date.now()) {
+      target.slackPreview.token = token;
+      target.slackPreview.expiresAt = expiresAt;
+    }
+  }
   await bucket.put(target.key, data, {
     httpMetadata: { contentType: target.contentType, cacheControl: "private, no-store" },
+    ...(target.slackPreview ? { customMetadata: {
+      slackPreviewToken: target.slackPreview.token,
+      slackPreviewExpiresAt: target.slackPreview.expiresAt,
+    } } : {}),
     sha256: digest,
   });
-  return { size: data.byteLength, sha256: hex(digest) };
+  return {
+    size: data.byteLength,
+    sha256: hex(digest),
+    slackPreviewUrl: target.slackPreview
+      ? `${target.slackPreview.baseUrl}/slack-preview/${target.id}/${target.slackPreview.token}`
+      : null,
+  };
 }
 
 export async function recordEvidence(
@@ -107,4 +144,8 @@ export async function deleteExpiredEvidence(db: D1Database, bucket: R2Bucket, no
 
 function hex(value: ArrayBuffer): string {
   return [...new Uint8Array(value)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function previewToken(): string {
+  return `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, "");
 }

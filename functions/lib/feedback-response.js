@@ -58,6 +58,7 @@ function responseCapture(capture) {
     environment: capture.environment ?? null,
     screenshotUrl: capture.screenshotUrl ?? null,
     screenshotAssetId: capture.screenshotAssetId ?? null,
+    screenshotPreviewUrl: capture.screenshotPreviewUrl ?? null,
     metadata: capture.metadata ?? null,
     elements: capture.elements ?? null,
     context: capture.context ?? null,

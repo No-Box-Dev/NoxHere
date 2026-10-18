@@ -31,10 +31,21 @@ describe("Feedback response service contract", () => {
   });
 
   it("renders a Slack message with the issue and reported page", () => {
-    const response = buildSlackResponse(capture, { url: "https://github.com/No-Box-Dev/playnist/issues/1" });
+    const screenshotPreviewUrl = "https://capture.example.com/api/feedback/public/v1/assets/slack-preview/asset_0123456789abcdef0123456789abcdef/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const screenshotUrl = "https://app.noxhere.com/api/v1/feedback/assets/asset_0123456789abcdef0123456789abcdef?org=acme";
+    const response = buildSlackResponse({ ...capture, screenshotPreviewUrl, screenshotUrl }, { url: "https://github.com/No-Box-Dev/playnist/issues/1" });
     expect(response).toMatchObject({ contract: "feedback.response", version: 1 });
     expect(response.message.client_msg_id).toBe("capture-1");
     expect(JSON.stringify(response.message.blocks)).toContain("https://app.playnist.com/library");
+    expect(response.message.blocks).toContainEqual({
+      type: "image",
+      image_url: screenshotPreviewUrl,
+      alt_text: "Feedback issue screenshot",
+    });
+    expect(response.message.blocks).toContainEqual(expect.objectContaining({
+      type: "actions",
+      elements: expect.arrayContaining([expect.objectContaining({ url: screenshotUrl })]),
+    }));
   });
 
   it("keeps test and digest renderers available to NoxHere", () => {

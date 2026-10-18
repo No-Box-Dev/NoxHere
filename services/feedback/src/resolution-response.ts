@@ -17,6 +17,7 @@ interface TokenRow {
   token_hash: string;
   report_id: string | null;
   org_id: number;
+  org_login: string;
   project_id: string;
   site_id: string;
   repo: string;
@@ -55,7 +56,8 @@ export async function submitResolutionResponse(context: AppContext): Promise<Res
   const hash = await sha256(token);
   const row = await context.env.DB.prepare(
     `SELECT token_hash, report_id, org_id, project_id, site_id, repo, issue_number,
-            report_title, reporter_name, expires_at, claimed_at, used_at
+            report_title, reporter_name, expires_at, claimed_at, used_at,
+            (SELECT github_login FROM orgs WHERE id = spot_report_response_tokens.org_id) AS org_login
        FROM spot_report_response_tokens WHERE token_hash = ? LIMIT 1`,
   ).bind(hash).first<TokenRow>();
   if (!isAvailable(row)) return page("Link unavailable", unavailableBody(), 404);
@@ -100,6 +102,7 @@ export async function submitResolutionResponse(context: AppContext): Promise<Res
         role: "follow_up_screenshot",
         contentType: screenshot.type,
         apiBaseUrl: context.env.PUBLIC_API_BASE_URL,
+        orgLogin: row.org_login,
       });
       screenshotKey = target.key;
       screenshotAssetId = target.id;
@@ -187,7 +190,8 @@ async function activeToken(db: D1Database, token: string): Promise<TokenRow | nu
   if (!TOKEN_PATTERN.test(token)) return null;
   const row = await db.prepare(
     `SELECT token_hash, report_id, org_id, project_id, site_id, repo, issue_number,
-            report_title, reporter_name, expires_at, claimed_at, used_at
+            report_title, reporter_name, expires_at, claimed_at, used_at,
+            (SELECT github_login FROM orgs WHERE id = spot_report_response_tokens.org_id) AS org_login
        FROM spot_report_response_tokens WHERE token_hash = ? LIMIT 1`,
   ).bind(await sha256(token)).first<TokenRow>();
   return isAvailable(row) ? row : null;
