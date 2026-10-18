@@ -343,7 +343,10 @@ describe("NoxHere API-backed platform", () => {
   it("always shows every available capability for a verified member", async () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/connections/overview");
 
-    expect(await screen.findByRole("link", { name: "Planning" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+    const capabilityLinks = within(screen.getByRole("navigation", { name: "NoxHere capabilities" })).getAllByRole("link");
+    expect(capabilityLinks[0]).toHaveAccessibleName("Dashboard");
+    expect(screen.getByRole("link", { name: "Planning" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Activity" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feedback" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Growth" })).toBeInTheDocument();
@@ -859,9 +862,9 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.queryByText("repo-guest")).not.toBeInTheDocument();
   });
 
-  it("shows the native team Stats experience as the Activity dashboard", async () => {
+  it("shows the native team Stats experience in the top-level Dashboard", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/dashboard");
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/dashboard/overview");
 
     expect(await screen.findByRole("heading", { name: "Team pulse" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveClass("active");
@@ -879,9 +882,9 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByRole("img", { name: "Activity chart with 12 periods" })).toBeInTheDocument();
   });
 
-  it("redirects the former Activity productivity URL to Dashboard", async () => {
-    renderApp(<><App /><CurrentRoute /></>, "/no-box-dev/proj_no-box-dev_playnist/activity/productivity");
-    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/no-box-dev/proj_no-box-dev_playnist/activity/dashboard"));
+  it.each(["dashboard", "productivity"])("redirects the former Activity %s URL to Dashboard", async (view) => {
+    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/proj_no-box-dev_playnist/activity/${view}`);
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/no-box-dev/proj_no-box-dev_playnist/dashboard/overview"));
   });
 
   it("prefetches Activity data before a user selects another tab", async () => {

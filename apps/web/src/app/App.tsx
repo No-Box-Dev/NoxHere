@@ -13,6 +13,7 @@ const ActivityPage = lazy(() => import("../features/activity/ActivityPage"));
 const FeedbackPage = lazy(() => import("../features/feedback/FeedbackPage"));
 const NoxKeyPage = lazy(() => import("../features/key/NoxKeyPage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
+const DashboardPage = lazy(() => import("../features/dashboard/DashboardPage"));
 
 export function App() {
   return (
@@ -22,6 +23,7 @@ export function App() {
           <Route path="/" element={null} />
           <Route path="/:organizationId/select/:service/:view" element={<Navigate replace to="/" />} />
           <Route path="/:organizationId/:projectId" element={<PlatformShell />}>
+            <Route path="dashboard/:view" element={<DashboardPage />} />
             <Route path="stats/:section" element={<StatsPage />} />
             <Route path="growth/:section" element={<GrowthPage />} />
             <Route path="usage/:section" element={<UsagePage />} />

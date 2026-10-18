@@ -3,7 +3,7 @@ import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import type { Bootstrap, Project } from "../api/contracts";
 import { platformApi } from "../api/platform";
-import { services } from "./service-registry";
+import { canAccessService, services } from "./service-registry";
 import { readLastProject } from "./last-project";
 import { Button } from "@/components/ui/button";
 import { NoxLogo } from "@/components/ui/nox-logo";
@@ -66,7 +66,7 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
   }
 
   function destination(currentBootstrap: Bootstrap, project: Project) {
-    const guestService = services.find((service) => !service.hidden && currentBootstrap.actor.allowedServiceIds.includes(service.id));
+    const guestService = services.find((service) => !service.hidden && canAccessService(service.id, currentBootstrap.actor.allowedServiceIds));
     const view = currentBootstrap.actor.accessLevel === "guest" && guestService
       ? `${guestService.id}/${guestService.defaultView}`
       : "connections/overview";
