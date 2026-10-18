@@ -1,4 +1,4 @@
-export type ServiceId = "connections" | "planning" | "activity" | "feedback" | "growth" | "usage" | "issues" | "mail" | "key";
+export type ServiceId = "dashboard" | "connections" | "planning" | "activity" | "feedback" | "growth" | "usage" | "issues" | "mail" | "key";
 
 export type ServiceDefinition = {
   id: ServiceId;
@@ -14,6 +14,7 @@ export type ServiceDefinition = {
 };
 
 export const services: readonly ServiceDefinition[] = [
+  { id: "dashboard", name: "Dashboard", shortName: "Dashboard", color: "#201e1d", softColor: "#ece7de", defaultView: "overview", ownership: "Team delivery, contribution and workload overview" },
   { id: "planning", name: "Planning", shortName: "Plan", color: "#201e1d", softColor: "#ece7de", defaultView: "board", ownership: "Tasks, features and delivery workflow", iconSrc: "/icons/planning.svg" },
   { id: "activity", name: "Activity", shortName: "Activity", color: "#201e1d", softColor: "#ece7de", defaultView: "current", ownership: "Engineering activity, pull requests and releases", iconSrc: "/icons/activity.svg" },
   { id: "feedback", name: "Feedback", shortName: "Feedback", color: "#201e1d", softColor: "#ece7de", defaultView: "issues", ownership: "Customer feedback, widgets and resolution messaging", iconSrc: "/icons/feedback.svg" },
@@ -28,3 +29,7 @@ export const services: readonly ServiceDefinition[] = [
 export const serviceById: ReadonlyMap<string, ServiceDefinition> = new Map(
   services.map((service) => [service.id, service] as const),
 );
+
+export function canAccessService(serviceId: ServiceId, allowedServiceIds: readonly string[]) {
+  return allowedServiceIds.includes(serviceId === "dashboard" ? "activity" : serviceId);
+}

@@ -5,7 +5,7 @@ import { platformApi } from "../api/platform";
 import { AsyncState } from "../components/AsyncState";
 import { PlatformRetrieval } from "./PlatformRetrieval";
 import { ProjectSwitcher } from "./ProjectSwitcher";
-import { services } from "./service-registry";
+import { canAccessService, services } from "./service-registry";
 import { clearLastProject, saveLastProject } from "./last-project";
 import type { PlatformOutletContext } from "./platform-context";
 import { NoxLogo } from "@/components/ui/nox-logo";
@@ -35,7 +35,7 @@ export function PlatformShell() {
     enabled: Boolean(selectedProject && !isGuest),
     staleTime: 5 * 60_000,
   });
-  const visibleServices = services.filter((item) => !item.hidden && (!isGuest || bootstrap.data?.actor.allowedServiceIds.includes(item.id)));
+  const visibleServices = services.filter((item) => !item.hidden && (!isGuest || canAccessService(item.id, bootstrap.data?.actor.allowedServiceIds ?? [])));
   const guestFallback = visibleServices[0];
   const guestRouteForbidden = Boolean(isGuest && serviceRouteSegment && (serviceRouteSegment === "settings" || !visibleServices.some((item) => item.id === serviceRouteSegment)));
 
@@ -120,6 +120,7 @@ export function PlatformShell() {
 function ServiceIcon({ service }: { service: (typeof services)[number] }) {
   return <span className="service-icon" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none">
+      {service.id === "dashboard" ? <><rect x="4" y="4" width="6" height="6" /><rect x="14" y="4" width="6" height="6" /><rect x="4" y="14" width="6" height="6" /><path d="M14 20v-6h6v6" /></> : null}
       {service.id === "planning" ? <><path d="M6 4v16M6 7h5a3 3 0 0 1 3 3v1a3 3 0 0 0 3 3h1" /><path d="m16 12 2 2 3-3" /></> : null}
       {service.id === "activity" ? <><path d="M6 7h12M6 12h12M6 17h8" /><circle cx="18" cy="17" r="1" /></> : null}
       {service.id === "feedback" ? <><path d="M5 5.5h14v10H9l-4 3v-13Z" /><path d="M8 9h8M8 12h5" /></> : null}

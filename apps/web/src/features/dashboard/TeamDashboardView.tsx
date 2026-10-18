@@ -5,7 +5,7 @@ import { platformApi } from "../../api/platform";
 import { AsyncState } from "../../components/AsyncState";
 import { StatusTag } from "../../components/StatusTag";
 
-type TeamDashboardProps = {
+type DashboardProps = {
   organizationId: string;
   projectId: string;
   actorLogin: string;
@@ -18,7 +18,7 @@ type TimelineScope = "organization" | "person";
 type ActivityPair = { current: EngineerActivity; previous: EngineerActivity };
 type TimelinePoint = { key: string; label: string; pullRequests: number; commits: number };
 
-export function TeamDashboardView({ organizationId, projectId, actorLogin, members, membersLoading, membersError }: TeamDashboardProps) {
+export function TeamDashboardView({ organizationId, projectId, actorLogin, members, membersLoading, membersError }: DashboardProps) {
   const [range, setRange] = useState<TimelineRange>("days");
   const [scope, setScope] = useState<TimelineScope>("organization");
   const [selectedLogin, setSelectedLogin] = useState(actorLogin);
