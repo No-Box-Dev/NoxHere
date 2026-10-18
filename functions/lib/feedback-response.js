@@ -13,6 +13,7 @@ export async function getFeedbackSlackResponse(env, capture, issue) {
   const response = await service.buildSlackResponse(responseCapture(capture), {
     number: issue.number,
     url: issue.html_url,
+    deliveryStatus: issue.delivery_status ?? (issue.html_url ? "delivered" : "failed"),
   });
   return validateSlackResponse(response);
 }

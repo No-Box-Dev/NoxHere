@@ -28,6 +28,7 @@ export interface IssueInput extends Record<string, unknown> {
   title?: string;
   url?: string | null;
   number?: number | null;
+  deliveryStatus?: string | null;
   submittedBy?: string | null;
   resolution?: {
     kind?: string;
@@ -65,7 +66,6 @@ export function buildIssueResponse(capture: CaptureInput) {
 export function buildSlackResponse(capture: CaptureInput, issue: IssueInput) {
   requireCapture(capture);
   const issueUrl = safeHttpUrl(issue?.url);
-  if (!issueUrl) throw new Error("Feedback response requires a valid GitHub issue URL");
   const pageUrl = safeHttpUrl(capture?.metadata?.url, 3_000);
   const fields = [
     { type: "mrkdwn", text: `*Type*\n${escapeMrkdwn(capture.issueType)}` },
@@ -80,18 +80,31 @@ export function buildSlackResponse(capture: CaptureInput, issue: IssueInput) {
     { type: "section", fields },
   ];
   if (capture.description) blocks.push({ type: "section", text: { type: "mrkdwn", text: truncate(escapeMrkdwn(capture.description), 2_800) } });
+  if (!issueUrl) {
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: ":warning: *GitHub issue could not be created.* This report was still delivered to Slack. Restore repository access in NoxHere to resume issue creation.",
+      },
+    });
+  }
   const previewUrl = safeHttpUrl(capture.screenshotPreviewUrl);
   if (previewUrl) blocks.push({ type: "image", image_url: previewUrl, alt_text: "Feedback issue screenshot" });
   const actions: Record<string, unknown>[] = [];
   if (pageUrl) actions.push({ type: "button", text: { type: "plain_text", text: "Open reported page" }, url: pageUrl });
   const evidenceUrl = safeHttpUrl(capture.screenshotUrl);
   if (evidenceUrl) actions.push({ type: "button", text: { type: "plain_text", text: "Open screenshot securely" }, url: evidenceUrl });
-  actions.push({ type: "button", text: { type: "plain_text", text: "Open GitHub issue" }, url: issueUrl });
-  blocks.push({ type: "actions", elements: actions });
+  if (issueUrl) actions.push({ type: "button", text: { type: "plain_text", text: "Open GitHub issue" }, url: issueUrl });
+  if (actions.length) blocks.push({ type: "actions", elements: actions });
   return {
     contract: CONTRACT,
     version: VERSION,
-    message: { text: `New Feedback issue: ${capture.title}`, client_msg_id: capture.captureId, blocks },
+    message: {
+      text: `${issueUrl ? "New Feedback issue" : "New Feedback report"}: ${capture.title}`,
+      client_msg_id: capture.captureId,
+      blocks,
+    },
   };
 }
 

@@ -48,6 +48,22 @@ describe("Feedback response service contract", () => {
     }));
   });
 
+  it("renders a Slack report when GitHub delivery fails", () => {
+    const screenshotPreviewUrl = "https://capture.example.com/preview.png";
+    const response = buildSlackResponse(
+      { ...capture, screenshotPreviewUrl },
+      { url: null, number: null, deliveryStatus: "blocked" },
+    );
+
+    expect(JSON.stringify(response.message.blocks)).toContain("GitHub issue could not be created");
+    expect(response.message.blocks).toContainEqual({
+      type: "image",
+      image_url: screenshotPreviewUrl,
+      alt_text: "Feedback issue screenshot",
+    });
+    expect(JSON.stringify(response.message.blocks)).not.toContain("Open GitHub issue");
+  });
+
   it("keeps test and digest renderers available to NoxHere", () => {
     expect(buildTestResponse("No-Box-Dev").message.text).toContain("No-Box-Dev");
     const digest = buildDailyDigestResponse("Playnist", "2026-09-02", [], [], { filed: 0, solved: 0 });
