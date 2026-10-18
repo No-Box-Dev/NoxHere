@@ -146,6 +146,42 @@ describe('viewport-bounded rasterization', () => {
     );
   });
 
+  it('primes embedded image data before loading the outer SVG in Safari', async () => {
+    const cover = document.createElement('img');
+    cover.src = 'https://app.playnist.com/api/img/coc5at/t_cover_big_2x';
+    document.body.appendChild(cover);
+
+    Element.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      return { top: 20, bottom: 120, left: 20, right: 120, width: 100, height: 100, x: 20, y: 20, toJSON() {} };
+    };
+    globalThis.fetch = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(['cover'], { type: 'image/jpeg' }),
+    }));
+    vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/620.1.2 (KHTML, like Gecko) Version/26.0 Safari/620.1.2',
+    );
+    const assignedSources = [];
+    class LoadedImage {
+      set src(value) {
+        assignedSources.push(value);
+        queueMicrotask(() => this.onload?.());
+      }
+    }
+    globalThis.Image = LoadedImage;
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+      scale: vi.fn(), fillRect: vi.fn(), drawImage: vi.fn(), set fillStyle(_value) {},
+    }));
+    HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/jpeg;base64,ok');
+
+    await captureViewport();
+
+    expect(assignedSources).toHaveLength(2);
+    expect(assignedSources[0]).toMatch(/^data:image\/jpeg;base64,/);
+    expect(assignedSources[1]).toMatch(/^data:image\/svg\+xml;base64,/);
+  });
+
   it('does not fetch media clipped outside an internal scroll viewport', async () => {
     const scroller = document.createElement('div');
     scroller.style.overflow = 'auto';
