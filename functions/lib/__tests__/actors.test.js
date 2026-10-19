@@ -156,6 +156,37 @@ describe("resolveActorFromGithub — new actor (insert path)", () => {
     const result = await resolveActorFromGithub(db, "owner-1", HUMAN_AUTHOR);
     expect(result).toEqual(inserted);
   });
+
+  it("uses an owner-scoped id when another tenant owns the legacy id", async () => {
+    const calls = { firsts: 0, runs: [] };
+    const inserted = { id: "actor_playnist_octocat", name: "Mona Lisa", tone: "X" };
+    const db = {
+      prepare(sql) {
+        return {
+          _binds: [],
+          bind(...binds) { this._binds = binds; return this; },
+          async first() {
+            if (!sql.includes("FROM actors")) return null;
+            calls.firsts += 1;
+            // Initial lookup and the lookup after the colliding legacy insert
+            // find no actor in this tenant. The scoped insert then succeeds.
+            return calls.firsts >= 3 ? inserted : null;
+          },
+          async run() {
+            calls.runs.push({ sql, binds: this._binds });
+            return { meta: { changes: 1 } };
+          },
+        };
+      },
+    };
+
+    const result = await resolveActorFromGithub(db, "Playnist", HUMAN_AUTHOR);
+
+    expect(result).toEqual(inserted);
+    expect(calls.runs).toHaveLength(2);
+    expect(calls.runs[0].binds[0]).toBe("actor_octocat");
+    expect(calls.runs[1].binds[0]).toBe("actor_playnist_octocat");
+  });
 });
 
 describe("DEFAULT_ACTOR_TONE", () => {
