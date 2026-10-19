@@ -7,19 +7,17 @@ import { canAccessService, services } from "./service-registry";
 import { readLastProject } from "./last-project";
 import { Button } from "@/components/ui/button";
 import { NoxLogo } from "@/components/ui/nox-logo";
+import type { WorkspaceProfile } from "./workspace-profile";
 
-export type WorkspaceProfile = {
-  user: { login: string; email?: string | null };
-  orgs: Array<{ login: string; role?: "guest" | "viewer" | "member" | "admin" | "owner" }>;
-};
-
-export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfile }) {
+export function WorkspaceProjectSelector({ profile, onRefresh }: { profile: WorkspaceProfile; onRefresh: () => Promise<WorkspaceProfile> }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedWorkspace, setSelectedWorkspace] = useState("");
   const [selectedProject, setSelectedProject] = useState("");
   const [creating, setCreating] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState("");
   const workspaces = useMemo(() => {
     const personal = profile.user.login.toLowerCase();
     const lastWorkspace = readLastProject(profile.user.login)?.organizationId.toLowerCase();
@@ -39,7 +37,7 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
       staleTime: 5 * 60_000,
     })),
   });
-  const effectiveWorkspace = selectedWorkspace || workspaces[0]?.id || "";
+  const effectiveWorkspace = workspaces.some((workspace) => workspace.id === selectedWorkspace) ? selectedWorkspace : workspaces[0]?.id ?? "";
   const workspaceIndex = workspaces.findIndex((workspace) => workspace.id === effectiveWorkspace);
   const workspace = workspaces[workspaceIndex];
   const workspaceQuery = bootstrapQueries[workspaceIndex];
@@ -80,6 +78,21 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
     if (name) create.mutate(name);
   }
 
+  async function refreshAccess() {
+    setRefreshing(true);
+    setRefreshMessage("");
+    try {
+      const previous = new Set(profile.orgs.map((organization) => organization.login.toLowerCase()));
+      const next = await onRefresh();
+      const added = next.orgs.filter((organization) => !previous.has(organization.login.toLowerCase()));
+      setRefreshMessage(added.length ? `Added ${added.map((organization) => organization.login).join(", ")}.` : "GitHub access is up to date.");
+    } catch (error) {
+      setRefreshMessage(error instanceof Error ? error.message : "GitHub access could not be refreshed");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   return <main className="workspace-selector-page">
     <section className="workspace-selector-panel" aria-labelledby="workspace-selector-title">
       <header>
@@ -92,6 +105,10 @@ export function WorkspaceProjectSelector({ profile }: { profile: WorkspaceProfil
           {workspaces.map((item) => <option value={item.id} key={item.id}>{item.login}</option>)}
         </select>
       </label>
+      <div className="workspace-refresh">
+        <Button variant="outline" type="button" disabled={refreshing} onClick={() => { void refreshAccess(); }}>{refreshing ? "Refreshing…" : "Refresh GitHub access"}</Button>
+        {refreshMessage ? <small role="status">{refreshMessage}</small> : null}
+      </div>
 
       {workspaceQuery?.isLoading ? <div className="workspace-selector-state" role="status"><span className="spinner" />Loading projects…</div> : null}
       {workspaceQuery?.isError ? <div className="workspace-selector-state error" role="alert">Could not load this workspace. Try another workspace or refresh.</div> : null}

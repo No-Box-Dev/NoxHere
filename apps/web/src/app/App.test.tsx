@@ -260,6 +260,27 @@ describe("NoxHere API-backed platform", () => {
     expect(vi.mocked(fetch).mock.calls.some(([, init]) => new Headers(init?.headers).get("X-Project-ID") === "select")).toBe(false);
   });
 
+  it("refreshes GitHub organization access from the project chooser without reloading", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/auth/profile?refresh=1") return json({
+        user: { login: "JasperNoBoxDev", email: "jasper@noboxdev.com" },
+        orgs: [{ login: "No-Box-Dev", role: "admin" }, { login: "Playnist", role: "admin" }],
+      });
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/");
+
+    const workspace = await screen.findByRole("combobox", { name: "Workspace" });
+    expect(within(workspace).queryByRole("option", { name: "Playnist" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Refresh GitHub access" }));
+
+    expect(await within(workspace).findByRole("option", { name: "Playnist" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Added Playnist.");
+    expect(fetch).toHaveBeenCalledWith("/api/v1/auth/profile?refresh=1", { credentials: "same-origin" });
+  });
+
   it("opens the last valid project for the signed-in person without showing the chooser", async () => {
     localStorage.setItem("noxhere.last-project.jaspernoboxdev", JSON.stringify({ organizationId: "no-box-dev", projectId: project.id }));
     renderApp(<><App /><CurrentRoute /></>, "/");
@@ -313,6 +334,39 @@ describe("NoxHere API-backed platform", () => {
     expect(projectSwitcher.closest(".brand-row")).not.toBeNull();
     expect(projectSwitcher.closest(".topbar-actions")).toBeNull();
     expect(screen.getByRole("link", { name: "Open API documentation" })).toHaveAttribute("href", "/developers");
+  });
+
+  it("shows accessible projects from every organization in the compact project switcher", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const organization = new Headers(init?.headers).get("X-Org")?.toLowerCase();
+      if (url === "/api/auth/profile") return json({
+        user: { login: "JasperNoBoxDev" },
+        orgs: [{ login: "No-Box-Dev", role: "admin" }, { login: "Playnist", role: "admin" }],
+      });
+      if (organization === "playnist" && url === "/api/v1/me") return json({ login: "JasperNoBoxDev", org: "Playnist", isAdmin: true });
+      if (organization === "playnist" && url.startsWith("/api/v1/projects")) return json({ projects: [{
+        id: "proj_playnist_app",
+        name: "Playnist App",
+        org: "Playnist",
+        repo: "playnist",
+        repositories: ["playnist"],
+        description: null,
+        archived: 0,
+      }] });
+      if (organization === "playnist" && url.startsWith("/api/v1/integrations/connections")) return json({ github: { connected: true }, slack: { connected: false } });
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/connections/overview`);
+
+    await user.click(await screen.findByRole("button", { name: "Open project switcher" }));
+    expect(await screen.findByRole("region", { name: "No-Box-Dev projects" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Playnist projects" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Playnist App" }));
+
+    await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/Playnist/proj_playnist_app/connections/overview"));
   });
 
   it("returns an unknown project URL to the chooser instead of selecting the first project", async () => {
@@ -1308,6 +1362,36 @@ describe("NoxHere API-backed platform", () => {
       method: "POST",
       body: JSON.stringify({ email: "guest@example.com", scopeType: "project", projectId: project.id, service: null }),
     }));
+  });
+
+  it("shows API-created pending invitations from every project after refreshing access", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    let guestAccessRequests = 0;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/guests" && init?.method !== "POST") {
+        guestAccessRequests += 1;
+        return json({ grants: [], invitations: guestAccessRequests === 1 ? [] : [{
+          id: "invite-api-1",
+          email: "api-guest@example.com",
+          scopeType: "project",
+          projectId: "project-created-through-api",
+          projectName: "API Project",
+          service: null,
+          expiresAt: "2026-10-26T12:00:00.000Z",
+          createdAt: "2026-10-19T12:00:00.000Z",
+        }] });
+      }
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, `/no-box-dev/${project.id}/connections/people`);
+
+    await user.click(await screen.findByRole("button", { name: "Refresh access" }));
+
+    expect(await screen.findByText("api-guest@example.com")).toBeInTheDocument();
+    expect(screen.getByText(/API Project/)).toBeInTheDocument();
+    expect(screen.getByText("Invite pending")).toBeInTheDocument();
+    expect(guestAccessRequests).toBeGreaterThanOrEqual(2);
   });
 
   it("keeps guests inside their granted service and removes settings", async () => {
