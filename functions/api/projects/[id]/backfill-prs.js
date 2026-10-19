@@ -14,8 +14,8 @@ import { getActivityGenerationInfo } from "../../../lib/activity-response.js";
 //     after swapping providers so the feed converges on the new voice.
 // }
 // Generates first-person posts for the last N days of PRs in the project's repo,
-// one per PR, attributed to its author. Dedupes via delivery_id like
-// `backfill:<projectId>:pr-<n>` so re-running is idempotent.
+// one per PR, attributed to its author. Existing release notes are the source of
+// truth for deduplication so a failed generation can be retried safely.
 const BACKFILL_MAX_PRS = 25;
 // Mirror the new-trigger cap on fallback re-narration. Unbounded loops blow
 // past waitUntil's wall-clock budget — earlier fallbacks ran, later ones
@@ -25,7 +25,7 @@ const BACKFILL_MAX_FALLBACKS = 25;
 
 export async function onRequestPost(context) {
   try {
-    const { orgId, orgLogin, isAdmin } = getCtx(context);
+    const { orgId, orgLogin, token: userToken, isAdmin } = getCtx(context);
     if (!orgLogin) return errorResponse("Missing org context", 400);
     if (!isAdmin) return errorResponse("Admin required", 403);
     const { id } = context.params;
@@ -55,7 +55,14 @@ export async function onRequestPost(context) {
 
     let prs;
     try {
-      prs = await fetchRecentPrs(context.env, inst.installation_id, project.org, project.repo, days);
+      prs = await fetchRecentPrs(
+        context.env,
+        inst.installation_id,
+        project.org,
+        project.repo,
+        days,
+        userToken,
+      );
     } catch (err) {
       return errorResponse(`Failed to fetch PRs: ${err instanceof Error ? err.message : String(err)}`, 502);
     }
@@ -71,21 +78,20 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Build exact delivery_id candidates and dedupe via IN(...). Avoids a LIKE
-    // pattern over project.id, whose literal `_` characters (e.g.
-    // `proj_n1healthcare_authentication-service`) blow past D1's
-    // "LIKE or GLOB pattern too complex" threshold.
-    const candidateIds = prs.map((pr) => `backfill:${project.id}:pr-${pr.number}`);
-    const placeholders = candidateIds.map(() => "?").join(",");
+    // A release note is the completed unit of work. Do not use only the raw
+    // backfill delivery ID here: if generation failed after that row was
+    // inserted, the next run must retry the missing release note.
     const existing = await db.prepare(
-      `SELECT delivery_id FROM events
-        WHERE owner_id = ? AND project_id = ? AND source = 'github-backfill'
-          AND delivery_id IN (${placeholders})`
-    ).bind(orgLogin, project.id, ...candidateIds).all();
-    const seen = new Set((existing.results ?? []).map((r) => r.delivery_id));
+      `SELECT CAST(json_extract(payload_json, '$.pr_number') AS INTEGER) AS pr_number
+         FROM events
+        WHERE owner_id = ? AND project_id = ? AND repo = ?
+          AND type = 'release_notes'
+          AND json_extract(payload_json, '$.pr_number') IS NOT NULL`
+    ).bind(orgLogin, project.id, project.repo).all();
+    const released = new Set((existing.results ?? []).map((row) => Number(row.pr_number)));
 
     const todo = prs
-      .filter((pr) => !seen.has(`backfill:${project.id}:pr-${pr.number}`))
+      .filter((pr) => !released.has(Number(pr.number)))
       .slice(0, BACKFILL_MAX_PRS);
 
     // Sweep up narratives that need re-narration:
@@ -249,8 +255,17 @@ async function renarrateFallbacks(env, fallbacks) {
   }
 }
 
-async function fetchRecentPrs(env, installationId, org, repo, days) {
-  const token = await getInstallationToken(env, installationId);
+async function fetchRecentPrs(env, installationId, org, repo, days, userToken) {
+  let token;
+  try {
+    token = await getInstallationToken(env, installationId);
+  } catch (error) {
+    if (!userToken) throw error;
+    // The core API intentionally does not own the GitHub App private key.
+    // Admin-triggered reads can safely use the already-authenticated user's
+    // GitHub token, as the sync and recovery endpoints do.
+    token = userToken;
+  }
   const cutoff = Date.now() - days * 86_400_000;
 
   const url = `https://api.github.com/repos/${org}/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`;
@@ -340,8 +355,18 @@ async function backfillOnePr(env, args, pr) {
     createdAt,
   ).run();
 
-  const eventId = result.meta?.last_row_id;
-  if (!eventId) return;
+  let eventId = result.meta?.last_row_id;
+  if (!eventId) {
+    const existing = await env.DB.prepare(
+      "SELECT id FROM events WHERE delivery_id = ? AND project_id = ?",
+    ).bind(`backfill:${args.projectId}:pr-${pr.number}`, args.projectId).first();
+    eventId = existing?.id;
+    if (!eventId) return;
+    // The raw event already exists, which means a previous attempt stopped
+    // before producing the release note. Retry only that missing output.
+    await narrateReleaseNotes(env, eventId);
+    return;
+  }
   // Run both voices in parallel — one event, two stored rows. Same LLM
   // config, different prompt. Promise.allSettled so one LLM failure
   // doesn't drop the other.
