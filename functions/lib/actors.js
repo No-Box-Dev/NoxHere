@@ -25,7 +25,7 @@ export async function resolveActorFromGithub(db, ownerId, author) {
   if (!author?.login || author.id == null) return null;
   const login = author.login.toLowerCase();
   const githubUserId = String(author.id);
-  const newId = `actor_${login}`;
+  const legacyId = `actor_${login}`;
   const kind = author.type === "Bot" ? "bot" : "human";
   const defaultTone = kind === "bot" ? DEFAULT_BOT_TONE : DEFAULT_ACTOR_TONE;
 
@@ -58,23 +58,27 @@ export async function resolveActorFromGithub(db, ownerId, author) {
     ).bind(existing.id, ownerId).first();
   }
 
-  // ON CONFLICT(id) — two webhooks racing for the same person produce the
-  // same deterministic id, so the second insert is a no-op.
-  await db.prepare(
+  const insert = (id) => db.prepare(
     `INSERT INTO actors (id, github_user_id, name, avatar_url, tone, kind, owner_id, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-     ON CONFLICT(id) DO NOTHING`
+     ON CONFLICT(id) DO NOTHING`,
   ).bind(
-    newId,
-    githubUserId,
-    author.name || author.login,
-    author.avatar_url ?? null,
-    defaultTone,
-    kind,
-    ownerId,
+    id, githubUserId, author.name || author.login, author.avatar_url ?? null,
+    defaultTone, kind, ownerId,
   ).run();
-
-  return await db.prepare(
+  const select = () => db.prepare(
     "SELECT id, name, tone FROM actors WHERE owner_id = ? AND github_user_id = ?"
   ).bind(ownerId, githubUserId).first();
+
+  // Preserve legacy IDs when available. If another tenant already owns that
+  // globally unique ID, create an owner-scoped ID instead. This matters after
+  // moving a project between organizations: the same GitHub author must be
+  // resolvable in both tenants without sharing an actor row.
+  await insert(legacyId);
+  const inserted = await select();
+  if (inserted) return inserted;
+
+  const ownerSegment = String(ownerId).toLowerCase().replace(/[^a-z0-9_-]+/g, "_");
+  await insert(`actor_${ownerSegment}_${login}`);
+  return await select();
 }
