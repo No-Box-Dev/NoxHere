@@ -1,9 +1,7 @@
 import { getCtx, jsonResponse, errorResponse } from "../../../lib/db";
 import { getInstallationToken } from "../../../lib/github-app";
 import { resolveActorFromGithub } from "../../../lib/actors";
-import { narrateEvent, narrateReleaseNotes } from "../../../lib/narrator";
-import { recordFailure } from "../../../lib/op-failures";
-import { sleep, NARRATOR_PACING_MS } from "../../../lib/pacing";
+import { TASK } from "../../../lib/tasks";
 import { getActivityGenerationInfo } from "../../../lib/activity-response.js";
 
 // POST /api/projects/:id/backfill-prs
@@ -146,31 +144,21 @@ export async function onRequestPost(context) {
       });
     }
 
-    const work = (async () => {
-      if (todo.length > 0) {
-        await processBackfill(context.env, {
-          projectId: project.id,
-          org: project.org,
-          repo: project.repo,
-          ownerId: orgLogin,
-          prs: todo,
-        });
-      }
-      if (fallbackIds.length > 0) {
-        await renarrateFallbacks(context.env, fallbackIds);
-      }
-    })();
-    context.waitUntil(
-      work.catch(async (err) => {
-        console.error("[noxhere backfill] failed:", err);
-        await recordFailure(db, {
-          ownerId: orgLogin,
-          op: "backfillPrs",
-          deliveryId: project.id,
-          error: err,
-        });
-      })
-    );
+    // Persist every trigger and hand generation to the durable queue before
+    // returning. LLM calls can outlive a request's waitUntil grace period;
+    // queue messages have retries and a dead-letter path instead.
+    if (todo.length > 0) {
+      await processBackfill(context.env, {
+        projectId: project.id,
+        org: project.org,
+        repo: project.repo,
+        ownerId: orgLogin,
+        prs: todo,
+      });
+    }
+    if (fallbackIds.length > 0) {
+      await renarrateFallbacks(context.env, orgLogin, project.id, fallbackIds);
+    }
 
     return jsonResponse({
       ok: true,
@@ -242,10 +230,8 @@ async function resolveOrgId(db, ownerId) {
   return row?.id ?? null;
 }
 
-async function renarrateFallbacks(env, fallbacks) {
-  for (let i = 0; i < fallbacks.length; i++) {
-    if (i > 0) await sleep(NARRATOR_PACING_MS);
-    const { triggerEventId } = fallbacks[i];
+async function renarrateFallbacks(env, ownerId, projectId, fallbacks) {
+  for (const { triggerEventId } of fallbacks) {
     try {
       // Clear ANY existing narrative/release_notes rows for this trigger
       // before re-running both narrators. The id we have from
@@ -260,9 +246,9 @@ async function renarrateFallbacks(env, fallbacks) {
            WHERE type IN ('narrative', 'release_notes')
              AND CAST(json_extract(payload_json, '$.trigger_event_id') AS INTEGER) = ?`,
       ).bind(triggerEventId).run();
-      await Promise.allSettled([
-        narrateEvent(env, triggerEventId),
-        narrateReleaseNotes(env, triggerEventId),
+      await Promise.all([
+        enqueueGeneration(env, ownerId, projectId, triggerEventId, TASK.NARRATE),
+        enqueueGeneration(env, ownerId, projectId, triggerEventId, TASK.RELEASE_NOTES),
       ]);
     } catch (err) {
       console.error(`[noxhere backfill] re-narrate trigger ${triggerEventId} failed:`, err);
@@ -304,14 +290,8 @@ async function fetchRecentPrs(env, installationId, org, repo, days, userToken) {
 async function processBackfill(env, args) {
   // Oldest-first so the feed reads chronologically.
   const sorted = [...args.prs].sort((a, b) => prAnchor(a).localeCompare(prAnchor(b)));
-  for (let i = 0; i < sorted.length; i++) {
-    if (i > 0) await sleep(NARRATOR_PACING_MS);
-    const pr = sorted[i];
-    try {
-      await backfillOnePr(env, args, pr);
-    } catch (err) {
-      console.error(`[noxhere backfill] PR #${pr.number} failed:`, err);
-    }
+  for (const pr of sorted) {
+    await backfillOnePr(env, args, pr);
   }
 }
 
@@ -380,14 +360,21 @@ async function backfillOnePr(env, args, pr) {
     if (!eventId) return;
     // The raw event already exists, which means a previous attempt stopped
     // before producing the release note. Retry only that missing output.
-    await narrateReleaseNotes(env, eventId);
+    await enqueueGeneration(env, args.ownerId, args.projectId, eventId, TASK.RELEASE_NOTES);
     return;
   }
-  // Run both voices in parallel — one event, two stored rows. Same LLM
-  // config, different prompt. Promise.allSettled so one LLM failure
-  // doesn't drop the other.
-  await Promise.allSettled([
-    narrateEvent(env, eventId),
-    narrateReleaseNotes(env, eventId),
+  // Queue both voices durably — one event, two independently retried tasks.
+  await Promise.all([
+    enqueueGeneration(env, args.ownerId, args.projectId, eventId, TASK.NARRATE),
+    enqueueGeneration(env, args.ownerId, args.projectId, eventId, TASK.RELEASE_NOTES),
   ]);
+}
+
+function enqueueGeneration(env, ownerId, projectId, eventId, type) {
+  return env.TASK_QUEUE.send({
+    type,
+    eventId,
+    ownerId,
+    deliveryId: `backfill:${projectId}:${eventId}:${type}`,
+  });
 }
