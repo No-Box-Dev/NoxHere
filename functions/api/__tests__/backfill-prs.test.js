@@ -5,10 +5,98 @@ vi.mock("../../lib/github-app.js", () => ({
 }));
 
 import { onRequestPost } from "../projects/[id]/backfill-prs.js";
+import { getInstallationToken } from "../../lib/github-app.js";
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("pull-request post backfill dependencies", () => {
+  it("uses the authenticated admin token when the core API has no GitHub App key", async () => {
+    vi.mocked(getInstallationToken).mockRejectedValueOnce(new Error("GitHub App env vars missing"));
+    const request = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const DB = {
+      prepare(sql) {
+        return {
+          bind() { return this; },
+          async first() {
+            if (sql.includes("FROM projects")) {
+              return { id: "project-1", name: "App", org: "acme", repo: "app", owner_id: "acme" };
+            }
+            if (sql.includes("FROM installations")) return { installation_id: 123 };
+            return null;
+          },
+        };
+      },
+    };
+    const response = await onRequestPost({
+      env: { DB },
+      data: { orgId: 1, orgLogin: "acme", token: "user-token", isAdmin: true },
+      params: { id: "project-1" },
+      request: new Request("https://example.com/api/v1/projects/project-1/backfill-prs", {
+        method: "POST",
+        body: JSON.stringify({ days: 2 }),
+      }),
+      waitUntil: vi.fn(),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ found: 0, queued: 0 });
+    expect(request).toHaveBeenCalledWith(
+      expect.stringContaining("/repos/acme/app/pulls"),
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer user-token" }) }),
+    );
+  });
+
+  it("does not queue a PR that already has a release note", async () => {
+    const recent = new Date().toISOString();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify([{
+      number: 42,
+      title: "Already released",
+      user: { login: "alex" },
+      created_at: recent,
+      updated_at: recent,
+      merged_at: recent,
+      closed_at: recent,
+    }]), { status: 200, headers: { "Content-Type": "application/json" } }));
+    const DB = {
+      prepare(sql) {
+        return {
+          bind() { return this; },
+          async first() {
+            if (sql.includes("FROM projects")) {
+              return { id: "project-1", name: "App", org: "acme", repo: "app", owner_id: "acme" };
+            }
+            if (sql.includes("FROM installations")) return { installation_id: 123 };
+            return null;
+          },
+          async all() {
+            if (sql.includes("type = 'release_notes'")) return { results: [{ pr_number: 42 }] };
+            return { results: [] };
+          },
+        };
+      },
+    };
+    const waitUntil = vi.fn();
+    const response = await onRequestPost({
+      env: { DB },
+      data: { orgId: 1, orgLogin: "acme", token: "user-token", isAdmin: true },
+      params: { id: "project-1" },
+      request: new Request("https://example.com/api/v1/projects/project-1/backfill-prs", {
+        method: "POST",
+        body: JSON.stringify({ days: 2 }),
+      }),
+      waitUntil,
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ found: 1, queued: 0, skipped: 1 });
+    expect(waitUntil).not.toHaveBeenCalled();
+  });
+
   it("returns a sanitized dependency error when Activity generation info is unreachable", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const recent = new Date().toISOString();
