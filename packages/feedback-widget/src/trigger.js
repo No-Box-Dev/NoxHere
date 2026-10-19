@@ -14,6 +14,42 @@ import { debugLog } from './debug.js';
 let triggerButton = null;
 let onTriggerCallback = null;
 
+const STYLES = new Set(['tab', 'button']);
+const POSITIONS = new Set([
+  'top-left', 'center-left', 'bottom-left',
+  'top-right', 'center-right', 'bottom-right',
+]);
+
+export const DEFAULT_LAUNCHER = {
+  desktop: { style: 'tab', position: 'center-right' },
+  mobile: { style: 'button', position: 'bottom-right' },
+};
+
+export function normalizeLauncher(value) {
+  const launcher = value && typeof value === 'object' ? value : {};
+  return {
+    desktop: normalizeViewport(launcher.desktop, DEFAULT_LAUNCHER.desktop),
+    mobile: normalizeViewport(launcher.mobile, DEFAULT_LAUNCHER.mobile),
+  };
+}
+
+function normalizeViewport(value, fallback) {
+  const candidate = value && typeof value === 'object' ? value : {};
+  return {
+    style: STYLES.has(candidate.style) ? candidate.style : fallback.style,
+    position: POSITIONS.has(candidate.position) ? candidate.position : fallback.position,
+  };
+}
+
+function applyLauncher(launcher) {
+  if (!triggerButton) return;
+  const normalized = normalizeLauncher(launcher);
+  triggerButton.dataset.feedbackDesktopStyle = normalized.desktop.style;
+  triggerButton.dataset.feedbackDesktopPosition = normalized.desktop.position;
+  triggerButton.dataset.feedbackMobileStyle = normalized.mobile.style;
+  triggerButton.dataset.feedbackMobilePosition = normalized.mobile.position;
+}
+
 export function createTrigger(onTrigger, options = {}) {
   if (triggerButton) return triggerButton;
 
@@ -45,6 +81,7 @@ export function createTrigger(onTrigger, options = {}) {
   // Apply custom color
   triggerButton.style.background = color;
   triggerButton.dataset.color = color;
+  applyLauncher(options.launcher);
 
   triggerButton.addEventListener('click', handleClick);
 
@@ -90,6 +127,7 @@ export function updateTrigger(options = {}) {
     triggerButton.setAttribute('aria-label', shortcut ? `${options.text} (${shortcut})` : options.text);
     if (shortcut) triggerButton.title = `${options.text} (${shortcut})`;
   }
+  if (options.launcher) applyLauncher(options.launcher);
 }
 
 export function getTrigger() {

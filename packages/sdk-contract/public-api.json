@@ -1065,6 +1065,50 @@
         ],
         "type": "object"
       },
+      "FeedbackLauncherConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "desktop": {
+            "$ref": "#/components/schemas/FeedbackLauncherViewport"
+          },
+          "mobile": {
+            "$ref": "#/components/schemas/FeedbackLauncherViewport"
+          }
+        },
+        "required": [
+          "desktop",
+          "mobile"
+        ],
+        "type": "object"
+      },
+      "FeedbackLauncherViewport": {
+        "additionalProperties": false,
+        "properties": {
+          "position": {
+            "enum": [
+              "top-left",
+              "center-left",
+              "bottom-left",
+              "top-right",
+              "center-right",
+              "bottom-right"
+            ],
+            "type": "string"
+          },
+          "style": {
+            "enum": [
+              "tab",
+              "button"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "style",
+          "position"
+        ],
+        "type": "object"
+      },
       "FeedbackReport": {
         "properties": {
           "blockValues": {
@@ -1330,6 +1374,9 @@
             "maxLength": 40,
             "type": "string"
           },
+          "launcher": {
+            "$ref": "#/components/schemas/FeedbackLauncherConfig"
+          },
           "name": {
             "maxLength": 120,
             "type": "string"
@@ -1378,6 +1425,9 @@
             },
             "maxItems": 50,
             "type": "array"
+          },
+          "launcher": {
+            "$ref": "#/components/schemas/FeedbackLauncherConfig"
           },
           "slackChannelId": {
             "maxLength": 80,
@@ -33856,5 +33906,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "25ce8e10c04192b4df1c34213370755121a4477cc557948118d8e4706fd1615d"
+  "x-sdk-source-sha256": "3a8966b6d72e3291d17766aef8622f1e842537c4696bb9270d60870c2d81dba9"
 }

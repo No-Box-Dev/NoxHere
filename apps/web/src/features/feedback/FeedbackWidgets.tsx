@@ -15,6 +15,27 @@ type WidgetEnvironment = {
   enabled?: boolean;
 };
 
+type LauncherStyle = "tab" | "button";
+type LauncherPosition = "top-left" | "center-left" | "bottom-left" | "top-right" | "center-right" | "bottom-right";
+type LauncherConfig = {
+  desktop: { style: LauncherStyle; position: LauncherPosition };
+  mobile: { style: LauncherStyle; position: LauncherPosition };
+};
+
+const DEFAULT_LAUNCHER: LauncherConfig = {
+  desktop: { style: "tab", position: "center-right" },
+  mobile: { style: "button", position: "bottom-right" },
+};
+
+const LAUNCHER_POSITIONS: { value: LauncherPosition; label: string }[] = [
+  { value: "top-left", label: "Top left" },
+  { value: "center-left", label: "Middle left" },
+  { value: "bottom-left", label: "Bottom left" },
+  { value: "top-right", label: "Top right" },
+  { value: "center-right", label: "Middle right" },
+  { value: "bottom-right", label: "Bottom right" },
+];
+
 type WidgetSite = {
   id: string;
   name: string;
@@ -33,6 +54,7 @@ type WidgetSite = {
   slackBlockedCount?: number;
   slackLastError?: string | null;
   environments?: WidgetEnvironment[];
+  launcher?: LauncherConfig;
   openIssueCount?: number;
   issueCount?: number;
   updatedAt?: string;
@@ -119,18 +141,35 @@ function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pend
   const [widgetMode, setWidgetMode] = useState(site.widgetMode || "development");
   const [autoErrorLogging, setAutoErrorLogging] = useState(site.autoErrorLogging === true);
   const [dailySummaryEnabled, setDailySummaryEnabled] = useState(site.dailySummaryEnabled !== false);
+  const [launcher, setLauncher] = useState<LauncherConfig>(() => ({
+    desktop: { ...(site.launcher?.desktop ?? DEFAULT_LAUNCHER.desktop) },
+    mobile: { ...(site.launcher?.mobile ?? DEFAULT_LAUNCHER.mobile) },
+  }));
   const [environments, setEnvironments] = useState<WidgetEnvironment[]>(() => (site.environments ?? []).map((environment) => ({ ...environment })));
   const [blocks, setBlocks] = useState<WidgetBlock[]>(() => (site.blocks ?? []).map((block) => ({ ...block })));
   const validEnvironments = environments.every((environment) => environment.name.trim() && environment.url.trim())
     && new Set(environments.map((environment) => environment.name.trim().toLowerCase())).size === environments.length;
   return <details className="widget-editor">
     <summary>Behavior and allowed environments <span>⌄</span></summary>
-    <form onSubmit={(event) => { event.preventDefault(); onSave({ widgetMode, autoErrorLogging, dailySummaryEnabled, environments, blocks }); }}>
+    <form onSubmit={(event) => { event.preventDefault(); onSave({ widgetMode, launcher, autoErrorLogging, dailySummaryEnabled, environments, blocks }); }}>
       <p className="widget-warning">Button text and accent color now come from Settings → Branding.</p>
       <div className="widget-fields">
         <label>Reporter experience<select value={widgetMode} onChange={(event) => setWidgetMode(event.target.value as "development" | "release")}><option value="development">Development</option><option value="release">Release</option></select></label>
         <label className="widget-check"><input type="checkbox" checked={autoErrorLogging} onChange={(event) => setAutoErrorLogging(event.target.checked)} /> Automatically report browser errors</label>
         <label className="widget-check"><input type="checkbox" checked={dailySummaryEnabled} onChange={(event) => setDailySummaryEnabled(event.target.checked)} /> Send daily Slack summary</label>
+      </div>
+      <div className="widget-environments widget-launcher-settings">
+        <header><div><b>Launcher</b><p>Choose the trigger shape and screen edge independently for desktop and mobile.</p></div></header>
+        <div className="widget-environment">
+          <b>Desktop</b>
+          <label>Style<select aria-label="Desktop launcher style" value={launcher.desktop.style} onChange={(event) => setLauncher((current) => ({ ...current, desktop: { ...current.desktop, style: event.target.value as LauncherStyle } }))}><option value="tab">Side tab</option><option value="button">Round button</option></select></label>
+          <label>Position<select aria-label="Desktop launcher position" value={launcher.desktop.position} onChange={(event) => setLauncher((current) => ({ ...current, desktop: { ...current.desktop, position: event.target.value as LauncherPosition } }))}>{LAUNCHER_POSITIONS.map((position) => <option key={position.value} value={position.value}>{position.label}</option>)}</select></label>
+        </div>
+        <div className="widget-environment">
+          <b>Mobile</b>
+          <label>Style<select aria-label="Mobile launcher style" value={launcher.mobile.style} onChange={(event) => setLauncher((current) => ({ ...current, mobile: { ...current.mobile, style: event.target.value as LauncherStyle } }))}><option value="button">Round button</option><option value="tab">Side tab</option></select></label>
+          <label>Position<select aria-label="Mobile launcher position" value={launcher.mobile.position} onChange={(event) => setLauncher((current) => ({ ...current, mobile: { ...current.mobile, position: event.target.value as LauncherPosition } }))}>{LAUNCHER_POSITIONS.map((position) => <option key={position.value} value={position.value}>{position.label}</option>)}</select></label>
+        </div>
       </div>
       <div className="widget-environments widget-blocks">
         <header><div><b>Feedback form</b><p>Choose what the capture widget asks. A custom form always needs one required description.</p></div><button type="button" onClick={() => setBlocks((current) => current.length ? [...current, { id: `field-${Date.now()}`, type: "custom_text", label: "Additional detail", required: false }] : [{ id: "description", type: "description", label: "What happened?", required: true }])}>{blocks.length ? "Add field" : "Customize form"}</button></header>

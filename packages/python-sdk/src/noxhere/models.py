@@ -141,6 +141,14 @@ class FeedbackErrorBatch(TypedDict, total=False):
     errors: Required[list["FeedbackErrorBatchErrors"]]
     siteId: Required[str]
 
+class FeedbackLauncherConfig(TypedDict, total=False):
+    desktop: Required["FeedbackLauncherViewport"]
+    mobile: Required["FeedbackLauncherViewport"]
+
+class FeedbackLauncherViewport(TypedDict, total=False):
+    position: Required[Literal['top-left', 'center-left', 'bottom-left', 'top-right', 'center-right', 'bottom-right']]
+    style: Required[Literal['tab', 'button']]
+
 class FeedbackReport(TypedDict, total=False):
     blockValues: NotRequired[Union[dict[str, str], None]]
     context: NotRequired[Union[dict[str, Any], None]]
@@ -179,6 +187,7 @@ class FeedbackSiteCreate(TypedDict, total=False):
     autoErrorLogging: NotRequired[bool]
     buttonColor: NotRequired[str]
     buttonText: NotRequired[str]
+    launcher: NotRequired["FeedbackLauncherConfig"]
     name: Required[str]
     projectId: Required[str]
     widgetMode: NotRequired[Literal['development', 'release']]
@@ -189,6 +198,7 @@ class FeedbackSitePatch(TypedDict, total=False):
     buttonColor: NotRequired[str]
     buttonText: NotRequired[str]
     environments: NotRequired[list["FeedbackEnvironment"]]
+    launcher: NotRequired["FeedbackLauncherConfig"]
     slackChannelId: NotRequired[Union[str, None]]
     slackConnectionId: NotRequired[Union[str, None]]
     widgetMode: NotRequired[Literal['development', 'release']]

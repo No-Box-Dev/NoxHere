@@ -78,4 +78,22 @@ describe("site configuration", () => {
     const config = publicWidgetConfig({ ...site, widget_config: JSON.stringify({ environments: [{ name: "Production", url: "app.example.com" }] }) }, "https://app.example.com");
     expect(config.captureMode).toBe("dom");
   });
+
+  it("returns independent launcher settings and safe defaults", () => {
+    expect(publicWidgetConfig({ ...site, widget_config: "{}" }, null).launcher).toEqual({
+      desktop: { style: "tab", position: "center-right" },
+      mobile: { style: "button", position: "bottom-right" },
+    });
+    const configured = publicWidgetConfig({
+      ...site,
+      widget_config: JSON.stringify({ launcher: {
+        desktop: { style: "button", position: "top-left" },
+        mobile: { style: "tab", position: "center-left" },
+      } }),
+    }, null);
+    expect(configured.launcher).toEqual({
+      desktop: { style: "button", position: "top-left" },
+      mobile: { style: "tab", position: "center-left" },
+    });
+  });
 });

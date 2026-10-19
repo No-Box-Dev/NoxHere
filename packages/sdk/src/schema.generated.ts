@@ -3453,6 +3453,16 @@ export interface components {
             })[];
             siteId: string;
         };
+        FeedbackLauncherConfig: {
+            desktop: components["schemas"]["FeedbackLauncherViewport"];
+            mobile: components["schemas"]["FeedbackLauncherViewport"];
+        };
+        FeedbackLauncherViewport: {
+            /** @enum {string} */
+            position: "top-left" | "center-left" | "bottom-left" | "top-right" | "center-right" | "bottom-right";
+            /** @enum {string} */
+            style: "tab" | "button";
+        };
         FeedbackReport: {
             blockValues?: {
                 [key: string]: string;
@@ -3522,6 +3532,7 @@ export interface components {
             autoErrorLogging?: boolean;
             buttonColor?: string;
             buttonText?: string;
+            launcher?: components["schemas"]["FeedbackLauncherConfig"];
             name: string;
             projectId: string;
             /** @enum {string} */
@@ -3533,6 +3544,7 @@ export interface components {
             buttonColor?: string;
             buttonText?: string;
             environments?: components["schemas"]["FeedbackEnvironment"][];
+            launcher?: components["schemas"]["FeedbackLauncherConfig"];
             slackChannelId?: string | null;
             slackConnectionId?: string | null;
             /** @enum {string} */

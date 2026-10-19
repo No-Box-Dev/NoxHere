@@ -1,4 +1,8 @@
 import { DEFAULT_FEEDBACK_BLOCKS } from "../../../packages/contracts/feedback-defaults";
+import {
+  normalizeFeedbackLauncher,
+  type FeedbackLauncherConfig,
+} from "../../../packages/contracts/feedback-launcher";
 
 export type WidgetMode = "development" | "release";
 export type CaptureMode = "screenshot" | "dom";
@@ -27,6 +31,7 @@ export interface WidgetConfig {
   autoErrorLogging?: boolean;
   environments?: WidgetEnvironment[];
   blocks?: WidgetBlock[];
+  launcher?: FeedbackLauncherConfig;
 }
 
 export interface BrandingConfig {
@@ -176,6 +181,7 @@ export function publicWidgetConfig(site: CaptureSite, origin: string | null) {
     widgetMode: matched?.widgetMode || (stored.widgetMode === "release" ? "release" : "development"),
     captureMode: matched?.captureMode === "screenshot" ? "screenshot" : "dom",
     autoErrorLogging: stored.autoErrorLogging === true,
+    launcher: normalizeFeedbackLauncher(stored.launcher),
     environment: environmentName,
     // The current widget matches environments client-side. Return only the
     // effective environment instead of exposing every internal/dev hostname.
@@ -196,6 +202,7 @@ export function legacyWidgetConfig(site: CaptureSite) {
     widgetMode: stored.widgetMode === "release" ? "release" : "development",
     captureMode: "dom" as CaptureMode,
     autoErrorLogging: stored.autoErrorLogging === true,
+    launcher: normalizeFeedbackLauncher(stored.launcher),
     environments: Array.isArray(stored.environments) ? stored.environments : [],
     blocks: Array.isArray(stored.blocks) && stored.blocks.length ? stored.blocks : DEFAULT_FEEDBACK_BLOCKS,
   };

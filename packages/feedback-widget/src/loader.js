@@ -8,7 +8,7 @@
  */
 
 import { injectLoaderStyles, removeLoaderStyles } from './loader-styles.js';
-import { createTrigger, hideTrigger, showTrigger, destroyTrigger, updateTrigger } from './trigger.js';
+import { createTrigger, hideTrigger, showTrigger, destroyTrigger, updateTrigger, normalizeLauncher } from './trigger.js';
 import { startConsoleCapture, stopConsoleCapture, autoReportErrors } from './console-buffer.js';
 import { setDebug, debugLog } from './debug.js';
 import { showToast, dismissToast } from './toast.js';
@@ -51,6 +51,7 @@ const config = {
   blocks: DEFAULT_BLOCKS,
   captureMode: 'dom',
   branding: null,
+  launcher: normalizeLauncher(null),
 };
 
 // Same env-scope rule as categories: NULL/empty environments means "all envs".
@@ -197,6 +198,7 @@ export function init(options = {}) {
   config.color = options.buttonColor || options.color || '#FE795D';
   config.text = options.buttonText || options.text || 'Report issue';
   config.branding = options.branding && typeof options.branding === 'object' ? options.branding : null;
+  config.launcher = normalizeLauncher(options.launcher);
   config.getContext = typeof options.getContext === 'function' ? options.getContext : null;
   const reporterProvider = options.getUser ?? options.getReporter;
   config.getUser = typeof reporterProvider === 'function' ? reporterProvider : null;
@@ -225,6 +227,7 @@ export function init(options = {}) {
     color: config.color,
     text: config.text,
     shortcut: formatShortcut(config.shortcut),
+    launcher: config.launcher,
   });
 
   shortcutCleanup = attachShortcutListener();
@@ -273,6 +276,7 @@ export function destroy() {
   config.categories = [];
   config.blocks = DEFAULT_BLOCKS;
   config.branding = null;
+  config.launcher = normalizeLauncher(null);
 }
 
 function normalizeReporter(reporter) {
@@ -354,7 +358,8 @@ async function fetchConfig(siteId, generation) {
     config.color = data.buttonColor || config.color;
     config.text = data.buttonText || config.text;
     config.branding = data.branding && typeof data.branding === 'object' ? data.branding : config.branding;
-    updateTrigger({ color: config.color, text: config.text });
+    config.launcher = normalizeLauncher(data.launcher);
+    updateTrigger({ color: config.color, text: config.text, launcher: config.launcher });
     config.autoErrorLogging = !!data.autoErrorLogging;
     config.captureMode = data.captureMode === 'screenshot' ? 'screenshot' : 'dom';
     const rawCategories = Array.isArray(data.categories) ? data.categories : [];

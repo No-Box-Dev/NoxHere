@@ -7,6 +7,10 @@ import { requeueBlockedForSite } from "../../../../lib/delivery-outbox.js";
 import { requeueBlockedTransportCommands } from "../../../../lib/transport-outbox";
 import { feedbackAuditStatement } from "../../../../lib/feedback-audit";
 import { projectSlackDestinationErrorStatus, validateProjectSlackDestination } from "../../../../lib/project-routing";
+import {
+  FEEDBACK_LAUNCHER_POSITIONS,
+  FEEDBACK_LAUNCHER_STYLES,
+} from "../../../../../packages/contracts/feedback-launcher";
 
 interface Ctx {
   env: NoxDatabaseEnv & {
@@ -52,6 +56,16 @@ const BlockInput = z.object({
   }
 });
 
+const LauncherViewportInput = z.object({
+  style: z.enum(FEEDBACK_LAUNCHER_STYLES),
+  position: z.enum(FEEDBACK_LAUNCHER_POSITIONS),
+});
+
+const LauncherInput = z.object({
+  desktop: LauncherViewportInput,
+  mobile: LauncherViewportInput,
+});
+
 const UpdateSite = z.object({
   projectId: z.string().trim().min(1).max(240).optional(),
   slackChannelId: z.string().trim().max(80).nullable().optional(),
@@ -59,6 +73,7 @@ const UpdateSite = z.object({
   dailySummaryEnabled: z.boolean().optional(),
   autoErrorLogging: z.boolean().optional(),
   widgetMode: z.enum(["development", "release"]).optional(),
+  launcher: LauncherInput.optional(),
   buttonColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   buttonText: z.string().trim().min(1).max(40).optional(),
   environments: z.array(EnvironmentInput).max(50).superRefine((environments, ctx) => {
@@ -157,7 +172,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
       : [],
   )[0];
   if (missingEnvironment) return errorResponse(`Block references unknown environment: ${missingEnvironment}`, 400);
-  for (const key of ["buttonColor", "buttonText", "widgetMode", "autoErrorLogging", "dailySummaryEnabled", "environments", "blocks"] as const) {
+  for (const key of ["buttonColor", "buttonText", "widgetMode", "launcher", "autoErrorLogging", "dailySummaryEnabled", "environments", "blocks"] as const) {
     if (input[key] !== undefined) config[key] = input[key];
   }
   const updateStatement = db.prepare(

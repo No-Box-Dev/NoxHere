@@ -3,12 +3,27 @@ import { getCtx, jsonResponse, errorResponse } from "../../../lib/db";
 import { validate } from "../../../lib/validate";
 import { getNoxDb, type NoxDatabaseEnv } from "../../../lib/nox-db";
 import { feedbackAuditStatement } from "../../../lib/feedback-audit";
+import {
+  FEEDBACK_LAUNCHER_POSITIONS,
+  FEEDBACK_LAUNCHER_STYLES,
+  normalizeFeedbackLauncher,
+} from "../../../../packages/contracts/feedback-launcher";
 
 interface Ctx {
   env: NoxDatabaseEnv;
   data: { orgId: number; orgLogin: string; userLogin: string; isAdmin: boolean; projectId?: string | null };
   request: Request;
 }
+
+const LauncherViewportInput = z.object({
+  style: z.enum(FEEDBACK_LAUNCHER_STYLES),
+  position: z.enum(FEEDBACK_LAUNCHER_POSITIONS),
+});
+
+const LauncherInput = z.object({
+  desktop: LauncherViewportInput,
+  mobile: LauncherViewportInput,
+});
 
 const CreateSite = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -17,6 +32,7 @@ const CreateSite = z.object({
   buttonText: z.string().trim().min(1).max(40).optional(),
   widgetMode: z.enum(["development", "release"]).optional(),
   autoErrorLogging: z.boolean().optional(),
+  launcher: LauncherInput.optional(),
 });
 
 const SITE_SELECT = `
@@ -43,6 +59,7 @@ function siteDto(row: Record<string, unknown>) {
     buttonText: config.buttonText ?? "Report issue",
     widgetMode: config.widgetMode === "release" ? "release" : "development",
     autoErrorLogging: config.autoErrorLogging === true,
+    launcher: normalizeFeedbackLauncher(config.launcher),
     environments: Array.isArray(config.environments) ? config.environments : [],
     blocks: Array.isArray(config.blocks) ? config.blocks : [],
     slackChannelId: row.slack_channel_id,
@@ -169,6 +186,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
       widgetMode: input.widgetMode ?? "development",
       autoErrorLogging: input.autoErrorLogging === true,
       dailySummaryEnabled: true,
+      launcher: normalizeFeedbackLauncher(input.launcher),
       environments: [],
       blocks: [],
     }),

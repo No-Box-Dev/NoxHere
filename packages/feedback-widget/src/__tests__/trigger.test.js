@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { darkenColor, createTrigger, updateTrigger, getTrigger, destroyTrigger } from '../trigger.js';
+import { darkenColor, createTrigger, updateTrigger, getTrigger, destroyTrigger, normalizeLauncher } from '../trigger.js';
 
 describe('updateTrigger', () => {
   beforeEach(() => {
@@ -28,6 +28,38 @@ describe('updateTrigger', () => {
 
   it('no-ops when the button does not exist', () => {
     expect(() => updateTrigger({ color: '#000' })).not.toThrow();
+  });
+
+  it('keeps legacy desktop and mobile launcher defaults', () => {
+    createTrigger(() => {}, { color: '#FE795D', text: 'Report issue' });
+    const btn = getTrigger();
+    expect(btn.dataset).toMatchObject({
+      feedbackDesktopStyle: 'tab',
+      feedbackDesktopPosition: 'center-right',
+      feedbackMobileStyle: 'button',
+      feedbackMobilePosition: 'bottom-right',
+    });
+  });
+
+  it('applies independent desktop and mobile launcher settings', () => {
+    createTrigger(() => {}, { color: '#FE795D', text: 'Report issue' });
+    updateTrigger({ launcher: {
+      desktop: { style: 'button', position: 'top-left' },
+      mobile: { style: 'tab', position: 'center-left' },
+    } });
+    expect(getTrigger().dataset).toMatchObject({
+      feedbackDesktopStyle: 'button',
+      feedbackDesktopPosition: 'top-left',
+      feedbackMobileStyle: 'tab',
+      feedbackMobilePosition: 'center-left',
+    });
+  });
+
+  it('normalizes unsupported launcher values to safe defaults', () => {
+    expect(normalizeLauncher({ desktop: { style: 'square' }, mobile: null })).toEqual({
+      desktop: { style: 'tab', position: 'center-right' },
+      mobile: { style: 'button', position: 'bottom-right' },
+    });
   });
 });
 

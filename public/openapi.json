@@ -14473,6 +14473,9 @@
           },
           "autoErrorLogging": {
             "type": "boolean"
+          },
+          "launcher": {
+            "$ref": "#/components/schemas/FeedbackLauncherConfig"
           }
         }
       },
@@ -14512,6 +14515,9 @@
           "autoErrorLogging": {
             "type": "boolean"
           },
+          "launcher": {
+            "$ref": "#/components/schemas/FeedbackLauncherConfig"
+          },
           "environments": {
             "type": "array",
             "maxItems": 50,
@@ -14525,6 +14531,50 @@
             "items": {
               "$ref": "#/components/schemas/FeedbackBlock"
             }
+          }
+        }
+      },
+      "FeedbackLauncherViewport": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "style",
+          "position"
+        ],
+        "properties": {
+          "style": {
+            "type": "string",
+            "enum": [
+              "tab",
+              "button"
+            ]
+          },
+          "position": {
+            "type": "string",
+            "enum": [
+              "top-left",
+              "center-left",
+              "bottom-left",
+              "top-right",
+              "center-right",
+              "bottom-right"
+            ]
+          }
+        }
+      },
+      "FeedbackLauncherConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "desktop",
+          "mobile"
+        ],
+        "properties": {
+          "desktop": {
+            "$ref": "#/components/schemas/FeedbackLauncherViewport"
+          },
+          "mobile": {
+            "$ref": "#/components/schemas/FeedbackLauncherViewport"
           }
         }
       },

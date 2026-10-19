@@ -184,6 +184,28 @@ describe("Feedback widget configuration", () => {
       blocks: [{ id: "description" }, { id: "impact", options: ["Low", "High"] }],
     });
   });
+
+  it("stores independent desktop and mobile launcher settings", async () => {
+    const db = database();
+    const launcher = {
+      desktop: { style: "button", position: "top-left" },
+      mobile: { style: "tab", position: "center-left" },
+    };
+    const response = await onRequestPatch(context(db, { launcher }) as never);
+    expect(response.status).toBe(200);
+    const update = db.runs.find((run) => run.sql.includes("UPDATE spot_sites SET"));
+    expect(JSON.parse(String(update?.binds[3]))).toMatchObject({ launcher });
+  });
+
+  it("rejects unsupported launcher styles and positions", async () => {
+    const response = await onRequestPatch(context(database(), {
+      launcher: {
+        desktop: { style: "square", position: "top-left" },
+        mobile: { style: "tab", position: "floating" },
+      },
+    }) as never);
+    expect(response.status).toBe(400);
+  });
 });
 
 describe("Feedback daily summary settings", () => {
