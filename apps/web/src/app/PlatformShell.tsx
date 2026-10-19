@@ -53,8 +53,9 @@ export function PlatformShell() {
     return !current;
   });
 
-  const switchProject = (nextProject: string) => {
+  const switchProject = (nextOrganization: string, nextProject: string) => {
     const parts = location.pathname.split("/").filter(Boolean);
+    parts[0] = nextOrganization;
     parts[1] = nextProject;
     void navigate(`/${parts.join("/")}${location.search}`);
   };
@@ -68,7 +69,7 @@ export function PlatformShell() {
           <aside className="sidebar">
             <div className="brand-row">
               <Link className="platform-brand" to="/" aria-label="NoxHere home"><NoxLogo /></Link>
-              <ProjectSwitcher organizationId={bootstrap.data.organization.id} projects={bootstrap.data.projects} selectedId={projectId} canCreate={bootstrap.data.actor.isAdmin} placement="brand" onSwitch={switchProject} />
+              <ProjectSwitcher organizationId={bootstrap.data.organization.id} organizationName={bootstrap.data.organization.name} projects={bootstrap.data.projects} selectedId={projectId} canCreate={bootstrap.data.actor.isAdmin} placement="brand" onSwitch={switchProject} />
             </div>
             <button type="button" className="sidebar-collapse" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>{sidebarCollapsed ? "›" : "‹"}</button>
             <div className="sidebar-rule" />

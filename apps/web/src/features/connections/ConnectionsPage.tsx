@@ -63,7 +63,12 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
   const [email, setEmail] = useState("");
   const [serviceId, setServiceId] = useState<"all" | GuestCapability>("all");
   const queryClient = useQueryClient();
-  const access = useQuery({ queryKey: ["platform", "guest-access", organizationId], queryFn: ({ signal }) => platformApi.guestAccess(organizationId, signal), enabled: canInvite });
+  const access = useQuery({
+    queryKey: ["platform", "guest-access", organizationId],
+    queryFn: ({ signal }) => platformApi.guestAccess(organizationId, signal),
+    enabled: canInvite,
+    refetchInterval: 15_000,
+  });
   const roleMembers = useQuery({ queryKey: ["platform", "memberships", organizationId], queryFn: ({ signal }) => platformApi.organizationMembers(organizationId, signal) });
   const auditLog = useQuery({ queryKey: ["platform", "access-audit", organizationId], queryFn: ({ signal }) => platformApi.auditLog(organizationId, signal), enabled: canInvite });
   const invite = useMutation({
@@ -97,12 +102,15 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
   };
 
   const guestServices = ["planning", "activity", "feedback", "growth", "usage", "issues"] as const;
-  const invitations = (access.data?.invitations ?? []).filter((item) => item.projectId === projectId || item.scopeType === "organization");
+  // Pending invitations are organization administration state. Keep every
+  // pending invite visible here—even when an API client created it for a
+  // different project—and use the project label to make its scope explicit.
+  const invitations = access.data?.invitations ?? [];
   const grants = (access.data?.grants ?? []).filter((item) => item.projectId === projectId || item.scopeType === "organization");
   const directory = [...members, ...(roleMembers.data ?? []).filter((managed) => !members.some((member) => member.login.toLowerCase() === managed.login.toLowerCase())).map((managed) => ({ login: managed.login, avatar_url: managed.avatarUrl ?? "", kind: "human" as const }))];
 
   return <>
-    <div className="connect-inline-action"><p>One invitation grants read-only access to all project capabilities by default. Settings are never available to guests.</p>{canInvite ? <button type="button" className="button" aria-expanded={showInvite} onClick={() => setShowInvite((open) => !open)}>{showInvite ? "Cancel" : "Invite guest"}</button> : null}</div>
+    <div className="connect-inline-action"><p>One invitation grants read-only access to all project capabilities by default. Pending invitations across this organization are shown here.</p>{canInvite ? <div className="connect-inline-actions"><button type="button" className="button" disabled={access.isFetching} onClick={() => { void access.refetch(); }}>{access.isFetching ? "Refreshing…" : "Refresh access"}</button><button type="button" className="button" aria-expanded={showInvite} onClick={() => setShowInvite((open) => !open)}>{showInvite ? "Cancel" : "Invite guest"}</button></div> : null}</div>
     {showInvite ? <form className="guest-invite-form" onSubmit={submitInvite}>
       <label><span>Email address</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="guest@company.com" required autoFocus /></label>
       <label><span>Capability access</span><select value={serviceId} onChange={(event) => setServiceId(event.target.value as typeof serviceId)}><option value="all">All capabilities</option>{guestServices.map((id) => <option value={id} key={id}>{serviceName(id)}</option>)}</select></label>

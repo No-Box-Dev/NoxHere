@@ -1,4 +1,5 @@
 import { createTelemetry } from "../../../packages/sdk/src/telemetry/server.js";
+import { apiError } from "./control/http";
 
 type BoundService = {
   fetch(request: Request): Promise<Response>;
@@ -207,7 +208,23 @@ export async function handleRequest(
           }));
           return unavailableAuthentication();
         }
-        if (principal.row.connection_id && control.identity.refreshGitHubIdentity && services.background) {
+        const refreshRequested = url.searchParams.get("refresh") === "1";
+        if (refreshRequested) {
+          if (!principal.row.connection_id || !control.identity.refreshGitHubIdentity) {
+            return apiError("github_connection_required", "Connect GitHub before refreshing organization access", 409);
+          }
+          try {
+            const { refreshStoredGitHubMemberships } = await import("./control/oauth");
+            await refreshStoredGitHubMemberships(control.db, control.identity, principal.row.principal_id, principal.row.connection_id);
+          } catch (error) {
+            console.error(JSON.stringify({
+              event: "github_membership_refresh_failed",
+              principalId: principal.row.principal_id,
+              error: error instanceof Error ? error.message : String(error),
+            }));
+            return apiError("provider_unavailable", "GitHub organization access could not be refreshed", 502);
+          }
+        } else if (principal.row.connection_id && control.identity.refreshGitHubIdentity && services.background) {
           // Membership claims are persisted at sign-in and remain the access
           // boundary. Refresh them out of band so every application load does
           // not wait on GitHub's API before it can render.
