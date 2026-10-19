@@ -263,7 +263,7 @@ describe("NoxHere API-backed platform", () => {
   it("refreshes GitHub organization access from the project chooser without reloading", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/auth/profile?refresh=1") return json({
+      if (String(input) === "/api/v1/auth/profile?refresh=1") return json({
         user: { login: "JasperNoBoxDev", email: "jasper@noboxdev.com" },
         orgs: [{ login: "No-Box-Dev", role: "admin" }, { login: "Playnist", role: "admin" }],
       });
@@ -278,7 +278,7 @@ describe("NoxHere API-backed platform", () => {
 
     expect(await within(workspace).findByRole("option", { name: "Playnist" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Added Playnist.");
-    expect(fetch).toHaveBeenCalledWith("/api/auth/profile?refresh=1", { credentials: "same-origin" });
+    expect(fetch).toHaveBeenCalledWith("/api/v1/auth/profile?refresh=1", { credentials: "same-origin" });
   });
 
   it("opens the last valid project for the signed-in person without showing the chooser", async () => {

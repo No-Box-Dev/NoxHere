@@ -25,7 +25,7 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   );
 
   const refreshProfile = async () => {
-    const response = await fetch("/api/auth/profile?refresh=1", { credentials: "same-origin" });
+    const response = await fetch("/api/v1/auth/profile?refresh=1", { credentials: "same-origin" });
     const body = await response.json().catch(() => null) as WorkspaceProfile | { error?: { message?: string } } | null;
     if (!response.ok) {
       const message = body && "error" in body ? body.error?.message : null;
