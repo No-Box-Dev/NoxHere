@@ -53,16 +53,28 @@ export async function onRequestPost(context) {
     ).bind(orgLogin, project.org).first();
     if (!inst) return errorResponse(`No installation for org ${project.org}`, 404);
 
+    const assigned = await db.prepare(
+      "SELECT repo FROM project_repositories WHERE org_id = ? AND project_id = ? ORDER BY repo",
+    ).bind(orgId, project.id).all();
+    const repositories = [...new Set([
+      project.repo,
+      ...(assigned.results ?? []).map((row) => row.repo).filter(Boolean),
+    ])];
+
     let prs;
     try {
-      prs = await fetchRecentPrs(
-        context.env,
-        inst.installation_id,
-        project.org,
-        project.repo,
-        days,
-        userToken,
-      );
+      const batches = await Promise.all(repositories.map(async (repo) => {
+        const rows = await fetchRecentPrs(
+          context.env,
+          inst.installation_id,
+          project.org,
+          repo,
+          days,
+          userToken,
+        );
+        return rows.map((pr) => ({ ...pr, _repo: repo }));
+      }));
+      prs = batches.flat();
     } catch (err) {
       return errorResponse(`Failed to fetch PRs: ${err instanceof Error ? err.message : String(err)}`, 502);
     }
@@ -82,16 +94,19 @@ export async function onRequestPost(context) {
     // backfill delivery ID here: if generation failed after that row was
     // inserted, the next run must retry the missing release note.
     const existing = await db.prepare(
-      `SELECT CAST(json_extract(payload_json, '$.pr_number') AS INTEGER) AS pr_number
+      `SELECT repo, CAST(json_extract(payload_json, '$.pr_number') AS INTEGER) AS pr_number
          FROM events
-        WHERE owner_id = ? AND project_id = ? AND repo = ?
+        WHERE owner_id = ? AND project_id = ?
           AND type = 'release_notes'
           AND json_extract(payload_json, '$.pr_number') IS NOT NULL`
-    ).bind(orgLogin, project.id, project.repo).all();
-    const released = new Set((existing.results ?? []).map((row) => Number(row.pr_number)));
+    ).bind(orgLogin, project.id).all();
+    const released = new Set(
+      (existing.results ?? []).map((row) => `${row.repo}#${Number(row.pr_number)}`),
+    );
 
     const todo = prs
-      .filter((pr) => !released.has(Number(pr.number)))
+      .filter((pr) => !released.has(`${pr._repo}#${Number(pr.number)}`))
+      .sort((a, b) => prAnchor(b).localeCompare(prAnchor(a)))
       .slice(0, BACKFILL_MAX_PRS);
 
     // Sweep up narratives that need re-narration:
@@ -306,6 +321,7 @@ function prAnchor(pr) {
 
 async function backfillOnePr(env, args, pr) {
   if (!pr.user?.login) return;
+  const repo = pr._repo || args.repo;
 
   const actor = await resolveActorFromGithub(env.DB, args.ownerId, {
     login: pr.user.login,
@@ -329,13 +345,13 @@ async function backfillOnePr(env, args, pr) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(delivery_id) DO NOTHING`
   ).bind(
-    `backfill:${args.projectId}:pr-${pr.number}`,
+    `backfill:${args.projectId}:${repo}:pr-${pr.number}`,
     "github-backfill",
     eventType,
     actor.id,
     args.projectId,
     args.org,
-    args.repo,
+    repo,
     `PR #${pr.number}: ${pr.title}`,
     JSON.stringify({
       action: pr.merged_at ? "merged" : "opened",
@@ -359,7 +375,7 @@ async function backfillOnePr(env, args, pr) {
   if (!eventId) {
     const existing = await env.DB.prepare(
       "SELECT id FROM events WHERE delivery_id = ? AND project_id = ?",
-    ).bind(`backfill:${args.projectId}:pr-${pr.number}`, args.projectId).first();
+    ).bind(`backfill:${args.projectId}:${repo}:pr-${pr.number}`, args.projectId).first();
     eventId = existing?.id;
     if (!eventId) return;
     // The raw event already exists, which means a previous attempt stopped
