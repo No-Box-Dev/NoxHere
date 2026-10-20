@@ -32,7 +32,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 199
+    public static let operationCount = 200
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -109,6 +109,7 @@ public enum NoxHereOperations {
         "getProjectIssues": .init(id: "getProjectIssues", method: "GET", path: "/api/v1/projects/{projectId}/issues", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getProjectRouting": .init(id: "getProjectRouting", method: "GET", path: "/api/v1/projects/routing", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getPublicFeedbackConfig": .init(id: "getPublicFeedbackConfig", method: "GET", path: "/api/feedback/public/v1/sites/{siteId}/config", resource: .feedback, changeSafety: .safeRead, servers: ["https://app.noxhere.com"]),
+        "getPublicFeedbackDeliveryStatus": .init(id: "getPublicFeedbackDeliveryStatus", method: "GET", path: "/api/feedback/public/v1/reports/{reportId}/status", resource: .feedback, changeSafety: .safeRead, servers: ["https://app.noxhere.com"]),
         "getPublicFeedbackMembers": .init(id: "getPublicFeedbackMembers", method: "GET", path: "/api/feedback/public/v1/sites/{siteId}/members", resource: .feedback, changeSafety: .safeRead, servers: ["https://app.noxhere.com"]),
         "getPullRequest": .init(id: "getPullRequest", method: "GET", path: "/api/v1/prs/{repo}/{number}", resource: .activity, changeSafety: .safeRead, servers: []),
         "getSetupPlan": .init(id: "getSetupPlan", method: "GET", path: "/api/v1/integrations/setup", resource: .workspace, changeSafety: .safeRead, servers: []),

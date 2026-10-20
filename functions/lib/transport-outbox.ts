@@ -452,7 +452,7 @@ export async function recoverTransportCommands(
 
 export async function requeueBlockedTransportCommands(
   env: TransportBindings,
-  scope: { orgId: number; projectId?: string | null; routeContext?: { kind: "source" | "site"; id: string } },
+  scope: { orgId: number; projectId?: string | null; routeContext?: { kind: "source" | "site"; id: string }; provider?: TransportProvider | "all" },
   now = new Date(),
 ): Promise<{ found: number; queued: number }> {
   const current = now.toISOString();
@@ -460,25 +460,40 @@ export async function requeueBlockedTransportCommands(
     `UPDATE transport_outbox
         SET status = 'pending', next_attempt_at = NULL, lease_expires_at = NULL,
             last_error_code = NULL, last_error = NULL, updated_at = ?
-      WHERE provider = 'slack' AND org_id = ?
+      WHERE org_id = ?
+        AND (? = 'all' OR provider = ?)
         AND (? IS NULL OR project_id = ?)
         AND (? IS NULL OR (
-          json_extract(command_json, '$.routeContext.kind') = ?
-          AND json_extract(command_json, '$.routeContext.id') = ?
+          (json_extract(command_json, '$.routeContext.kind') = ?
+           AND json_extract(command_json, '$.routeContext.id') = ?)
+          OR EXISTS (
+            SELECT 1 FROM transport_callbacks callback
+             WHERE callback.transport_id = transport_outbox.id
+               AND json_extract(callback.payload_json, '$.siteId') = ?
+          )
         ))
         AND status IN ('blocked', 'failed')
-      RETURNING id`,
+      RETURNING id, provider`,
   ).bind(
     current,
     scope.orgId,
+    scope.provider ?? "slack",
+    scope.provider ?? "slack",
     scope.projectId ?? null,
     scope.projectId ?? null,
     scope.routeContext?.id ?? null,
     scope.routeContext?.kind ?? null,
     scope.routeContext?.id ?? null,
-  ).all<{ id: string }>();
+    scope.routeContext?.id ?? null,
+  ).all<{ id: string; provider: TransportProvider }>();
   let queued = 0;
   for (const row of results ?? []) {
+    if (row.provider === "github") {
+      await env.DB.prepare(
+        `UPDATE transport_callbacks SET status = 'pending', lease_expires_at = NULL,
+                last_error = NULL, updated_at = ? WHERE transport_id = ?`,
+      ).bind(current, row.id).run();
+    }
     if (await queueTransport(env, row.id, current)) queued += 1;
   }
   return { found: results?.length ?? 0, queued };

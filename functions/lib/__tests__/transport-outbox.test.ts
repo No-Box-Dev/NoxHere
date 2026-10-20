@@ -6,6 +6,7 @@ import {
   executeTransportCommand,
   publishTransportCommand,
   recoverTransportCommands,
+  requeueBlockedTransportCommands,
 } from "../transport-outbox";
 
 const COMMAND = {
@@ -28,7 +29,7 @@ interface Options {
   duplicate?: Record<string, unknown> | null;
   idConflict?: boolean;
   claim?: Record<string, unknown> | null;
-  recovery?: Array<{ id: string }>;
+  recovery?: Array<{ id: string; provider?: "slack" | "github" }>;
   callbackClaim?: { kind: "feedback_issue" | "telemetry_incident"; payload_json: string };
   callbackTransport?: { command_json: string; receipt_json: string };
 }
@@ -179,6 +180,23 @@ describe("provider-neutral transport outbox", () => {
     expect(result).toEqual({ found: 2, queued: 2 });
     expect(send).toHaveBeenCalledTimes(2);
     expect(database.calls[0].sql).toContain("stale_transport_claim");
+  });
+
+  it("requeues both provider commands for a repaired Feedback site", async () => {
+    const database = new FakeDatabase({ recovery: [{ id: "command-1", provider: "github" }] });
+    const { env, send } = environment(database);
+    await expect(requeueBlockedTransportCommands(env, {
+      orgId: 7,
+      projectId: "project-1",
+      routeContext: { kind: "site", id: "site-1" },
+      provider: "all",
+    })).resolves.toEqual({ found: 1, queued: 1 });
+    const update = database.calls.find((call) => call.method === "all");
+    expect(update?.sql).toContain("transport_callbacks callback");
+    expect(update?.sql.match(/WHERE org_id/g)).toHaveLength(1);
+    expect(update?.values.slice(1, 4)).toEqual([7, "all", "all"]);
+    expect(database.calls.some((call) => call.method === "run" && call.sql.includes("UPDATE transport_callbacks SET status = 'pending'"))).toBe(true);
+    expect(send).toHaveBeenCalledWith({ type: "deliver_transport", outboxId: "command-1", deliveryId: "command-1" });
   });
 
   it("finalizes receipt-dependent state independently from provider delivery", async () => {

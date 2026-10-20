@@ -1061,6 +1061,33 @@ describe("NoxHere API-backed platform", () => {
     );
   });
 
+  it("saves independent desktop and mobile launcher choices", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    let saved: Record<string, unknown> | null = null;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/feedback/sites/site-playnist" && init?.method === "PATCH") {
+        saved = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return json({ ok: true });
+      }
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/widgets");
+    await user.click(await screen.findByText("Behavior and allowed environments"));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Availability" }), "draft");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Desktop launcher style" }), "button");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Desktop launcher position" }), "top-left");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Mobile launcher style" }), "tab");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Mobile launcher position" }), "center-left");
+    await user.click(screen.getByRole("button", { name: "Save widget settings" }));
+    await waitFor(() => expect(saved).toMatchObject({
+      launcher: {
+        desktop: { style: "button", position: "top-left" },
+        mobile: { style: "tab", position: "center-left" },
+      },
+    }));
+  });
+
   it("filters the complete Feedback issue inbox by source", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {

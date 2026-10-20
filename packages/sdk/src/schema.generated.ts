@@ -41,6 +41,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/feedback/public/v1/reports/{reportId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Feedback delivery status
+         * @description Read the origin-scoped GitHub and Slack delivery receipt for a submitted Feedback report.
+         */
+        get: operations["getPublicFeedbackDeliveryStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/feedback/public/v1/resolution-responses/{token}": {
         parameters: {
             query?: never;
@@ -3453,6 +3473,16 @@ export interface components {
             })[];
             siteId: string;
         };
+        FeedbackLauncherConfig: {
+            desktop: components["schemas"]["FeedbackLauncherViewport"];
+            mobile: components["schemas"]["FeedbackLauncherViewport"];
+        };
+        FeedbackLauncherViewport: {
+            /** @enum {string} */
+            position: "top-left" | "center-left" | "bottom-left" | "top-right" | "center-right" | "bottom-right";
+            /** @enum {string} */
+            style: "tab" | "button";
+        };
         FeedbackReport: {
             blockValues?: {
                 [key: string]: string;
@@ -3522,6 +3552,7 @@ export interface components {
             autoErrorLogging?: boolean;
             buttonColor?: string;
             buttonText?: string;
+            launcher?: components["schemas"]["FeedbackLauncherConfig"];
             name: string;
             projectId: string;
             /** @enum {string} */
@@ -3533,6 +3564,7 @@ export interface components {
             buttonColor?: string;
             buttonText?: string;
             environments?: components["schemas"]["FeedbackEnvironment"][];
+            launcher?: components["schemas"]["FeedbackLauncherConfig"];
             slackChannelId?: string | null;
             slackConnectionId?: string | null;
             /** @enum {string} */
@@ -4573,7 +4605,7 @@ export interface operations {
         };
         responses: {
             /** @description Capture queued */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4619,6 +4651,48 @@ export interface operations {
             };
             /** @description Delivery unavailable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyError"];
+                };
+            };
+        };
+    };
+    getPublicFeedbackDeliveryStatus: {
+        parameters: {
+            query: {
+                siteId: string;
+            };
+            header?: never;
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current delivery status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            /** @description Origin is not enabled */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyError"];
+                };
+            };
+            /** @description Site not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

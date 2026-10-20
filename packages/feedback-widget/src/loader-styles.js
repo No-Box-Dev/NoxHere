@@ -29,6 +29,86 @@ const CSS = `
   transition: background 0.2s ease;
 }
 
+.feedback-trigger[data-feedback-desktop-position="top-left"] {
+  top: 20px;
+  right: auto;
+  bottom: auto;
+  left: 0;
+  transform: none;
+}
+
+.feedback-trigger[data-feedback-desktop-position="center-left"] {
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.feedback-trigger[data-feedback-desktop-position="bottom-left"] {
+  top: auto;
+  right: auto;
+  bottom: 20px;
+  left: 0;
+  transform: none;
+}
+
+.feedback-trigger[data-feedback-desktop-position="top-right"] {
+  top: 20px;
+  right: 0;
+  bottom: auto;
+  left: auto;
+  transform: none;
+}
+
+.feedback-trigger[data-feedback-desktop-position="center-right"] {
+  top: 50%;
+  right: 0;
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%);
+}
+
+.feedback-trigger[data-feedback-desktop-position="bottom-right"] {
+  top: auto;
+  right: 0;
+  bottom: 20px;
+  left: auto;
+  transform: none;
+}
+
+.feedback-trigger[data-feedback-desktop-position$="-left"][data-feedback-desktop-style="tab"] {
+  border-radius: 0 8px 8px 0;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+}
+
+.feedback-trigger[data-feedback-desktop-style="button"] {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border-radius: 50%;
+  justify-content: center;
+}
+
+.feedback-trigger[data-feedback-desktop-style="button"][data-feedback-desktop-position$="-left"] {
+  left: 20px;
+}
+
+.feedback-trigger[data-feedback-desktop-style="button"][data-feedback-desktop-position$="-right"] {
+  right: 20px;
+}
+
+.feedback-trigger[data-feedback-desktop-style="button"] .feedback-trigger-text,
+.feedback-trigger[data-feedback-desktop-style="button"] .feedback-trigger-shortcut,
+.feedback-trigger[data-feedback-desktop-style="button"] .feedback-trigger-dots {
+  display: none;
+}
+
+.feedback-trigger[data-feedback-desktop-style="button"] svg {
+  width: 24px;
+  height: 24px;
+}
+
 .feedback-trigger:hover {
   background: #e5684d;
 }
@@ -142,28 +222,115 @@ const CSS = `
   background: rgba(255,255,255,0.1);
 }
 
-/* Mobile: trigger becomes a circular FAB, lifted above iOS safe area */
+/* Mobile defaults remain a circular FAB. Every site can independently choose
+   a side tab and any edge position without host-page CSS overrides. */
 @media (max-width: 767px) {
   .feedback-trigger {
     position: fixed;
-    bottom: calc(20px + env(safe-area-inset-bottom));
-    right: 20px;
     top: auto;
+    right: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: auto;
     transform: none;
+  }
+
+  .feedback-trigger[data-feedback-mobile-position="top-left"] {
+    top: calc(20px + env(safe-area-inset-top));
+    right: auto;
+    bottom: auto;
+    left: 20px;
+    transform: none;
+  }
+
+  .feedback-trigger[data-feedback-mobile-position="center-left"] {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 20px;
+    transform: translateY(-50%);
+  }
+
+  .feedback-trigger[data-feedback-mobile-position="bottom-left"] {
+    top: auto;
+    right: auto;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: 20px;
+    transform: none;
+  }
+
+  .feedback-trigger[data-feedback-mobile-position="top-right"] {
+    top: calc(20px + env(safe-area-inset-top));
+    right: 20px;
+    bottom: auto;
+    left: auto;
+    transform: none;
+  }
+
+  .feedback-trigger[data-feedback-mobile-position="center-right"] {
+    top: 50%;
+    right: 20px;
+    bottom: auto;
+    left: auto;
+    transform: translateY(-50%);
+  }
+
+  .feedback-trigger[data-feedback-mobile-position="bottom-right"] {
+    top: auto;
+    right: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: auto;
+    transform: none;
+  }
+
+  .feedback-trigger[data-feedback-mobile-style="button"] {
     width: 60px;
     height: 60px;
     border-radius: 50%;
     padding: 0;
     justify-content: center;
   }
-  .feedback-trigger-text,
-  .feedback-trigger-shortcut,
-  .feedback-trigger-dots {
+
+  .feedback-trigger[data-feedback-mobile-style="button"] .feedback-trigger-text,
+  .feedback-trigger[data-feedback-mobile-style="button"] .feedback-trigger-shortcut,
+  .feedback-trigger[data-feedback-mobile-style="button"] .feedback-trigger-dots {
     display: none;
   }
-  .feedback-trigger svg {
+
+  .feedback-trigger[data-feedback-mobile-style="button"] svg {
     width: 26px;
     height: 26px;
+  }
+
+  .feedback-trigger[data-feedback-mobile-style="tab"] {
+    width: auto;
+    height: auto;
+    padding: 14px 9px 10px;
+    border-radius: 8px 0 0 8px;
+    justify-content: flex-start;
+  }
+
+  .feedback-trigger[data-feedback-mobile-style="tab"][data-feedback-mobile-position$="-left"] {
+    left: 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .feedback-trigger[data-feedback-mobile-style="tab"][data-feedback-mobile-position$="-right"] {
+    right: 0;
+  }
+
+  .feedback-trigger[data-feedback-mobile-style="tab"] .feedback-trigger-text,
+  .feedback-trigger[data-feedback-mobile-style="tab"] .feedback-trigger-dots {
+    display: flex;
+  }
+
+  .feedback-trigger[data-feedback-mobile-style="tab"] .feedback-trigger-shortcut {
+    display: none !important;
+  }
+
+  .feedback-trigger[data-feedback-mobile-style="tab"] svg {
+    width: 18px;
+    height: 18px;
   }
 }
 `;

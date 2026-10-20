@@ -24,7 +24,7 @@ function database({ targetProject = true, feedbackAssets = true }: { targetProje
         binds: [] as unknown[],
         bind(...binds: unknown[]) { statement.binds = binds; return statement; },
         async first() {
-          if (sql.includes("FROM spot_sites")) return { id: "site-1", project_id: "playnist", repo: "web", slack_channel_id: null, widget_config: "{}" };
+          if (sql.includes("FROM spot_sites")) return { id: "site-1", project_id: "playnist", repo: "web", slack_channel_id: null, widget_config: '{"lifecycle":"ready","environments":[{"name":"Production","url":"app.example.com","enabled":true}]}' };
           if (sql.includes("FROM projects project")) return targetProject ? { id: "umbrella" } : null;
           if (sql.includes("sqlite_master")) return feedbackAssets ? { name: "feedback_assets" } : null;
           return null;
@@ -183,6 +183,28 @@ describe("Feedback widget configuration", () => {
       environments: [{ name: "Production" }],
       blocks: [{ id: "description" }, { id: "impact", options: ["Low", "High"] }],
     });
+  });
+
+  it("stores independent desktop and mobile launcher settings", async () => {
+    const db = database();
+    const launcher = {
+      desktop: { style: "button", position: "top-left" },
+      mobile: { style: "tab", position: "center-left" },
+    };
+    const response = await onRequestPatch(context(db, { launcher }) as never);
+    expect(response.status).toBe(200);
+    const update = db.runs.find((run) => run.sql.includes("UPDATE spot_sites SET"));
+    expect(JSON.parse(String(update?.binds[3]))).toMatchObject({ launcher });
+  });
+
+  it("rejects unsupported launcher styles and positions", async () => {
+    const response = await onRequestPatch(context(database(), {
+      launcher: {
+        desktop: { style: "square", position: "top-left" },
+        mobile: { style: "tab", position: "floating" },
+      },
+    }) as never);
+    expect(response.status).toBe(400);
   });
 });
 

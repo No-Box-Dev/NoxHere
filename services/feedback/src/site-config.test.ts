@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { environmentForOrigin, originAllowed, parseWidgetConfig, publicWidgetConfig, type CaptureSite } from "./site-config";
+import { environmentForOrigin, originAllowed, parseWidgetConfig, publicWidgetConfig, siteReadiness, type CaptureSite } from "./site-config";
 
 const site: CaptureSite = {
   id: "site-1",
@@ -10,6 +10,14 @@ const site: CaptureSite = {
   slack_channel_id: null,
   slack_connection_id: null,
   github_login: "acme",
+  project_repo: "web",
+  project_archived: 0,
+  github_installation_id: 1001,
+  effective_slack_channel_id: "C123",
+  effective_slack_connection_id: "slack-1",
+  slack_connected: 1,
+  slack_health_status: "ok",
+  slack_channel_health: "verified",
   widget_config: JSON.stringify({
     buttonColor: "#111111",
     buttonText: "Feedback",
@@ -49,6 +57,12 @@ describe("site configuration", () => {
     expect(originAllowed(config, "https://other.example.com")).toBe(false);
   });
 
+  it("rejects an empty origin allowlist and reports delivery readiness", () => {
+    expect(originAllowed(parseWidgetConfig("{}"), "https://app.example.com")).toBe(false);
+    expect(siteReadiness(site)).toEqual({ lifecycle: "ready", ready: true, issues: [] });
+    expect(siteReadiness({ ...site, project_repo: "other" }).issues).toContain("repository_mismatch");
+  });
+
   it("returns only the effective environment and its blocks", () => {
     const config = publicWidgetConfig(site, "https://app.example.com");
     expect(config.buttonColor).toBe("#222222");
@@ -77,5 +91,23 @@ describe("site configuration", () => {
   it("keeps DOM selection enabled for existing environments", () => {
     const config = publicWidgetConfig({ ...site, widget_config: JSON.stringify({ environments: [{ name: "Production", url: "app.example.com" }] }) }, "https://app.example.com");
     expect(config.captureMode).toBe("dom");
+  });
+
+  it("returns independent launcher settings and safe defaults", () => {
+    expect(publicWidgetConfig({ ...site, widget_config: "{}" }, null).launcher).toEqual({
+      desktop: { style: "tab", position: "center-right" },
+      mobile: { style: "button", position: "bottom-right" },
+    });
+    const configured = publicWidgetConfig({
+      ...site,
+      widget_config: JSON.stringify({ launcher: {
+        desktop: { style: "button", position: "top-left" },
+        mobile: { style: "tab", position: "center-left" },
+      } }),
+    }, null);
+    expect(configured.launcher).toEqual({
+      desktop: { style: "button", position: "top-left" },
+      mobile: { style: "tab", position: "center-left" },
+    });
   });
 });

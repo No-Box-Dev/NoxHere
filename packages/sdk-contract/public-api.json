@@ -1065,6 +1065,50 @@
         ],
         "type": "object"
       },
+      "FeedbackLauncherConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "desktop": {
+            "$ref": "#/components/schemas/FeedbackLauncherViewport"
+          },
+          "mobile": {
+            "$ref": "#/components/schemas/FeedbackLauncherViewport"
+          }
+        },
+        "required": [
+          "desktop",
+          "mobile"
+        ],
+        "type": "object"
+      },
+      "FeedbackLauncherViewport": {
+        "additionalProperties": false,
+        "properties": {
+          "position": {
+            "enum": [
+              "top-left",
+              "center-left",
+              "bottom-left",
+              "top-right",
+              "center-right",
+              "bottom-right"
+            ],
+            "type": "string"
+          },
+          "style": {
+            "enum": [
+              "tab",
+              "button"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "style",
+          "position"
+        ],
+        "type": "object"
+      },
       "FeedbackReport": {
         "properties": {
           "blockValues": {
@@ -1330,6 +1374,9 @@
             "maxLength": 40,
             "type": "string"
           },
+          "launcher": {
+            "$ref": "#/components/schemas/FeedbackLauncherConfig"
+          },
           "name": {
             "maxLength": 120,
             "type": "string"
@@ -1378,6 +1425,9 @@
             },
             "maxItems": 50,
             "type": "array"
+          },
+          "launcher": {
+            "$ref": "#/components/schemas/FeedbackLauncherConfig"
           },
           "slackChannelId": {
             "maxLength": 80,
@@ -4965,7 +5015,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5038,6 +5088,74 @@
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
+      }
+    },
+    "/api/feedback/public/v1/reports/{reportId}/status": {
+      "get": {
+        "description": "Read the origin-scoped GitHub and Slack delivery receipt for a submitted Feedback report.",
+        "operationId": "getPublicFeedbackDeliveryStatus",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reportId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "siteId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Current delivery status"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyError"
+                }
+              }
+            },
+            "description": "Origin is not enabled"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyError"
+                }
+              }
+            },
+            "description": "Site not found"
+          }
+        },
+        "security": [],
+        "servers": [
+          {
+            "url": "https://app.noxhere.com"
+          }
+        ],
+        "summary": "Get Feedback delivery status",
+        "tags": [
+          "Feedback"
+        ],
+        "x-authentication": "public",
+        "x-change-safety": "safe_read"
       }
     },
     "/api/feedback/public/v1/resolution-responses/{token}": {
@@ -24264,6 +24382,80 @@
       "authentication": "public",
       "automationScope": null,
       "changeSafety": "safe_read",
+      "description": "Read the origin-scoped GitHub and Slack delivery receipt for a submitted Feedback report.",
+      "id": "getPublicFeedbackDeliveryStatus",
+      "method": "GET",
+      "namespace": "feedback",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "reportId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "siteId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "path": "/api/feedback/public/v1/reports/{reportId}/status",
+      "projectScope": "none",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Current delivery status"
+        },
+        "403": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyError"
+              }
+            }
+          },
+          "description": "Origin is not enabled"
+        },
+        "404": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyError"
+              }
+            }
+          },
+          "description": "Site not found"
+        }
+      },
+      "security": [],
+      "servers": [
+        {
+          "url": "https://app.noxhere.com"
+        }
+      ],
+      "summary": "Get Feedback delivery status",
+      "tag": "Feedback"
+    },
+    {
+      "authentication": "public",
+      "automationScope": null,
+      "changeSafety": "safe_read",
       "description": "Returns at most 250 human GitHub organization members after validating the site and configured origin. Bots and internal membership metadata are not exposed.",
       "id": "getPublicFeedbackMembers",
       "method": "GET",
@@ -31129,7 +31321,7 @@
         "application/json"
       ],
       "responses": {
-        "200": {
+        "202": {
           "content": {
             "application/json": {
               "schema": {
@@ -33856,5 +34048,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "25ce8e10c04192b4df1c34213370755121a4477cc557948118d8e4706fd1615d"
+  "x-sdk-source-sha256": "0792ff0fbbd3ed1d88c90dbd4937e6d4d31b8fb19ac009ad2d005588e916391b"
 }

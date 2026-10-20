@@ -1178,6 +1178,25 @@ export const operationDefinitions = [
     ]
   },
   {
+    "id": "getPublicFeedbackDeliveryStatus",
+    "method": "GET",
+    "path": "/api/feedback/public/v1/reports/{reportId}/status",
+    "namespace": "feedback",
+    "authentication": "public",
+    "automationScope": null,
+    "projectScope": "none",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": [
+      {
+        "url": "https://app.noxhere.com"
+      }
+    ]
+  },
+  {
     "id": "getPublicFeedbackMembers",
     "method": "GET",
     "path": "/api/feedback/public/v1/sites/{siteId}/members",
