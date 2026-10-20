@@ -1074,6 +1074,7 @@ describe("NoxHere API-backed platform", () => {
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/widgets");
     await user.click(await screen.findByText("Behavior and allowed environments"));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Availability" }), "draft");
     await user.selectOptions(screen.getByRole("combobox", { name: "Desktop launcher style" }), "button");
     await user.selectOptions(screen.getByRole("combobox", { name: "Desktop launcher position" }), "top-left");
     await user.selectOptions(screen.getByRole("combobox", { name: "Mobile launcher style" }), "tab");
