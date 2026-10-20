@@ -10,7 +10,7 @@ vi.mock('../canvas.js', () => ({
   getCanvasDataURL: vi.fn(() => ''),
 }));
 vi.mock('../toolbar.js', () => ({
-  createToolbarHTML: () => '<div class="tool-stub"></div>',
+  createToolbarHTML: () => '<button class="feedback-tool-btn active" data-tool="element">Select element</button>',
   initToolbar: vi.fn(),
   destroyToolbar: vi.fn(),
 }));
@@ -26,9 +26,11 @@ vi.mock('../metadata.js', () => ({
 }));
 
 import { showOverlay, hideOverlay } from '../overlay.js';
+import { initToolbar } from '../toolbar.js';
 
 beforeEach(() => {
   document.body.innerHTML = '';
+  vi.mocked(initToolbar).mockReset();
   if (!window.matchMedia) {
     window.matchMedia = vi.fn(() => ({ matches: false }));
   }
@@ -160,5 +162,40 @@ describe('showOverlay — optimistic flow', () => {
 
     expect(document.querySelector('.feedback-overlay')).toBeNull();
     expect(onCaptureError).toHaveBeenCalledWith(failure);
+  });
+
+  it('keeps one picker instruction and removes it when the overlay closes', async () => {
+    vi.mocked(initToolbar).mockImplementation((container, options) => {
+      container.querySelector('[data-tool="element"]').addEventListener('click', () => {
+        options.onToolChange('element');
+      });
+    });
+    const capture = {
+      dataUrl: 'data:image/png;base64,iVBOR',
+      elementMap: [],
+      viewport: { width: 100, height: 100 },
+    };
+
+    showOverlay(Promise.resolve(capture), {
+      blocks: [{ id: 'element', type: 'element_picker' }],
+      onClose: () => {},
+      onSubmit: () => {},
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const overlay = document.querySelector('.feedback-overlay');
+    const img = overlay.querySelector('.feedback-screenshot');
+    Object.defineProperty(img, 'naturalWidth', { value: 100, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 100, configurable: true });
+    img.dispatchEvent(new Event('load'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(overlay.querySelectorAll('.feedback-picker-instruction')).toHaveLength(1);
+    overlay.querySelector('[data-tool="element"]').click();
+    expect(overlay.querySelectorAll('.feedback-picker-instruction')).toHaveLength(1);
+
+    hideOverlay();
+    expect(document.querySelector('.feedback-picker-instruction')).toBeNull();
   });
 });
