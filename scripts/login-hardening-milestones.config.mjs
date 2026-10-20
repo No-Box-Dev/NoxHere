@@ -1,4 +1,4 @@
-export const activeMilestone = "M3";
+export const activeMilestone = "M4";
 
 export const milestones = [
   {
@@ -107,8 +107,36 @@ export const milestones = [
     id: "M4",
     name: "Generated routes and configuration",
     objective: "Generate deployment routes and service configuration from one validated manifest.",
-    requiredPaths: ["scripts/generated-service-manifest.mjs"],
-    gates: [{ name: "Generated configuration drift", command: "node", args: ["scripts/generated-service-manifest.mjs", "--check"] }],
+    requiredPaths: [
+      "config/platform-services.mjs",
+      "config/platform-services.generated.json",
+      "scripts/generated-service-manifest.mjs",
+      "scripts/generated-service-manifest.test.js",
+      "services/gateway/src/generated/platform-service-manifest.ts",
+      "services/gateway/src/generated/platform-service-manifest.test.ts",
+    ],
+    gates: [
+      {
+        name: "Generated configuration drift",
+        command: "npm",
+        args: ["run", "routes:check"],
+      },
+      {
+        name: "Manifest validation and routing behavior",
+        command: "npx",
+        args: ["vitest", "run", "scripts/generated-service-manifest.test.js", "services/gateway/src/generated/platform-service-manifest.test.ts"],
+      },
+      {
+        name: "Gateway route integration",
+        command: "npm",
+        args: ["--prefix", "services/gateway", "test", "--", "src/index.test.ts", "src/generated/platform-service-manifest.test.ts"],
+      },
+      {
+        name: "Gateway typecheck and build",
+        command: "npm",
+        args: ["run", "login:milestones:gateway-check"],
+      },
+    ],
   },
   {
     id: "M5",

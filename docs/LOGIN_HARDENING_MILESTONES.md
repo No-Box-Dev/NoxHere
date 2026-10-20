@@ -17,3 +17,7 @@ This roadmap turns the production-login RCA into fail-closed delivery gates. `np
 The active milestone is declared in `scripts/login-hardening-milestones.config.mjs`. Future milestones deliberately name artifacts that do not exist yet, so `npm run login:milestones:verify:all` stops at the first unfinished milestone instead of implying that the roadmap is complete.
 
 Production promotion remains additionally guarded by the deployment workflow: staging deploy, staging smoke/acceptance, production deploy, and production smoke. A failed or unavailable CI runner must leave the currently verified production release in place.
+
+## Route and service topology changes
+
+`config/platform-services.mjs` is the source of truth for public gateway route groups, worker names, deployment order, and gateway/core service bindings. After editing it, run `npm run routes:generate` and commit both generated artifacts. `npm run routes:check` fails when generated output or the corresponding Wrangler configuration drifts from that manifest. Runtime gateway routing imports the generated route table directly.
