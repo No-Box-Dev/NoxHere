@@ -8158,6 +8158,67 @@
         "x-automation-scope": "planning:write"
       }
     },
+    "/api/v1/bootstrap": {
+      "get": {
+        "operationId": "getApplicationBootstrap",
+        "summary": "Load the authenticated application bootstrap",
+        "description": "Returns the current actor, organization, accessible projects, and connection summaries in one organization- and project-scoped response.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "x-required-role": "member",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "member",
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "x-change-safety": "safe_read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "x-project-scope": "optional"
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "getCurrentMember",

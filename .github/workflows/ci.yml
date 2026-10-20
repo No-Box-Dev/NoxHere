@@ -62,6 +62,8 @@ jobs:
       - run: npm ci
       - name: Enforce active platform event milestone
         run: npm run milestones:verify
+      - name: Enforce active login hardening milestone
+        run: npm run login:milestones:verify
       - name: Verify API docs and complete CLI command reference
         run: npm run docs:check
       - name: Verify project capabilities through the compiled Pages router

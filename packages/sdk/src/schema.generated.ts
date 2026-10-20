@@ -493,6 +493,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Load the authenticated application bootstrap
+         * @description Returns the current actor, organization, accessible projects, and connection summaries in one organization- and project-scoped response.
+         */
+        get: operations["getApplicationBootstrap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/bootstrap-status": {
         parameters: {
             query?: never;
@@ -5492,6 +5512,35 @@ export interface operations {
             400: components["responses"]["V1Error"];
             401: components["responses"]["V1Error"];
             403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    getApplicationBootstrap: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            404: components["responses"]["V1Error"];
             409: components["responses"]["V1Error"];
             429: components["responses"]["RateLimited"];
         };

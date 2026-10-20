@@ -6746,6 +6746,67 @@
         "x-required-role": "member"
       }
     },
+    "/api/v1/bootstrap": {
+      "get": {
+        "description": "Returns the current actor, organization, accessible projects, and connection summaries in one organization- and project-scoped response.",
+        "operationId": "getApplicationBootstrap",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Load the authenticated application bootstrap",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "member",
+        "x-change-safety": "safe_read",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "member"
+      }
+    },
     "/api/v1/bootstrap-status": {
       "get": {
         "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
@@ -22275,6 +22336,70 @@
       "authentication": "member",
       "automationScope": null,
       "changeSafety": "safe_read",
+      "description": "Returns the current actor, organization, accessible projects, and connection summaries in one organization- and project-scoped response.",
+      "id": "getApplicationBootstrap",
+      "method": "GET",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/bootstrap",
+      "projectScope": "optional",
+      "requestBody": null,
+      "requestContentTypes": [],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "404": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Load the authenticated application bootstrap",
+      "tag": "NoxHere"
+    },
+    {
+      "authentication": "member",
+      "automationScope": null,
+      "changeSafety": "safe_read",
       "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
       "id": "getBootstrapStatus",
       "method": "GET",
@@ -34048,5 +34173,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "0792ff0fbbd3ed1d88c90dbd4937e6d4d31b8fb19ac009ad2d005588e916391b"
+  "x-sdk-source-sha256": "e729bded55365d7ef564098d03c8cde05f0055689fdf963856fff9e5065c6df0"
 }

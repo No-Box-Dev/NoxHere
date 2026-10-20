@@ -7,6 +7,8 @@ import {
 
 describe("API authentication primitives", () => {
   it("allows only resource-safe project token routes", () => {
+    expect(projectScopedApiTokenPathSupported("/api/v1/bootstrap", "GET")).toBe(true);
+    expect(projectScopedApiTokenPathSupported("/api/v1/bootstrap", "POST")).toBe(false);
     expect(projectScopedApiTokenPathSupported("/api/v1/activity", "GET")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/developer-feedback", "POST")).toBe(true);
     expect(projectScopedApiTokenPathSupported("/api/v1/integrations/slack/messages", "POST")).toBe(true);

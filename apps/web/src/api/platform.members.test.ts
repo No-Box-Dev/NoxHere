@@ -8,9 +8,12 @@ describe("platform membership bootstrap", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       const bodies: Record<string, unknown> = {
-        "/api/v1/me": { login: "owner", org: "acme", accessLevel: "member", isAdmin: true },
-        "/api/v1/projects?view=bootstrap": { projects: [{ id: "project-1", name: "Project one", org: "acme", repo: "project-one", archived: 0, routing_enabled: 1 }] },
-        "/api/v1/integrations/connections?view=bootstrap": { github: { connected: true }, slack: { connected: false } },
+        "/api/v1/bootstrap": {
+          apiVersion: 1,
+          actor: { id: "owner", name: "owner", initials: "OW", accessLevel: "member", role: "admin", capabilities: ["organization.manage"], isAdmin: true, allowedServiceIds: [] },
+          organization: { id: "acme", name: "acme" },
+          projects: [{ id: "project-1", name: "Project one", organizationId: "acme", environment: "production", connections: [] }],
+        },
       };
       if (!(path in bodies)) throw new Error(`Unexpected request to ${path}`);
       return new Response(JSON.stringify(bodies[path]), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -21,7 +24,8 @@ describe("platform membership bootstrap", () => {
 
     expect(result.projects[0]).not.toHaveProperty("members");
     expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("/members"), expect.anything());
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/me", expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/bootstrap", expect.objectContaining({
       headers: expect.objectContaining({ "X-Org": "acme", "X-Project-ID": "project-1" }),
     }));
   });

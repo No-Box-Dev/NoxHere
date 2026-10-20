@@ -15,6 +15,42 @@ const project = {
   archived: 0,
 };
 
+function bootstrapBody({
+  organizationId = "No-Box-Dev",
+  organizationName = undefined as string | undefined,
+  login = "JasperNoBoxDev",
+  accessLevel = "member" as "member" | "guest",
+  role = "admin" as "owner" | "admin" | "member" | "viewer" | "guest",
+  isAdmin = true,
+  allowedServiceIds = [] as string[],
+  projects = [project],
+} = {}) {
+  const resolvedOrganizationName = organizationName ?? organizationId;
+  return {
+    apiVersion: 1,
+    actor: {
+      id: login,
+      name: login,
+      initials: login.slice(0, 2).toUpperCase(),
+      accessLevel,
+      role,
+      capabilities: isAdmin
+        ? ["organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "growth.configure", "usage.configure", "issues.configure", "planning.configure"]
+        : ["content.read", "content.write"],
+      isAdmin,
+      allowedServiceIds,
+    },
+    organization: { id: organizationId, name: resolvedOrganizationName },
+    projects: projects.map((item) => ({
+      id: item.id,
+      name: item.name,
+      organizationId,
+      environment: "production",
+      connections: item.repo ? [{ id: `github-${item.id}-${item.repo}`, provider: "github", label: `${item.org ?? organizationId}/${item.repo}`, status: "connected" }] : [],
+    })),
+  };
+}
+
 function CurrentRoute() {
   return <output data-testid="current-route">{useLocation().pathname}</output>;
 }
@@ -41,6 +77,11 @@ beforeEach(() => {
     const url = String(input);
     if (url === "/api/auth/profile") return json({ user: { login: "JasperNoBoxDev", email: "jasper@noboxdev.com" }, orgs: [{ login: "No-Box-Dev", role: "admin" }] });
     if (url === "/api/v1/app-activity" && init?.method === "POST") return json({ recorded: "already_active" });
+    if (url === "/api/v1/bootstrap") {
+      const organizationId = new Headers(init?.headers).get("X-Org") ?? "No-Box-Dev";
+      const organizationName = organizationId.toLowerCase() === "no-box-dev" ? "No-Box-Dev" : organizationId;
+      return json(bootstrapBody({ organizationId, organizationName }));
+    }
     if (url === "/api/v1/me") return json({ login: "JasperNoBoxDev", org: "No-Box-Dev", isAdmin: true });
     if (url === `/api/v1/projects/${project.id}/usage/actions`) return json({ projectId: project.id, windowDays: 7, actions: [
       { slot: 1, key: "custom.comments.written", label: "Comments written" },
@@ -187,7 +228,7 @@ describe("NoxHere API-backed platform", () => {
     await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent("/"));
     expect(await screen.findByRole("heading", { name: "Choose a project" })).toBeInTheDocument();
     expect(vi.mocked(fetch).mock.calls.some(([input, init]) => (
-      String(input) === "/api/v1/me"
+      String(input) === "/api/v1/bootstrap"
       && new Headers(init?.headers).get("X-Org") === "removed-workspace"
     ))).toBe(false);
   });
@@ -294,7 +335,9 @@ describe("NoxHere API-backed platform", () => {
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === "/api/auth/profile") return json({ user: { login: "JasperNoBoxDev" }, orgs: [{ login: "JasperNoBoxDev", role: "admin" }, { login: "No-Box-Dev", role: "admin" }] });
-      if (url.startsWith("/api/v1/projects") && init?.method !== "POST" && new Headers(init?.headers).get("X-Org") === "jaspernoboxdev") return json({ projects: [] });
+      if (url === "/api/v1/bootstrap" && new Headers(init?.headers).get("X-Org") === "jaspernoboxdev") {
+        return json(bootstrapBody({ organizationId: "jaspernoboxdev", projects: [] }));
+      }
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
@@ -345,8 +388,7 @@ describe("NoxHere API-backed platform", () => {
         user: { login: "JasperNoBoxDev" },
         orgs: [{ login: "No-Box-Dev", role: "admin" }, { login: "Playnist", role: "admin" }],
       });
-      if (organization === "playnist" && url === "/api/v1/me") return json({ login: "JasperNoBoxDev", org: "Playnist", isAdmin: true });
-      if (organization === "playnist" && url.startsWith("/api/v1/projects")) return json({ projects: [{
+      if (organization === "playnist" && url === "/api/v1/bootstrap") return json(bootstrapBody({ organizationId: "Playnist", projects: [{
         id: "proj_playnist_app",
         name: "Playnist App",
         org: "Playnist",
@@ -354,8 +396,7 @@ describe("NoxHere API-backed platform", () => {
         repositories: ["playnist"],
         description: null,
         archived: 0,
-      }] });
-      if (organization === "playnist" && url.startsWith("/api/v1/integrations/connections")) return json({ github: { connected: true }, slack: { connected: false } });
+      }] }));
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
@@ -418,7 +459,7 @@ describe("NoxHere API-backed platform", () => {
         profileChecks += 1;
         if (profileChecks > 1) return json({ error: { code: "unauthorized", message: "Session expired; sign in again" } }, 401);
       }
-      if (String(input) === "/api/v1/me") {
+      if (String(input) === "/api/v1/bootstrap") {
         return json({ apiVersion: 1, error: { code: "unauthorized", message: "Session expired; sign in again" } }, 401);
       }
       return baseFetch(input, init);
@@ -1030,11 +1071,14 @@ describe("NoxHere API-backed platform", () => {
   it("does not fan out service discovery across a large project list", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).startsWith("/api/v1/projects")) return json({ projects: Array.from({ length: 120 }, (_, index) => ({
-        ...project,
-        id: `proj_n1_${index}`,
-        name: `N1 project ${index}`,
-      })) });
+      if (String(input) === "/api/v1/bootstrap") return json(bootstrapBody({
+        organizationId: new Headers(init?.headers).get("X-Org") ?? "n1healthcare",
+        projects: Array.from({ length: 120 }, (_, index) => ({
+          ...project,
+          id: `proj_n1_${index}`,
+          name: `N1 project ${index}`,
+        })),
+      }));
       return baseFetch(input, init);
     });
     renderApp(<App />, "/n1healthcare/select/connections/overview");
@@ -1424,7 +1468,7 @@ describe("NoxHere API-backed platform", () => {
   it("keeps guests inside their granted service and removes settings", async () => {
     const memberFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["feedback"] });
+      if (String(input) === "/api/v1/bootstrap") return json(bootstrapBody({ organizationId: "no-box-dev", organizationName: "No-Box-Dev", login: "guest", accessLevel: "guest", role: "guest", isAdmin: false, allowedServiceIds: ["feedback"] }));
       return memberFetch(input, init);
     });
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/settings");
@@ -1432,7 +1476,7 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "NoxHere" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "NoxKey" })).not.toBeInTheDocument();
-    expect(fetch).toHaveBeenCalledWith("/api/v1/me", expect.objectContaining({
+    expect(fetch).toHaveBeenCalledWith("/api/v1/bootstrap", expect.objectContaining({
       headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
     }));
   });
@@ -1440,7 +1484,7 @@ describe("NoxHere API-backed platform", () => {
   it("preserves former Telemetry guest access across Growth, Usage, and Issues", async () => {
     const memberFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["telemetry"] });
+      if (String(input) === "/api/v1/bootstrap") return json(bootstrapBody({ organizationId: "no-box-dev", organizationName: "No-Box-Dev", login: "guest", accessLevel: "guest", role: "guest", isAdmin: false, allowedServiceIds: ["growth", "usage", "issues"] }));
       return memberFetch(input, init);
     });
     renderApp(<App />, `/no-box-dev/${project.id}/stats/overview`);
@@ -1454,7 +1498,7 @@ describe("NoxHere API-backed platform", () => {
   it("keeps new Growth guest access separate from Usage and Issues", async () => {
     const memberFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/v1/me") return json({ login: "guest", org: "No-Box-Dev", isAdmin: false, accessLevel: "guest", allowedServices: ["growth"] });
+      if (String(input) === "/api/v1/bootstrap") return json(bootstrapBody({ organizationId: "no-box-dev", organizationName: "No-Box-Dev", login: "guest", accessLevel: "guest", role: "guest", isAdmin: false, allowedServiceIds: ["growth"] }));
       return memberFetch(input, init);
     });
     renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/usage/overview`);
