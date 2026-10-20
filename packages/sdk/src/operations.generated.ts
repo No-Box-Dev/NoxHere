@@ -694,6 +694,21 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "getApplicationBootstrap",
+    "method": "GET",
+    "path": "/api/v1/bootstrap",
+    "namespace": "workspace",
+    "authentication": "member",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "safe_read",
+    "requestContentTypes": [],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "getBootstrapStatus",
     "method": "GET",
     "path": "/api/v1/bootstrap-status",

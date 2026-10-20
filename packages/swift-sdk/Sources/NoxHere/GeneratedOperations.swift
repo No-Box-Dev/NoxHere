@@ -32,7 +32,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 200
+    public static let operationCount = 201
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -77,6 +77,7 @@ public enum NoxHereOperations {
         "getActivityDefaultPrompt": .init(id: "getActivityDefaultPrompt", method: "GET", path: "/api/v1/activity/release-notes-prompt", resource: .activity, changeSafety: .safeRead, servers: []),
         "getActor": .init(id: "getActor", method: "GET", path: "/api/v1/actors/{actorId}", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getAiSettings": .init(id: "getAiSettings", method: "GET", path: "/api/v1/llm-settings", resource: .activity, changeSafety: .safeRead, servers: []),
+        "getApplicationBootstrap": .init(id: "getApplicationBootstrap", method: "GET", path: "/api/v1/bootstrap", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getBootstrapStatus": .init(id: "getBootstrapStatus", method: "GET", path: "/api/v1/bootstrap-status", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getCurrentMember": .init(id: "getCurrentMember", method: "GET", path: "/api/v1/me", resource: .workspace, changeSafety: .safeRead, servers: []),
         "getCurrentWorkSummary": .init(id: "getCurrentWorkSummary", method: "GET", path: "/api/v1/activity/current-summary", resource: .activity, changeSafety: .safeRead, servers: []),

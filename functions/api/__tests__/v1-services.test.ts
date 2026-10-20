@@ -83,7 +83,12 @@ describe("Nox service capabilities API", () => {
     expect(noxhere).toMatchObject({
       kind: "foundation",
       focus: "Connections and shared workspace control",
-      setup: { state: "ready" },
+      setup: {
+        state: "needs_setup",
+        blockers: expect.arrayContaining([
+          { type: "connection", provider: "slack", state: "disconnected" },
+        ]),
+      },
     });
     expect(noxhere.capabilities.map((capability: { id: string }) => capability.id)).toContain("connections");
 

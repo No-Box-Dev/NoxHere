@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { bootstrapSchema, engineerActivitySchema, growthDashboardSchema, growthEventSchema, telemetryActionsSchema, telemetryAlertRuleSchema, telemetryAlertSchema, telemetryDashboardSchema, telemetryStatEventSchema, engineerStatsSchema, githubMemberSchema, guestAccessSchema, guestInviteResponseSchema, organizationMembersSchema, planningTaskSchema, projectRoutingResponseSchema, projectSettingsSchema, retrievalResultSchema, slackChannelsSchema, slackMessageDeliverySchema, slackRoutingSchema, slackStatusSchema, taskWorkflowSchema, planningFeatureAttachmentSchema, planningFeatureSchema } from "./contracts";
-import type { Bootstrap, EngineerActivity, GrowthDashboard, GrowthEvent, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, OrganizationMember, PlanningTask, Project, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, ServiceId, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
-import { deleteJson, getBlob, getJson, getRawJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
+import type { Bootstrap, EngineerActivity, GrowthDashboard, GrowthEvent, TelemetryAction, TelemetryActions, TelemetryAlert, TelemetryAlertRule, TelemetryDashboard, TelemetryStatEvent, EngineerStats, GithubMember, GuestAccess, GuestInvite, OrganizationMember, PlanningTask, ProjectRouting, ProjectRoutingResponse, ProjectSettings, RetrievalResult, SlackChannels, SlackMessageDelivery, SlackMessagePayload, SlackRouting, SlackStatus, TaskStage, TaskWorkflow, PlanningFeatureAttachment, PlanningFeatureRecord } from "./contracts";
+import { deleteJson, getBlob, getJson, patchJson, postFormJson, postJson, postRawJson, putJson } from "./http";
 
 export interface PlatformApi {
   bootstrap(organizationId: string, projectId: string, signal?: AbortSignal): Promise<Bootstrap>;
@@ -56,37 +56,7 @@ export const projectSettingsQueryKey = (organizationId: string, projectId: strin
 
 export const platformApi: PlatformApi = {
   bootstrap: async (organizationId, projectId, signal) => {
-    const scope = { organizationId, projectId };
-    const [profileRaw, projectsRaw, connectionsRaw] = await Promise.all([
-      getRawJson("/api/v1/me", signal, scope),
-      getRawJson("/api/v1/projects?view=bootstrap", signal, scope),
-      getRawJson("/api/v1/integrations/connections?view=bootstrap", signal, scope).catch(() => null),
-    ]);
-    const profile = profileRaw as { login?: string; org?: string; accessLevel?: "member" | "guest"; role?: "owner" | "admin" | "member" | "viewer" | "guest"; capabilities?: string[]; isAdmin?: boolean; allowedServices?: string[] };
-    const projectRows = (projectsRaw as { projects?: Array<{ id: string; name: string; org?: string | null; repo?: string | null; repositories?: string[]; description?: string | null; archived?: number; routing_enabled?: number }> }).projects ?? [];
-    const integration = connectionsRaw as { github?: { connected?: boolean }; slack?: { connected?: boolean; teamName?: string | null } } | null;
-    const guestServices = profile.accessLevel === "guest" ? new Set((profile.allowedServices ?? []).flatMap((id) => {
-      const mapped = ({ planning: ["planning"], activity: ["activity"], feedback: ["feedback"], growth: ["growth"], usage: ["usage"], issues: ["issues"], telemetry: ["growth", "usage", "issues"] } as Record<string, ServiceId[] | undefined>)[id];
-      return mapped ?? [];
-    })) : null;
-    const projects: Project[] = projectRows.flatMap((row) => {
-      if (row.archived === 1 || row.routing_enabled === 0) return [];
-      const connections: Project["connections"] = [];
-      const repositories = row.repositories?.length ? row.repositories : row.repo ? [row.repo] : [];
-      repositories.forEach((repo) => connections.push({ id: `github-${row.id}-${repo}`, provider: "github", label: `${row.org ?? organizationId}/${repo}`, status: integration?.github?.connected ? "connected" : "attention" }));
-      if (integration?.slack?.connected) connections.push({ id: `slack-${row.id}`, provider: "slack", label: integration.slack.teamName ?? "Slack", status: "connected" });
-      return [{
-        id: row.id, name: row.name, organizationId,
-        environment: row.description?.toLowerCase().includes("isolated project for safely testing") ? "test" as const : "production" as const,
-        connections,
-      }];
-    });
-    const login = profile.login ?? "Member";
-    return bootstrapSchema.parse({
-      actor: { id: login, name: login, initials: login.slice(0, 2).toUpperCase(), accessLevel: profile.accessLevel ?? "member", role: profile.role ?? (profile.accessLevel === "guest" ? "guest" : profile.isAdmin ? "admin" : "member"), capabilities: profile.capabilities ?? (profile.isAdmin ? ["organization.manage", "members.manage", "guests.manage", "connections.manage", "repositories.manage", "tokens.manage", "growth.configure", "usage.configure", "issues.configure", "planning.configure"] : ["content.read", "content.write"]), isAdmin: Boolean(profile.isAdmin), allowedServiceIds: guestServices ? [...guestServices] : [] },
-      organization: { id: organizationId, name: profile.org ?? organizationId },
-      projects,
-    });
+    return getJson("/api/v1/bootstrap", bootstrapSchema, signal, { organizationId, projectId });
   },
   createProject: async (organizationId, name, repositories) => {
     const response = await postRawJson<{ project?: { id?: unknown; name?: unknown; repositories?: unknown } }>("/api/v1/projects", { name, ...(repositories ? { repositories } : {}) }, { organizationId });

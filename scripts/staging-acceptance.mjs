@@ -116,6 +116,12 @@ async function preflight() {
   pass("NoxHere staging gateway health", "200");
 
   await request("NoxHere staging readiness", "/api/health/ready");
+  const bootstrap = (await request("authenticated application bootstrap", "/api/v1/bootstrap")).body;
+  if (bootstrap?.organization?.id?.toLowerCase() !== config.org.toLowerCase()
+      || !bootstrap?.projects?.some((project) => project.id === config.projectId)) {
+    fail("authenticated application bootstrap is not scoped to the acceptance organization and project");
+  }
+  pass("authenticated application bootstrap is project-scoped", config.projectId);
   const catalog = (await request("service discovery", "/api/v1/services")).body;
   for (const id of ["noxhere", "planning", "activity", "feedback", "telemetry"]) {
     const service = catalog?.services?.find((candidate) => candidate.id === id);

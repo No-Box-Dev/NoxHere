@@ -441,6 +441,7 @@ export async function revokeBrowserSession(request: Request, db: D1Database): Pr
 
 export function requiredScope(pathname: string, method: string): string | null {
   const access = ["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase()) ? "read" : "write";
+  if (pathname === "/api/v1/bootstrap" && access === "read") return "services:read";
   if (pathname === "/api/v1/developer-feedback" && access === "write") return "developer-feedback:write";
   if (pathname === "/api/v1/integrations/slack/messages" && access === "write") return "slack:send";
   if (pathname === "/api/v1/slack/test" && access === "write") return "slack:send";

@@ -21,6 +21,7 @@ function statementFor(sql) {
     first: vi.fn(async () => {
       if (sql.includes("FROM orgs")) return { installation_id: 42, bootstrapped_at: "2026-01-01", last_event_at: "2026-01-02" };
       if (sql.includes("FROM installations")) return { installation_id: 42, account_login: "acme", account_type: "Organization", health_status: null };
+      if (sql.includes("FROM slack_connections")) return { team_name: "Acme Slack" };
       if (sql.includes("FROM slack_settings")) return null;
       if (sql.includes("FROM config")) return null;
       return null;
@@ -65,6 +66,18 @@ describe("NoxHere provider API", () => {
     expect(body.connections[0].actions.connect.href).toBe("/api/v1/integrations/connections/github/start");
     expect(JSON.stringify(body)).not.toContain("private");
     expect(JSON.stringify(body)).not.toContain("secret");
+  });
+
+  it("returns the compact credential-free bootstrap status", async () => {
+    const ctx = context();
+    ctx.request = new Request("https://app.noxhere.com/api/v1/integrations/connections?view=bootstrap");
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("private, max-age=30");
+    expect(await response.json()).toEqual({
+      github: { connected: true },
+      slack: { connected: true, teamName: "Acme Slack" },
+    });
   });
 
   it("starts GitHub through the shared redirect contract", async () => {

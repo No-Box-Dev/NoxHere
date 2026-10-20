@@ -65,6 +65,11 @@ describe("Planning automation authorization", () => {
 });
 
 describe("application write authorization", () => {
+  it("allows project-scoped acceptance to verify the unified bootstrap", () => {
+    expect(requiredScope("/api/v1/bootstrap", "GET")).toBe("services:read");
+    expect(requiredScope("/api/v1/bootstrap", "POST")).toBeNull();
+  });
+
   it("separates ingestion and submission from management writes", () => {
     expect(API_TOKEN_SCOPES).toContain("telemetry:ingest");
     expect(requiredScope("/api/v1/telemetry/public/events", "POST")).toBe("telemetry:ingest");
