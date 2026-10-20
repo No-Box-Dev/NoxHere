@@ -9,7 +9,21 @@ async function tokenHash(token: string) {
 
 beforeAll(async () => {
   await env.DB.batch([
-    env.DB.prepare("CREATE TABLE orgs (id INTEGER PRIMARY KEY, github_login TEXT NOT NULL)"),
+    env.DB.prepare("CREATE TABLE orgs (id INTEGER PRIMARY KEY, github_login TEXT NOT NULL, installation_id INTEGER)"),
+    env.DB.prepare("CREATE TABLE projects (id TEXT PRIMARY KEY, org_id INTEGER NOT NULL, repo TEXT, archived INTEGER NOT NULL DEFAULT 0)"),
+    env.DB.prepare(`CREATE TABLE slack_connections (
+      id TEXT PRIMARY KEY, org_id INTEGER NOT NULL, health_status TEXT NOT NULL,
+      is_default INTEGER NOT NULL DEFAULT 0, installed_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE TABLE slack_channel_status (
+      org_id INTEGER NOT NULL, slack_connection_id TEXT NOT NULL, channel_id TEXT NOT NULL,
+      status TEXT NOT NULL, updated_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE TABLE transport_outbox (
+      id TEXT PRIMARY KEY, org_id INTEGER NOT NULL, project_id TEXT NOT NULL, provider TEXT NOT NULL,
+      operation TEXT NOT NULL, route TEXT NOT NULL, idempotency_key TEXT NOT NULL, status TEXT NOT NULL,
+      last_error_code TEXT, last_error TEXT, receipt_json TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )`),
     env.DB.prepare("CREATE TABLE config (org_id INTEGER NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (org_id, key))"),
     env.DB.prepare("CREATE TABLE project_config (org_id INTEGER NOT NULL, project_id TEXT NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT, PRIMARY KEY (org_id, project_id, key))"),
     env.DB.prepare(`CREATE TABLE members (
@@ -39,7 +53,10 @@ beforeAll(async () => {
       sha256 TEXT NOT NULL, r2_key TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       expires_at TEXT, deleted_at TEXT
     )`),
-    env.DB.prepare("INSERT INTO orgs (id, github_login) VALUES (1, 'acme')"),
+    env.DB.prepare("INSERT INTO orgs (id, github_login, installation_id) VALUES (1, 'acme', 1001)"),
+    env.DB.prepare("INSERT INTO projects (id, org_id, repo, archived) VALUES ('project-1', 1, 'web', 0)"),
+    env.DB.prepare("INSERT INTO slack_connections (id, org_id, health_status, is_default, installed_at) VALUES ('slack-1', 1, 'ok', 1, CURRENT_TIMESTAMP)"),
+    env.DB.prepare("INSERT INTO config (org_id, key, data) VALUES (1, 'settings', '{\"slack\":{\"fallbackChannelId\":\"C123\",\"fallbackConnectionId\":\"slack-1\"}}')"),
     env.DB.prepare(`INSERT INTO members (id, org_id, login, avatar_url, kind) VALUES
       (1, 1, 'Ada-Lovelace', 'https://avatars.example/ada.png', 'human'),
       (2, 1, 'release-bot', NULL, 'bot')`),
@@ -367,7 +384,7 @@ describe("public capture Worker", () => {
       }),
     }, { ...env, TASK_QUEUE: { send } } as never);
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(202);
     const task = send.mock.calls[0][0] as { screenshotAssetId: string; screenshotUrl: string; screenshotPreviewUrl: string };
     expect(task.screenshotAssetId).toMatch(/^asset_[a-f0-9]{32}$/);
     expect(task.screenshotUrl).toBe(`https://app.noxhere.com/api/v1/feedback/assets/${task.screenshotAssetId}?org=acme`);
@@ -381,6 +398,30 @@ describe("public capture Worker", () => {
     expect((await app.request(`/api/feedback/public/v1/assets/${asset!.r2_key}`, {}, env as never)).status).toBe(404);
     expect((await app.request(task.screenshotPreviewUrl, {}, env as never)).status).toBe(200);
     expect((await app.request(`${task.screenshotPreviewUrl.slice(0, -1)}0`, {}, env as never)).status).toBe(404);
+  });
+
+  it("returns a public, origin-scoped delivery receipt", async () => {
+    const now = new Date().toISOString();
+    const receipt = JSON.stringify({ result: { url: "https://github.com/acme/web/issues/42" } });
+    await env.DB.batch([
+      env.DB.prepare(`INSERT INTO transport_outbox
+        (id, org_id, project_id, provider, operation, route, idempotency_key, status, receipt_json, created_at, updated_at)
+        VALUES ('gh-status', 1, 'project-1', 'github', 'github.issue.create', 'feedback', 'feedback:receipt-1', 'delivered', ?, ?, ?)`)
+        .bind(receipt, now, now),
+      env.DB.prepare(`INSERT INTO transport_outbox
+        (id, org_id, project_id, provider, operation, route, idempotency_key, status, receipt_json, created_at, updated_at)
+        VALUES ('slack-status', 1, 'project-1', 'slack', 'slack.message.send', 'feedback', 'feedback:receipt-1', 'delivered', '{}', ?, ?)`)
+        .bind(now, now),
+    ]);
+    const response = await SELF.fetch("https://capture.test/api/feedback/public/v1/reports/receipt-1/status?siteId=site-1", {
+      headers: { Origin: "https://app.example.com" },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      status: "delivered",
+      issueUrl: "https://github.com/acme/web/issues/42",
+      stages: { github: "delivered", slack: "delivered" },
+    });
   });
 
   it("does not expose retired generic widget routes", async () => {
@@ -408,7 +449,8 @@ describe("public capture Worker", () => {
       expect(config.status).toBe(404);
       expect(widget.status).toBe(404);
     } finally {
-      await env.DB.prepare("DELETE FROM config WHERE org_id = 1 AND key = 'settings'").run();
+      await env.DB.prepare("UPDATE config SET data = ? WHERE org_id = 1 AND key = 'settings'")
+        .bind('{"slack":{"fallbackChannelId":"C123","fallbackConnectionId":"slack-1"}}').run();
     }
   });
 
@@ -424,7 +466,8 @@ describe("public capture Worker", () => {
       });
       expect(response.status).toBe(404);
     } finally {
-      await env.DB.prepare("DELETE FROM config WHERE org_id = 1 AND key = 'settings'").run();
+      await env.DB.prepare("UPDATE config SET data = ? WHERE org_id = 1 AND key = 'settings'")
+        .bind('{"slack":{"fallbackChannelId":"C123","fallbackConnectionId":"slack-1"}}').run();
     }
   });
 

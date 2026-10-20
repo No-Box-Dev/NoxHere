@@ -116,6 +116,25 @@ describe("Slack transport adapter", () => {
     expect(provider.install).toHaveBeenCalledWith(expect.anything(), 7, "connection-site");
   });
 
+  it("inherits the default Slack connection for a site-specific channel", async () => {
+    const statement = {
+      bind: vi.fn(),
+      first: vi.fn(async () => ({ connection_id: null, channel_id: "C-SPOT" })),
+    };
+    statement.bind.mockReturnValue(statement);
+    const DB = { prepare: vi.fn(() => statement) } as unknown as D1Database;
+    provider.post.mockResolvedValueOnce({ channel: "C-SPOT", ts: "100.4" });
+    const feedback = parseTransportCommand({
+      ...command(),
+      commandId: "feedback-default-connection",
+      idempotencyKey: "feedback:capture-default",
+      route: "feedback",
+      routeContext: { kind: "site", id: "site-1" },
+    });
+    await deliverSlackTransport({ DB }, feedback);
+    expect(provider.install).toHaveBeenCalledWith(expect.anything(), 7, null);
+  });
+
   it("blocks a command when its neutral route has no destination", async () => {
     provider.projectRoute.mockResolvedValue(null);
     provider.channels.mockResolvedValue({});

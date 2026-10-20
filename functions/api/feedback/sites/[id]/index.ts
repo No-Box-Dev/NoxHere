@@ -7,6 +7,7 @@ import { requeueBlockedForSite } from "../../../../lib/delivery-outbox.js";
 import { requeueBlockedTransportCommands } from "../../../../lib/transport-outbox";
 import { feedbackAuditStatement } from "../../../../lib/feedback-audit";
 import { projectSlackDestinationErrorStatus, validateProjectSlackDestination } from "../../../../lib/project-routing";
+import { markSlackChannelVerified } from "../../../../lib/slack-channel-status";
 import {
   FEEDBACK_LAUNCHER_POSITIONS,
   FEEDBACK_LAUNCHER_STYLES,
@@ -68,6 +69,7 @@ const LauncherInput = z.object({
 
 const UpdateSite = z.object({
   projectId: z.string().trim().min(1).max(240).optional(),
+  lifecycle: z.enum(["draft", "ready", "disabled"]).optional(),
   slackChannelId: z.string().trim().max(80).nullable().optional(),
   slackConnectionId: z.string().trim().min(1).max(120).nullable().optional(),
   dailySummaryEnabled: z.boolean().optional(),
@@ -117,23 +119,18 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
        FROM spot_sites WHERE id = ? AND org_id = ?${projectId ? " AND project_id = ?" : ""}`,
   ).bind(...(projectId ? [context.params.id, orgId, projectId] : [context.params.id, orgId])).first<Record<string, unknown>>();
   if (!existing) return errorResponse("Feedback site not found", 404);
-  const resourceProjectId = String(existing.project_id);
+  const resourceProjectId = typeof existing.project_id === "string" && existing.project_id ? existing.project_id : null;
 
   const input = parsed.data;
   const targetProjectId = input.projectId ?? resourceProjectId;
-  if (targetProjectId !== resourceProjectId) {
-    const target = await db.prepare(
-      `SELECT project.id
-         FROM projects project
-        WHERE project.id = ? AND project.org_id = ? AND COALESCE(project.archived, 0) = 0
-          AND (project.repo = ? COLLATE NOCASE OR EXISTS (
-            SELECT 1 FROM project_repositories assignment
-             WHERE assignment.org_id = project.org_id AND assignment.project_id = project.id
-               AND assignment.repo = ? COLLATE NOCASE
-          ))`,
-    ).bind(targetProjectId, orgId, existing.repo, existing.repo).first<{ id: string }>();
-    if (!target) return errorResponse("The target project must be active and include this site's repository", 409);
-  }
+  if (!targetProjectId) return errorResponse("Choose an active project for this capture site", 409);
+  const target = await db.prepare(
+    `SELECT project.id
+       FROM projects project
+      WHERE project.id = ? AND project.org_id = ? AND COALESCE(project.archived, 0) = 0
+        AND project.repo = ? COLLATE NOCASE`,
+  ).bind(targetProjectId, orgId, existing.repo).first<{ id: string }>();
+  if (!target) return errorResponse("The target project's delivery repository must match this site's repository", 409);
   let validatedSlackConnectionId = input.slackConnectionId !== undefined
     ? input.slackConnectionId : existing.slack_connection_id;
   if (input.slackChannelId) {
@@ -152,6 +149,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     } else {
       const slack = await resolveSlackInstall({ ...context.env, DB: db }, orgId, String(connectionId || "") || null);
       if (!slack) return errorResponse("Connect Slack in Integrations before selecting a channel", 409);
+      validatedSlackConnectionId = slack.id;
       try {
         const channel = await getSlackChannel(slack.botToken, input.slackChannelId);
         if (!channel || channel.is_archived) return errorResponse("Slack channel is archived or unavailable", 409);
@@ -159,6 +157,9 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
       } catch (error) {
         return errorResponse(error instanceof Error ? error.message : "Slack channel is unavailable", 409);
       }
+    }
+    if (validatedSlackConnectionId) {
+      await markSlackChannelVerified(db, orgId, String(validatedSlackConnectionId), input.slackChannelId);
     }
   }
   let config: Record<string, unknown> = {};
@@ -172,13 +173,17 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
       : [],
   )[0];
   if (missingEnvironment) return errorResponse(`Block references unknown environment: ${missingEnvironment}`, 400);
-  for (const key of ["buttonColor", "buttonText", "widgetMode", "launcher", "autoErrorLogging", "dailySummaryEnabled", "environments", "blocks"] as const) {
+  const targetLifecycle = input.lifecycle ?? config.lifecycle ?? "ready";
+  if (targetLifecycle === "ready" && !finalEnvironments.some((environment) => environment.enabled !== false)) {
+    return errorResponse("A ready capture site requires at least one enabled environment", 409);
+  }
+  for (const key of ["buttonColor", "buttonText", "widgetMode", "launcher", "autoErrorLogging", "dailySummaryEnabled", "lifecycle", "environments", "blocks"] as const) {
     if (input[key] !== undefined) config[key] = input[key];
   }
   const updateStatement = db.prepare(
     `UPDATE spot_sites SET project_id = ?, slack_channel_id = ?, slack_connection_id = ?, widget_config = ?,
        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-      WHERE id = ? AND org_id = ? AND project_id = ?`,
+      WHERE id = ? AND org_id = ? AND project_id IS ?`,
   ).bind(
     targetProjectId,
     input.slackChannelId !== undefined ? input.slackChannelId || null : existing.slack_channel_id,
@@ -191,9 +196,9 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
   const moveStatements: D1PreparedStatement[] = [];
   if (targetProjectId !== resourceProjectId) {
     moveStatements.push(
-      db.prepare("UPDATE spot_reports SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id = ?")
+      db.prepare("UPDATE spot_reports SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id IS ?")
         .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
-      db.prepare("UPDATE delivery_outbox SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id = ?")
+      db.prepare("UPDATE delivery_outbox SET project_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE org_id = ? AND site_id = ? AND project_id IS ?")
         .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
     );
     const evidenceTable = await db.prepare(
@@ -201,7 +206,7 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
     ).first<{ name: string }>();
     if (evidenceTable) {
       moveStatements.push(
-        db.prepare("UPDATE feedback_assets SET project_id = ? WHERE org_id = ? AND site_id = ? AND project_id = ?")
+        db.prepare("UPDATE feedback_assets SET project_id = ? WHERE org_id = ? AND site_id = ? AND project_id IS ?")
           .bind(targetProjectId, orgId, context.params.id, resourceProjectId),
       );
     }
@@ -249,12 +254,12 @@ export async function onRequestPatch(context: Ctx): Promise<Response> {
         ).bind(orgId, context.params.id).run();
       }
     }
-    if (context.env.TASK_QUEUE) {
-      await requeueBlockedTransportCommands(
-        { DB: db, TASK_QUEUE: context.env.TASK_QUEUE },
-        { orgId, projectId: targetProjectId, routeContext: { kind: "site", id: context.params.id } },
-      );
-    }
+  }
+  if (context.env.TASK_QUEUE && (input.slackChannelId !== undefined || input.slackConnectionId !== undefined || input.projectId !== undefined || input.lifecycle === "ready")) {
+    await requeueBlockedTransportCommands(
+      { DB: db, TASK_QUEUE: context.env.TASK_QUEUE },
+      { orgId, projectId: targetProjectId, routeContext: { kind: "site", id: context.params.id }, provider: "all" },
+    );
   }
 
   return jsonResponse({ ok: true });

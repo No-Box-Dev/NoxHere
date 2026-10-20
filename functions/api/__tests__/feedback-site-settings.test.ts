@@ -24,7 +24,7 @@ function database({ targetProject = true, feedbackAssets = true }: { targetProje
         binds: [] as unknown[],
         bind(...binds: unknown[]) { statement.binds = binds; return statement; },
         async first() {
-          if (sql.includes("FROM spot_sites")) return { id: "site-1", project_id: "playnist", repo: "web", slack_channel_id: null, widget_config: "{}" };
+          if (sql.includes("FROM spot_sites")) return { id: "site-1", project_id: "playnist", repo: "web", slack_channel_id: null, widget_config: '{"lifecycle":"ready","environments":[{"name":"Production","url":"app.example.com","enabled":true}]}' };
           if (sql.includes("FROM projects project")) return targetProject ? { id: "umbrella" } : null;
           if (sql.includes("sqlite_master")) return feedbackAssets ? { name: "feedback_assets" } : null;
           return null;

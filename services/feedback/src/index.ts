@@ -33,6 +33,7 @@ import {
   parseWidgetConfig,
   publicWidgetConfig,
   requestOrigin,
+  siteReadiness,
   type CaptureSite,
 } from "./site-config";
 import {
@@ -77,6 +78,14 @@ function clientIp(context: AppContext): string {
 
 function jsonError(context: AppContext, error: string, status: 400 | 403 | 404 | 413 | 415 | 429 | 500 | 503) {
   return context.json({ error }, status);
+}
+
+function siteUnavailable(context: AppContext, issues: string[]) {
+  return context.json({
+    error: "This feedback site is not ready to deliver reports",
+    code: "site_not_ready",
+    issues,
+  }, 503);
 }
 
 function requireJson(context: AppContext) {
@@ -154,6 +163,8 @@ async function submitReport(context: AppContext) {
 
   const site = await siteForPublicRequest(context, params.siteId);
   if (site instanceof Response) return site;
+  const readiness = siteReadiness(site);
+  if (!readiness.ready) return siteUnavailable(context, readiness.issues);
   const origin = requestOrigin(context.req.raw);
   const config = parseWidgetConfig(site.widget_config);
   params.environment = environmentForOrigin(config, origin)?.name ?? null;
@@ -236,11 +247,69 @@ async function submitReport(context: AppContext) {
   }
 
   console.log(JSON.stringify({ event: "feedback.report.queued", siteId: site.id, captureId }));
-  return context.json({ success: true, issueId: captureId, queued: true, mode: effectiveConfig.widgetMode });
+  return context.json({
+    success: true,
+    issueId: captureId,
+    queued: true,
+    status: "queued",
+    statusUrl: `/api/feedback/public/v1/reports/${encodeURIComponent(captureId)}/status?siteId=${encodeURIComponent(site.id)}`,
+    mode: effectiveConfig.widgetMode,
+  }, 202);
 }
 
 app.post("/api/feedback/public/v1/reports", submitReport);
 app.post("/report", submitReport);
+
+app.get("/api/feedback/public/v1/reports/:captureId/status", async (context) => {
+  const captureId = context.req.param("captureId");
+  const siteId = context.req.query("siteId");
+  if (!siteId || !/^[A-Za-z0-9:_-]{1,100}$/.test(captureId)) return jsonError(context, "Invalid report receipt", 400);
+  const site = await siteForPublicRequest(context, siteId);
+  if (site instanceof Response) return site;
+
+  const { results } = await context.env.DB.prepare(
+    `SELECT provider, status, last_error_code, last_error, receipt_json, updated_at
+       FROM transport_outbox
+      WHERE org_id = ? AND route = 'feedback' AND idempotency_key = ?
+      ORDER BY created_at`,
+  ).bind(site.org_id, `feedback:${captureId}`).all<{
+    provider: "github" | "slack";
+    status: string;
+    last_error_code: string | null;
+    last_error: string | null;
+    receipt_json: string | null;
+    updated_at: string;
+  }>();
+  const transports = results ?? [];
+  const github = transports.find((row) => row.provider === "github");
+  const slack = transports.find((row) => row.provider === "slack");
+  const terminalFailure = [github, slack].find((row) => row && ["blocked", "failed"].includes(row.status));
+  let issueUrl: string | null = null;
+  if (github?.receipt_json) {
+    try {
+      const receipt = JSON.parse(github.receipt_json) as { result?: { url?: unknown } };
+      issueUrl = typeof receipt.result?.url === "string" ? receipt.result.url : null;
+    } catch { /* A corrupt receipt is surfaced through its transport state. */ }
+  }
+  const status = terminalFailure ? "failed"
+    : github?.status === "delivered" && slack?.status === "delivered" ? "delivered"
+      : transports.length ? "processing" : "queued";
+  return context.json({
+    issueId: captureId,
+    status,
+    issueUrl,
+    stages: {
+      github: github?.status ?? "queued",
+      slack: slack?.status ?? (github?.status === "delivered" ? "queued" : "waiting"),
+    },
+    error: terminalFailure ? {
+      provider: terminalFailure.provider,
+      code: terminalFailure.last_error_code ?? "delivery_failed",
+      message: terminalFailure.last_error ?? "Report delivery failed",
+    } : null,
+    updatedAt: transports.at(-1)?.updated_at ?? null,
+  }, { headers: { "Cache-Control": "no-store" } });
+});
 app.get("/resolution/:token", resolutionResponsePage);
 app.post("/api/feedback/public/v1/resolution-responses/:token", submitResolutionResponse);
 
@@ -271,6 +340,8 @@ async function submitErrors(context: AppContext) {
   if (site.noxalert_enabled === 0) return jsonError(context, "Automatic error logging is not enabled", 404);
   const config = parseWidgetConfig(site.widget_config);
   if (config.autoErrorLogging !== true) return jsonError(context, "Automatic error logging is not enabled", 404);
+  const readiness = siteReadiness(site);
+  if (!readiness.ready) return siteUnavailable(context, readiness.issues);
   const environment = environmentForOrigin(config, requestOrigin(context.req.raw))?.name ?? null;
 
   const queued: Array<{

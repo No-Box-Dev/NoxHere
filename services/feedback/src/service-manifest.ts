@@ -7,8 +7,8 @@ export const FEEDBACK_SERVICE_MANIFEST = {
     kind: "product",
     focus: "Capture actionable website feedback",
     description: "Adds a website feedback widget that captures reports, screenshots, page context, and delivery details for the team.",
-    requiredConnections: ["github"],
-    optionalConnections: ["slack"],
+    requiredConnections: ["github", "slack"],
+    optionalConnections: [],
     capabilities: [
       { id: "sites", name: "Sites", description: "Register websites and manage their Feedback installation.", access: "admin", requires: ["github"], operations: [
         { id: "list_sites", method: "GET", path: "/api/v1/feedback/sites", authentication: "member", description: "List Feedback sites." },
@@ -23,6 +23,7 @@ export const FEEDBACK_SERVICE_MANIFEST = {
       ] },
       { id: "reports", name: "Reports and screenshots", description: "Turn captured feedback and browser context into actionable reports.", access: "member", requires: ["github"], operations: [
         { id: "submit_report", method: "POST", path: "https://app.noxhere.com/api/feedback/public/v1/reports", authentication: "public", description: "Submit bounded website feedback from an allowed origin." },
+        { id: "get_report_delivery", method: "GET", path: "https://app.noxhere.com/api/feedback/public/v1/reports/{reportId}/status?siteId={siteId}", authentication: "public", description: "Read the origin-scoped GitHub and Slack delivery receipt for a submitted report." },
         { id: "submit_browser_errors", method: "POST", path: "https://app.noxhere.com/api/feedback/public/v1/errors", authentication: "public", description: "Submit a bounded batch of automatic browser errors." },
         { id: "reopen_resolved_report", method: "POST", path: "https://app.noxhere.com/api/feedback/public/v1/resolution-responses/{token}", authentication: "reporter_token", description: "Add an optional note or screenshot and reopen the original issue through a single-use resolution link." },
         { id: "get_resolution_template", method: "GET", path: "/api/v1/feedback/sites/{siteId}/resolution-template", authentication: "admin", description: "Read the site's resolved-ticket email presentation." },

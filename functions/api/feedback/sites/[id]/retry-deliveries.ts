@@ -28,7 +28,7 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   const transport = context.env.TASK_QUEUE
     ? await requeueBlockedTransportCommands(
         { DB: db, TASK_QUEUE: context.env.TASK_QUEUE },
-        { orgId, projectId: site.project_id, routeContext: { kind: "site", id: context.params.id } },
+        { orgId, projectId: site.project_id, routeContext: { kind: "site", id: context.params.id }, provider: "all" },
       )
     : { queued: 0 };
   return jsonResponse({ ok: true, queued: result.queued + transport.queued });

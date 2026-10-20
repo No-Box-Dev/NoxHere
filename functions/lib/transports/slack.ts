@@ -102,7 +102,10 @@ async function resolveDestination(env: SlackTransportEnvironment, command: Slack
     if (site?.channel_id) return {
       projectId: command.projectId,
       projectName: "",
-      connectionId: site.connection_id ?? "",
+      // A site-specific channel may deliberately inherit the organization's
+      // default Slack installation. Preserve null so resolveSlackInstall can
+      // perform that fallback instead of looking up an empty connection ID.
+      connectionId: site.connection_id ?? null,
       channelId: site.channel_id,
     };
   }

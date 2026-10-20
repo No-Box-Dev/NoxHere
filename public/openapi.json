@@ -103,7 +103,7 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "Capture queued",
             "content": {
               "application/json": {
@@ -169,6 +169,74 @@
         ],
         "x-authentication": "public",
         "x-change-safety": "write_not_safe_to_retry"
+      }
+    },
+    "/api/feedback/public/v1/reports/{reportId}/status": {
+      "get": {
+        "operationId": "getPublicFeedbackDeliveryStatus",
+        "summary": "Get Feedback delivery status",
+        "description": "Read the origin-scoped GitHub and Slack delivery receipt for a submitted Feedback report.",
+        "security": [],
+        "servers": [
+          {
+            "url": "https://app.noxhere.com"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current delivery status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin is not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Site not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Feedback"
+        ],
+        "x-authentication": "public",
+        "x-change-safety": "safe_read"
       }
     },
     "/api/feedback/public/v1/errors": {

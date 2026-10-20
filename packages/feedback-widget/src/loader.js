@@ -355,6 +355,11 @@ async function fetchConfig(siteId, generation) {
 
     const data = await response.json();
     if (generation !== bootstrapGeneration) return false;
+    if (data.deliveryReady === false || data.lifecycle === 'draft' || data.lifecycle === 'disabled') {
+      debugLog('[Feedback] Site is not ready for delivery:', data.deliveryIssues || data.lifecycle);
+      destroyTrigger();
+      return false;
+    }
     config.color = data.buttonColor || config.color;
     config.text = data.buttonText || config.text;
     config.branding = data.branding && typeof data.branding === 'object' ? data.branding : config.branding;
@@ -584,6 +589,7 @@ export function buildSubmitBody(data, ctx) {
 
   return {
     siteId: ctx.siteId,
+    attemptId: ctx.attemptId || null,
     title: data.title,
     description: data.description,
     reporter: data.reporter || ctx.reporter?.name || '',
@@ -603,7 +609,10 @@ export function buildSubmitBody(data, ctx) {
 export async function sendReport(body) {
   const response = await fetch(`${API_URL}/api/feedback/public/v1/reports`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(body.attemptId ? { 'Idempotency-Key': body.attemptId } : {}),
+    },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -622,6 +631,34 @@ export async function sendReport(body) {
     throw err;
   }
   return response.json().catch(() => ({}));
+}
+
+export async function getReportStatus(statusUrl) {
+  const url = new URL(statusUrl, API_URL).href;
+  const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+  if (!response.ok) throw Object.assign(new Error(`Could not verify delivery (${response.status})`), { status: response.status });
+  return response.json();
+}
+
+export async function waitForReportDelivery(result, { attempts = 30, intervalMs = 1000 } = {}) {
+  if (!result?.statusUrl) return { ...result, status: result?.status || 'queued', verificationTimedOut: true };
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const receipt = await getReportStatus(result.statusUrl);
+      if (receipt.status === 'delivered') return { ...result, ...receipt };
+      if (receipt.status === 'failed') {
+        const error = new Error(receipt.error?.message || 'Report delivery failed');
+        error.code = receipt.error?.code || 'DELIVERY_FAILED';
+        error.provider = receipt.error?.provider || null;
+        throw error;
+      }
+    } catch (error) {
+      if (error?.code === 'DELIVERY_FAILED' || error?.provider) throw error;
+      debugLog('[Feedback] Delivery receipt check failed, retrying:', error?.message || error);
+    }
+    if (attempt < attempts - 1) await new Promise((resolve) => window.setTimeout(resolve, intervalMs));
+  }
+  return { ...result, status: 'queued', verificationTimedOut: true };
 }
 
 export function reportSubmitFailure(error, body, stage) {
@@ -697,16 +734,18 @@ function handleSubmit(data) {
 
   const body = buildSubmitBody(data, {
     siteId: config.siteId,
+    attemptId: crypto.randomUUID(),
     environment: config.environment,
     blocks: config.blocks,
     reporter: currentReporter(),
   });
 
   sendReport(body)
+    .then((result) => waitForReportDelivery(result))
     .then((result) => {
       debugLog('[Feedback] Report submitted successfully', result);
       showToast({
-        message: 'Reported ✓',
+        message: result.verificationTimedOut ? 'Queued — delivery continuing' : 'Ticket created and sent ✓',
         variant: 'success',
         durationMs: 6000,
         action: openIssueAction(result?.issueUrl),
@@ -730,9 +769,10 @@ function handleSubmit(data) {
 function retrySubmit(body) {
   showToast({ message: 'Retrying…', variant: 'success', durationMs: 0 });
   sendReport(body)
+    .then((result) => waitForReportDelivery(result))
     .then((result) => {
       showToast({
-        message: 'Reported ✓',
+        message: result.verificationTimedOut ? 'Queued — delivery continuing' : 'Ticket created and sent ✓',
         variant: 'success',
         durationMs: 6000,
         action: openIssueAction(result?.issueUrl),

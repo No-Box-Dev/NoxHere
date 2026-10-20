@@ -954,6 +954,12 @@ class GetProjectIssuesPath(TypedDict, total=False):
 class GetPublicFeedbackConfigPath(TypedDict, total=False):
     siteId: Required[str]
 
+class GetPublicFeedbackDeliveryStatusPath(TypedDict, total=False):
+    reportId: Required[str]
+
+class GetPublicFeedbackDeliveryStatusQuery(TypedDict, total=False):
+    siteId: Required[str]
+
 class GetPublicFeedbackMembersPath(TypedDict, total=False):
     siteId: Required[str]
 

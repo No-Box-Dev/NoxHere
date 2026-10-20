@@ -46,6 +46,9 @@ type WidgetSite = {
   widgetMode?: "development" | "release";
   autoErrorLogging?: boolean;
   dailySummaryEnabled?: boolean;
+  lifecycle?: "draft" | "ready" | "disabled";
+  deliveryReady?: boolean;
+  deliveryIssues?: string[];
   blocks?: WidgetBlock[];
   slackHealth?: "disabled" | "disconnected" | "degraded" | "pending" | "connected";
   slackChannelId?: string | null;
@@ -53,6 +56,9 @@ type WidgetSite = {
   slackPendingCount?: number;
   slackBlockedCount?: number;
   slackLastError?: string | null;
+  githubPendingCount?: number;
+  githubBlockedCount?: number;
+  githubLastError?: string | null;
   environments?: WidgetEnvironment[];
   launcher?: LauncherConfig;
   openIssueCount?: number;
@@ -121,13 +127,14 @@ function WidgetSiteCard({ site, scope, projects, isAdmin }: { site: WidgetSite; 
   const channels = useQuery({ queryKey: ["spot-widget-channels", scope.organizationId, scope.projectId, connection?.id], queryFn: ({ signal }) => platformApi.slackChannels(scope.organizationId ?? "", scope.projectId ?? "", connection?.id ?? "", signal), enabled: Boolean(connection?.id) });
   const testSlack = useMutation({ mutationFn: () => postRawJson("/api/v1/slack/test", { connectionId: connection?.id, channelId: slackDraft, kind: "feedback", sourceId: site.id }, scope) });
   return <article className="widget-site-card">
-    <header><div><h3>{site.name}</h3><p>{site.repo || "Project capture site"} · {site.openIssueCount ?? 0} open · {site.issueCount ?? 0} total</p></div><span className="widget-health">Slack {site.slackHealth ?? "disabled"}</span></header>
+    <header><div><h3>{site.name}</h3><p>{site.repo || "Project capture site"} · {site.openIssueCount ?? 0} open · {site.issueCount ?? 0} total</p></div><span className="widget-health">{site.deliveryReady ? "Ready" : "Needs setup"}</span></header>
+    {!site.deliveryReady ? <div className="widget-delivery-health"><b>Delivery is disabled</b><small>{(site.deliveryIssues ?? []).map(deliveryIssueLabel).join(" · ") || "Complete this site's setup before enabling it."}</small></div> : null}
     <section className="widget-install"><b>Install code</b><p>Place this before <code>&lt;/body&gt;</code> in the top-level page.</p><div><code>{snippet}</code><button type="button" onClick={async () => {
       await navigator.clipboard.writeText(snippet);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     }}>{copied ? "Copied" : "Copy"}</button></div><details><summary>Identify signed-in reporters</summary><p>After the widget script loads, pass approved profile fields from the host application. Call it again when the signed-in user changes; the widget never reads session cookies.</p><pre><code>{identitySnippet}</code></pre></details></section>
-    {site.slackPendingCount || site.slackBlockedCount ? <div className="widget-delivery-health"><span>{site.slackPendingCount ?? 0} pending · {site.slackBlockedCount ?? 0} blocked</span>{site.slackLastError ? <small>{site.slackLastError}</small> : null}{isAdmin ? <button className="mini-button" disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "Retrying…" : "Retry deliveries"}</button> : null}</div> : null}
+    {site.slackPendingCount || site.slackBlockedCount || site.githubPendingCount || site.githubBlockedCount ? <div className="widget-delivery-health"><span>GitHub {site.githubPendingCount ?? 0} pending · {site.githubBlockedCount ?? 0} blocked · Slack {site.slackPendingCount ?? 0} pending · {site.slackBlockedCount ?? 0} blocked</span>{site.githubLastError || site.slackLastError ? <small>{site.githubLastError || site.slackLastError}</small> : null}{isAdmin ? <button className="mini-button" disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "Retrying…" : "Retry deliveries"}</button> : null}</div> : null}
     {isAdmin ? <div className="widget-slack-route"><label>Slack destination<select value={slackDraft} disabled={!connection} onChange={(event) => setSlackDraft(event.target.value)}><option value="">Use organization fallback</option>{(channels.data?.channels ?? []).filter((channel) => !channel.is_archived).map((channel) => <option value={channel.id} key={channel.id}>#{channel.name}</option>)}</select></label><button className="button" disabled={update.isPending || slackDraft === (site.slackChannelId ?? "")} onClick={() => update.mutate({ slackChannelId: slackDraft || null, slackConnectionId: slackDraft ? connection?.id : null })}>Save Slack route</button><button className="button" disabled={!slackDraft || testSlack.isPending} onClick={() => testSlack.mutate()}>{testSlack.isPending ? "Testing…" : "Send test"}</button>{testSlack.isSuccess ? <small role="status">Test delivered.</small> : testSlack.error ? <small role="alert">{testSlack.error.message}</small> : null}</div> : null}
     {isAdmin ? <><div className="widget-project-route"><label>Owning project<select aria-label={`Owning project for ${site.name}`} value={projectDraft} disabled={update.isPending} onChange={(event) => setProjectDraft(event.target.value)}>{compatibleProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label><button type="button" className="button" disabled={update.isPending || projectDraft === site.projectId} onClick={() => {
       const target = projects.find((project) => project.id === projectDraft);
@@ -138,6 +145,7 @@ function WidgetSiteCard({ site, scope, projects, isAdmin }: { site: WidgetSite; 
 }
 
 function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pending: boolean; error: unknown; onSave: (body: unknown) => void }) {
+  const [lifecycle, setLifecycle] = useState<"draft" | "ready" | "disabled">(site.lifecycle || "ready");
   const [widgetMode, setWidgetMode] = useState(site.widgetMode || "development");
   const [autoErrorLogging, setAutoErrorLogging] = useState(site.autoErrorLogging === true);
   const [dailySummaryEnabled, setDailySummaryEnabled] = useState(site.dailySummaryEnabled !== false);
@@ -151,9 +159,10 @@ function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pend
     && new Set(environments.map((environment) => environment.name.trim().toLowerCase())).size === environments.length;
   return <details className="widget-editor">
     <summary>Behavior and allowed environments <span>⌄</span></summary>
-    <form onSubmit={(event) => { event.preventDefault(); onSave({ widgetMode, launcher, autoErrorLogging, dailySummaryEnabled, environments, blocks }); }}>
+    <form onSubmit={(event) => { event.preventDefault(); onSave({ lifecycle, widgetMode, launcher, autoErrorLogging, dailySummaryEnabled, environments, blocks }); }}>
       <p className="widget-warning">Button text and accent color now come from Settings → Branding.</p>
       <div className="widget-fields">
+        <label>Availability<select value={lifecycle} onChange={(event) => setLifecycle(event.target.value as "draft" | "ready" | "disabled")}><option value="draft">Draft — setup only</option><option value="ready">Ready — accept reports</option><option value="disabled">Disabled</option></select></label>
         <label>Reporter experience<select value={widgetMode} onChange={(event) => setWidgetMode(event.target.value as "development" | "release")}><option value="development">Development</option><option value="release">Release</option></select></label>
         <label className="widget-check"><input type="checkbox" checked={autoErrorLogging} onChange={(event) => setAutoErrorLogging(event.target.checked)} /> Automatically report browser errors</label>
         <label className="widget-check"><input type="checkbox" checked={dailySummaryEnabled} onChange={(event) => setDailySummaryEnabled(event.target.checked)} /> Send daily Slack summary</label>
@@ -177,7 +186,7 @@ function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pend
       </div>
       <div className="widget-environments">
         <header><div><b>Allowed environments</b><p>When present, the widget only works on these exact origins.</p></div><button type="button" onClick={() => setEnvironments((current) => [...current, { name: `Environment ${current.length + 1}`, url: "", enabled: true }])}>Add environment</button></header>
-        {environments.length === 0 ? <p className="widget-warning">Compatibility mode: all origins are accepted.</p> : environments.map((environment, index) => <div className="widget-environment" key={index}>
+        {environments.length === 0 ? <p className="widget-warning">Add an allowed environment before making this site ready.</p> : environments.map((environment, index) => <div className="widget-environment" key={index}>
           <label>Name<input value={environment.name} maxLength={60} onChange={(event) => setEnvironments((current) => current.map((item, currentIndex) => currentIndex === index ? { ...item, name: event.target.value } : item))} /></label>
           <label>Origin<input value={environment.url} maxLength={500} placeholder="https://app.example.com" onChange={(event) => setEnvironments((current) => current.map((item, currentIndex) => currentIndex === index ? { ...item, url: event.target.value } : item))} /></label>
           <label className="widget-check"><input type="checkbox" checked={environment.enabled !== false} onChange={(event) => setEnvironments((current) => current.map((item, currentIndex) => currentIndex === index ? { ...item, enabled: event.target.checked } : item))} /> Enabled</label>
@@ -187,9 +196,26 @@ function WidgetEditor({ site, pending, error, onSave }: { site: WidgetSite; pend
       </div>
       {!validEnvironments ? <small role="alert">Every environment needs a unique name and an origin.</small> : null}
       {error ? <small role="alert">{error instanceof Error ? error.message : "The widget settings could not be saved."}</small> : null}
-      <button className="button" disabled={pending || !validEnvironments}>{pending ? "Saving…" : "Save widget settings"}</button>
+      <button className="button" disabled={pending || !validEnvironments || (lifecycle === "ready" && !environments.some((environment) => environment.enabled !== false))}>{pending ? "Saving…" : "Save widget settings"}</button>
     </form>
   </details>;
+}
+
+function deliveryIssueLabel(issue: string) {
+  return ({
+    site_draft: "Site is still a draft",
+    site_disabled: "Site is disabled",
+    project_unavailable: "Active project missing",
+    repository_mismatch: "Project repository does not match",
+    github_not_connected: "GitHub is not connected",
+    github_delivery_degraded: "GitHub delivery is blocked",
+    origin_not_configured: "No allowed origin",
+    slack_channel_not_configured: "Slack channel missing",
+    slack_not_connected: "Slack is not connected",
+    slack_connection_degraded: "Slack connection needs attention",
+    slack_channel_unavailable: "Slack channel is unavailable",
+    slack_delivery_degraded: "Slack delivery is blocked",
+  } as Record<string, string>)[issue] ?? issue.replaceAll("_", " ");
 }
 
 function WidgetState({ title, detail, action }: { title: string; detail: string; action?: () => void }) {

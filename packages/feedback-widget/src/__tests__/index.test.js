@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { isUrlMatch, init, destroy, identify, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS, reportSubmitFailure, sendReport } from '../loader.js';
+import { isUrlMatch, init, destroy, identify, buildSubmitBody, filterByEnvironment, DEFAULT_BLOCKS, reportSubmitFailure, sendReport, waitForReportDelivery } from '../loader.js';
 
 describe('isUrlMatch', () => {
   beforeEach(() => {
@@ -229,6 +229,24 @@ describe('report submission', () => {
       'https://app.noxhere.com/api/feedback/public/v1/reports',
       expect.objectContaining({ method: 'POST' }),
     );
+  });
+
+  it('waits for both provider deliveries before reporting success', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: 'delivered', issueUrl: 'https://github.com/acme/web/issues/1' }),
+    });
+    await expect(waitForReportDelivery({ statusUrl: '/api/feedback/public/v1/reports/a/status?siteId=s' }, { attempts: 1, intervalMs: 0 }))
+      .resolves.toMatchObject({ status: 'delivered', issueUrl: 'https://github.com/acme/web/issues/1' });
+  });
+
+  it('surfaces a terminal provider failure', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: 'failed', error: { provider: 'slack', code: 'channel_not_found', message: 'Slack channel unavailable' } }),
+    });
+    await expect(waitForReportDelivery({ statusUrl: '/status' }, { attempts: 1, intervalMs: 0 }))
+      .rejects.toMatchObject({ message: 'Slack channel unavailable', code: 'channel_not_found', provider: 'slack' });
   });
 });
 
