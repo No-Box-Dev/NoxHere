@@ -1,9 +1,7 @@
 import { getCtx, jsonResponse, errorResponse } from "../../../lib/db";
 import { getInstallationToken } from "../../../lib/github-app";
 import { resolveActorFromGithub } from "../../../lib/actors";
-import { narrateEvent, narrateReleaseNotes } from "../../../lib/narrator";
-import { recordFailure } from "../../../lib/op-failures";
-import { sleep, NARRATOR_PACING_MS } from "../../../lib/pacing";
+import { TASK } from "../../../lib/tasks";
 import { getActivityGenerationInfo } from "../../../lib/activity-response.js";
 
 // POST /api/projects/:id/backfill-prs
@@ -14,8 +12,8 @@ import { getActivityGenerationInfo } from "../../../lib/activity-response.js";
 //     after swapping providers so the feed converges on the new voice.
 // }
 // Generates first-person posts for the last N days of PRs in the project's repo,
-// one per PR, attributed to its author. Dedupes via delivery_id like
-// `backfill:<projectId>:pr-<n>` so re-running is idempotent.
+// one per PR, attributed to its author. Existing release notes are the source of
+// truth for deduplication so a failed generation can be retried safely.
 const BACKFILL_MAX_PRS = 25;
 // Mirror the new-trigger cap on fallback re-narration. Unbounded loops blow
 // past waitUntil's wall-clock budget — earlier fallbacks ran, later ones
@@ -25,7 +23,7 @@ const BACKFILL_MAX_FALLBACKS = 25;
 
 export async function onRequestPost(context) {
   try {
-    const { orgId, orgLogin, isAdmin } = getCtx(context);
+    const { orgId, orgLogin, token: userToken, isAdmin } = getCtx(context);
     if (!orgLogin) return errorResponse("Missing org context", 400);
     if (!isAdmin) return errorResponse("Admin required", 403);
     const { id } = context.params;
@@ -53,9 +51,28 @@ export async function onRequestPost(context) {
     ).bind(orgLogin, project.org).first();
     if (!inst) return errorResponse(`No installation for org ${project.org}`, 404);
 
+    const assigned = await db.prepare(
+      "SELECT repo FROM project_repositories WHERE org_id = ? AND project_id = ? ORDER BY repo",
+    ).bind(orgId, project.id).all();
+    const repositories = [...new Set([
+      project.repo,
+      ...(assigned.results ?? []).map((row) => row.repo).filter(Boolean),
+    ])];
+
     let prs;
     try {
-      prs = await fetchRecentPrs(context.env, inst.installation_id, project.org, project.repo, days);
+      const batches = await Promise.all(repositories.map(async (repo) => {
+        const rows = await fetchRecentPrs(
+          context.env,
+          inst.installation_id,
+          project.org,
+          repo,
+          days,
+          userToken,
+        );
+        return rows.map((pr) => ({ ...pr, _repo: repo }));
+      }));
+      prs = batches.flat();
     } catch (err) {
       return errorResponse(`Failed to fetch PRs: ${err instanceof Error ? err.message : String(err)}`, 502);
     }
@@ -71,21 +88,23 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Build exact delivery_id candidates and dedupe via IN(...). Avoids a LIKE
-    // pattern over project.id, whose literal `_` characters (e.g.
-    // `proj_n1healthcare_authentication-service`) blow past D1's
-    // "LIKE or GLOB pattern too complex" threshold.
-    const candidateIds = prs.map((pr) => `backfill:${project.id}:pr-${pr.number}`);
-    const placeholders = candidateIds.map(() => "?").join(",");
+    // A release note is the completed unit of work. Do not use only the raw
+    // backfill delivery ID here: if generation failed after that row was
+    // inserted, the next run must retry the missing release note.
     const existing = await db.prepare(
-      `SELECT delivery_id FROM events
-        WHERE owner_id = ? AND project_id = ? AND source = 'github-backfill'
-          AND delivery_id IN (${placeholders})`
-    ).bind(orgLogin, project.id, ...candidateIds).all();
-    const seen = new Set((existing.results ?? []).map((r) => r.delivery_id));
+      `SELECT repo, CAST(json_extract(payload_json, '$.pr_number') AS INTEGER) AS pr_number
+         FROM events
+        WHERE owner_id = ? AND project_id = ?
+          AND type = 'release_notes'
+          AND json_extract(payload_json, '$.pr_number') IS NOT NULL`
+    ).bind(orgLogin, project.id).all();
+    const released = new Set(
+      (existing.results ?? []).map((row) => `${row.repo}#${Number(row.pr_number)}`),
+    );
 
     const todo = prs
-      .filter((pr) => !seen.has(`backfill:${project.id}:pr-${pr.number}`))
+      .filter((pr) => !released.has(`${pr._repo}#${Number(pr.number)}`))
+      .sort((a, b) => prAnchor(b).localeCompare(prAnchor(a)))
       .slice(0, BACKFILL_MAX_PRS);
 
     // Sweep up narratives that need re-narration:
@@ -125,31 +144,21 @@ export async function onRequestPost(context) {
       });
     }
 
-    const work = (async () => {
-      if (todo.length > 0) {
-        await processBackfill(context.env, {
-          projectId: project.id,
-          org: project.org,
-          repo: project.repo,
-          ownerId: orgLogin,
-          prs: todo,
-        });
-      }
-      if (fallbackIds.length > 0) {
-        await renarrateFallbacks(context.env, fallbackIds);
-      }
-    })();
-    context.waitUntil(
-      work.catch(async (err) => {
-        console.error("[noxhere backfill] failed:", err);
-        await recordFailure(db, {
-          ownerId: orgLogin,
-          op: "backfillPrs",
-          deliveryId: project.id,
-          error: err,
-        });
-      })
-    );
+    // Persist every trigger and hand generation to the durable queue before
+    // returning. LLM calls can outlive a request's waitUntil grace period;
+    // queue messages have retries and a dead-letter path instead.
+    if (todo.length > 0) {
+      await processBackfill(context.env, {
+        projectId: project.id,
+        org: project.org,
+        repo: project.repo,
+        ownerId: orgLogin,
+        prs: todo,
+      });
+    }
+    if (fallbackIds.length > 0) {
+      await renarrateFallbacks(context.env, orgLogin, project.id, fallbackIds);
+    }
 
     return jsonResponse({
       ok: true,
@@ -221,10 +230,8 @@ async function resolveOrgId(db, ownerId) {
   return row?.id ?? null;
 }
 
-async function renarrateFallbacks(env, fallbacks) {
-  for (let i = 0; i < fallbacks.length; i++) {
-    if (i > 0) await sleep(NARRATOR_PACING_MS);
-    const { triggerEventId } = fallbacks[i];
+async function renarrateFallbacks(env, ownerId, projectId, fallbacks) {
+  for (const { triggerEventId } of fallbacks) {
     try {
       // Clear ANY existing narrative/release_notes rows for this trigger
       // before re-running both narrators. The id we have from
@@ -239,9 +246,9 @@ async function renarrateFallbacks(env, fallbacks) {
            WHERE type IN ('narrative', 'release_notes')
              AND CAST(json_extract(payload_json, '$.trigger_event_id') AS INTEGER) = ?`,
       ).bind(triggerEventId).run();
-      await Promise.allSettled([
-        narrateEvent(env, triggerEventId),
-        narrateReleaseNotes(env, triggerEventId),
+      await Promise.all([
+        enqueueGeneration(env, ownerId, projectId, triggerEventId, TASK.NARRATE),
+        enqueueGeneration(env, ownerId, projectId, triggerEventId, TASK.RELEASE_NOTES),
       ]);
     } catch (err) {
       console.error(`[noxhere backfill] re-narrate trigger ${triggerEventId} failed:`, err);
@@ -249,8 +256,17 @@ async function renarrateFallbacks(env, fallbacks) {
   }
 }
 
-async function fetchRecentPrs(env, installationId, org, repo, days) {
-  const token = await getInstallationToken(env, installationId);
+async function fetchRecentPrs(env, installationId, org, repo, days, userToken) {
+  let token;
+  try {
+    token = await getInstallationToken(env, installationId);
+  } catch (error) {
+    if (!userToken) throw error;
+    // The core API intentionally does not own the GitHub App private key.
+    // Admin-triggered reads can safely use the already-authenticated user's
+    // GitHub token, as the sync and recovery endpoints do.
+    token = userToken;
+  }
   const cutoff = Date.now() - days * 86_400_000;
 
   const url = `https://api.github.com/repos/${org}/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`;
@@ -274,14 +290,8 @@ async function fetchRecentPrs(env, installationId, org, repo, days) {
 async function processBackfill(env, args) {
   // Oldest-first so the feed reads chronologically.
   const sorted = [...args.prs].sort((a, b) => prAnchor(a).localeCompare(prAnchor(b)));
-  for (let i = 0; i < sorted.length; i++) {
-    if (i > 0) await sleep(NARRATOR_PACING_MS);
-    const pr = sorted[i];
-    try {
-      await backfillOnePr(env, args, pr);
-    } catch (err) {
-      console.error(`[noxhere backfill] PR #${pr.number} failed:`, err);
-    }
+  for (const pr of sorted) {
+    await backfillOnePr(env, args, pr);
   }
 }
 
@@ -291,6 +301,7 @@ function prAnchor(pr) {
 
 async function backfillOnePr(env, args, pr) {
   if (!pr.user?.login) return;
+  const repo = pr._repo || args.repo;
 
   const actor = await resolveActorFromGithub(env.DB, args.ownerId, {
     login: pr.user.login,
@@ -314,13 +325,13 @@ async function backfillOnePr(env, args, pr) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(delivery_id) DO NOTHING`
   ).bind(
-    `backfill:${args.projectId}:pr-${pr.number}`,
+    `backfill:${args.projectId}:${repo}:pr-${pr.number}`,
     "github-backfill",
     eventType,
     actor.id,
     args.projectId,
     args.org,
-    args.repo,
+    repo,
     `PR #${pr.number}: ${pr.title}`,
     JSON.stringify({
       action: pr.merged_at ? "merged" : "opened",
@@ -340,13 +351,30 @@ async function backfillOnePr(env, args, pr) {
     createdAt,
   ).run();
 
-  const eventId = result.meta?.last_row_id;
-  if (!eventId) return;
-  // Run both voices in parallel — one event, two stored rows. Same LLM
-  // config, different prompt. Promise.allSettled so one LLM failure
-  // doesn't drop the other.
-  await Promise.allSettled([
-    narrateEvent(env, eventId),
-    narrateReleaseNotes(env, eventId),
+  let eventId = result.meta?.last_row_id;
+  if (!eventId) {
+    const existing = await env.DB.prepare(
+      "SELECT id FROM events WHERE delivery_id = ? AND project_id = ?",
+    ).bind(`backfill:${args.projectId}:${repo}:pr-${pr.number}`, args.projectId).first();
+    eventId = existing?.id;
+    if (!eventId) return;
+    // The raw event already exists, which means a previous attempt stopped
+    // before producing the release note. Retry only that missing output.
+    await enqueueGeneration(env, args.ownerId, args.projectId, eventId, TASK.RELEASE_NOTES);
+    return;
+  }
+  // Queue both voices durably — one event, two independently retried tasks.
+  await Promise.all([
+    enqueueGeneration(env, args.ownerId, args.projectId, eventId, TASK.NARRATE),
+    enqueueGeneration(env, args.ownerId, args.projectId, eventId, TASK.RELEASE_NOTES),
   ]);
+}
+
+function enqueueGeneration(env, ownerId, projectId, eventId, type) {
+  return env.TASK_QUEUE.send({
+    type,
+    eventId,
+    ownerId,
+    deliveryId: `backfill:${projectId}:${eventId}:${type}`,
+  });
 }

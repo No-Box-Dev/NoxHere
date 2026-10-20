@@ -3,8 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
 import { AUTH_REQUIRED_EVENT, postRawJson } from "../api/http";
 import { platformApi } from "../api/platform";
-import { WorkspaceProjectSelector, type WorkspaceProfile } from "./WorkspaceProjectSelector";
+import { WorkspaceProjectSelector } from "./WorkspaceProjectSelector";
 import { readLastProject } from "./last-project";
+import { WorkspaceProfileContext, type WorkspaceProfile } from "./workspace-profile";
 import { Button } from "@/components/ui/button";
 import { NoxLogo } from "@/components/ui/nox-logo";
 
@@ -22,6 +23,18 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   const scopedOrganization = profile?.orgs.find(
     (organization) => organization.login.toLowerCase() === routeOrganizationId.toLowerCase(),
   );
+
+  const refreshProfile = async () => {
+    const response = await fetch("/api/v1/auth/profile?refresh=1", { credentials: "same-origin" });
+    const body = await response.json().catch(() => null) as WorkspaceProfile | { error?: { message?: string } } | null;
+    if (!response.ok) {
+      const message = body && "error" in body ? body.error?.message : null;
+      throw new Error(message || "GitHub access could not be refreshed");
+    }
+    const nextProfile = body as WorkspaceProfile;
+    setProfile(nextProfile);
+    return nextProfile;
+  };
 
   useEffect(() => {
     fetch("/api/auth/profile", { credentials: "same-origin" })
@@ -75,9 +88,9 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     const lastProject = chooseProject ? null : readLastProject(profile.user.login);
     const canOpenLastProject = lastProject && profile.orgs.some((organization) => organization.login.toLowerCase() === lastProject.organizationId.toLowerCase());
     if (canOpenLastProject) return <Navigate replace to={`/${encodeURIComponent(lastProject.organizationId)}/${encodeURIComponent(lastProject.projectId)}/connections/overview`} />;
-    return <WorkspaceProjectSelector profile={profile} />;
+    return <WorkspaceProjectSelector profile={profile} onRefresh={refreshProfile} />;
   }
-  return children;
+  return <WorkspaceProfileContext.Provider value={profile}>{children}</WorkspaceProfileContext.Provider>;
 }
 
 function Login() {

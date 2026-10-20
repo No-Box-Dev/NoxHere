@@ -67,6 +67,67 @@ function services(overrides: Partial<PlatformServices> = {}): PlatformServices {
 }
 
 describe("NoxHere gateway", () => {
+  it("refreshes GitHub memberships before returning an explicitly refreshed profile", async () => {
+    const db = {
+      prepare(sql: string) {
+        const statement = {
+          bind() { return statement; },
+          async first() {
+            if (sql.includes("FROM browser_sessions")) return {
+              credential_id: "session-hash",
+              principal_id: "github:42",
+              github_user_id: 42,
+              github_login: "octocat",
+              connection_id: "noxic_connection",
+              csrf_hash: "csrf-hash",
+            };
+            if (sql.includes("SELECT id FROM principals")) return { id: "github:42" };
+            return null;
+          },
+          async all() {
+            if (sql.includes("FROM org_memberships membership")) return { results: [
+              { login: "acme", role: "owner" },
+              { login: "Playnist", role: "owner" },
+            ] };
+            return { results: [] };
+          },
+          async run() { return { success: true, meta: { changes: 1 } }; },
+        };
+        return statement;
+      },
+      async batch() { return []; },
+    } as unknown as D1Database;
+    const refreshGitHubIdentity = vi.fn(async () => ({
+      version: 1 as const,
+      connectionId: "noxic_connection",
+      user: { id: 42, login: "octocat", avatarUrl: "https://example.com/avatar.png" },
+      organizations: [{ id: 7, login: "acme", role: "admin" as const }, { id: 8, login: "Playnist", role: "admin" as const }],
+    }));
+    const bindings = services({
+      control: {
+        db,
+        identity: {
+          exchangeGitHubOAuth: vi.fn(),
+          refreshGitHubIdentity,
+          startGitHubDeviceAuth: vi.fn(),
+          pollGitHubDeviceAuth: vi.fn(),
+        },
+        assertionSecret: "integration-secret",
+      },
+    });
+
+    const response = await handleRequest(new Request("https://app.noxhere.com/api/auth/profile?refresh=1", {
+      headers: { Cookie: "__Host-nox_session=session-token" },
+    }), bindings);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ orgs: [
+      { login: "acme", role: "owner" },
+      { login: "Playnist", role: "owner" },
+    ] });
+    expect(refreshGitHubIdentity).toHaveBeenCalledWith({ connectionId: "noxic_connection" });
+  });
+
   it("serves its own bounded health response", async () => {
     const bindings = services();
     const response = await handleRequest(
