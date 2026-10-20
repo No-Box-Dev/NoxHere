@@ -1,0 +1,190 @@
+{
+  "apiVersion": 1,
+  "origins": {
+    "production": "https://app.noxhere.com",
+    "staging": "https://noxhere-staging.jasper-414.workers.dev"
+  },
+  "gateway": {
+    "serviceId": "gateway",
+    "productionRoutes": [
+      {
+        "pattern": "app.noxhere.com/*",
+        "zone_name": "noxhere.com"
+      }
+    ],
+    "runWorkerFirst": [
+      "/api/*",
+      "/auth/github/callback",
+      "/auth/email/*",
+      "/__noxhere/*",
+      "/widget/*",
+      "/r2/*",
+      "/responses/*",
+      "/feedback.min.js",
+      "/feedback-core.min.js"
+    ],
+    "routeGroups": {
+      "health": {
+        "exact": [
+          "/__noxhere/health",
+          "/__noxhere/health/private-boundary",
+          "/__noxhere/health/identity-boundary",
+          "/__noxhere/health/provider-ingress"
+        ]
+      },
+      "publicFeedback": {
+        "exact": [
+          "/feedback.min.js",
+          "/feedback-core.min.js"
+        ],
+        "prefixes": [
+          "/api/feedback/public/v1/",
+          "/widget/",
+          "/r2/",
+          "/responses/"
+        ]
+      },
+      "providerIngress": {
+        "exact": [
+          "/api/webhook",
+          "/api/postmark/webhook",
+          "/api/slack/oauth/callback",
+          "/api/slack/oauth/handoff",
+          "/api/slack/events",
+          "/api/slack/interactions"
+        ]
+      },
+      "publicConnector": {
+        "exact": [
+          "/api/health/live",
+          "/api/health/ready"
+        ],
+        "prefixes": [
+          "/api/public/"
+        ]
+      },
+      "anonymousIngest": {
+        "exact": [
+          "/api/telemetry/public/v1/events",
+          "/api/v1/telemetry/public/events",
+          "/api/v1/growth/events",
+          "/api/v1/usage/events"
+        ]
+      },
+      "authenticatedProvider": {
+        "excludeExact": [
+          "/api/slack/test",
+          "/api/v1/slack/test"
+        ],
+        "prefixes": [
+          "/api/slack/",
+          "/api/v1/slack/"
+        ],
+        "patterns": [
+          "^/api/(?:v1/)?integrations/connections/[^/]+/start$"
+        ]
+      }
+    }
+  },
+  "services": [
+    {
+      "id": "connections",
+      "config": "services/connections/wrangler.jsonc",
+      "productionName": "noxhere-connections",
+      "stagingName": "noxhere-connections-staging",
+      "deployOrder": 0
+    },
+    {
+      "id": "telemetry",
+      "config": "services/telemetry/wrangler.jsonc",
+      "productionName": "noxhere-telemetry",
+      "stagingName": "noxhere-telemetry-staging",
+      "deployOrder": 1,
+      "releaseSha": true
+    },
+    {
+      "id": "activity",
+      "config": "services/activity/wrangler.toml",
+      "productionName": "noxhere-activity",
+      "stagingName": "noxhere-activity-staging",
+      "deployOrder": 2
+    },
+    {
+      "id": "planning",
+      "config": "services/planning/wrangler.jsonc",
+      "productionName": "noxhere-planning",
+      "stagingName": "noxhere-planning-staging",
+      "deployOrder": 3,
+      "releaseSha": true
+    },
+    {
+      "id": "feedback",
+      "config": "services/feedback/wrangler.jsonc",
+      "productionName": "noxhere-feedback",
+      "stagingName": "noxhere-feedback-staging",
+      "deployOrder": 4,
+      "releaseSha": true
+    },
+    {
+      "id": "core-api",
+      "config": "services/core-api/wrangler.jsonc",
+      "productionName": "noxhere-api",
+      "stagingName": "noxhere-api-staging",
+      "deployOrder": 5,
+      "releaseSha": true
+    },
+    {
+      "id": "scheduler",
+      "config": "services/scheduler/wrangler.toml",
+      "productionName": "noxhere-orchestrator",
+      "stagingName": "noxhere-orchestrator-staging",
+      "deployOrder": 6,
+      "releaseSha": true
+    },
+    {
+      "id": "gateway",
+      "config": "services/gateway/wrangler.jsonc",
+      "productionName": "noxhere",
+      "stagingName": "noxhere-staging",
+      "deployOrder": 7,
+      "releaseSha": true,
+      "promoteVersion": true
+    }
+  ],
+  "bindings": {
+    "gateway": {
+      "production": {
+        "NOXHERE": "noxhere-api",
+        "NOXHERE_IDENTITY": "noxhere-connections",
+        "FEEDBACK": "noxhere-feedback",
+        "TELEMETRY_INGEST": "noxhere-telemetry"
+      },
+      "staging": {
+        "NOXHERE": "noxhere-api-staging",
+        "NOXHERE_IDENTITY": "noxhere-connections-staging",
+        "FEEDBACK": "noxhere-feedback-staging",
+        "TELEMETRY_INGEST": "noxhere-telemetry-staging"
+      }
+    },
+    "coreApi": {
+      "production": {
+        "FEEDBACK_RESPONSE": "noxhere-feedback",
+        "CONNECTIONS": "noxhere-connections",
+        "NOXHERE_EMAIL": "noxhere-connections",
+        "PLANNING_SERVICE": "noxhere-planning",
+        "TELEMETRY_RESPONSE": "noxhere-telemetry",
+        "TELEMETRY_INGEST": "noxhere-telemetry",
+        "ACTIVITY_RESPONSE": "noxhere-activity"
+      },
+      "staging": {
+        "FEEDBACK_RESPONSE": "noxhere-feedback-staging",
+        "CONNECTIONS": "noxhere-connections-staging",
+        "NOXHERE_EMAIL": "noxhere-connections-staging",
+        "PLANNING_SERVICE": "noxhere-planning-staging",
+        "TELEMETRY_RESPONSE": "noxhere-telemetry-staging",
+        "TELEMETRY_INGEST": "noxhere-telemetry-staging",
+        "ACTIVITY_RESPONSE": "noxhere-activity-staging"
+      }
+    }
+  }
+}

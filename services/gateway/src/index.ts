@@ -1,5 +1,6 @@
 import { createTelemetry } from "../../../packages/sdk/src/telemetry/server.js";
 import { apiError } from "./control/http";
+import { matchesGatewayRoute, PLATFORM_GATEWAY_MANIFEST } from "./generated/platform-service-manifest";
 
 type BoundService = {
   fetch(request: Request): Promise<Response>;
@@ -21,10 +22,12 @@ export interface PlatformServices {
 }
 
 const API_PREFIX = "/api/";
-const HEALTH_PATH = "/__noxhere/health";
-const PRIVATE_BOUNDARY_HEALTH_PATH = "/__noxhere/health/private-boundary";
-const IDENTITY_BOUNDARY_HEALTH_PATH = "/__noxhere/health/identity-boundary";
-const PROVIDER_INGRESS_HEALTH_PATH = "/__noxhere/health/provider-ingress";
+const [
+  HEALTH_PATH,
+  PRIVATE_BOUNDARY_HEALTH_PATH,
+  IDENTITY_BOUNDARY_HEALTH_PATH,
+  PROVIDER_INGRESS_HEALTH_PATH,
+] = PLATFORM_GATEWAY_MANIFEST.routeGroups.health.exact;
 
 function gatewayResponse(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -448,38 +451,20 @@ function isApiTokenRequest(request: Request): boolean {
 }
 
 function isPublicConnectorPath(pathname: string, request: Request): boolean {
-  return pathname === "/api/health/live"
-    || pathname === "/api/health/ready"
-    || pathname.startsWith("/api/public/")
-    || ((pathname === "/api/telemetry/public/v1/events"
-      || pathname === "/api/v1/telemetry/public/events"
-      || pathname === "/api/v1/growth/events"
-      || pathname === "/api/v1/usage/events") && !isApiTokenRequest(request));
+  return matchesGatewayRoute("publicConnector", pathname)
+    || (matchesGatewayRoute("anonymousIngest", pathname) && !isApiTokenRequest(request));
 }
 
 function isProviderIngressPath(pathname: string): boolean {
-  return pathname === "/api/webhook"
-    || pathname === "/api/postmark/webhook"
-    || pathname === "/api/slack/oauth/callback"
-    || pathname === "/api/slack/oauth/handoff"
-    || pathname === "/api/slack/events"
-    || pathname === "/api/slack/interactions";
+  return matchesGatewayRoute("providerIngress", pathname);
 }
 
 function isAuthenticatedProviderPath(pathname: string): boolean {
-  if (pathname === "/api/slack/test" || pathname === "/api/v1/slack/test") return false;
-  return pathname.startsWith("/api/slack/")
-    || pathname.startsWith("/api/v1/slack/")
-    || /^\/api\/(?:v1\/)?integrations\/connections\/[^/]+\/start$/.test(pathname);
+  return matchesGatewayRoute("authenticatedProvider", pathname);
 }
 
 function isPublicFeedbackPath(pathname: string): boolean {
-  return pathname.startsWith("/api/feedback/public/v1/")
-    || pathname.startsWith("/widget/")
-    || pathname.startsWith("/r2/")
-    || pathname.startsWith("/responses/")
-    || pathname === "/feedback.min.js"
-    || pathname === "/feedback-core.min.js";
+  return matchesGatewayRoute("publicFeedback", pathname);
 }
 
 function unavailableAuthentication(): Response {
