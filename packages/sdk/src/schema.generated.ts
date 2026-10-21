@@ -3634,7 +3634,7 @@ export interface components {
             metrics: components["schemas"]["GrowthMetric"][];
             projectId: string;
             /** @enum {string} */
-            range: "7d" | "30d" | "90d" | "1y";
+            range: "all" | "7d" | "30d" | "90d" | "1y";
             revenue: {
                 amountMinor: number;
                 currency: string | null;

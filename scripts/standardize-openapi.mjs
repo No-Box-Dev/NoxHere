@@ -367,7 +367,7 @@ document.components.schemas.GrowthDashboard = {
   type: "object", additionalProperties: false,
   required: ["projectId", "range", "dateLabel", "metrics", "funnel", "revenue", "acquisition"],
   properties: {
-    projectId: { type: "string" }, range: { type: "string", enum: ["7d", "30d", "90d", "1y"] },
+    projectId: { type: "string" }, range: { type: "string", enum: ["all", "7d", "30d", "90d", "1y"] },
     dateLabel: { type: "string" },
     metrics: { type: "array", items: { "$ref": "#/components/schemas/GrowthMetric" } },
     funnel: { "$ref": "#/components/schemas/GrowthFunnel" },

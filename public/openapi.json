@@ -18744,6 +18744,7 @@
           "range": {
             "type": "string",
             "enum": [
+              "all",
               "7d",
               "30d",
               "90d",

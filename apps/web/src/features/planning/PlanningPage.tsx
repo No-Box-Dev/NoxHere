@@ -9,8 +9,10 @@ import { SearchableSelect } from "../../components/SearchableSelect";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
 import type { PlatformOutletContext } from "../../app/platform-context";
+import { useFilterPreference } from "../../lib/filterPreferences";
 
 const tabs = [["board", "Features"], ["tasks", "Tasks"], ["backlog", "Backlog"], ["completed", "Completed"], ["settings", "Settings"]] as const;
+const allFeaturesPerson = "__all__";
 
 type Stage = TaskStage;
 type FeatureLink = { url: string; label?: string };
@@ -229,21 +231,25 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   const [queries, setQueries] = useState<Record<FeatureView, string>>(() => ({ board: "", backlog: "", completed: "" }));
   const query = queries[mode];
   const people = members.includes(actor) ? members : [actor, ...members];
-  const [person, setPerson] = useState(actor);
+  const [person, setPerson] = useFilterPreference({ actorId: actor, organizationId, projectId, filterId: "planning.feature-person" }, [allFeaturesPerson, ...people], allFeaturesPerson);
   const [sort, setSort] = useState<"updated" | "title">("updated");
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = features.find((feature) => feature.id === selectedId) ?? null;
   const normalizedPerson = person.toLowerCase();
-  const active = useMemo(() => features.filter((feature) => !feature.closed && !feature.backlog && featureOwnedBy(feature, normalizedPerson) && matches(feature, query, "")).sort(sort === "title" ? byTitle : () => 0), [features, normalizedPerson, query, sort]);
-  const backlog = useMemo(() => features.filter((feature) => !feature.closed && feature.backlog && featureOwnedBy(feature, normalizedPerson) && matches(feature, query, "")).sort(byTitle), [features, normalizedPerson, query]);
-  const completed = useMemo(() => features.filter((feature) => feature.closed && featureOwnedBy(feature, normalizedPerson) && matches(feature, query, "")), [features, normalizedPerson, query]);
+  const showsAllPeople = person === allFeaturesPerson;
+  const active = useMemo(() => features.filter((feature) => !feature.closed && !feature.backlog && (showsAllPeople || featureOwnedBy(feature, normalizedPerson)) && matches(feature, query, "")).sort(sort === "title" ? byTitle : () => 0), [features, normalizedPerson, query, showsAllPeople, sort]);
+  const backlog = useMemo(() => features.filter((feature) => !feature.closed && feature.backlog && (showsAllPeople || featureOwnedBy(feature, normalizedPerson)) && matches(feature, query, "")).sort(byTitle), [features, normalizedPerson, query, showsAllPeople]);
+  const completed = useMemo(() => features.filter((feature) => feature.closed && (showsAllPeople || featureOwnedBy(feature, normalizedPerson)) && matches(feature, query, "")), [features, normalizedPerson, query, showsAllPeople]);
+  const selectPerson = (next: string) => {
+    setPerson(next);
+  };
   const addFeature = (event: FormEvent) => {
     event.preventDefault();
     const title = newTitle.trim();
     if (!title) return;
-    createFeature(title, mode === "backlog", person);
+    createFeature(title, mode === "backlog", showsAllPeople ? actor : person);
     setNewTitle(""); setAdding(false);
   };
   const moveFeature = (id: number, status: string) => { const feature = features.find((item) => item.id === id); if (feature) saveFeature({ ...feature, status, updated: "Now", history: [`Moved to ${stages.find((stage) => stage.id === status)?.label ?? status} · now`, ...feature.history] }); };
@@ -260,7 +266,7 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   return <>
     <div className="ticket-toolbar">
       <input aria-label={`Search ${mode === "board" ? "features" : mode}`} value={query} onChange={(event) => setQueries((current) => ({ ...current, [mode]: event.target.value }))} placeholder={`Search ${mode === "board" ? "features" : mode}…`} />
-      <label className="planning-person-picker"><span>Planning for</span><SearchableSelect ariaLabel="Planning for person" value={person} onChange={setPerson} options={people.map((member) => ({ value: member, label: member === actor ? `${member} (you)` : member }))} /></label>
+      <label className="planning-person-picker"><span>Planning for</span><select name="featurePerson" aria-label="Planning for person" value={person} onChange={(event) => selectPerson(event.target.value)}><option value={allFeaturesPerson}>All</option>{people.map((member) => <option value={member} key={member}>{member === actor ? `${member} (you)` : member}</option>)}</select></label>
       <select aria-label="Sort features" value={sort} onChange={(event) => setSort(event.target.value as "updated" | "title")}><option value="updated">Default</option><option value="title">Title A–Z</option></select>
       <span className="toolbar-spacer" />{mode === "board" ? <button type="button" className="button" disabled={productionCount === 0 || saving} onClick={completeProduction}>{saving ? "Moving…" : `Move production to completed${productionCount ? ` (${productionCount})` : ""}`}</button> : null}<button type="button" className="button primary-button" onClick={() => setAdding(true)}>New feature</button>
     </div>

@@ -1544,6 +1544,7 @@
           },
           "range": {
             "enum": [
+              "all",
               "7d",
               "30d",
               "90d",
@@ -34499,5 +34500,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "6d1e689b8af86ade086cb0b2a110cd41202116aac89a04e1439b8ab3944e003d"
+  "x-sdk-source-sha256": "9758e9223a67fccf7cf6ee1e5c7661adb35bb35ac40c57f4f8b48fbadd01f190"
 }

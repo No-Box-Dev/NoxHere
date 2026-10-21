@@ -4,6 +4,7 @@ import type { EngineerActivity, EngineerStats, GithubMember } from "../../api/co
 import { platformApi } from "../../api/platform";
 import { AsyncState } from "../../components/AsyncState";
 import { StatusTag } from "../../components/StatusTag";
+import { ALL_FILTER_VALUE, useFilterPreference } from "../../lib/filterPreferences";
 
 type DashboardProps = {
   organizationId: string;
@@ -14,14 +15,13 @@ type DashboardProps = {
   membersError: Error | null;
 };
 type TimelineRange = "days" | "months";
-type TimelineScope = "organization" | "person";
+type TimelineScope = "all" | "person";
 type ActivityPair = { current: EngineerActivity; previous: EngineerActivity };
 type TimelinePoint = { key: string; label: string; pullRequests: number; commits: number };
 
 export function TeamDashboardView({ organizationId, projectId, actorLogin, members, membersLoading, membersError }: DashboardProps) {
   const [range, setRange] = useState<TimelineRange>("days");
-  const [scope, setScope] = useState<TimelineScope>("organization");
-  const [selectedLogin, setSelectedLogin] = useState(actorLogin);
+  const [scope, setScope] = useFilterPreference<TimelineScope>({ actorId: actorLogin, organizationId, projectId, filterId: "dashboard.activity-scope" }, [ALL_FILTER_VALUE, "person"]);
   const stats = useQuery({
     queryKey: ["activity", organizationId, projectId, "team-dashboard", "stats"],
     queryFn: ({ signal }) => platformApi.engineerStats(organizationId, projectId, signal),
@@ -34,6 +34,11 @@ export function TeamDashboardView({ organizationId, projectId, actorLogin, membe
   const people = useMemo(() => stats.data ? members
     .filter((member) => member.kind === "human" && !excluded.has(normalizeLogin(member.login)) && hasTrackedActivity(stats.data, member.login))
     .sort((left, right) => score(stats.data!, right.login) - score(stats.data!, left.login) || left.login.localeCompare(right.login)) : [], [excluded, members, stats.data]);
+  const [selectedLogin, setSelectedLogin] = useFilterPreference(
+    { actorId: actorLogin, organizationId, projectId, filterId: "dashboard.developer" },
+    stats.isLoading ? undefined : [actorLogin, ...people.map((person) => person.login)],
+    actorLogin,
+  );
   const effectiveLogin = people.some((person) => normalizeLogin(person.login) === normalizeLogin(selectedLogin))
     ? selectedLogin
     : people.find((person) => normalizeLogin(person.login) === normalizeLogin(actorLogin))?.login ?? people[0]?.login ?? "";
@@ -78,7 +83,7 @@ export function TeamDashboardView({ organizationId, projectId, actorLogin, membe
         <header className="team-section-header">
           <div><span className="eyebrow">PR and commit activity</span><h3 id="team-activity-title">{range === "days" ? "Last 30 days" : "Last 12 months"}</h3></div>
           <div className="team-dashboard-controls">
-            <Segmented label="Activity scope" value={scope} options={[["organization", "Organization"], ["person", "Person"]]} onChange={setScope} />
+            <Segmented label="Activity scope" value={scope} options={[["all", "All people"], ["person", "Person"]]} onChange={setScope} />
             {scope === "person" ? <label className="team-person-select"><span className="visually-hidden">Developer</span><select aria-label="Developer" value={effectiveLogin} onChange={(event) => setSelectedLogin(event.target.value)}>{people.map((person) => <option key={person.login} value={person.login}>@{person.login}</option>)}</select></label> : null}
             <Segmented label="Chart interval" value={range} options={[["days", "Day"], ["months", "Month"]]} onChange={setRange} />
           </div>

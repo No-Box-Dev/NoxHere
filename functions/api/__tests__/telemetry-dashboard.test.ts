@@ -89,4 +89,30 @@ describe("Telemetry project dashboard", () => {
     expect(queries.filter((sql) => sql.includes("telemetry_sources")).every((sql) => sql.includes("capability = 'usage'"))).toBe(true);
     expect(body.stats.map((stat) => stat.id)).toEqual(["users.active.monthly"]);
   });
+
+  it("supports an unbounded all-time range for Usage", async () => {
+    const queries: string[] = [];
+    const db = {
+      prepare(sql: string) {
+        queries.push(sql);
+        const statement = {
+          bind() { return statement; },
+          async first() {
+            if (sql.includes("SELECT MIN(day)")) return { day: "2026-01-01" };
+            return null;
+          },
+          async all() { return { results: [] }; },
+        };
+        return statement;
+      },
+    };
+    const response = await onRequestGet({
+      env: { DB: db },
+      request: new Request("https://app.noxhere.com/api/v1/projects/playnist/usage/dashboard?range=all"),
+      params: { id: "playnist" },
+      data: { orgId: 7, projectId: "playnist" },
+    } as never);
+    expect((await response.json() as { range: string }).range).toBe("all");
+    expect(queries.find((sql) => sql.includes("SELECT MIN(day)"))).toContain("source.capability = 'usage'");
+  });
 });
