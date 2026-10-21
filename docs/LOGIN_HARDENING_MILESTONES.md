@@ -25,3 +25,9 @@ Production promotion remains additionally guarded by the deployment workflow: st
 ## Staging login acceptance
 
 Every deployment now runs `npm run login:staging:acceptance` after the complete staging release and API-surface probe, but before production promotion. The harness provisions short-lived staging-only native and project automation credentials, proves unauthenticated requests fail with canonical JSON, switches one authenticated identity across two organizations, verifies each bootstrap scope, proves the automation token cannot escape its project, and removes the credentials in a `finally` cleanup. The gate accepts only the declared staging origin and the exact staged commit SHA.
+
+## Verified promotion and rollback
+
+Production cannot mutate until `scripts/promote-verified-release.mjs` has written a fresh receipt for the exact staged commit. The receipt records the successful smoke, full API-surface, login acceptance, readiness, and the single active 100%-traffic version of every staging Worker. Secret synchronization runs before the versioned deploys so those active versions remain attributable to the release SHA.
+
+Immediately before the first production mutation, the same tool captures and verifies the currently active version of every production Worker. A failed promotion restores those exact targets in reverse deployment order and verifies each resulting deployment. Successful runs verify production health and version attribution again, then retain the staging receipt, rollback manifest, and final promotion receipt as a 30-day workflow artifact. Worker rollback restores code, assets, bindings, and compatibility settings; it does not revert D1, R2, KV, Queue, or Durable Object state, so migrations remain additive forward-only changes.
