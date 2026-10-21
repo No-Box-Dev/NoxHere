@@ -74,6 +74,14 @@ async function publicRoutesReady() {
     && entryPrefix !== "<";
   if (!assetsReady) return false;
 
+  // A stale tab may ask for a hashed chunk from the previous release. The
+  // asset binding uses an SPA fallback, so explicitly prove that an absent
+  // module is a non-cacheable 404 rather than index.html with HTTP 200.
+  const missingModule = await fetch(smokeUrl("/assets/__noxhere_missing_build_chunk__.js"), { headers });
+  if (missingModule.status !== 404
+      || missingModule.headers.get("content-type")?.includes("text/html")
+      || missingModule.headers.get("x-noxhere-asset-miss") !== "1") return false;
+
   // Keep every shipped native client able to begin GitHub device login. An
   // older gateway deployment once accepted the CLI while returning 400 to
   // both the current NoxHere app and the installed NoxFeed App Store build.

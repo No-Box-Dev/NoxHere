@@ -362,7 +362,23 @@ export async function handleRequest(
       : unavailableResponse();
   }
 
-  return services.assets.fetch(request);
+  const asset = await services.assets.fetch(request);
+  if (url.pathname.startsWith("/assets/")
+      && asset.headers.get("Content-Type")?.toLowerCase().includes("text/html")) {
+    // The SPA fallback is correct for application routes, but a missing
+    // hashed module must never be returned as index.html. Browsers otherwise
+    // report an opaque import failure and can cache the invalid response.
+    return new Response("Asset not found", {
+      status: 404,
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+        "X-NoxHere-Asset-Miss": "1",
+      },
+    });
+  }
+  return asset;
 }
 
 async function privateBoundaryHealth(request: Request, services: PlatformServices): Promise<Response> {

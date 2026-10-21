@@ -13,6 +13,7 @@
       }
     ],
     "runWorkerFirst": [
+      "/assets/*",
       "/api/*",
       "/auth/github/callback",
       "/auth/email/*",
