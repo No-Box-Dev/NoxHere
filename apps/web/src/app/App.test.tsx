@@ -982,7 +982,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("shows the native team Stats experience in the top-level Dashboard", async () => {
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/dashboard/overview");
+    const dashboard = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/dashboard/overview");
 
     expect(await screen.findByRole("heading", { name: "Team pulse" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveClass("active");
@@ -993,11 +993,17 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByRole("heading", { name: "Developer contribution" })).toBeInTheDocument();
     expect(screen.getByText("3", { selector: ".team-data-coverage b" })).toBeInTheDocument();
     expect(screen.queryByText("@memenoboxdev")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All people" })).toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByRole("button", { name: "Person" }));
     expect(screen.getByRole("combobox", { name: "Developer" })).toHaveValue("JasperNoBoxDev");
     await user.click(screen.getByRole("button", { name: "Month" }));
     expect(screen.getByRole("img", { name: "Activity chart with 12 periods" })).toBeInTheDocument();
+    dashboard.unmount();
+
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/dashboard/overview");
+    expect(await screen.findByRole("button", { name: "Person" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("combobox", { name: "Developer" })).toHaveValue("JasperNoBoxDev");
   });
 
   it.each(["dashboard", "productivity"])("redirects the former Activity %s URL to Dashboard", async (view) => {
@@ -1193,13 +1199,19 @@ describe("NoxHere API-backed platform", () => {
       return baseFetch(input, init);
     });
     const user = userEvent.setup();
-    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
+    const feedback = renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
     expect(await screen.findByText("Widget report")).toBeInTheDocument();
     expect(screen.getByText("Repository issue")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Issue source" })).toHaveValue("all");
     await user.selectOptions(screen.getByRole("combobox", { name: "Issue source" }), "github");
     expect(screen.queryByText("Widget report")).not.toBeInTheDocument();
     expect(screen.getByText("Repository issue")).toBeInTheDocument();
     expect(screen.getAllByText("GitHub").length).toBeGreaterThan(0);
+    feedback.unmount();
+
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
+    expect(await screen.findByRole("combobox", { name: "Issue source" })).toHaveValue("github");
+    expect(screen.queryByText("Widget report")).not.toBeInTheDocument();
   });
 
   it("renders rich Feedback capture details when the API supplies them", async () => {
@@ -1296,11 +1308,54 @@ describe("NoxHere API-backed platform", () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/usage/overview");
     expect(await screen.findByRole("link", { name: "Engagement" })).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
-      `/api/v1/projects/${project.id}/usage/dashboard?range=30d`,
+      `/api/v1/projects/${project.id}/usage/dashboard?range=all`,
       expect.objectContaining({
         headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
       }),
     );
+  });
+
+  it("defaults result filters to All and restores the user's last valid choices", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `/api/v1/projects/${project.id}/usage/events`) return json([
+        { id: "one", name: "Signed in", type: "user.signed_in", subject: "user-1", environment: "Production", receivedAt: "2026-10-21T00:00:00Z", status: "accepted" },
+        { id: "two", name: "Report sent", type: "report.sent", subject: "user-2", environment: "Staging", receivedAt: "2026-10-21T01:00:00Z", status: "accepted" },
+      ]);
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+
+    const overview = renderApp(<App />, `/no-box-dev/${project.id}/usage/overview`);
+    const usageRange = await screen.findByRole("combobox", { name: "Time range" });
+    expect(usageRange).toHaveValue("all");
+    await user.selectOptions(usageRange, "90d");
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      `/api/v1/projects/${project.id}/usage/dashboard?range=90d`,
+      expect.anything(),
+    ));
+    overview.unmount();
+
+    const restoredOverview = renderApp(<App />, `/no-box-dev/${project.id}/usage/overview`);
+    expect(await screen.findByRole("combobox", { name: "Time range" })).toHaveValue("90d");
+    restoredOverview.unmount();
+
+    const events = renderApp(<App />, `/no-box-dev/${project.id}/usage/events`);
+    const type = await screen.findByRole("combobox", { name: "Event type" });
+    const environment = screen.getByRole("combobox", { name: "Environment" });
+    expect(type).toHaveValue("all");
+    expect(environment).toHaveValue("all");
+    expect(screen.getByText("2 events")).toBeInTheDocument();
+    await user.selectOptions(type, "report.sent");
+    await user.selectOptions(environment, "staging");
+    expect(screen.getByText("1 events")).toBeInTheDocument();
+    expect(screen.getByText("Report sent")).toBeInTheDocument();
+    expect(screen.queryByText("Signed in")).not.toBeInTheDocument();
+    events.unmount();
+
+    renderApp(<App />, `/no-box-dev/${project.id}/usage/events`);
+    expect(await screen.findByRole("combobox", { name: "Event type" })).toHaveValue("report.sent");
+    expect(screen.getByRole("combobox", { name: "Environment" })).toHaveValue("staging");
   });
 
   it("configures the three-action engagement template and provides tracking calls", async () => {
@@ -1331,8 +1386,8 @@ describe("NoxHere API-backed platform", () => {
   it("explains custom engagement with breadth and depth instead of a rolling average", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).includes("/usage/dashboard?range=30d")) return json({
-        range: "30d", dateLabel: "2026-10-03", reportStatus: "Reported", stats: [{
+      if (String(input).includes("/usage/dashboard?range=")) return json({
+        range: "all", dateLabel: "2026-10-03", reportStatus: "Reported", stats: [{
           id: "custom.comments.written.per_mau", name: "Comments per active user", value: "5.00",
           context: "Last 7 days", change: "↑ 25.0% vs previous 7 days", direction: "up", points: [4, 5],
           breakdown: { actionLabel: "comments", windowDays: 7, totalActions: 100, activeUsers: 20, participatingUsers: 10, participationRate: 0.5, actionsPerParticipant: 10 },

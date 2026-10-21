@@ -32,7 +32,7 @@ interface GrowthAcquisitionRow {
   currency: string | null;
 }
 
-function acquisitionSql(dimension: "channel" | "campaign" | "landing_path") {
+function acquisitionSql(dimension: "channel" | "campaign" | "landing_path", allTime: boolean) {
   const label = dimension === "channel" ? "dimension.channel"
     : dimension === "campaign" ? "COALESCE(dimension.campaign, 'Unattributed')"
       : "COALESCE(dimension.landing_path, 'Unknown landing page')";
@@ -50,7 +50,7 @@ function acquisitionSql(dimension: "channel" | "campaign" | "landing_path") {
     JOIN telemetry_sources source ON source.id = dimension.source_id
    WHERE source.org_id = ? AND source.project_id = ? AND source.capability = 'growth'
      AND source.environment = 'production' AND source.enabled = 1
-     AND dimension.occurred_at >= datetime('now', ?)
+     ${allTime ? "" : "AND dimension.occurred_at >= datetime('now', ?)"}
    GROUP BY ${label}
    HAVING visitors > 0 OR trials > 0 OR paid > 0
    ORDER BY paid DESC, revenueMinor DESC, visitors DESC
@@ -62,8 +62,30 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   const requestedProject = String(context.params.id || "");
   if (!projectId || projectId !== requestedProject) return errorResponse("Project scope mismatch", 403);
   const requestedRange = new URL(context.request.url).searchParams.get("range") || "30d";
-  const range = Object.hasOwn(DAYS, requestedRange) ? requestedRange : "30d";
-  const days = DAYS[range]!;
+  const range = requestedRange === "all" || Object.hasOwn(DAYS, requestedRange) ? requestedRange : "30d";
+  const allTime = range === "all";
+  let days = DAYS[range] ?? 1;
+  if (allTime) {
+    const earliest = await context.env.DB.prepare(
+      `SELECT MIN(day) AS day FROM (
+         SELECT event.period AS day
+           FROM telemetry_tracked_events event
+           JOIN telemetry_sources source ON source.id = event.source_id
+          WHERE source.org_id = ? AND source.project_id = ? AND source.capability = 'growth'
+            AND source.environment = 'production' AND source.enabled = 1
+         UNION ALL
+         SELECT date(dimension.occurred_at) AS day
+           FROM growth_event_dimensions dimension
+           JOIN telemetry_sources source ON source.id = dimension.source_id
+          WHERE source.org_id = ? AND source.project_id = ? AND source.capability = 'growth'
+            AND source.environment = 'production' AND source.enabled = 1
+       )`,
+    ).bind(orgId, projectId, orgId, projectId).first<{ day: string | null }>();
+    if (earliest?.day) {
+      const firstDay = Date.parse(`${earliest.day}T00:00:00Z`);
+      if (Number.isFinite(firstDay)) days = Math.max(1, Math.floor((Date.now() - firstDay) / 86_400_000) + 1);
+    }
+  }
   const rows = await context.env.DB.prepare(
     `WITH RECURSIVE periods(period) AS (
        SELECT date('now', ?)
@@ -82,6 +104,8 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
   ).bind(`-${days - 1} days`, orgId, projectId, ...EVENT_NAMES).all<GrowthRow>();
 
   const since = `-${days - 1} days`;
+  const timeCondition = allTime ? "" : "AND dimension.occurred_at >= datetime('now', ?)";
+  const dimensionBindings = (extra: unknown[] = []) => allTime ? [orgId, projectId, ...extra] : [orgId, projectId, since, ...extra];
   const [uniqueResult, channelsResult, campaignsResult, landingPagesResult] = await context.env.DB.batch([
     context.env.DB.prepare(
       `SELECT dimension.name,
@@ -90,12 +114,12 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
          JOIN telemetry_sources source ON source.id = dimension.source_id
         WHERE source.org_id = ? AND source.project_id = ? AND source.capability = 'growth'
           AND source.environment = 'production' AND source.enabled = 1
-          AND dimension.occurred_at >= datetime('now', ?)
+          ${timeCondition}
         GROUP BY dimension.name`,
-    ).bind(orgId, projectId, since),
-    context.env.DB.prepare(acquisitionSql("channel")).bind(orgId, projectId, since),
-    context.env.DB.prepare(acquisitionSql("campaign")).bind(orgId, projectId, since),
-    context.env.DB.prepare(acquisitionSql("landing_path")).bind(orgId, projectId, since),
+    ).bind(...dimensionBindings()),
+    context.env.DB.prepare(acquisitionSql("channel", allTime)).bind(...dimensionBindings()),
+    context.env.DB.prepare(acquisitionSql("campaign", allTime)).bind(...dimensionBindings()),
+    context.env.DB.prepare(acquisitionSql("landing_path", allTime)).bind(...dimensionBindings()),
   ]);
 
   const byName = new Map<string, GrowthRow[]>();

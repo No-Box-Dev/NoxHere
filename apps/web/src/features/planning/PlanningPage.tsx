@@ -9,10 +9,10 @@ import { SearchableSelect } from "../../components/SearchableSelect";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
 import type { PlatformOutletContext } from "../../app/platform-context";
+import { useFilterPreference } from "../../lib/filterPreferences";
 
 const tabs = [["board", "Features"], ["tasks", "Tasks"], ["backlog", "Backlog"], ["completed", "Completed"], ["settings", "Settings"]] as const;
 const allFeaturesPerson = "__all__";
-const featurePersonPreferencePrefix = "noxhere.planning.feature-person.v1.";
 
 type Stage = TaskStage;
 type FeatureLink = { url: string; label?: string };
@@ -222,26 +222,6 @@ function uniqueLogins(logins: string[]) {
   });
 }
 
-function featurePersonPreferenceKey(actor: string, organizationId: string, projectId: string) {
-  return `${featurePersonPreferencePrefix}${actor.trim().toLowerCase()}.${organizationId}.${projectId}`;
-}
-
-function readFeaturePersonPreference(actor: string, organizationId: string, projectId: string, people: string[]) {
-  try {
-    const saved = window.localStorage.getItem(featurePersonPreferenceKey(actor, organizationId, projectId));
-    if (!saved || saved === allFeaturesPerson) return allFeaturesPerson;
-    return people.find((person) => person.toLowerCase() === saved.toLowerCase()) ?? allFeaturesPerson;
-  } catch {
-    return allFeaturesPerson;
-  }
-}
-
-function saveFeaturePersonPreference(actor: string, organizationId: string, projectId: string, person: string) {
-  try {
-    window.localStorage.setItem(featurePersonPreferenceKey(actor, organizationId, projectId), person);
-  } catch { /* The preference remains active for this page. */ }
-}
-
 function DataNotice({ title, detail }: { title: string; detail: string }) {
   return <div className="empty-view data-notice" role="status"><h2>{title}</h2><p>{detail}</p></div>;
 }
@@ -251,7 +231,7 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   const [queries, setQueries] = useState<Record<FeatureView, string>>(() => ({ board: "", backlog: "", completed: "" }));
   const query = queries[mode];
   const people = members.includes(actor) ? members : [actor, ...members];
-  const [person, setPerson] = useState(() => readFeaturePersonPreference(actor, organizationId, projectId, people));
+  const [person, setPerson] = useFilterPreference({ actorId: actor, organizationId, projectId, filterId: "planning.feature-person" }, [allFeaturesPerson, ...people], allFeaturesPerson);
   const [sort, setSort] = useState<"updated" | "title">("updated");
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -264,7 +244,6 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   const completed = useMemo(() => features.filter((feature) => feature.closed && (showsAllPeople || featureOwnedBy(feature, normalizedPerson)) && matches(feature, query, "")), [features, normalizedPerson, query, showsAllPeople]);
   const selectPerson = (next: string) => {
     setPerson(next);
-    saveFeaturePersonPreference(actor, organizationId, projectId, next);
   };
   const addFeature = (event: FormEvent) => {
     event.preventDefault();

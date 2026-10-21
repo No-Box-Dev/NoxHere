@@ -7,9 +7,12 @@ import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { Sparkline } from "../../components/Sparkline";
 import { StatusTag } from "../../components/StatusTag";
+import { ALL_FILTER_VALUE, useFilterPreference } from "../../lib/filterPreferences";
 
-type UsageViewProps = { organizationId: string; projectId: string; canConfigure?: boolean };
+type ProjectScope = { organizationId: string; projectId: string };
+type UsageViewProps = ProjectScope & { actorId: string; canConfigure?: boolean };
 type UsageSubview = "overview" | "engagement" | "events";
+const timeRangeValues = [ALL_FILTER_VALUE, "7d", "30d", "90d", "1y"] as const;
 
 const tabs = [
   ["overview", "Overview"],
@@ -17,21 +20,21 @@ const tabs = [
   ["events", "Events"],
 ] as const;
 
-export function UsageView({ organizationId, projectId, canConfigure = false, view = "overview" }: UsageViewProps & { view?: UsageSubview }) {
+export function UsageView({ organizationId, projectId, actorId, canConfigure = false, view = "overview" }: UsageViewProps & { view?: UsageSubview }) {
   const base = `/${organizationId}/${projectId}/usage`;
   return (
     <>
       <ServiceTabs base={base} active={view} tabs={tabs} />
       <div className="workspace-view">
-        {view === "overview" ? <UsageDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} mode="overview" /> : view === "engagement" ? <UsageDashboard organizationId={organizationId} projectId={projectId} canConfigure={canConfigure} mode="engagement" /> : <UsageEvents organizationId={organizationId} projectId={projectId} />}
+        {view === "overview" ? <UsageDashboard organizationId={organizationId} projectId={projectId} actorId={actorId} canConfigure={canConfigure} mode="overview" /> : view === "engagement" ? <UsageDashboard organizationId={organizationId} projectId={projectId} actorId={actorId} canConfigure={canConfigure} mode="engagement" /> : <UsageEvents organizationId={organizationId} projectId={projectId} actorId={actorId} />}
       </div>
     </>
   );
 }
 
-function UsageDashboard({ organizationId, projectId, canConfigure = false, mode }: UsageViewProps & { mode: "overview" | "engagement" }) {
+function UsageDashboard({ organizationId, projectId, actorId, canConfigure = false, mode }: UsageViewProps & { mode: "overview" | "engagement" }) {
   const [configuring, setConfiguring] = useState(false);
-  const [range, setRange] = useState("30d");
+  const [range, setRange] = useFilterPreference({ actorId, organizationId, projectId, filterId: `usage.${mode}.time-range` }, timeRangeValues);
   const dashboard = useQuery({
     queryKey: ["usage", organizationId, projectId, "dashboard", range],
     queryFn: ({ signal }) => platformApi.usageDashboard(organizationId, projectId, range, signal),
@@ -55,7 +58,7 @@ function UsageDashboard({ organizationId, projectId, canConfigure = false, mode 
     <AsyncState loading={dashboard.isLoading} error={dashboard.error}>
       {dashboard.data ? <>
         <div className="toolbar">
-          <select name="timeRange" aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select>
+          <select name="timeRange" aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="all">All time</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select>
           <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag>{mode === "engagement" && canConfigure ? <button className="button" onClick={() => setConfiguring(true)}>Configure actions</button> : null}<button className="button" onClick={exportCsv}>Export CSV</button>
         </div>
         <div className="stat-grid">
@@ -78,7 +81,7 @@ function actionKey(label: string) {
   return slug ? `custom.${slug}` : "";
 }
 
-function EngagementActionsDialog({ organizationId, projectId, onClose }: UsageViewProps & { onClose: () => void }) {
+function EngagementActionsDialog({ organizationId, projectId, onClose }: ProjectScope & { onClose: () => void }) {
   const configured = useQuery({
     queryKey: ["usage", organizationId, projectId, "actions"],
     queryFn: ({ signal }) => platformApi.usageActions(organizationId, projectId, signal),
@@ -87,7 +90,7 @@ function EngagementActionsDialog({ organizationId, projectId, onClose }: UsageVi
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="cue-actions-dialog" role="dialog" aria-modal="true" aria-labelledby="cue-actions-title"><header><div><span className="eyebrow">STANDARD TEMPLATE</span><h2 id="cue-actions-title">Engagement actions</h2><p>Choose the three actions that show how actively people use your product.</p></div><button type="button" className="dialog-close" aria-label="Close action setup" onClick={onClose}>×</button></header><main><div className="cue-actions-loading">{configured.error instanceof Error ? configured.error.message : "Loading actions…"}</div></main><footer><button type="button" className="button" onClick={onClose}>Close</button></footer></div></div>;
 }
 
-function EngagementActionsEditor({ organizationId, projectId, onClose, initialActions, initialWindowDays }: UsageViewProps & { onClose: () => void; initialActions: Array<{ key: string; label: string }>; initialWindowDays: 7 | 14 | 30 }) {
+function EngagementActionsEditor({ organizationId, projectId, onClose, initialActions, initialWindowDays }: ProjectScope & { onClose: () => void; initialActions: Array<{ key: string; label: string }>; initialWindowDays: 7 | 14 | 30 }) {
   const queryClient = useQueryClient();
   const [actions, setActions] = useState(() => EMPTY_ACTIONS.map((empty, index) => initialActions[index]
     ? { label: initialActions[index].label, key: initialActions[index].key }
@@ -159,17 +162,25 @@ function StatCard({ stat }: { stat: TelemetryStat }) {
   </article>;
 }
 
-function UsageEvents({ organizationId, projectId }: UsageViewProps) {
-  const [type, setType] = useState("all");
-  const [environment, setEnvironment] = useState("all");
+function UsageEvents({ organizationId, projectId, actorId }: UsageViewProps) {
   const events = useQuery({
     queryKey: ["usage", organizationId, projectId, "events"],
     queryFn: ({ signal }) => platformApi.usageEvents(organizationId, projectId, signal),
   });
 
-  const filtered = (events.data ?? []).filter((event) => (type === "all" || event.type === type) && (environment === "all" || event.environment.toLowerCase() === environment));
   const eventTypes = [...new Set((events.data ?? []).map((event) => event.type))];
   const environments = [...new Set((events.data ?? []).map((event) => event.environment))];
+  const environmentValues = environments.map((value) => value.toLowerCase());
+  const loaded = !events.isLoading;
+  const [type, setType] = useFilterPreference(
+    { actorId, organizationId, projectId, filterId: "usage.event-type" },
+    loaded ? [ALL_FILTER_VALUE, ...eventTypes] : undefined,
+  );
+  const [environment, setEnvironment] = useFilterPreference(
+    { actorId, organizationId, projectId, filterId: "usage.environment" },
+    loaded ? [ALL_FILTER_VALUE, ...environmentValues] : undefined,
+  );
+  const filtered = (events.data ?? []).filter((event) => (type === ALL_FILTER_VALUE || event.type === type) && (environment === ALL_FILTER_VALUE || event.environment.toLowerCase() === environment));
   return (
     <AsyncState loading={events.isLoading} error={events.error}>
       <div className="toolbar"><select name="eventType" aria-label="Event type" value={type} onChange={(event) => setType(event.target.value)}><option value="all">All usage events</option>{eventTypes.map((value) => <option value={value} key={value}>{value}</option>)}</select><select name="eventEnvironment" aria-label="Environment" value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="all">All environments</option>{environments.map((value) => <option value={value.toLowerCase()} key={value}>{value}</option>)}</select><span className="toolbar-spacer" /><span>{filtered.length} events</span><StatusTag tone="positive">Receiving</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
