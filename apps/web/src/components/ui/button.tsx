@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { forwardRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +24,16 @@ const buttonVariants = cva("ui-button", {
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>;
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant, size, ...props }, ref) => (
-  <button ref={ref} data-slot="button" className={cn(buttonVariants({ variant, size }), className)} {...props} />
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant = "default", size = "default", ...props }, ref) => (
+  <button ref={ref} data-slot="button" data-size={size} data-variant={variant} className={cn(buttonVariants({ variant, size }), className)} {...props} />
 ));
 Button.displayName = "Button";
 
-export { Button };
+type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & VariantProps<typeof buttonVariants>;
+
+const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(({ className, variant = "default", size = "default", ...props }, ref) => (
+  <a ref={ref} data-slot="button" data-size={size} data-variant={variant} className={cn(buttonVariants({ variant, size }), className)} {...props} />
+));
+ButtonLink.displayName = "ButtonLink";
+
+export { Button, ButtonLink };

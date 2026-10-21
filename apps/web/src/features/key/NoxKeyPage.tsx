@@ -1,3 +1,5 @@
+import { ButtonLink } from "@/components/ui/button";
+
 export default function NoxKeyPage() {
   return <section className="key-placeholder" role="status">
     <div className="key-placeholder-icon" aria-hidden="true">
@@ -5,6 +7,6 @@ export default function NoxKeyPage() {
     </div>
     <h2>NoxKey is a separate secure app</h2>
     <p>Credentials stay outside the Noxhere workspace. Open NoxKey to manage and share them.</p>
-    <a className="button primary-button" href="https://apps.apple.com/app/noxkey/id6760210699" target="_blank" rel="noreferrer">Open NoxKey in the App Store</a>
+    <ButtonLink variant="cut" href="https://apps.apple.com/app/noxkey/id6760210699" target="_blank" rel="noreferrer">Open NoxKey in the App Store</ButtonLink>
   </section>;
 }

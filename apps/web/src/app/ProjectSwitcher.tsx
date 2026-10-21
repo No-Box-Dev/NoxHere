@@ -3,6 +3,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import { Link } from "react-router-dom";
 import type { Bootstrap, Project } from "../api/contracts";
 import { platformApi } from "../api/platform";
+import { Button } from "@/components/ui/button";
 import { useWorkspaceProfile } from "./workspace-profile";
 
 type ProjectSwitcherProps = {
@@ -104,7 +105,7 @@ export function ProjectSwitcher({ organizationId, organizationName, projects, se
           {canCreate && creating ? <form className="project-onboarding" onSubmit={(event) => { event.preventDefault(); save(); }}>
             <label><span>Project name</span><input aria-label="New project name" maxLength={100} value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="Project name" autoFocus /></label>
             <fieldset><legend>Repositories <small>All available repositories are included by default.</small></legend>{routing.isLoading ? <p>Loading repositories…</p> : availableRepositories.length ? <div>{availableRepositories.map((repo) => <label key={repo}><input type="checkbox" checked={selectedRepositories.includes(repo)} onChange={() => setDraftRepositories((current) => { const selection = current ?? availableRepositories; return selection.includes(repo) ? selection.filter((item) => item !== repo) : [...selection, repo]; })} />{repo}</label>)}</div> : <p>No unassigned repositories. You can move repositories from another project in Project Settings.</p>}</fieldset>
-            <div><button className="mini-button primary" disabled={create.isPending || !draftName.trim()}>{create.isPending ? "Creating…" : "Create project"}</button><button type="button" className="mini-button" onClick={() => { setCreating(false); setDraftName(""); setDraftRepositories(null); create.reset(); }}>Cancel</button></div>
+            <div><Button size="sm" disabled={create.isPending || !draftName.trim()}>{create.isPending ? "Creating…" : "Create project"}</Button><Button type="button" size="sm" variant="outline" onClick={() => { setCreating(false); setDraftName(""); setDraftRepositories(null); create.reset(); }}>Cancel</Button></div>
           </form> : canCreate ? <button type="button" className="project-create" onClick={() => setCreating(true)}>+ New project</button> : null}
           {create.error ? <small role="alert">{create.error.message}</small> : null}
         </footer>

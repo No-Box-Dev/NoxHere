@@ -7,6 +7,7 @@ import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { Sparkline } from "../../components/Sparkline";
 import { StatusTag } from "../../components/StatusTag";
+import { Button } from "@/components/ui/button";
 
 type UsageViewProps = { organizationId: string; projectId: string; canConfigure?: boolean };
 type UsageSubview = "overview" | "engagement" | "events";
@@ -131,7 +132,7 @@ function EngagementActionsEditor({ organizationId, projectId, onClose, initialAc
           <p className="cue-advanced-note">Need more than three? Additional product actions remain available through the Usage API.</p>
           {save.error ? <p className="form-error">{save.error.message}</p> : null}
       </main>
-      <footer><button type="button" className="button" onClick={onClose}>Cancel</button><button type="button" className="button primary-button" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save actions"}</button></footer>
+      <footer><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="button" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save actions"}</Button></footer>
     </div>
   </div>;
 }

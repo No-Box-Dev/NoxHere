@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { SlackMessagePayload } from "../../api/contracts";
 import { platformApi } from "../../api/platform";
+import { Button } from "@/components/ui/button";
 
 const SUPPORTED_FIELDS = [
   "text", "markdown_text", "blocks", "attachments", "metadata", "thread_ts",
@@ -103,7 +104,7 @@ export function SlackMessageBridge({ organizationId, projectId, isAdmin }: { org
     <label className="slack-bridge-field"><span>Message</span><textarea aria-label="Slack message" rows={5} value={text} onChange={(event) => setText(event.target.value)} placeholder="Write the message Slack should receive…" /></label>
     <fieldset className="slack-image-fields"><legend>Optional image</legend><label><span>Public image URL</span><input aria-label="Public image URL" type="url" inputMode="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://…/image.png" /></label><label><span>Alternative text</span><input aria-label="Image alternative text" value={imageAlt} onChange={(event) => setImageAlt(event.target.value)} placeholder="Describe the image" /></label><label><span>Title</span><input aria-label="Image title" value={imageTitle} onChange={(event) => setImageTitle(event.target.value)} placeholder="Optional" /></label></fieldset>
     <details className="slack-advanced"><summary>Advanced Slack fields</summary><p>JSON object supporting {SUPPORTED_FIELDS.join(", ")}. Blocks and attachments follow Slack’s native JSON format. Custom username or icon fields require the workspace to have approved Slack’s customize permission.</p><textarea aria-label="Additional Slack fields JSON" rows={8} value={advancedJson} onChange={(event) => setAdvancedJson(event.target.value)} placeholder={'{"unfurl_links": false, "thread_ts": "1234567890.123456"}'} /></details>
-    <div className="slack-bridge-actions"><button className="button primary-button" disabled={send.isPending}>{send.isPending ? "Sending…" : "Send to Slack"}</button>{send.isSuccess ? <span className="form-success" role="status">Message sent to the selected Slack channel.</span> : null}</div>
+    <div className="slack-bridge-actions"><Button disabled={send.isPending}>{send.isPending ? "Sending…" : "Send to Slack"}</Button>{send.isSuccess ? <span className="form-success" role="status">Message sent to the selected Slack channel.</span> : null}</div>
     {localError ? <p className="form-error" role="alert">{localError}</p> : null}
     {send.isError ? <p className="form-error" role="alert">{send.error instanceof Error ? send.error.message : "Slack did not accept the message."}</p> : null}
   </form>;
