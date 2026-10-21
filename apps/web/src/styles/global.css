@@ -70,7 +70,6 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .project-choice i { color: var(--service); font-style: normal; font-weight: 800; }
 .mini-button { height: 31px; padding: 0 9px; border: 1px solid rgb(114 88 198 / 24%); border-radius: 7px; background: var(--brand-soft); color: var(--brand); font-size: 8px; font-weight: 750; box-shadow: 0 2px 8px rgb(112 82 180 / 6%); transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
 .mini-button:hover { border-color: rgb(154 112 220 / 48%); box-shadow: 0 5px 14px rgb(112 82 180 / 12%); transform: translateY(-1px); }
-.mini-button.primary { border-color: var(--brand); background: var(--brand); color: var(--primary-foreground); box-shadow: 0 6px 16px rgb(112 82 180 / 20%); }
 .project-menu > footer { display: grid; gap: 7px; padding: 9px; background: var(--soft); }
 .project-menu-status { margin: 0; padding: 10px 14px; color: var(--muted-foreground); font-size: 9px; }
 .project-menu-status.error { color: var(--red); }
@@ -647,8 +646,6 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid
 .button:hover { border-color: rgb(154 112 220 / 48%); box-shadow: 0 6px 18px rgb(112 82 180 / 13%); transform: translateY(-1px); }
 .button:active, .mini-button:active { transform: translateY(0); }
 .button:disabled, .mini-button:disabled { cursor: default; opacity: .5; transform: none; }
-.primary-button { border-color: var(--brand); background: var(--brand); color: var(--primary-foreground); box-shadow: 0 7px 20px rgb(112 82 180 / 22%); }
-.primary-button:hover { border-color: transparent; box-shadow: 0 9px 24px rgb(112 82 180 / 29%); }
 .button.danger-button { border-color: color-mix(in srgb, var(--red) 30%, var(--line)); background: var(--red-soft); color: var(--red); box-shadow: none; }
 .link-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .status-tag { display: inline-flex; align-items: center; min-height: 22px; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--muted); font-size: 9px; font-weight: 750; white-space: nowrap; }
@@ -1150,14 +1147,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   font-weight: 600;
 }
 .button:hover, .mini-button:hover { border-color: var(--foreground); color: var(--foreground); box-shadow: none; transform: none; }
-.primary-button, .mini-button.primary {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--primary-foreground);
-  clip-path: polygon(var(--cut-md) 0,100% 0,100% calc(100% - var(--cut-md)),calc(100% - var(--cut-md)) 100%,0 100%,0 var(--cut-md));
-}
-.primary-button:hover, .mini-button.primary:hover { border-color: var(--primary-hover); background: var(--primary-hover); color: var(--primary-foreground); }
-
 .ui-badge, .status-tag {
   display: inline-flex;
   align-items: center;

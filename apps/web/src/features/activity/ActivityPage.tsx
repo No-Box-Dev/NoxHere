@@ -9,6 +9,7 @@ import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
 import type { PlatformOutletContext } from "../../app/platform-context";
+import { Button } from "@/components/ui/button";
 
 const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"]] as const;
 type WorkItem = { id: number; repo: string; number: number; title: string; state: string; author?: string; author_avatar?: string; assignees?: Array<{ login: string; avatar_url?: string }>; html_url?: string; updated_at?: string; draft?: boolean };
@@ -143,7 +144,7 @@ function PullRequestActions({ item, scope }: { item: WorkItem; scope: { organiza
     destructive: action === "close",
   }).then((confirmed) => { if (confirmed) mutation.mutate({ action }); });
   return <>
-    <button type="button" className="mini-button primary" disabled={mutation.isPending} onClick={() => act("merge")}>{mutation.isPending ? "Working…" : "Merge"}</button>
+    <Button type="button" size="sm" disabled={mutation.isPending} onClick={() => act("merge")}>{mutation.isPending ? "Working…" : "Merge"}</Button>
     <button type="button" className="mini-button destructive" disabled={mutation.isPending} onClick={() => act("close")}>Close</button>
     {mutation.error ? <small role="alert">{mutation.error.message}</small> : null}
     {confirmation}

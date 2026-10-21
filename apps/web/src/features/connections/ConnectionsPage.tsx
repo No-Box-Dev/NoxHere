@@ -5,6 +5,7 @@ import type { GithubMember, GuestInvite, OrganizationMember, Project } from "../
 import { platformApi } from "../../api/platform";
 import { ListRow } from "../../components/ListRow";
 import { StatusTag } from "../../components/StatusTag";
+import { Button } from "@/components/ui/button";
 import { ProjectRepositories } from "../../components/ProjectRepositories";
 import type { PlatformOutletContext } from "../../app/platform-context";
 import { useConfirmDialog } from "../../components/ConfirmDialog";
@@ -114,7 +115,7 @@ function People({ members, membersLoading, membersError, retryMembers, organizat
     {showInvite ? <form className="guest-invite-form" onSubmit={submitInvite}>
       <label><span>Email address</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="guest@company.com" required autoFocus /></label>
       <label><span>Capability access</span><select value={serviceId} onChange={(event) => setServiceId(event.target.value as typeof serviceId)}><option value="all">All capabilities</option>{guestServices.map((id) => <option value={id} key={id}>{serviceName(id)}</option>)}</select></label>
-      <button className="button primary-button" disabled={invite.isPending}>{invite.isPending ? "Sending…" : "Send invite"}</button>
+      <Button disabled={invite.isPending}>{invite.isPending ? "Sending…" : "Send invite"}</Button>
       {invite.isError ? <span className="form-error" role="alert">{invite.error instanceof Error ? invite.error.message : "Invite could not be sent."}</span> : null}
     </form> : null}
     {membersLoading ? <div className="connect-empty"><b>Loading GitHub members</b><p>Reading the shared organization member directory…</p></div> : null}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRawJson, getRawJsonWithHeaders, patchRawJson, postRawJson } from "../../api/http";
+import { Button } from "@/components/ui/button";
 
 type FontPreset = "system" | "playnist" | "humanist" | "editorial" | "mono";
 type ResolutionTemplate = {
@@ -109,7 +110,7 @@ export function FeedbackMessaging({ organizationId, projectId, isAdmin }: { orga
         <ColorField label="Muted text" value={draft.appearance.mutedColor} onChange={(value) => updateAppearance("mutedColor", value)} />
       </div><small>Email clients may substitute their nearest installed font; every option includes reliable fallbacks.</small></fieldset>
       <p className="messaging-variables">Available variables: <code>{"{{report_title}}"}</code> and <code>{"{{site_name}}"}</code>.</p>
-      <div className="messaging-actions"><button className="button primary-button" disabled={save.isPending} onClick={() => save.mutate(draft)}>{save.isPending ? "Saving…" : "Save template"}</button><button className="button" disabled={preview.isPending} onClick={() => preview.mutate(draft)}>{preview.isPending ? "Preparing…" : "Preview"}</button><button className="button" disabled={save.isPending} onClick={() => save.mutate(null)}>Reset to default</button></div>
+      <div className="messaging-actions"><Button variant="outline" disabled={save.isPending} onClick={() => save.mutate(draft)}>{save.isPending ? "Saving…" : "Save template"}</Button><button className="button" disabled={preview.isPending} onClick={() => preview.mutate(draft)}>{preview.isPending ? "Preparing…" : "Preview"}</button><button className="button" disabled={save.isPending} onClick={() => save.mutate(null)}>Reset to default</button></div>
       <div className="test-email"><label className="field-label">Send a test through the normal email flow<input type="email" value={testRecipient} placeholder="you@example.com" onChange={(event) => setTestRecipient(event.target.value)} /></label><button className="button" disabled={test.isPending || !testRecipient.trim()} onClick={() => test.mutate({ recipient: testRecipient.trim(), next: draft })}>{test.isPending ? "Sending…" : test.isSuccess ? "Sent" : "Send test"}</button></div>
       {error ? <p className="messaging-error">{error instanceof Error ? error.message : "Template request failed"}</p> : null}
     </section>

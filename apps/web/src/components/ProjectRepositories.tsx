@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { platformApi } from "../api/platform";
 import { StatusTag } from "./StatusTag";
 
@@ -63,7 +64,7 @@ export function ProjectRepositories({ organizationId, projectId, projectName, ca
         return <label className={checked ? "selected" : ""} key={repo}><input type="checkbox" checked={checked} onChange={() => toggle(repo)} /><span><b>{repo}</b><small>{owner && !checked ? `Currently in ${owner} · selecting moves it here` : checked ? `Included in ${projectName}` : "Available"}</small></span></label>;
       })}
     </div>
-    <div className="repository-editor-footer"><span>{selected.length} of {repositories.length} repositories selected</span><div>{savedProjectId === projectId && !dirty ? <span className="form-success" role="status">Saved</span> : null}<button type="button" className="button primary-button" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save repositories"}</button></div></div>
+    <div className="repository-editor-footer"><span>{selected.length} of {repositories.length} repositories selected</span><div>{savedProjectId === projectId && !dirty ? <span className="form-success" role="status">Saved</span> : null}<Button type="button" variant="outline" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save repositories"}</Button></div></div>
     {save.isError ? <p className="form-error" role="alert">{save.error instanceof Error ? save.error.message : "Repositories could not be saved."}</p> : null}
   </div>;
 }

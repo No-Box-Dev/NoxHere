@@ -489,7 +489,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("renders the main project with API-backed empty states", async () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
-    expect(await screen.findByRole("button", { name: "New feature" }, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "New feature" }, { timeout: 3000 })).toHaveAttribute("data-variant", "cut");
     expect(screen.queryByText("No Planning records yet")).not.toBeInTheDocument();
     expect(screen.getByText("To do")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/v1/features?state=all", expect.objectContaining({ headers: expect.objectContaining({ "X-Project-ID": "proj_no-box-dev_playnist" }) }));
@@ -507,6 +507,8 @@ describe("NoxHere API-backed platform", () => {
 
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
     await user.click(await screen.findByRole("button", { name: "New feature" }));
+    expect(screen.getByRole("button", { name: "New feature" })).toHaveAttribute("data-variant", "outline");
+    expect(screen.getByRole("button", { name: "Create feature" })).toHaveAttribute("data-variant", "default");
     await user.type(screen.getByRole("textbox", { name: "Feature title" }), "Instant feature");
     await user.click(screen.getByRole("button", { name: "Create feature" }));
 
@@ -1292,6 +1294,7 @@ describe("NoxHere API-backed platform", () => {
     const sender = screen.getByRole("textbox", { name: "Sender name" });
     await user.clear(sender);
     await user.type(sender, "Playnist Support");
+    expect(screen.getByRole("button", { name: "Save template" })).toHaveAttribute("data-variant", "outline");
     await user.click(screen.getByRole("button", { name: "Save template" }));
     expect(fetch).toHaveBeenCalledWith("/api/v1/feedback/sites/site-playnist/resolution-template", expect.objectContaining({
       method: "PATCH",
@@ -1493,6 +1496,7 @@ describe("NoxHere API-backed platform", () => {
     expect(fetch).toHaveBeenCalledWith("/api/v1/members", expect.objectContaining({
       headers: expect.objectContaining({ "X-Org": "no-box-dev", "X-Project-ID": project.id }),
     }));
+    expect(screen.getByRole("button", { name: "Save repositories" })).toHaveAttribute("data-variant", "outline");
     await user.click(screen.getByRole("button", { name: "Save repositories" }));
 
     expect(fetch).toHaveBeenCalledWith(`/api/v1/projects/${project.id}/routing`, expect.objectContaining({

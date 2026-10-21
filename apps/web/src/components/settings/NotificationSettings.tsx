@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getRawJsonWithHeaders, patchRawJson, postRawJson } from "../../api/http";
 import { platformApi } from "../../api/platform";
+import { Button } from "@/components/ui/button";
 
 const ROUTES = [
   ["activity_posts", "Activity posts"],
@@ -34,5 +35,5 @@ export function NotificationSettings({ organizationId, projectId, isAdmin }: { o
 function FeedPromptEditor({ initial, etag, scope, onSaved }: { initial: string; etag: string; scope: { organizationId: string; projectId: string }; onSaved: () => Promise<unknown> }) {
   const [prompt, setPrompt] = useState(initial);
   const save = useMutation({ mutationFn: () => patchRawJson<FeedConfig>("/api/v1/services/activity/config", { releaseNotesPrompt: prompt.trim() || null }, { "If-Match": etag }, scope), onSuccess: () => void onSaved() });
-  return <section className="settings-card"><header><div><b>Release-note instructions</b><p>Optional project-specific guidance used when Activity writes release notes.</p></div></header><textarea rows={8} maxLength={20_000} value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Focus on customer impact and avoid implementation detail." /><button className="button primary-button" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save instructions"}</button>{save.error ? <small role="alert">{save.error.message}</small> : null}</section>;
+  return <section className="settings-card"><header><div><b>Release-note instructions</b><p>Optional project-specific guidance used when Activity writes release notes.</p></div></header><textarea rows={8} maxLength={20_000} value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Focus on customer impact and avoid implementation detail." /><Button variant="outline" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save instructions"}</Button>{save.error ? <small role="alert">{save.error.message}</small> : null}</section>;
 }
