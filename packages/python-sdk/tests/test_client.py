@@ -107,6 +107,11 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(len(idempotent.calls), 2)
         self.assertEqual(idempotent.calls[0][3], idempotent.calls[1][3])
 
+        bounded = Recorder(status=503, response={"error": "busy"})
+        with self.assertRaises(NoxHereApiError):
+            NoxHereClient(transport=bounded, max_retries=10_000, sleep=lambda _delay: None).workspace.list_projects()
+        self.assertEqual(len(bounded.calls), 6)
+
         observed: list[str] = []
         public = Recorder(response={"ok": True})
         scoped = NoxHereClient(token="nox_sk_secret", transport=public, on_request=lambda event: observed.append(str(event["url"]))).with_context(organization="No-Box-Dev", project_id="project-1")

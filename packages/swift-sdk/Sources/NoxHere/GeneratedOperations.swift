@@ -32,7 +32,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 202
+    public static let operationCount = 203
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -180,6 +180,7 @@ public enum NoxHereOperations {
         "recoverRepositoryHistory": .init(id: "recoverRepositoryHistory", method: "POST", path: "/api/v1/recover-repo-history", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "refreshNativeSession": .init(id: "refreshNativeSession", method: "POST", path: "/api/v1/auth/native/refresh", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "reopenResolvedFeedbackReport": .init(id: "reopenResolvedFeedbackReport", method: "POST", path: "/api/feedback/public/v1/resolution-responses/{token}", resource: .feedback, changeSafety: .writeNotSafeToRetry, servers: ["https://app.noxhere.com"]),
+        "requeueQuarantinedTask": .init(id: "requeueQuarantinedTask", method: "POST", path: "/api/v1/op-failures", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "resendGuestInvitation": .init(id: "resendGuestInvitation", method: "POST", path: "/api/v1/guests/invites/{inviteId}/resend", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "restoreProject": .init(id: "restoreProject", method: "DELETE", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
         "restoreSpec": .init(id: "restoreSpec", method: "DELETE", path: "/api/v1/specs/{specId}/archive", resource: .planning, changeSafety: .destructive, servers: []),

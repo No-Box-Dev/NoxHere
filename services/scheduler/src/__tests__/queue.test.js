@@ -11,6 +11,7 @@ vi.mock("../../../../functions/lib/github-app.js", () => ({
   getInstallationToken: vi.fn().mockResolvedValue("install-token"),
 }));
 vi.mock("../../../../functions/lib/op-failures.js", () => ({ recordFailure: vi.fn() }));
+vi.mock("../../../../functions/lib/task-quarantine.js", () => ({ quarantineTask: vi.fn() }));
 vi.mock("../../../../functions/lib/feedback.js", () => ({
   createFeedbackGitHubIssue: vi.fn(),
 }));
@@ -31,6 +32,7 @@ import { narrateEvent } from "../../../../functions/lib/narrator.js";
 import { syncRepo } from "../../../../functions/lib/github-sync.js";
 import { getInstallationToken } from "../../../../functions/lib/github-app.js";
 import { recordFailure } from "../../../../functions/lib/op-failures.js";
+import { quarantineTask } from "../../../../functions/lib/task-quarantine.js";
 import { createFeedbackGitHubIssue } from "../../../../functions/lib/feedback.js";
 import { createOrUpdateTelemetryGitHubIssue } from "../../../../functions/lib/telemetry-github.js";
 import { markOutboxFailed } from "../../../../functions/lib/delivery-outbox.js";
@@ -115,7 +117,7 @@ describe("background queue consumer", () => {
     expect(recordFailure).not.toHaveBeenCalled();
   });
 
-  it("records to op_failures and acks once the delivery limit is reached", async () => {
+  it("records and quarantines work before handing the final delivery to the DLQ", async () => {
     narrateEvent.mockRejectedValueOnce(new Error("boom"));
     // MAX_DELIVERIES = 5 (1 initial + max_retries 4); the 5th delivery is terminal.
     const m = msg({ type: "narrate", eventId: 1, ownerId: "acme", deliveryId: "d-1" }, 5);
@@ -124,8 +126,9 @@ describe("background queue consumer", () => {
       env.DB,
       expect.objectContaining({ ownerId: "acme", op: "task:narrate", deliveryId: "d-1" }),
     );
-    expect(m.ack).toHaveBeenCalledOnce();
-    expect(m.retry).not.toHaveBeenCalled();
+    expect(quarantineTask).toHaveBeenCalledWith(env.DB, m.body, 5, expect.any(Error));
+    expect(m.ack).not.toHaveBeenCalled();
+    expect(m.retry).toHaveBeenCalledOnce();
   });
 
   it("marks an exhausted Slack outbox delivery as failed", async () => {
@@ -133,7 +136,8 @@ describe("background queue consumer", () => {
     const m = msg({ type: "deliver_slack", outboxId: "delivery-1", ownerId: "acme" }, 5);
     await worker.queue({ messages: [m] }, env);
     expect(markOutboxFailed).toHaveBeenCalledWith(env.DB, "delivery-1", expect.any(Error));
-    expect(m.ack).toHaveBeenCalledOnce();
+    expect(m.ack).not.toHaveBeenCalled();
+    expect(m.retry).toHaveBeenCalledOnce();
   });
 
   it("treats an unknown task type as a failure", async () => {

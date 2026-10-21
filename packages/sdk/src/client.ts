@@ -172,6 +172,7 @@ const SDK_VERSION = "0.2.6";
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RETRY_DELAY_MS = 250;
 const MAX_RETRY_AFTER_MS = 30_000;
+const MAX_RETRIES = 5;
 
 function retryableStatus(status: number): boolean {
   return status === 408 || status === 429 || status >= 500;
@@ -233,7 +234,8 @@ export function createNoxHere(options: NoxHereOptions = {}): NoxHereClient {
   if (!requestFetch) throw new TypeError("NoxHere requires a fetch implementation");
   const definitions = new Map(operationDefinitions.map((definition) => [definition.id, definition]));
   const timeoutMs = Math.max(1, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-  const maxRetries = Math.max(0, Math.floor(options.maxRetries ?? 2));
+  const requestedRetries = Number.isFinite(options.maxRetries) ? Number(options.maxRetries) : 2;
+  const maxRetries = Math.min(MAX_RETRIES, Math.max(0, Math.floor(requestedRetries)));
   const baseRetryDelay = Math.max(0, options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS);
   const sleep = options.sleep ?? ((milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds)));
 
