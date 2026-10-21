@@ -628,11 +628,12 @@ describe("NoxHere API-backed platform", () => {
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/board");
 
-    expect(await screen.findByRole("combobox", { name: "Planning for person" })).toHaveValue("All");
+    const featurePerson = await screen.findByRole("combobox", { name: "Planning for person" });
+    expect(featurePerson.tagName).toBe("SELECT");
+    expect(featurePerson).toHaveDisplayValue("All");
     expect(screen.getByText("My feature")).toBeInTheDocument();
     expect(screen.getByText("Teammate feature")).toBeInTheDocument();
-    await user.click(screen.getByRole("combobox", { name: "Planning for person" }));
-    await user.click(screen.getByRole("option", { name: "memenoboxdev" }));
+    await user.selectOptions(featurePerson, "memenoboxdev");
     expect(screen.queryByText("My feature")).not.toBeInTheDocument();
     expect(screen.getByText("Teammate feature")).toBeInTheDocument();
     expect(screen.queryByText("My task")).not.toBeInTheDocument();

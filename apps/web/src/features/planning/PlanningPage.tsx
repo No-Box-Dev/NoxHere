@@ -266,7 +266,7 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   return <>
     <div className="ticket-toolbar">
       <input aria-label={`Search ${mode === "board" ? "features" : mode}`} value={query} onChange={(event) => setQueries((current) => ({ ...current, [mode]: event.target.value }))} placeholder={`Search ${mode === "board" ? "features" : mode}…`} />
-      <label className="planning-person-picker"><span>Planning for</span><SearchableSelect ariaLabel="Planning for person" value={person} onChange={selectPerson} options={[{ value: allFeaturesPerson, label: "All" }, ...people.map((member) => ({ value: member, label: member === actor ? `${member} (you)` : member }))]} /></label>
+      <label className="planning-person-picker"><span>Planning for</span><select name="featurePerson" aria-label="Planning for person" value={person} onChange={(event) => selectPerson(event.target.value)}><option value={allFeaturesPerson}>All</option>{people.map((member) => <option value={member} key={member}>{member === actor ? `${member} (you)` : member}</option>)}</select></label>
       <select aria-label="Sort features" value={sort} onChange={(event) => setSort(event.target.value as "updated" | "title")}><option value="updated">Default</option><option value="title">Title A–Z</option></select>
       <span className="toolbar-spacer" />{mode === "board" ? <button type="button" className="button" disabled={productionCount === 0 || saving} onClick={completeProduction}>{saving ? "Moving…" : `Move production to completed${productionCount ? ` (${productionCount})` : ""}`}</button> : null}<button type="button" className="button primary-button" onClick={() => setAdding(true)}>New feature</button>
     </div>
