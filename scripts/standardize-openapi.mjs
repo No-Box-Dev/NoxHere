@@ -1117,6 +1117,7 @@ setJsonSuccessSchema("/api/v1/activity/release-notes-prompt", "get", "ApiRecord"
 setJsonSuccessSchema("/api/v1/llm-settings", "get", "ApiRecord");
 setJsonSuccessSchema("/api/v1/llm-settings", "put", "MutationReceipt");
 setJsonSuccessSchema("/api/v1/prs/close", "post", "MutationReceipt");
+setJsonSuccessSchema("/api/v1/prs/merge", "post", "MutationReceipt");
 setJsonSuccessSchema("/api/v1/features", "get", "FeatureList");
 setJsonSuccessSchema("/api/v1/features", "post", "Feature");
 setJsonSuccessSchema("/api/v1/features/{number}", "patch", "Feature");
@@ -1346,7 +1347,7 @@ function authenticationFor(operation) {
     "startConnection", "disconnectConnection", "assignSlackConnectionProject",
     "getSlackRouting", "patchSlackRouting", "testSlackRoute", "archiveProject",
     "restoreProject", "acknowledgeRepositories", "updateActor", "archiveSpec",
-    "restoreSpec", "closePullRequest", "getLlmSettings", "putLlmSettings",
+    "restoreSpec", "closePullRequest", "mergePullRequest", "getLlmSettings", "putLlmSettings",
     "createFeedbackSite", "updateFeedbackSite", "deleteFeedbackSite",
     "retryFeedbackDeliveries", "listTelemetrySources", "createTelemetrySource",
     "updateTelemetrySource", "deleteTelemetrySource", "createTelemetryKey",
@@ -1362,6 +1363,6 @@ function changeSafety(method, operationId) {
   if (operationId === "submitDeveloperFeedback") return "idempotent_with_key";
   if (["patchNoxServiceConfig", "updateFeedbackResolutionTemplate"].includes(operationId)) return "conditional_write";
   if (operationId === "ingestTelemetryEvent") return "idempotent_with_event_key";
-  if (method === "delete" || /disconnect|archive|close|revoke|delete/i.test(operationId)) return "destructive";
+  if (method === "delete" || /disconnect|archive|close|merge|revoke|delete/i.test(operationId)) return "destructive";
   return "write_not_safe_to_retry";
 }

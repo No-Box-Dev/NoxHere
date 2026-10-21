@@ -3,7 +3,7 @@ import { handleProviderIngress, providerIngressReadiness, type ProviderIngressEn
 
 function env(overrides: Partial<ProviderIngressEnv> = {}): ProviderIngressEnv {
   return {
-    DB: {} as D1Database,
+    DB: { prepare: vi.fn(() => ({ first: vi.fn(async () => null) })) } as unknown as D1Database,
     TASK_QUEUE: {} as Queue,
     ...overrides,
   };
@@ -15,7 +15,7 @@ function context(request: Request, overrides: Partial<ProviderIngressEnv> = {}) 
 
 describe("provider ingress boundary", () => {
   it("reports each provider configuration without exposing secret values", async () => {
-    const response = providerIngressReadiness(env({
+    const response = await providerIngressReadiness(env({
       ENCRYPTION_KEY: "encryption-secret",
       GITHUB_WEBHOOK_SECRET: "github-secret",
       POSTMARK_WEBHOOK_SECRET: "postmark-secret",
@@ -27,21 +27,32 @@ describe("provider ingress boundary", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     await expect(response.json()).resolves.toEqual({
-      service: "noxhere-connections",
+      contractVersion: 1,
+      kind: "readiness",
+      service: "connections",
       status: "ok",
-      dependency: "provider-ingress",
-      checks: { github: true, slack: true, postmark: true },
+      buildSha: "development",
+      checks: { database: true, github: true, slack: true, postmark: true },
     });
   });
 
   it("blocks readiness when any provider verification secret is missing", async () => {
-    const response = providerIngressReadiness(env({ ENCRYPTION_KEY: "configured" }));
+    const response = await providerIngressReadiness(env({ ENCRYPTION_KEY: "configured" }));
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({
-      status: "degraded",
+      status: "not_ready",
       checks: { github: false, slack: false, postmark: false },
     });
+  });
+
+  it("keeps liveness healthy when provider dependencies are unavailable", async () => {
+    const response = await handleProviderIngress(context(new Request(
+      "https://connections.internal/health/live",
+    ), { DB: { prepare: vi.fn(() => { throw new Error("offline"); }) } as unknown as D1Database }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ kind: "liveness", status: "ok" });
   });
 
   it("fails closed when Slack sends an event before its signing secret is configured", async () => {

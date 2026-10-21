@@ -32,7 +32,7 @@ public struct NoxHereOperation: Sendable, Equatable {
 }
 
 public enum NoxHereOperations {
-    public static let operationCount = 201
+    public static let operationCount = 202
     public static let all: [String: NoxHereOperation] = [
         "acknowledgeRepositories": .init(id: "acknowledgeRepositories", method: "POST", path: "/api/v1/repos/acknowledge", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "archiveProject": .init(id: "archiveProject", method: "POST", path: "/api/v1/projects/{projectId}/archive", resource: .workspace, changeSafety: .destructive, servers: []),
@@ -167,6 +167,7 @@ public enum NoxHereOperations {
         "listUsageCards": .init(id: "listUsageCards", method: "GET", path: "/api/v1/usage/sources/{sourceId}/cards", resource: .usage, changeSafety: .safeRead, servers: []),
         "listUsageKeys": .init(id: "listUsageKeys", method: "GET", path: "/api/v1/usage/sources/{sourceId}/keys", resource: .usage, changeSafety: .safeRead, servers: []),
         "listUsageSources": .init(id: "listUsageSources", method: "GET", path: "/api/v1/usage/sources", resource: .usage, changeSafety: .safeRead, servers: []),
+        "mergePullRequest": .init(id: "mergePullRequest", method: "POST", path: "/api/v1/prs/merge", resource: .activity, changeSafety: .destructive, servers: []),
         "patchNoxServiceConfig": .init(id: "patchNoxServiceConfig", method: "PATCH", path: "/api/v1/services/{service}/config", resource: .workspace, changeSafety: .conditionalWrite, servers: []),
         "patchSlackRouting": .init(id: "patchSlackRouting", method: "PATCH", path: "/api/v1/integrations/slack/routing", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),
         "pollNativeDeviceAuthorization": .init(id: "pollNativeDeviceAuthorization", method: "POST", path: "/api/v1/auth/native/device/poll", resource: .workspace, changeSafety: .writeNotSafeToRetry, servers: []),

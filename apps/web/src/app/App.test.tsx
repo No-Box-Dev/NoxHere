@@ -965,6 +965,21 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.queryByText("repo-guest")).not.toBeInTheDocument();
   });
 
+  it("keeps GitHub activity visible when Planning is temporarily unavailable", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith("/api/v1/features?state=all")) return json({ error: "Planning unavailable" }, 502);
+      return baseFetch(input, init);
+    });
+
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/current");
+
+    expect(await screen.findByText("JasperNoBoxDev")).toBeInTheDocument();
+    expect(screen.getByText("0 open items")).toBeInTheDocument();
+    expect(screen.queryByText("Activity is unavailable")).not.toBeInTheDocument();
+  });
+
   it("shows the native team Stats experience in the top-level Dashboard", async () => {
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/dashboard/overview");
@@ -1024,6 +1039,34 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByText("Ship player")).toBeInTheDocument();
     expect(screen.getByText("Fix player")).toBeInTheDocument();
     expect(screen.getByText("Player controls")).toBeInTheDocument();
+  });
+
+  it("confirms and submits an admin pull request merge", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/activity/current-summary") return json({
+        prs: [{ id: 1, repo: "playnist", number: 10, title: "Ship player", state: "open", author: "JasperNoBoxDev" }],
+        issues: [],
+        members: [{ login: "JasperNoBoxDev", avatar_url: "", kind: "human" }],
+        excludedMembers: [],
+      });
+      if (url === "/api/v1/prs/merge" && init?.method === "POST") {
+        return json({ ok: true, repo: "playnist", number: 10, state: "merged", method: "squash", sha: "merge-123" });
+      }
+      return baseFetch(input, init);
+    });
+    const user = userEvent.setup();
+    renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/current/jaspernoboxdev");
+
+    await user.click(await screen.findByRole("button", { name: "Merge" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Merge playnist #10?" });
+    await user.click(within(dialog).getByRole("button", { name: "Merge pull request" }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/v1/prs/merge", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ repo: "playnist", number: 10, method: "squash" }),
+    })));
   });
 
   it("renders merged activity without waiting for optional release notes", async () => {

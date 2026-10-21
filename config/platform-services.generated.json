@@ -13,6 +13,7 @@
       }
     ],
     "runWorkerFirst": [
+      "/assets/*",
       "/api/*",
       "/auth/github/callback",
       "/auth/email/*",
@@ -92,7 +93,8 @@
       "config": "services/connections/wrangler.jsonc",
       "productionName": "noxhere-connections",
       "stagingName": "noxhere-connections-staging",
-      "deployOrder": 0
+      "deployOrder": 0,
+      "releaseSha": true
     },
     {
       "id": "telemetry",
@@ -107,7 +109,8 @@
       "config": "services/activity/wrangler.toml",
       "productionName": "noxhere-activity",
       "stagingName": "noxhere-activity-staging",
-      "deployOrder": 2
+      "deployOrder": 2,
+      "releaseSha": true
     },
     {
       "id": "planning",
@@ -174,7 +177,8 @@
         "PLANNING_SERVICE": "noxhere-planning",
         "TELEMETRY_RESPONSE": "noxhere-telemetry",
         "TELEMETRY_INGEST": "noxhere-telemetry",
-        "ACTIVITY_RESPONSE": "noxhere-activity"
+        "ACTIVITY_RESPONSE": "noxhere-activity",
+        "BACKGROUND_SERVICE": "noxhere-orchestrator"
       },
       "staging": {
         "FEEDBACK_RESPONSE": "noxhere-feedback-staging",
@@ -183,7 +187,8 @@
         "PLANNING_SERVICE": "noxhere-planning-staging",
         "TELEMETRY_RESPONSE": "noxhere-telemetry-staging",
         "TELEMETRY_INGEST": "noxhere-telemetry-staging",
-        "ACTIVITY_RESPONSE": "noxhere-activity-staging"
+        "ACTIVITY_RESPONSE": "noxhere-activity-staging",
+        "BACKGROUND_SERVICE": "noxhere-orchestrator-staging"
       }
     }
   }

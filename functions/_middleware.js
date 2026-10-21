@@ -27,7 +27,9 @@ export async function onRequest(context) {
 
   // These routes authenticate themselves and never consume a NoxHere user
   // credential. All other API traffic must carry a signed NoxHere assertion.
-  if (url.pathname === "/api/health/live" || url.pathname === "/api/health/ready") {
+  if (url.pathname === "/api/health/live"
+      || url.pathname === "/api/health/ready"
+      || url.pathname === "/api/health/contracts") {
     return nextApiResponse(context, url);
   }
   const hasInternalAssertion = Boolean(

@@ -1,9 +1,10 @@
 import { useCallback, useMemo } from "react";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
 import type { GithubMember, PlanningFeatureRecord } from "../../api/contracts";
-import { getRawJson } from "../../api/http";
+import { getRawJson, postRawJson } from "../../api/http";
 import { platformApi } from "../../api/platform";
+import { useConfirmDialog } from "../../components/ConfirmDialog";
 import { ListRow } from "../../components/ListRow";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
@@ -32,7 +33,12 @@ export default function ActivityPage() {
     queryFn: async ({ signal }) => {
       const [summary, featureRecords] = await Promise.all([
         getRawJson("/api/v1/activity/current-summary", signal, scope) as Promise<CurrentSummary>,
-        planningEnabled ? platformApi.planningFeatures(organizationId, projectId, signal) : Promise.resolve([]),
+        // Planning enriches the Current view, but it is not required to show
+        // GitHub PRs and issues. Keep the core workload usable if that
+        // capability is temporarily unavailable.
+        planningEnabled
+          ? platformApi.planningFeatures(organizationId, projectId, signal).catch(() => [])
+          : Promise.resolve([]),
       ]);
       const features = (featureRecords as PlanningFeatureRecord[]).filter((feature) => feature.state === "open").map((feature) => ({
         id: Number(feature.id ?? feature.number), repo: project?.name ?? "Planning", number: feature.number, title: feature.title, state: feature.state,
@@ -82,13 +88,13 @@ export default function ActivityPage() {
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
     {(!isFeedStream && !isLegacyDashboard && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}
     {(!isFeedStream && !isLegacyDashboard && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Activity is unavailable" detail="The project activity API could not be reached. No placeholder activity is being shown." /> : null}
-    {query.data && view === "current" ? <Current data={{ ...(query.data as CurrentResult), members }} base={base} person={person} /> : null}
+    {query.data && view === "current" ? <Current data={{ ...(query.data as CurrentResult), members }} base={base} person={person} scope={scope} isAdmin={bootstrap.actor.isAdmin} /> : null}
     {stream.data && isFeedStream ? <Events events={streamEvents} releaseNotes={releaseNotes.data?.events ?? []} label={view} hasNextPage={stream.hasNextPage} loadingMore={stream.isFetchingNextPage} onLoadMore={() => void stream.fetchNextPage()} /> : null}
   </div></section>;
 }
 
 function Empty({ title, detail }: { title: string; detail: string }) { return <div className="empty-view" role="status"><h2>{title}</h2><p>{detail}</p></div>; }
-function Current({ data, base, person }: { data: CurrentResult; base: string; person?: string }) {
+function Current({ data, base, person, scope, isAdmin }: { data: CurrentResult; base: string; person?: string; scope: { organizationId: string; projectId: string }; isAdmin: boolean }) {
   const excluded = useMemo(() => new Set(data.excludedMembers.map(normalizeLogin)), [data.excludedMembers]);
   const people = useMemo(() => data.members.filter((member) => member.kind === "human" && !excluded.has(normalizeLogin(member.login))).map((member) => ({
     member,
@@ -98,7 +104,7 @@ function Current({ data, base, person }: { data: CurrentResult; base: string; pe
   })).sort((a, b) => workloadTotal(b) - workloadTotal(a) || a.member.login.localeCompare(b.member.login)), [data, excluded]);
   if (person) {
     const selected = people.find((entry) => normalizeLogin(entry.member.login) === normalizeLogin(person));
-    return selected ? <PersonWork person={selected} base={base} planningEnabled={data.planningEnabled} /> : <Empty title="Person not found" detail="This person is not tracked for the selected project." />;
+    return selected ? <PersonWork person={selected} base={base} planningEnabled={data.planningEnabled} scope={scope} isAdmin={isAdmin} /> : <Empty title="Person not found" detail="This person is not tracked for the selected project." />;
   }
   if (!people.length) return <Empty title="No tracked people" detail="Track project members in Settings to show their current workload here." />;
   return <div className="list-surface feed-people">{people.map((entry) => <Link className="list-row feed-person-row" key={entry.member.login} to={`${base}/current/${encodeURIComponent(entry.member.login)}`}>
@@ -108,15 +114,40 @@ function Current({ data, base, person }: { data: CurrentResult; base: string; pe
   </Link>)}</div>;
 }
 function Group({ title, count, children }: { title: string; count: number; children: React.ReactNode }) { return <section className="feed-group"><header><h3>{title}</h3><span>{count}</span></header><div className="list-surface">{children}</div></section>; }
-function WorkRow({ item, kind }: { item: WorkItem; kind: "PR" | "Issue" | "Feature" }) { return <ListRow symbol={kind === "PR" ? "↳" : kind === "Feature" ? "F" : "○"} title={item.title} description={`${item.repo} · #${item.number}`} meta={<>{item.html_url ? <a className="feed-item-link" href={item.html_url} target="_blank" rel="noreferrer">Open ↗</a> : null}<StatusTag tone={item.draft ? "neutral" : "positive"}>{item.draft ? "Draft" : kind}</StatusTag></>} />; }
+function WorkRow({ item, kind, scope, isAdmin }: { item: WorkItem; kind: "PR" | "Issue" | "Feature"; scope: { organizationId: string; projectId: string }; isAdmin: boolean }) { return <ListRow symbol={kind === "PR" ? "↳" : kind === "Feature" ? "F" : "○"} title={item.title} description={`${item.repo} · #${item.number}`} meta={<>{item.html_url ? <a className="feed-item-link" href={item.html_url} target="_blank" rel="noreferrer">Open ↗</a> : null}{kind === "PR" && isAdmin ? <PullRequestActions item={item} scope={scope} /> : null}<StatusTag tone={item.draft ? "neutral" : "positive"}>{item.draft ? "Draft" : kind}</StatusTag></>} />; }
 
 type PersonWorkload = { member: GithubMember; prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[] };
-function PersonWork({ person, base, planningEnabled }: { person: PersonWorkload; base: string; planningEnabled: boolean }) {
+function PersonWork({ person, base, planningEnabled, scope, isAdmin }: { person: PersonWorkload; base: string; planningEnabled: boolean; scope: { organizationId: string; projectId: string }; isAdmin: boolean }) {
   return <div className="feed-person-page"><Link className="feed-back-link" to={`${base}/current`}>← All people</Link><header><span className="feed-person-avatar large">{person.member.avatar_url ? <img src={person.member.avatar_url} alt="" /> : initials(person.member.login)}</span><div><h2>{person.member.login}</h2><p>{workloadTotal(person)} open items assigned</p></div></header>
-    <Group title="Open pull requests" count={person.prs.length}>{person.prs.length ? person.prs.map((item) => <WorkRow key={`pr-${item.id}`} item={item} kind="PR" />) : <p className="feed-empty-group">No open pull requests.</p>}</Group>
-    <Group title="Open issues" count={person.issues.length}>{person.issues.length ? person.issues.map((item) => <WorkRow key={`issue-${item.id}`} item={item} kind="Issue" />) : <p className="feed-empty-group">No open issues.</p>}</Group>
-    {planningEnabled ? <Group title="Open features" count={person.features.length}>{person.features.length ? person.features.map((item) => <WorkRow key={`feature-${item.id}`} item={item} kind="Feature" />) : <p className="feed-empty-group">No open features.</p>}</Group> : null}
+    <Group title="Open pull requests" count={person.prs.length}>{person.prs.length ? person.prs.map((item) => <WorkRow key={`pr-${item.id}`} item={item} kind="PR" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No open pull requests.</p>}</Group>
+    <Group title="Open issues" count={person.issues.length}>{person.issues.length ? person.issues.map((item) => <WorkRow key={`issue-${item.id}`} item={item} kind="Issue" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No open issues.</p>}</Group>
+    {planningEnabled ? <Group title="Open features" count={person.features.length}>{person.features.length ? person.features.map((item) => <WorkRow key={`feature-${item.id}`} item={item} kind="Feature" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No open features.</p>}</Group> : null}
   </div>;
+}
+
+function PullRequestActions({ item, scope }: { item: WorkItem; scope: { organizationId: string; projectId: string } }) {
+  const queryClient = useQueryClient();
+  const { confirm, confirmation } = useConfirmDialog();
+  const mutation = useMutation({
+    mutationFn: ({ action }: { action: "close" | "merge" }) => action === "merge"
+      ? postRawJson("/api/v1/prs/merge", { repo: item.repo, number: item.number, method: "squash" }, scope)
+      : postRawJson("/api/v1/prs/close", { repo: item.repo, number: item.number }, scope),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["activity", scope.organizationId, scope.projectId] }),
+  });
+  const act = (action: "close" | "merge") => void confirm({
+    title: `${action === "merge" ? "Merge" : "Close"} ${item.repo} #${item.number}?`,
+    detail: action === "merge"
+      ? "NoxHere will squash-merge the current head through the GitHub App. GitHub branch rules and required checks still apply."
+      : "This closes the pull request without merging it.",
+    confirmLabel: action === "merge" ? "Merge pull request" : "Close pull request",
+    destructive: action === "close",
+  }).then((confirmed) => { if (confirmed) mutation.mutate({ action }); });
+  return <>
+    <button type="button" className="mini-button primary" disabled={mutation.isPending} onClick={() => act("merge")}>{mutation.isPending ? "Working…" : "Merge"}</button>
+    <button type="button" className="mini-button destructive" disabled={mutation.isPending} onClick={() => act("close")}>Close</button>
+    {mutation.error ? <small role="alert">{mutation.error.message}</small> : null}
+    {confirmation}
+  </>;
 }
 
 function normalizeLogin(value?: string) { return (value ?? "").trim().toLowerCase(); }

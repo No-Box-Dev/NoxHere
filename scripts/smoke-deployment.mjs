@@ -20,7 +20,12 @@ async function ready() {
 async function spotReady() {
   const response = await fetch(new URL("/health", spotOrigin), { headers: { "Cache-Control": "no-cache" } });
   const body = await response.json();
-  return response.ok && body?.owner === "noxhere" && body?.buildSha === expectedSha;
+  return response.ok
+    && body?.contractVersion === 1
+    && body?.kind === "readiness"
+    && body?.service === "feedback"
+    && body?.status === "ok"
+    && body?.buildSha === expectedSha;
 }
 
 async function publicRoutesReady() {
@@ -48,6 +53,24 @@ async function publicRoutesReady() {
       || providerIngressBody?.checks?.slack !== true
       || providerIngressBody?.checks?.postmark !== true) return false;
 
+  const live = await fetch(smokeUrl("/__noxhere/health/live"), { headers });
+  const liveBody = await live.json().catch(() => null);
+  if (!live.ok
+      || liveBody?.kind !== "liveness"
+      || liveBody?.service !== "gateway"
+      || liveBody?.buildSha !== expectedSha) return false;
+
+  const contracts = await fetch(smokeUrl("/__noxhere/health/contracts"), { headers });
+  const contractsBody = await contracts.json().catch(() => null);
+  if (!contracts.ok
+      || contractsBody?.kind !== "health-contracts"
+      || contractsBody?.buildSha !== expectedSha
+      || !Array.isArray(contractsBody?.services)
+      || contractsBody.services.length !== 8
+      || contractsBody.services.some((service) => service.live !== true
+        || service.ready !== true
+        || service.buildSha !== expectedSha)) return false;
+
   const profile = await fetch(smokeUrl("/api/auth/profile"), { headers });
   const profileBody = await profile.json().catch(() => null);
   if (profile.status !== 401
@@ -73,6 +96,14 @@ async function publicRoutesReady() {
     && Boolean(entry.headers.get("content-type")?.includes("javascript"))
     && entryPrefix !== "<";
   if (!assetsReady) return false;
+
+  // A stale tab may ask for a hashed chunk from the previous release. The
+  // asset binding uses an SPA fallback, so explicitly prove that an absent
+  // module is a non-cacheable 404 rather than index.html with HTTP 200.
+  const missingModule = await fetch(smokeUrl("/assets/__noxhere_missing_build_chunk__.js"), { headers });
+  if (missingModule.status !== 404
+      || missingModule.headers.get("content-type")?.includes("text/html")
+      || missingModule.headers.get("x-noxhere-asset-miss") !== "1") return false;
 
   // Keep every shipped native client able to begin GitHub device login. An
   // older gateway deployment once accepted the CLI while returning 400 to

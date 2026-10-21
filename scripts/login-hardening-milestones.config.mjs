@@ -1,4 +1,4 @@
-export const activeMilestone = "M5";
+export const activeMilestone = "M7";
 
 export const milestones = [
   {
@@ -164,15 +164,46 @@ export const milestones = [
     id: "M6",
     name: "Safe promotion and rollback",
     objective: "Require a verified staging release and retain a tested rollback target before production promotion.",
-    requiredPaths: ["scripts/promote-verified-release.mjs"],
-    gates: [{ name: "Promotion and rollback contract", command: "node", args: ["scripts/promote-verified-release.mjs", "--check"] }],
+    requiredPaths: [
+      "scripts/promote-verified-release.mjs",
+      "scripts/promote-verified-release.test.js",
+      ".github/workflows/deploy-pages.yml",
+    ],
+    gates: [
+      { name: "Promotion workflow contract", command: "node", args: ["scripts/promote-verified-release.mjs", "--check"] },
+      { name: "Promotion receipt and rollback behavior", command: "npx", args: ["vitest", "run", "scripts/promote-verified-release.test.js"] },
+    ],
   },
   {
     id: "M7",
     name: "Split liveness and readiness",
     objective: "Distinguish process liveness from dependency readiness across every deployed service.",
-    requiredPaths: ["scripts/check-health-contracts.mjs"],
-    gates: [{ name: "Health contract coverage", command: "node", args: ["scripts/check-health-contracts.mjs"] }],
+    requiredPaths: [
+      "packages/contracts/health.ts",
+      "packages/contracts/health.test.ts",
+      "functions/api/health/contracts.ts",
+      "scripts/check-health-contracts.mjs",
+      "scripts/check-health-contracts.test.js",
+      "services/activity/src/health.test.js",
+      "services/planning/src/__tests__/health.test.ts",
+      "services/telemetry/src/__tests__/health.test.ts",
+      ".github/workflows/deploy-pages.yml",
+    ],
+    gates: [
+      { name: "Health contract coverage", command: "node", args: ["scripts/check-health-contracts.mjs"] },
+      {
+        name: "Shared and boundary health behavior",
+        command: "npx",
+        args: ["vitest", "run", "packages/contracts/health.test.ts", "scripts/check-health-contracts.test.js", "functions/api/__tests__/health.test.ts", "services/connections/src/provider-ingress.test.ts", "services/scheduler/src/__tests__/index.test.js", "scripts/promote-verified-release.test.js"],
+      },
+      { name: "Gateway health aggregation", command: "npm", args: ["--prefix", "services/gateway", "test", "--", "src/index.test.ts"] },
+      { name: "Telemetry health behavior", command: "npm", args: ["--prefix", "services/telemetry", "test", "--", "src/__tests__/health.test.ts"] },
+      { name: "Activity health behavior", command: "npm", args: ["--prefix", "services/activity", "test", "--", "src/health.test.js"] },
+      { name: "Planning health behavior", command: "npm", args: ["--prefix", "services/planning", "test", "--", "src/__tests__/health.test.ts"] },
+      { name: "Feedback health behavior", command: "npm", args: ["--prefix", "services/feedback", "test", "--", "src/index.test.ts"] },
+      { name: "Health contract type safety", command: "npm", args: ["run", "login:milestones:typecheck"] },
+      { name: "Gateway health build", command: "npm", args: ["run", "login:milestones:gateway-check"] },
+    ],
   },
   {
     id: "M8",

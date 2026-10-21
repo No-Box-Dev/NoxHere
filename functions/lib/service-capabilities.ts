@@ -186,6 +186,7 @@ export const SERVICE_DEFINITIONS: ServiceDefinition[] = [
         { id: "get_github_details", method: "GET", path: "/api/v1/github/details", authentication: "member", description: "Read live details for a tracked issue or pull request." },
         { id: "get_pull_request_comments", method: "GET", path: "/api/v1/github/comments", authentication: "member", description: "Read comments for a tracked pull request." },
         { id: "close_pull_request", method: "POST", path: "/api/v1/prs/close", authentication: "admin", description: "Close a pull request through GitHub." },
+        { id: "merge_pull_request", method: "POST", path: "/api/v1/prs/merge", authentication: "admin", description: "Merge a pull request through GitHub while enforcing repository rules." },
       ] },
       { id: "activity", name: "Engineering activity", description: "Browse normalized project and engineer activity over time.", access: "member", requires: ["github"], operations: [
         { id: "get_engineer_stats", method: "GET", path: "/api/v1/engineer-stats", authentication: "member", description: "Read current work counts by engineer." },

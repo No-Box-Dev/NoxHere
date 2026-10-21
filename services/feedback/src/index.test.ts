@@ -71,15 +71,19 @@ beforeAll(async () => {
 
 describe("public capture Worker", () => {
   it("identifies NoxHere as the sole production owner", async () => {
-    const response = await SELF.fetch("https://capture.test/health");
+    const live = await SELF.fetch("https://capture.test/health/live");
+    expect(live.status).toBe(200);
+    expect(await live.json()).toMatchObject({ kind: "liveness", service: "feedback", status: "ok" });
+
+    const response = await SELF.fetch("https://capture.test/health/ready");
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({
-      status: "ok",
-      service: "noxhere-feedback",
-      owner: "noxhere",
-      plane: "public-capture",
       contractVersion: 1,
+      kind: "readiness",
+      status: "ok",
+      service: "feedback",
       buildSha: "development",
+      checks: { database: true, assets: true, taskQueue: true },
     });
   });
 

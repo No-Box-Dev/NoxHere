@@ -76,9 +76,10 @@ export async function getInstallationToken(env, installationId) {
   // GitHub App credentials are owned by the Connections capability. Other
   // Workers obtain short-lived installation credentials over the private
   // service binding instead of duplicating the long-lived private key.
+  const connections = env.CONNECTIONS ?? env.NOXHERE;
   if ((!env.GITHUB_APP_ID || !env.GITHUB_APP_PRIVATE_KEY)
-      && typeof env.NOXHERE?.getGitHubInstallationToken === "function") {
-    const token = await env.NOXHERE.getGitHubInstallationToken(installationId);
+      && typeof connections?.getGitHubInstallationToken === "function") {
+    const token = await connections.getGitHubInstallationToken(installationId);
     if (typeof token !== "string" || !token) throw new Error("Connections returned an invalid GitHub installation token");
     return token;
   }

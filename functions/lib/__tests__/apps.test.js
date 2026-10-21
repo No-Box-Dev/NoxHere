@@ -29,6 +29,7 @@ describe("server capability routing", () => {
     expect(appForApiPath("/api/issues")).toBe("activity");
     expect(appForApiPath("/api/v1/issues")).toBe("activity");
     expect(appForApiPath("/api/v1/prs/close")).toBe("activity");
+    expect(appForApiPath("/api/v1/prs/merge")).toBe("activity");
     expect(appForApiPath("/api/v1/engineer-activity")).toBe("activity");
     expect(appForApiPath("/api/v1/llm-settings")).toBe("activity");
     expect(appForApiPath("/api/feedback/sites")).toBe("feedback");

@@ -2177,6 +2177,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/prs/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge a pull request through GitHub
+         * @description Merge the current pull-request head through GitHub while preserving repository rules and required checks.
+         */
+        post: operations["mergePullRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/prs/{repo}/{number}": {
         parameters: {
             query?: never;
@@ -8682,6 +8702,46 @@ export interface operations {
         };
         responses: {
             /** @description Pull request closed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationReceipt"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    mergePullRequest: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default squash
+                     * @enum {string}
+                     */
+                    method?: "merge" | "squash" | "rebase";
+                    number: number;
+                    repo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pull request merged */
             200: {
                 headers: {
                     [name: string]: unknown;

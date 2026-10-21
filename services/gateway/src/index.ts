@@ -1,6 +1,7 @@
 import { createTelemetry } from "../../../packages/sdk/src/telemetry/server.js";
 import { apiError } from "./control/http";
 import { matchesGatewayRoute, PLATFORM_GATEWAY_MANIFEST } from "./generated/platform-service-manifest";
+import { livenessResponse, readinessResponse } from "../../../packages/contracts/health";
 
 type BoundService = {
   fetch(request: Request): Promise<Response>;
@@ -19,6 +20,7 @@ export interface PlatformServices {
     guestEmail?: Omit<import("./control/guests").GuestEnv, "email">;
   };
   background?: (work: Promise<unknown>) => void;
+  buildSha?: string;
 }
 
 const API_PREFIX = "/api/";
@@ -28,6 +30,9 @@ const [
   IDENTITY_BOUNDARY_HEALTH_PATH,
   PROVIDER_INGRESS_HEALTH_PATH,
 ] = PLATFORM_GATEWAY_MANIFEST.routeGroups.health.exact;
+const GATEWAY_LIVE_PATH = "/__noxhere/health/live";
+const GATEWAY_READY_PATH = "/__noxhere/health/ready";
+const HEALTH_CONTRACTS_PATH = "/__noxhere/health/contracts";
 
 function gatewayResponse(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -90,6 +95,27 @@ export async function handleRequest(
   services: PlatformServices,
 ): Promise<Response> {
   const url = new URL(request.url);
+
+  if (url.pathname === GATEWAY_LIVE_PATH) {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+    return livenessResponse("gateway", services.buildSha);
+  }
+
+  if (url.pathname === GATEWAY_READY_PATH) {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+    return gatewayReadiness(request, services);
+  }
+
+  if (url.pathname === HEALTH_CONTRACTS_PATH) {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+    return gatewayHealthContracts(request, services);
+  }
 
   if (url.pathname === HEALTH_PATH) {
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -362,7 +388,110 @@ export async function handleRequest(
       : unavailableResponse();
   }
 
-  return services.assets.fetch(request);
+  const asset = await services.assets.fetch(request);
+  if (url.pathname.startsWith("/assets/")
+      && asset.headers.get("Content-Type")?.toLowerCase().includes("text/html")) {
+    // The SPA fallback is correct for application routes, but a missing
+    // hashed module must never be returned as index.html. Browsers otherwise
+    // report an opaque import failure and can cache the invalid response.
+    return new Response("Asset not found", {
+      status: 404,
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+        "X-NoxHere-Asset-Miss": "1",
+      },
+    });
+  }
+  return asset;
+}
+
+async function gatewayReadiness(request: Request, services: PlatformServices): Promise<Response> {
+  let controlDatabase = false;
+  let coreApi = false;
+  try {
+    await services.control?.db.prepare("SELECT id FROM orgs LIMIT 1").first();
+    controlDatabase = Boolean(services.control);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "gateway_control_readiness_failed",
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
+  try {
+    const target = new URL("/api/health/ready", request.url);
+    const response = await services.connector.fetch(new Request(target, { headers: { "Cache-Control": "no-cache" } }));
+    const body = await response.json().catch(() => ({})) as {
+      kind?: unknown;
+      status?: unknown;
+      buildSha?: unknown;
+    };
+    coreApi = response.ok
+      && body.kind === "readiness"
+      && body.status === "ok"
+      && body.buildSha === (services.buildSha ?? "development");
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "gateway_core_readiness_failed",
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
+  return readinessResponse("gateway", services.buildSha, { controlDatabase, coreApi });
+}
+
+async function gatewayHealthContracts(request: Request, services: PlatformServices): Promise<Response> {
+  const buildSha = services.buildSha ?? "development";
+  const gatewayReady = await gatewayReadiness(request, services);
+  let downstream: {
+    contractVersion?: unknown;
+    kind?: unknown;
+    status?: unknown;
+    services?: unknown;
+    buildSha?: unknown;
+  } = {};
+  let downstreamOk = false;
+  try {
+    const target = new URL("/api/health/contracts", request.url);
+    const response = await services.connector.fetch(new Request(target, { headers: { "Cache-Control": "no-cache" } }));
+    downstream = await response.json<typeof downstream>().catch(() => ({}));
+    downstreamOk = response.ok
+      && downstream.contractVersion === 1
+      && downstream.kind === "health-contracts"
+      && downstream.status === "ok"
+      && downstream.buildSha === buildSha
+      && validDownstreamHealthContracts(downstream.services, buildSha);
+  } catch {
+    downstreamOk = false;
+  }
+  const serviceContracts = Array.isArray(downstream.services) ? downstream.services : [];
+  const all = [
+    { service: "gateway", live: true, ready: gatewayReady.ok, buildSha },
+    ...serviceContracts,
+  ];
+  const ready = downstreamOk && gatewayReady.ok && all.length === 8;
+  return Response.json({
+    contractVersion: 1,
+    kind: "health-contracts",
+    status: ready ? "ok" : "not_ready",
+    buildSha,
+    services: all,
+  }, {
+    status: ready ? 200 : 503,
+    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+  });
+}
+
+function validDownstreamHealthContracts(value: unknown, buildSha: string): boolean {
+  const expected = new Set(["connections", "telemetry", "activity", "planning", "feedback", "core-api", "scheduler"]);
+  if (!Array.isArray(value) || value.length !== expected.size) return false;
+  for (const contract of value) {
+    if (!contract || typeof contract !== "object") return false;
+    const item = contract as Record<string, unknown>;
+    if (typeof item.service !== "string" || !expected.delete(item.service)
+      || item.live !== true || item.ready !== true || item.buildSha !== buildSha) return false;
+  }
+  return expected.size === 0;
 }
 
 async function privateBoundaryHealth(request: Request, services: PlatformServices): Promise<Response> {
@@ -572,6 +701,7 @@ export default {
           },
         },
         background: (work) => execution.waitUntil(work),
+        buildSha: runtimeEnv.BUILD_SHA,
       });
       if (response.status >= 500 && shouldReportGatewayFailure(url.pathname)) {
         execution.waitUntil(reportGatewayFailure(runtimeEnv, request, null, response.status, correlationId));
