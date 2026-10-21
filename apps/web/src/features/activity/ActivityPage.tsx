@@ -129,11 +129,9 @@ function PullRequestActions({ item, scope }: { item: WorkItem; scope: { organiza
   const queryClient = useQueryClient();
   const { confirm, confirmation } = useConfirmDialog();
   const mutation = useMutation({
-    mutationFn: ({ action }: { action: "close" | "merge" }) => postRawJson(`/api/v1/prs/${action}`, {
-      repo: item.repo,
-      number: item.number,
-      ...(action === "merge" ? { method: "squash" } : {}),
-    }, scope),
+    mutationFn: ({ action }: { action: "close" | "merge" }) => action === "merge"
+      ? postRawJson("/api/v1/prs/merge", { repo: item.repo, number: item.number, method: "squash" }, scope)
+      : postRawJson("/api/v1/prs/close", { repo: item.repo, number: item.number }, scope),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["activity", scope.organizationId, scope.projectId] }),
   });
   const act = (action: "close" | "merge") => void confirm({
