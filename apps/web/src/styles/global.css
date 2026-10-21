@@ -934,6 +934,7 @@ button.list-row:hover { background: var(--service-soft); }
   .stage-editor-row > span { display: none; }
   .list-row { grid-template-columns: 28px minmax(0, 1fr); }
   .list-meta { grid-column: 2; justify-content: flex-start; flex-wrap: wrap; }
+  .feed-person-counts { grid-column: 2; justify-content: flex-start; flex-wrap: wrap; }
   .slack-connection-row { grid-template-columns: 32px minmax(0, 1fr); }
   .slack-connection-controls { max-width: none; }
   .ticket-backlog-row, .ticket-priority-row { grid-template-columns: minmax(0, 1fr); }

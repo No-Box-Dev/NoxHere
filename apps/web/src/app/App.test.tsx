@@ -1032,7 +1032,10 @@ describe("NoxHere API-backed platform", () => {
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === "/api/v1/activity/current-summary") return json({
-        prs: [{ id: 1, repo: "playnist", number: 10, title: "Ship player", state: "open", author: "JasperNoBoxDev" }],
+        prs: [
+          { id: 1, repo: "playnist", number: 10, title: "Ship player", state: "open", author: "JasperNoBoxDev", draft: false },
+          { id: 4, repo: "playnist", number: 13, title: "Try player controls", state: "open", author: "JasperNoBoxDev", draft: true },
+        ],
         issues: [{ id: 2, repo: "playnist", number: 11, title: "Fix player", state: "open", assignees: [{ login: "JasperNoBoxDev" }] }],
         members: [{ login: "JasperNoBoxDev", avatar_url: "", kind: "human" }],
         excludedMembers: [],
@@ -1042,10 +1045,15 @@ describe("NoxHere API-backed platform", () => {
     });
     const user = userEvent.setup();
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/current");
-    expect(await screen.findByText("3 open items")).toBeInTheDocument();
+    expect(await screen.findByText("4 open items")).toBeInTheDocument();
+    expect(screen.getByLabelText("1 open PR")).toBeInTheDocument();
+    expect(screen.getByLabelText("1 draft")).toBeInTheDocument();
     await user.click(screen.getByText("JasperNoBoxDev"));
     expect(await screen.findByRole("heading", { name: "JasperNoBoxDev" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Open pull requests" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Draft pull requests" })).toBeInTheDocument();
     expect(screen.getByText("Ship player")).toBeInTheDocument();
+    expect(screen.getByText("Try player controls")).toBeInTheDocument();
     expect(screen.getByText("Fix player")).toBeInTheDocument();
     expect(screen.getByText("Player controls")).toBeInTheDocument();
   });

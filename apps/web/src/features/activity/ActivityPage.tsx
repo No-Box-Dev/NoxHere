@@ -97,12 +97,15 @@ export default function ActivityPage() {
 function Empty({ title, detail }: { title: string; detail: string }) { return <div className="empty-view" role="status"><h2>{title}</h2><p>{detail}</p></div>; }
 function Current({ data, base, person, scope, isAdmin }: { data: CurrentResult; base: string; person?: string; scope: { organizationId: string; projectId: string }; isAdmin: boolean }) {
   const excluded = useMemo(() => new Set(data.excludedMembers.map(normalizeLogin)), [data.excludedMembers]);
-  const people = useMemo(() => data.members.filter((member) => member.kind === "human" && !excluded.has(normalizeLogin(member.login))).map((member) => ({
-    member,
-    prs: data.prs.filter((item) => normalizeLogin(item.author) === normalizeLogin(member.login)),
-    issues: data.issues.filter((item) => assignedTo(item, member.login)),
-    features: data.planningEnabled ? data.features.filter((item) => assignedTo(item, member.login)) : [],
-  })).sort((a, b) => workloadTotal(b) - workloadTotal(a) || a.member.login.localeCompare(b.member.login)), [data, excluded]);
+  const people = useMemo(() => data.members.filter((member) => member.kind === "human" && !excluded.has(normalizeLogin(member.login))).map((member) => {
+    const prGroups = splitPullRequests(data.prs, member.login);
+    return {
+      member,
+      ...prGroups,
+      issues: data.issues.filter((item) => assignedTo(item, member.login)),
+      features: data.planningEnabled ? data.features.filter((item) => assignedTo(item, member.login)) : [],
+    };
+  }).sort((a, b) => workloadTotal(b) - workloadTotal(a) || a.member.login.localeCompare(b.member.login)), [data, excluded]);
   if (person) {
     const selected = people.find((entry) => normalizeLogin(entry.member.login) === normalizeLogin(person));
     return selected ? <PersonWork person={selected} base={base} planningEnabled={data.planningEnabled} scope={scope} isAdmin={isAdmin} /> : <Empty title="Person not found" detail="This person is not tracked for the selected project." />;
@@ -111,16 +114,18 @@ function Current({ data, base, person, scope, isAdmin }: { data: CurrentResult; 
   return <div className="list-surface feed-people">{people.map((entry) => <Link className="list-row feed-person-row" key={entry.member.login} to={`${base}/current/${encodeURIComponent(entry.member.login)}`}>
     <span className="feed-person-avatar">{entry.member.avatar_url ? <img src={entry.member.avatar_url} alt="" loading="lazy" /> : initials(entry.member.login)}</span>
     <span className="list-copy"><b>{entry.member.login}</b><small>{workloadTotal(entry)} open items</small></span>
-    <span className="feed-person-counts"><span><b>{entry.prs.length}</b> PRs</span><span><b>{entry.issues.length}</b> issues</span>{data.planningEnabled ? <span><b>{entry.features.length}</b> features</span> : null}<i aria-hidden="true">→</i></span>
+    <span className="feed-person-counts"><CountBadge count={entry.openPrs.length} singular="open PR" plural="open PRs" /><CountBadge count={entry.drafts.length} singular="draft" plural="drafts" /><CountBadge count={entry.issues.length} singular="issue" plural="issues" />{data.planningEnabled ? <CountBadge count={entry.features.length} singular="feature" plural="features" /> : null}<i aria-hidden="true">→</i></span>
   </Link>)}</div>;
 }
+function CountBadge({ count, singular, plural }: { count: number; singular: string; plural: string }) { const label = count === 1 ? singular : plural; return <span aria-label={`${count} ${label}`}><b>{count}</b> {label}</span>; }
 function Group({ title, count, children }: { title: string; count: number; children: React.ReactNode }) { return <section className="feed-group"><header><h3>{title}</h3><span>{count}</span></header><div className="list-surface">{children}</div></section>; }
 function WorkRow({ item, kind, scope, isAdmin }: { item: WorkItem; kind: "PR" | "Issue" | "Feature"; scope: { organizationId: string; projectId: string }; isAdmin: boolean }) { return <ListRow symbol={kind === "PR" ? "↳" : kind === "Feature" ? "F" : "○"} title={item.title} description={`${item.repo} · #${item.number}`} meta={<>{item.html_url ? <a className="feed-item-link" href={item.html_url} target="_blank" rel="noreferrer">Open ↗</a> : null}{kind === "PR" && isAdmin ? <PullRequestActions item={item} scope={scope} /> : null}<StatusTag tone={item.draft ? "neutral" : "positive"}>{item.draft ? "Draft" : kind}</StatusTag></>} />; }
 
-type PersonWorkload = { member: GithubMember; prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[] };
+type PersonWorkload = { member: GithubMember; openPrs: WorkItem[]; drafts: WorkItem[]; issues: WorkItem[]; features: WorkItem[] };
 function PersonWork({ person, base, planningEnabled, scope, isAdmin }: { person: PersonWorkload; base: string; planningEnabled: boolean; scope: { organizationId: string; projectId: string }; isAdmin: boolean }) {
   return <div className="feed-person-page"><Link className="feed-back-link" to={`${base}/current`}>← All people</Link><header><span className="feed-person-avatar large">{person.member.avatar_url ? <img src={person.member.avatar_url} alt="" /> : initials(person.member.login)}</span><div><h2>{person.member.login}</h2><p>{workloadTotal(person)} open items assigned</p></div></header>
-    <Group title="Open pull requests" count={person.prs.length}>{person.prs.length ? person.prs.map((item) => <WorkRow key={`pr-${item.id}`} item={item} kind="PR" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No open pull requests.</p>}</Group>
+    <Group title="Open pull requests" count={person.openPrs.length}>{person.openPrs.length ? person.openPrs.map((item) => <WorkRow key={`pr-${item.id}`} item={item} kind="PR" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No open pull requests.</p>}</Group>
+    <Group title="Draft pull requests" count={person.drafts.length}>{person.drafts.length ? person.drafts.map((item) => <WorkRow key={`draft-${item.id}`} item={item} kind="PR" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No draft pull requests.</p>}</Group>
     <Group title="Open issues" count={person.issues.length}>{person.issues.length ? person.issues.map((item) => <WorkRow key={`issue-${item.id}`} item={item} kind="Issue" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No open issues.</p>}</Group>
     {planningEnabled ? <Group title="Open features" count={person.features.length}>{person.features.length ? person.features.map((item) => <WorkRow key={`feature-${item.id}`} item={item} kind="Feature" scope={scope} isAdmin={isAdmin} />) : <p className="feed-empty-group">No open features.</p>}</Group> : null}
   </div>;
@@ -153,7 +158,17 @@ function PullRequestActions({ item, scope }: { item: WorkItem; scope: { organiza
 
 function normalizeLogin(value?: string) { return (value ?? "").trim().toLowerCase(); }
 function assignedTo(item: WorkItem, login: string) { const target = normalizeLogin(login); return (item.assignees ?? []).some((assignee) => normalizeLogin(assignee.login) === target); }
-function workloadTotal(person: Pick<PersonWorkload, "prs" | "issues" | "features">) { return person.prs.length + person.issues.length + person.features.length; }
+function splitPullRequests(items: WorkItem[], login: string) {
+  const target = normalizeLogin(login);
+  const openPrs: WorkItem[] = [];
+  const drafts: WorkItem[] = [];
+  for (const item of items) {
+    if (normalizeLogin(item.author) !== target) continue;
+    (item.draft ? drafts : openPrs).push(item);
+  }
+  return { openPrs, drafts };
+}
+function workloadTotal(person: Pick<PersonWorkload, "openPrs" | "drafts" | "issues" | "features">) { return person.openPrs.length + person.drafts.length + person.issues.length + person.features.length; }
 function initials(value: string) { return value.slice(0, 2).toUpperCase(); }
 function Events({ events, releaseNotes, label, hasNextPage, loadingMore, onLoadMore }: { events: FeedEvent[]; releaseNotes: FeedEvent[]; label: string; hasNextPage: boolean; loadingMore: boolean; onLoadMore: () => void }) {
   if (!events.length) return <Empty title={`No ${label} records`} detail="Events will appear after NoxHere receives them for this project." />;
