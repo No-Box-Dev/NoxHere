@@ -64,6 +64,31 @@ function makeCtx() {
 }
 
 describe("scheduled tick", () => {
+  it("separates process liveness from dependency readiness", async () => {
+    const env = {
+      BUILD_SHA: "release-1",
+      DB: { prepare: () => ({ first: async () => ({
+        status: "healthy",
+        last_succeeded_at: "2026-10-21T04:00:00.000Z",
+        release: "release-1",
+      }) }) },
+      TASK_QUEUE: {},
+      NOXHERE: {},
+      FEEDBACK_RESPONSE: {},
+      TELEMETRY_RESPONSE: {},
+      ACTIVITY_RESPONSE: {},
+    };
+    const { ctx } = makeCtx();
+
+    const live = await worker.fetch(new Request("https://x/health/live"), env, ctx);
+    const ready = await worker.fetch(new Request("https://x/health/ready"), env, ctx);
+
+    expect(live.status).toBe(200);
+    await expect(live.json()).resolves.toMatchObject({ kind: "liveness", status: "ok" });
+    expect(ready.status).toBe(503);
+    await expect(ready.json()).resolves.toMatchObject({ kind: "readiness", checks: { database: true, schedule: false } });
+  });
+
   it("does not expose manual background controls without the local-only enable flag", async () => {
     const { ctx } = makeCtx();
     const response = await worker.fetch(new Request("https://x/__scheduled"), { DB: makeDb() }, ctx);

@@ -105,12 +105,26 @@ describe("verified release promotion", () => {
   });
 
   it("requires exact release health and every dependency readiness check", async () => {
+    const serviceNames = ["connections", "telemetry", "activity", "planning", "feedback", "core-api", "scheduler", "gateway"];
     const ready = {
       status: "ok",
-      checks: Object.fromEntries(["database", "backgroundWorker", "deliveryQueue", "planning", "feedback", "telemetry", "activity"].map((key) => [key, true])),
-      versions: Object.fromEntries(["noxhere", "background", "planning", "feedback", "telemetry", "activity"].map((key) => [key, sha])),
+      checks: Object.fromEntries(["database", "backgroundWorker", "deliveryQueue", "connections", "planning", "feedback", "telemetry", "activity", "scheduler"].map((key) => [key, true])),
+      versions: Object.fromEntries(["noxhere", "background", "connections", "planning", "feedback", "telemetry", "activity", "scheduler"].map((key) => [key, sha])),
     };
-    const fetchImpl = async (url) => Response.json(String(url).includes("/api/health/ready") ? ready : { service: "noxhere", plane: "public-platform", status: "ok" });
+    const contracts = {
+      contractVersion: 1,
+      kind: "health-contracts",
+      status: "ok",
+      buildSha: sha,
+      services: serviceNames.map((service) => ({ service, live: true, ready: true, buildSha: sha })),
+    };
+    const fetchImpl = async (url) => Response.json(
+      String(url).includes("/api/health/ready")
+        ? ready
+        : String(url).includes("/health/contracts")
+          ? contracts
+          : { service: "noxhere", plane: "public-platform", status: "ok" },
+    );
     await expect(verifyReleaseHealth("https://example.test", sha, fetchImpl)).resolves.toMatchObject({ readiness: ready });
     await expect(verifyReleaseHealth("https://example.test", previousSha, fetchImpl)).rejects.toThrow("noxhere readiness");
   });

@@ -68,6 +68,7 @@ export const platformServices = {
       productionName: "noxhere-connections",
       stagingName: "noxhere-connections-staging",
       deployOrder: 0,
+      releaseSha: true,
     },
     {
       id: "telemetry",
@@ -83,6 +84,7 @@ export const platformServices = {
       productionName: "noxhere-activity",
       stagingName: "noxhere-activity-staging",
       deployOrder: 2,
+      releaseSha: true,
     },
     {
       id: "planning",
@@ -150,6 +152,7 @@ export const platformServices = {
         TELEMETRY_RESPONSE: "noxhere-telemetry",
         TELEMETRY_INGEST: "noxhere-telemetry",
         ACTIVITY_RESPONSE: "noxhere-activity",
+        BACKGROUND_SERVICE: "noxhere-orchestrator",
       },
       staging: {
         FEEDBACK_RESPONSE: "noxhere-feedback-staging",
@@ -159,6 +162,7 @@ export const platformServices = {
         TELEMETRY_RESPONSE: "noxhere-telemetry-staging",
         TELEMETRY_INGEST: "noxhere-telemetry-staging",
         ACTIVITY_RESPONSE: "noxhere-activity-staging",
+        BACKGROUND_SERVICE: "noxhere-orchestrator-staging",
       },
     },
   },

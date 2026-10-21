@@ -48,6 +48,24 @@ async function publicRoutesReady() {
       || providerIngressBody?.checks?.slack !== true
       || providerIngressBody?.checks?.postmark !== true) return false;
 
+  const live = await fetch(smokeUrl("/__noxhere/health/live"), { headers });
+  const liveBody = await live.json().catch(() => null);
+  if (!live.ok
+      || liveBody?.kind !== "liveness"
+      || liveBody?.service !== "gateway"
+      || liveBody?.buildSha !== expectedSha) return false;
+
+  const contracts = await fetch(smokeUrl("/__noxhere/health/contracts"), { headers });
+  const contractsBody = await contracts.json().catch(() => null);
+  if (!contracts.ok
+      || contractsBody?.kind !== "health-contracts"
+      || contractsBody?.buildSha !== expectedSha
+      || !Array.isArray(contractsBody?.services)
+      || contractsBody.services.length !== 8
+      || contractsBody.services.some((service) => service.live !== true
+        || service.ready !== true
+        || service.buildSha !== expectedSha)) return false;
+
   const profile = await fetch(smokeUrl("/api/auth/profile"), { headers });
   const profileBody = await profile.json().catch(() => null);
   if (profile.status !== 401

@@ -144,6 +144,120 @@ describe("NoxHere gateway", () => {
     expect(bindings.connector.fetch).not.toHaveBeenCalled();
   });
 
+  it("keeps liveness independent from databases and downstream services", async () => {
+    const bindings = services({
+      buildSha: "release-1",
+      connector: { fetch: vi.fn(async () => { throw new Error("offline"); }) },
+      control: {
+        db: { prepare() { throw new Error("offline"); } } as unknown as D1Database,
+        identity: {
+          exchangeGitHubOAuth: vi.fn(),
+          startGitHubDeviceAuth: vi.fn(),
+          pollGitHubDeviceAuth: vi.fn(),
+        },
+      },
+    });
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/__noxhere/health/live"),
+      bindings,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      contractVersion: 1,
+      kind: "liveness",
+      service: "gateway",
+      status: "ok",
+      buildSha: "release-1",
+    });
+    expect(bindings.connector.fetch).not.toHaveBeenCalled();
+  });
+
+  it("fails readiness when the exact-release core API is unavailable", async () => {
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/__noxhere/health/ready"),
+      services({
+        buildSha: "release-1",
+        control: {
+          db: controlDb(),
+          identity: {
+            exchangeGitHubOAuth: vi.fn(),
+            startGitHubDeviceAuth: vi.fn(),
+            pollGitHubDeviceAuth: vi.fn(),
+          },
+        },
+        connector: { fetch: vi.fn(async () => Response.json({
+          contractVersion: 1,
+          kind: "readiness",
+          service: "core-api",
+          status: "ok",
+          buildSha: "another-release",
+          checks: {},
+        })) },
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      contractVersion: 1,
+      kind: "readiness",
+      service: "gateway",
+      status: "not_ready",
+      checks: { controlDatabase: true, coreApi: false },
+    });
+  });
+
+  it("aggregates exact-release health for all eight services", async () => {
+    const sha = "release-1";
+    const downstream = ["connections", "telemetry", "activity", "planning", "feedback", "core-api", "scheduler"]
+      .map((service) => ({ service, live: true, ready: true, buildSha: sha }));
+    const connector = { fetch: vi.fn(async (request: Request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/health/ready") return Response.json({
+        contractVersion: 1,
+        kind: "readiness",
+        service: "core-api",
+        status: "ok",
+        buildSha: sha,
+        checks: {},
+      });
+      return Response.json({
+        contractVersion: 1,
+        kind: "health-contracts",
+        status: "ok",
+        buildSha: sha,
+        services: downstream,
+      });
+    }) };
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/__noxhere/health/contracts"),
+      services({
+        buildSha: sha,
+        connector,
+        control: {
+          db: controlDb(),
+          identity: {
+            exchangeGitHubOAuth: vi.fn(),
+            startGitHubDeviceAuth: vi.fn(),
+            pollGitHubDeviceAuth: vi.fn(),
+          },
+        },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json() as { services: Array<Record<string, unknown>> };
+    expect(body).toMatchObject({
+      contractVersion: 1,
+      kind: "health-contracts",
+      status: "ok",
+      buildSha: sha,
+    });
+    expect(body.services).toHaveLength(8);
+    expect(body.services[0]).toEqual({ service: "gateway", live: true, ready: true, buildSha: sha });
+    expect(connector.fetch).toHaveBeenCalledTimes(2);
+  });
+
   it("probes the signed private connector boundary without exposing connector data", async () => {
     const db = {
       prepare() {

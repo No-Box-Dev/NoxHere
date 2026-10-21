@@ -90,11 +90,11 @@ jobs:
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/feedback/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env staging
       - name: Deploy staging Connections capability
-        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging Telemetry capability
         run: npx wrangler deploy --config services/telemetry/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging Activity capability
-        run: npx wrangler deploy --config services/activity/wrangler.toml --env staging --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/activity/wrangler.toml --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging Planning capability
         run: npx wrangler deploy --config services/planning/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging Feedback capability
@@ -124,6 +124,10 @@ jobs:
         run: npm run login:staging:acceptance
         env:
           NOX_LOGIN_ACCEPTANCE_EXPECTED_SHA: ${{ env.DEPLOY_SHA }}
+      - name: Verify every staging health contract
+        env:
+          HEALTH_CONTRACT_WAIT_SECONDS: "180"
+        run: node scripts/check-health-contracts.mjs https://noxhere-staging.jasper-414.workers.dev "$DEPLOY_SHA"
       - name: Record verified staging release
         run: >-
           node scripts/promote-verified-release.mjs record-staging
@@ -171,11 +175,11 @@ jobs:
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/feedback/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env=""
       - name: Deploy production Connections capability
-        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production Telemetry capability
         run: npx wrangler deploy --config services/telemetry/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production Activity capability
-        run: npx wrangler deploy --config services/activity/wrangler.toml --env="" --message "$DEPLOY_SHA"
+        run: npx wrangler deploy --config services/activity/wrangler.toml --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production Planning capability
         run: npx wrangler deploy --config services/planning/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production Feedback capability
@@ -222,6 +226,8 @@ jobs:
         env:
           ECOSYSTEM_HEALTH_WAIT_SECONDS: "960"
         run: node scripts/check-ecosystem-health.mjs https://app.noxhere.com noxhere "$DEPLOY_SHA"
+      - name: Verify every production health contract
+        run: node scripts/check-health-contracts.mjs https://app.noxhere.com "$DEPLOY_SHA"
       - name: Finalize verified production release
         run: >-
           node scripts/promote-verified-release.mjs finalize
