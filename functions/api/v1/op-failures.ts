@@ -1,1 +1,1 @@
-export { onRequestGet } from "../op-failures.js";
+export { onRequestGet, onRequestPost } from "../op-failures.js";

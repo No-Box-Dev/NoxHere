@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { onRequestGet } from "../op-failures.js";
+vi.mock("../../lib/task-quarantine.js", () => ({ requeueQuarantinedTask: vi.fn() }));
+
+import { onRequestGet, onRequestPost } from "../op-failures.js";
+import { requeueQuarantinedTask } from "../../lib/task-quarantine.js";
 
 function makeDb(rows = []) {
   const all = vi.fn().mockResolvedValue({ results: rows });
@@ -66,6 +69,7 @@ describe("GET /api/op-failures", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.failures).toEqual(sample);
+    expect(body.quarantined).toEqual(sample);
     expect(DB._bind).toHaveBeenCalledWith("acme", 25);
   });
 
@@ -80,5 +84,31 @@ describe("GET /api/op-failures", () => {
     await onRequestGet(ctx);
     // 0 falls through to DEFAULT_ROWS=25, since Number("0") || 25 === 25
     expect(DB._bind).toHaveBeenCalledWith("acme", 25);
+  });
+});
+
+describe("POST /api/op-failures", () => {
+  it("requeues one organization-scoped quarantined task", async () => {
+    requeueQuarantinedTask.mockResolvedValueOnce({ status: "requeued", id: 7 });
+    const { ctx } = makeCtx();
+    ctx.request = new Request("http://x/api/op-failures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quarantineId: 7 }),
+    });
+    ctx.env.TASK_QUEUE = { send: vi.fn() };
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(202);
+    expect(requeueQuarantinedTask).toHaveBeenCalledWith(ctx.env.DB, ctx.env.TASK_QUEUE, "acme", 7);
+  });
+
+  it("does not expose another organization or an already recovered task", async () => {
+    requeueQuarantinedTask.mockResolvedValueOnce({ status: "not_found" });
+    const { ctx } = makeCtx();
+    ctx.request = new Request("http://x/api/op-failures", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ quarantineId: 9 }),
+    });
+    ctx.env.TASK_QUEUE = { send: vi.fn() };
+    expect((await onRequestPost(ctx)).status).toBe(404);
   });
 });
