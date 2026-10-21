@@ -21,6 +21,7 @@
     "login:milestones:verify:all": "node scripts/run-login-hardening-milestones.mjs --all",
     "login:milestones:typecheck": "npm run typecheck:functions && npm --prefix apps/web run typecheck",
     "login:milestones:gateway-check": "npm run build:web && npm --prefix services/gateway run typecheck && npm --prefix services/gateway run build",
+    "login:staging:acceptance": "node scripts/login-staging-acceptance.mjs",
     "routes:generate": "node scripts/generated-service-manifest.mjs",
     "routes:check": "node scripts/generated-service-manifest.mjs --check",
     "health:service-rpc": "node scripts/check-service-rpc.mjs",
