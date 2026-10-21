@@ -801,7 +801,10 @@ const clientRouteContracts = [
   ["/api/v1/me", [["get", "getCurrentMember", "Read membership and NoxHere role for the current organization", "member"]]],
   ["/api/v1/members", [["get", "listMembers", "List members visible through the connected GitHub organization", "member"]]],
   ["/api/v1/activity/release-notes-prompt", [["get", "getActivityDefaultPrompt", "Read the server-owned Activity release-notes prompt", "admin"]]],
-  ["/api/v1/op-failures", [["get", "listOperationFailures", "List recent background-operation failures", "admin"]]],
+  ["/api/v1/op-failures", [
+    ["get", "listOperationFailures", "List recent background-operation failures and quarantined tasks", "admin"],
+    ["post", "requeueQuarantinedTask", "Requeue one quarantined background task", "admin"],
+  ]],
   ["/api/v1/operator/usage", [["get", "getOperatorUsage", "Read platform-wide operator usage", "platform_operator", false]]],
   ["/api/v1/projects", [["post", "createProject", "Create an empty project scope", "admin"]]],
   ["/api/v1/projects/{projectId}/retrieval", [["get", "retrieveProject", "Search the selected project across Nox services", "member"]]],

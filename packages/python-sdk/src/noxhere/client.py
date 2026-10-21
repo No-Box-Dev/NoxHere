@@ -266,7 +266,7 @@ class NoxHereClient:
         self._allow_operation_servers = base_url.rstrip("/") == DEFAULT_BASE_URL
         self._timeout = max(0.001, timeout)
         self._transport: Transport = transport or _transport_with_timeout(self._timeout)
-        self._max_retries = max(0, max_retries)
+        self._max_retries = min(5, max(0, int(max_retries)))
         self._retry_delay = max(0.0, retry_delay)
         self._on_request = on_request
         self._on_response = on_response
@@ -385,7 +385,7 @@ class AsyncNoxHereClient:
         self._allow_operation_servers = base_url.rstrip("/") == DEFAULT_BASE_URL
         self._timeout = max(0.001, timeout)
         self._transport: AsyncTransport = transport or _async_transport_with_timeout(self._timeout)
-        self._max_retries = max(0, max_retries)
+        self._max_retries = min(5, max(0, int(max_retries)))
         self._retry_delay = max(0.0, retry_delay)
         self._on_request = on_request
         self._on_response = on_response

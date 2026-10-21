@@ -35,6 +35,7 @@ import { recoverPlatformEventProjections } from "../../../functions/lib/platform
 import { recoverTransportDeliveryEvents } from "../../../functions/lib/transport-delivery-events.ts";
 import { recoverAbandonedReconciliations } from "./reconciliation-recovery.js";
 import { livenessResponse, readinessResponse } from "../../../packages/contracts/health.ts";
+import { quarantineTask } from "../../../functions/lib/task-quarantine.js";
 
 // Bound how many independent reconciliation messages a maintenance tick can
 // publish. Queue consumers process one organization per invocation.
@@ -84,6 +85,7 @@ export default {
               deliveryId: msg.body?.deliveryId ?? null,
               error: err,
             });
+            await quarantineTask(env.DB, msg.body, msg.attempts, err);
             if (msg.body?.type === TASK.DELIVER_SLACK && msg.body?.outboxId) {
               await markOutboxFailed(env.DB, msg.body.outboxId, err);
             }
@@ -94,7 +96,10 @@ export default {
                 message: "A durable background task failed on every delivery attempt.",
               });
             }
-            msg.ack();
+            // One final retry hands the already-persisted task to Cloudflare's
+            // DLQ. The database quarantine remains the actionable recovery
+            // source and prevents poison work from looping in the live queue.
+            msg.retry();
           } else {
             msg.retry();
           }

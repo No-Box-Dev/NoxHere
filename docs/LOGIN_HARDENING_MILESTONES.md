@@ -12,7 +12,7 @@ This roadmap turns the production-login RCA into fail-closed delivery gates. `np
 | M5 | Production-shaped login acceptance runs against staging | Authenticated staging acceptance passes |
 | M6 | Only a verified staging release can be promoted and rolled back | Promotion and rollback drill passes |
 | M7 | Complete — every service exposes separate liveness and exact-release dependency readiness | Static coverage, service behavior, aggregate contract, receipt, type, and build gates pass |
-| M8 | Retries are bounded and poison work is quarantined | Retry/quarantine policy tests pass |
+| M8 | Complete — authentication and SDK retries are bounded, poison work is quarantined, and admins can requeue it | Static policy, runtime quarantine/recovery, SDK, type, and schema gates pass |
 
 The active milestone is declared in `scripts/login-hardening-milestones.config.mjs`. Future milestones deliberately name artifacts that do not exist yet, so `npm run login:milestones:verify:all` stops at the first unfinished milestone instead of implying that the roadmap is complete.
 
