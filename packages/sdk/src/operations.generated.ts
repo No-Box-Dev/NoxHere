@@ -2287,6 +2287,23 @@ export const operationDefinitions = [
     ]
   },
   {
+    "id": "requeueQuarantinedTask",
+    "method": "POST",
+    "path": "/api/v1/op-failures",
+    "namespace": "workspace",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "write_not_safe_to_retry",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "resendGuestInvitation",
     "method": "POST",
     "path": "/api/v1/guests/invites/{inviteId}/resend",

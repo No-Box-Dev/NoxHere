@@ -95,6 +95,17 @@ describe("@noxhere/sdk", () => {
     expect(idempotentRequest.mock.calls[0][1]?.body).toBe(idempotentRequest.mock.calls[1][1]?.body);
   });
 
+  it("caps caller-configured retries to prevent unbounded request loops", async () => {
+    const request = vi.fn(async () => Response.json({ error: "busy" }, { status: 503 }));
+    const client = createNoxHere({
+      fetch: request as typeof fetch,
+      maxRetries: 10_000,
+      sleep: vi.fn(async () => {}),
+    });
+    await expect(client.workspace.listProjects()).rejects.toMatchObject({ status: 503 });
+    expect(request).toHaveBeenCalledTimes(6);
+  });
+
   it("supports scoped clients, operation servers, SDK headers, and sanitized hooks", async () => {
     const request = vi.fn(async () => Response.json({ ok: true }));
     const observed: string[] = [];

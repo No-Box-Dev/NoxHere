@@ -1606,7 +1606,11 @@ export interface paths {
          */
         get: operations["listOperationFailures"];
         put?: never;
-        post?: never;
+        /**
+         * Requeue one quarantined background task
+         * @description Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.
+         */
+        post: operations["requeueQuarantinedTask"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7683,6 +7687,38 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JsonValue"];
+                };
+            };
+            400: components["responses"]["V1Error"];
+            401: components["responses"]["V1Error"];
+            403: components["responses"]["V1Error"];
+            409: components["responses"]["V1Error"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    requeueQuarantinedTask: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional project selector inside the authenticated organization. Omit it for organization-wide data. When supplied, it must match any project identifier in the URL and the project bound to an API token. */
+                "X-Project-ID"?: components["parameters"]["projectContext"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JsonValue"];
+            };
+        };
         responses: {
             /** @description Success */
             200: {

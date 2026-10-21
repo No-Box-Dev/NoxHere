@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 const widgetCore = "../../packages/feedback-widget/dist/feedback-core.min.js";
 const liveTestUrl = "https://app.noxhere.com/__feedback-widget-browser-test";
 const noxHereSiteId = "8970ca4d-75ad-41d0-a5fa-e4e62e658635";
+const liveWidgetE2e = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.LIVE_WIDGET_E2E === "1";
 
 const hostPage = `<!doctype html>
 <html lang="en">
@@ -53,7 +56,7 @@ test("removes the element-picker coachmark when the local widget closes", async 
 });
 
 test("removes the element-picker coachmark from the live production loader", async ({ page }) => {
-  test.skip(process.env.LIVE_WIDGET_E2E !== "1", "Set LIVE_WIDGET_E2E=1 to exercise production assets");
+  test.skip(!liveWidgetE2e, "Set LIVE_WIDGET_E2E=1 to exercise production assets");
   await page.route(liveTestUrl, (route) => route.fulfill({
     status: 200,
     contentType: "text/html",

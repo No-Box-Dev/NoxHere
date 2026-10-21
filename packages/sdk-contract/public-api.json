@@ -11478,6 +11478,73 @@
         "x-organization-optional": false,
         "x-project-scope": "optional",
         "x-required-role": "admin"
+      },
+      "post": {
+        "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+        "operationId": "requeueQuarantinedTask",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/projectContext"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/V1Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "browserSession": [],
+            "csrfProof": [],
+            "organization": []
+          },
+          {
+            "nativeSession": [],
+            "organization": []
+          }
+        ],
+        "summary": "Requeue one quarantined background task",
+        "tags": [
+          "NoxHere"
+        ],
+        "x-authentication": "admin",
+        "x-change-safety": "write_not_safe_to_retry",
+        "x-first-party-client": true,
+        "x-organization-optional": false,
+        "x-project-scope": "optional",
+        "x-required-role": "admin"
       }
     },
     "/api/v1/operator/usage": {
@@ -29758,6 +29825,79 @@
       "automationScope": null,
       "changeSafety": "write_not_safe_to_retry",
       "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
+      "id": "requeueQuarantinedTask",
+      "method": "POST",
+      "namespace": "workspace",
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/projectContext"
+        }
+      ],
+      "path": "/api/v1/op-failures",
+      "projectScope": "optional",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          }
+        },
+        "required": false
+      },
+      "requestContentTypes": [
+        "application/json"
+      ],
+      "responseContentTypes": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            }
+          },
+          "description": "Success"
+        },
+        "400": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "401": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "403": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "409": {
+          "$ref": "#/components/responses/V1Error"
+        },
+        "429": {
+          "$ref": "#/components/responses/RateLimited"
+        }
+      },
+      "security": [
+        {
+          "browserSession": [],
+          "csrfProof": [],
+          "organization": []
+        },
+        {
+          "nativeSession": [],
+          "organization": []
+        }
+      ],
+      "servers": [],
+      "summary": "Requeue one quarantined background task",
+      "tag": "NoxHere"
+    },
+    {
+      "authentication": "admin",
+      "automationScope": null,
+      "changeSafety": "write_not_safe_to_retry",
+      "description": "Canonical first-party client operation. Its established success payload remains compatible while all failures use the API v1 error envelope.",
       "id": "resendGuestInvitation",
       "method": "POST",
       "namespace": "workspace",
@@ -34360,5 +34500,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "c5a4746b981a27af015130b9ca1c1fe7de770c96f60558a0c4a24004eb54099f"
+  "x-sdk-source-sha256": "9758e9223a67fccf7cf6ee1e5c7661adb35bb35ac40c57f4f8b48fbadd01f190"
 }

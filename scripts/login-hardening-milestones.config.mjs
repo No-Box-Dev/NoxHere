@@ -1,4 +1,4 @@
-export const activeMilestone = "M7";
+export const activeMilestone = "M8";
 
 export const milestones = [
   {
@@ -209,7 +209,23 @@ export const milestones = [
     id: "M8",
     name: "Bounded retry and quarantine",
     objective: "Bound authentication and provider retries, quarantine poison work, and expose actionable recovery state.",
-    requiredPaths: ["scripts/check-retry-quarantine.mjs"],
-    gates: [{ name: "Retry and quarantine policy", command: "node", args: ["scripts/check-retry-quarantine.mjs"] }],
+    requiredPaths: [
+      "scripts/check-retry-quarantine.mjs",
+      "scripts/check-retry-quarantine.test.js",
+      "migrations/0118_task_quarantine.sql",
+      "functions/lib/task-quarantine.js",
+      "functions/lib/__tests__/task-quarantine.test.js",
+    ],
+    gates: [
+      { name: "Retry and quarantine policy", command: "node", args: ["scripts/check-retry-quarantine.mjs"] },
+      {
+        name: "Quarantine and recovery behavior",
+        command: "npx",
+        args: ["vitest", "run", "scripts/check-retry-quarantine.test.js", "functions/lib/__tests__/task-quarantine.test.js", "functions/api/__tests__/op-failures.test.js", "services/scheduler/src/__tests__/queue.test.js", "packages/sdk/src/client.test.ts"],
+      },
+      { name: "Unified SDK retry bounds", command: "npm", args: ["run", "test:sdk"] },
+      { name: "M8 functions typecheck", command: "npm", args: ["run", "typecheck:functions"] },
+      { name: "M8 API and SDK drift", command: "npm", args: ["run", "sdk:check"] },
+    ],
   },
 ];
