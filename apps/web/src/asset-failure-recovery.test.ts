@@ -34,4 +34,18 @@ describe("asset failure recovery", () => {
     dispose();
     sessionStorage.clear();
   });
+
+  it("recovers Safari module-import failures reported as rejected promises", () => {
+    const reload = vi.fn();
+    const dispose = installAssetFailureRecovery({ target: window, storage: sessionStorage, reload, now: () => 2_000 });
+    const rejection = new Event("unhandledrejection", { cancelable: true });
+    Object.defineProperty(rejection, "reason", { value: new TypeError("Importing a module script failed.") });
+
+    window.dispatchEvent(rejection);
+
+    expect(rejection.defaultPrevented).toBe(true);
+    expect(reload).toHaveBeenCalledOnce();
+    dispose();
+    sessionStorage.clear();
+  });
 });
