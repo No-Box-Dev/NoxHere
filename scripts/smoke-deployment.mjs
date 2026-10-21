@@ -20,7 +20,12 @@ async function ready() {
 async function spotReady() {
   const response = await fetch(new URL("/health", spotOrigin), { headers: { "Cache-Control": "no-cache" } });
   const body = await response.json();
-  return response.ok && body?.owner === "noxhere" && body?.buildSha === expectedSha;
+  return response.ok
+    && body?.contractVersion === 1
+    && body?.kind === "readiness"
+    && body?.service === "feedback"
+    && body?.status === "ok"
+    && body?.buildSha === expectedSha;
 }
 
 async function publicRoutesReady() {
