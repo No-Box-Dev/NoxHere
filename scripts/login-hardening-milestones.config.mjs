@@ -1,4 +1,4 @@
-export const activeMilestone = "M4";
+export const activeMilestone = "M5";
 
 export const milestones = [
   {
@@ -142,8 +142,23 @@ export const milestones = [
     id: "M5",
     name: "Production-shaped acceptance",
     objective: "Exercise login, bootstrap, organization switching, and API-token scope against staging before promotion.",
-    requiredPaths: ["scripts/login-staging-acceptance.mjs"],
-    gates: [{ name: "Staging login acceptance contract", command: "node", args: ["scripts/login-staging-acceptance.mjs", "--contract"] }],
+    requiredPaths: [
+      "scripts/login-staging-acceptance.mjs",
+      "scripts/login-staging-acceptance.test.js",
+      ".github/workflows/deploy-pages.yml",
+    ],
+    gates: [
+      {
+        name: "Staging login acceptance safety and scope",
+        command: "npx",
+        args: ["vitest", "run", "scripts/login-staging-acceptance.test.js"],
+      },
+      {
+        name: "Private login/bootstrap routing contract",
+        command: "node",
+        args: ["scripts/login-staging-acceptance.mjs", "--contract"],
+      },
+    ],
   },
   {
     id: "M6",

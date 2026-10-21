@@ -21,3 +21,7 @@ Production promotion remains additionally guarded by the deployment workflow: st
 ## Route and service topology changes
 
 `config/platform-services.mjs` is the source of truth for public gateway route groups, worker names, deployment order, and gateway/core service bindings. After editing it, run `npm run routes:generate` and commit both generated artifacts. `npm run routes:check` fails when generated output or the corresponding Wrangler configuration drifts from that manifest. Runtime gateway routing imports the generated route table directly.
+
+## Staging login acceptance
+
+Every deployment now runs `npm run login:staging:acceptance` after the complete staging release and API-surface probe, but before production promotion. The harness provisions short-lived staging-only native and project automation credentials, proves unauthenticated requests fail with canonical JSON, switches one authenticated identity across two organizations, verifies each bootstrap scope, proves the automation token cannot escape its project, and removes the credentials in a `finally` cleanup. The gate accepts only the declared staging origin and the exact staged commit SHA.

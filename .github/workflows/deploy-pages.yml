@@ -117,6 +117,10 @@ jobs:
         run: node scripts/smoke-deployment.mjs https://noxhere-staging.jasper-414.workers.dev https://noxhere-feedback-staging.jasper-414.workers.dev "$DEPLOY_SHA"
       - name: Verify every staging API operation
         run: npm run health:api-surface -- https://noxhere-staging.jasper-414.workers.dev
+      - name: Verify production-shaped staging login and scope
+        run: npm run login:staging:acceptance
+        env:
+          NOX_LOGIN_ACCEPTANCE_EXPECTED_SHA: ${{ env.DEPLOY_SHA }}
 
       - name: Re-verify release is still the current main commit
         run: node scripts/assert-main-release.mjs
