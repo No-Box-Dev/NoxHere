@@ -4,6 +4,7 @@ import type { Bootstrap } from "../../api/contracts";
 import { getRawJson } from "../../api/http";
 import { ServiceTabs } from "../../components/ServiceTabs";
 import { StatusTag } from "../../components/StatusTag";
+import { ALL_FILTER_VALUE, useFilterPreference } from "../../lib/filterPreferences";
 import { FeedbackMessaging } from "./FeedbackMessaging";
 import { FeedbackWidgets } from "./FeedbackWidgets";
 
@@ -47,7 +48,9 @@ export default function FeedbackPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isGuest = bootstrap.actor.accessLevel === "guest";
   const sourceParam = searchParams.get("source");
-  const source: "all" | "feedback" | "github" = sourceParam === "feedback" || sourceParam === "github" ? sourceParam : "all";
+  const sourceValues = [ALL_FILTER_VALUE, "feedback", "github"] as const;
+  const [savedSource, setSavedSource] = useFilterPreference({ actorId: bootstrap.actor.id, organizationId, projectId, filterId: "feedback.issue-source" }, sourceValues);
+  const source: "all" | "feedback" | "github" = sourceParam === "feedback" || sourceParam === "github" ? sourceParam : savedSource;
   const base = `/${organizationId}/${projectId}/feedback`;
   const query = useInfiniteQuery({
     queryKey: ["feedback", organizationId, projectId, view],
@@ -74,6 +77,7 @@ export default function FeedbackPage() {
   const showsReports = view === "issues" || view === "resolved";
   const refreshActions = query.data && showsReports ? <>
     <select className="spot-source-filter" aria-label="Issue source" value={source} onChange={(event) => {
+      setSavedSource(event.target.value);
       const next = new URLSearchParams(searchParams);
       if (event.target.value === "all") next.delete("source"); else next.set("source", event.target.value);
       setSearchParams(next);

@@ -18,7 +18,7 @@ export default function UsagePage() {
 
   return (
     <section className="cue-page usage-page">
-      <UsageView organizationId={organizationId} projectId={projectId} view={section} canConfigure={bootstrap.actor.capabilities.includes("usage.configure")} />
+      <UsageView organizationId={organizationId} projectId={projectId} actorId={bootstrap.actor.id} view={section} canConfigure={bootstrap.actor.capabilities.includes("usage.configure")} />
     </section>
   );
 }

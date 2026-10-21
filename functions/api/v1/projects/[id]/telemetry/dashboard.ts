@@ -14,9 +14,32 @@ export async function onRequestGet(context: Ctx) {
   const { orgId, projectId } = getCtx(context);
   const requestedProject = String(context.params.id || "");
   if (!projectId || projectId !== requestedProject) return errorResponse("Project scope mismatch", 403);
-  const range = new URL(context.request.url).searchParams.get("range") || "30d";
-  const days = DAYS[range] ?? 30;
+  const requestedRange = new URL(context.request.url).searchParams.get("range") || "30d";
+  const range = requestedRange === "all" || Object.hasOwn(DAYS, requestedRange) ? requestedRange : "30d";
   const usageOnly = new URL(context.request.url).pathname.includes("/usage/");
+  let days = DAYS[range] ?? 1;
+  if (range === "all") {
+    const capabilityCondition = usageOnly ? "AND source.capability = 'usage'" : "";
+    const earliest = await context.env.DB.prepare(
+      `SELECT MIN(day) AS day FROM (
+         SELECT metric.period AS day
+           FROM telemetry_daily_metrics metric
+           JOIN telemetry_sources source ON source.id = metric.source_id
+          WHERE source.org_id = ? AND source.project_id = ? ${capabilityCondition}
+            AND source.environment = 'production' AND source.enabled = 1
+         UNION ALL
+         SELECT activity.period AS day
+           FROM telemetry_activity_events activity
+           JOIN telemetry_sources source ON source.id = activity.source_id
+          WHERE source.org_id = ? AND source.project_id = ? ${capabilityCondition}
+            AND source.environment = 'production' AND source.enabled = 1
+       )`,
+    ).bind(orgId, projectId, orgId, projectId).first<{ day: string | null }>();
+    if (earliest?.day) {
+      const firstDay = Date.parse(`${earliest.day}T00:00:00Z`);
+      if (Number.isFinite(firstDay)) days = Math.max(1, Math.floor((Date.now() - firstDay) / 86_400_000) + 1);
+    }
+  }
   const setting = await context.env.DB.prepare(
     `SELECT window_days FROM telemetry_engagement_settings WHERE org_id = ? AND project_id = ?`,
   ).bind(orgId, projectId).first<{ window_days: number }>();

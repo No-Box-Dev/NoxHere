@@ -222,7 +222,7 @@ class GrowthDashboard(TypedDict, total=False):
     funnel: Required["GrowthFunnel"]
     metrics: Required[list["GrowthMetric"]]
     projectId: Required[str]
-    range: Required[Literal['7d', '30d', '90d', '1y']]
+    range: Required[Literal['all', '7d', '30d', '90d', '1y']]
     revenue: Required["GrowthDashboardRevenue"]
 
 class GrowthEvent(TypedDict, total=False):

@@ -28,4 +28,26 @@ describe("Growth dashboard", () => {
     expect(body.acquisition.channels[0]).toMatchObject({ revenueMinor: 8700 });
     expect(batch).toHaveBeenCalledOnce();
   });
+
+  it("supports an unbounded all-time range", async () => {
+    const queries: string[] = [];
+    const prepare = vi.fn((sql: string) => {
+      queries.push(sql);
+      const statement = {
+        bind: vi.fn(() => statement),
+        first: vi.fn(async () => ({ day: "2026-01-01" })),
+        all: vi.fn(async () => ({ results: [] })),
+      };
+      return statement;
+    });
+    const response = await onRequestGet({
+      env: { DB: { prepare, batch: vi.fn(async () => [{ results: [] }, { results: [] }, { results: [] }, { results: [] }]) } as unknown as D1Database },
+      request: new Request("https://app.noxhere.com/api/v1/projects/noxhere/growth/dashboard?range=all"),
+      params: { id: "noxhere" },
+      data: { orgId: 2, projectId: "noxhere" },
+    });
+    expect((await response.json() as { range: string }).range).toBe("all");
+    expect(queries.some((sql) => sql.includes("SELECT MIN(day)"))).toBe(true);
+    expect(queries.filter((sql) => sql.includes("FROM growth_event_dimensions") && sql.includes("GROUP BY")).every((sql) => !sql.includes("occurred_at >="))).toBe(true);
+  });
 });
