@@ -41,12 +41,20 @@ export function installAssetFailureRecovery(options: RecoveryOptions = {}): () =
       recover(event);
     }
   };
+  const recoverRejectedImport = (event: PromiseRejectionEvent) => {
+    const message = event.reason instanceof Error ? event.reason.message : String(event.reason ?? "");
+    if (/importing a module script failed|failed to fetch dynamically imported module|error loading dynamically imported module/i.test(message)) {
+      recover(event);
+    }
+  };
 
   target.addEventListener("vite:preloadError", recover);
   target.addEventListener("error", recoverImportError);
+  target.addEventListener("unhandledrejection", recoverRejectedImport);
   return () => {
     target.removeEventListener("vite:preloadError", recover);
     target.removeEventListener("error", recoverImportError);
+    target.removeEventListener("unhandledrejection", recoverRejectedImport);
   };
 }
 
