@@ -421,6 +421,26 @@ describe("NoxHere gateway", () => {
     await expect(response.text()).resolves.toBe("portal");
   });
 
+  it("does not turn a missing hashed module into a successful HTML response", async () => {
+    const assets = { fetch: vi.fn(async () => new Response("<!doctype html><title>NoxHere</title>", {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    })) };
+
+    const response = await handleRequest(
+      new Request("https://app.noxhere.com/assets/Feature-old-build.js"),
+      services({ assets }),
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("X-NoxHere-Asset-Miss")).toBe("1");
+    await expect(response.text()).resolves.toBe("Asset not found");
+  });
+
   it("owns the canonical GitHub callback without invoking the compatibility connector", async () => {
     const connector = { fetch: vi.fn(async () => new Response(null, { status: 500 })) };
     const request = new Request("https://app.noxhere.com/auth/github/callback?code=one");

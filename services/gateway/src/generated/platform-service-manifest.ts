@@ -5,6 +5,7 @@ export const PLATFORM_GATEWAY_MANIFEST = {
     "staging": "https://noxhere-staging.jasper-414.workers.dev"
   },
   "runWorkerFirst": [
+    "/assets/*",
     "/api/*",
     "/auth/github/callback",
     "/auth/email/*",
