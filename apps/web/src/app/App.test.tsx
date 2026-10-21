@@ -614,7 +614,7 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.queryByRole("tablist", { name: "Feature views" })).not.toBeInTheDocument();
   });
 
-  it("defaults Features to all people, restores its last filter, and keeps Tasks person-specific", async () => {
+  it("defaults Planning people filters to all and restores each last selection", async () => {
     const baseFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       if (String(input) === "/api/v1/features?state=all") return json([
@@ -640,17 +640,20 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByText("Teammate feature")).toBeInTheDocument();
     expect(screen.queryByText("My task")).not.toBeInTheDocument();
     await user.click(screen.getByRole("link", { name: "Tasks" }));
-    expect(await screen.findByRole("combobox", { name: "Tasks for person" })).toHaveValue("JasperNoBoxDev (you)");
+    const taskPerson = await screen.findByRole("combobox", { name: "Tasks for person" });
+    expect(taskPerson.tagName).toBe("SELECT");
+    expect(taskPerson).toHaveDisplayValue("All");
     expect(screen.getByText("My task")).toBeInTheDocument();
-    expect(screen.queryByText("Teammate task")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("combobox", { name: "Tasks for person" }));
-    await user.click(screen.getByRole("option", { name: "memenoboxdev" }));
+    expect(screen.getByText("Teammate task")).toBeInTheDocument();
+    await user.selectOptions(taskPerson, "memenoboxdev");
     expect(screen.getByText("Teammate task")).toBeInTheDocument();
     expect(screen.queryByText("My task")).not.toBeInTheDocument();
     await user.click(screen.getByRole("link", { name: "Features" }));
     expect(await screen.findByRole("combobox", { name: "Planning for person" })).toHaveValue("memenoboxdev");
     expect(screen.queryByText("My feature")).not.toBeInTheDocument();
     expect(screen.getByText("Teammate feature")).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Tasks" }));
+    expect(await screen.findByRole("combobox", { name: "Tasks for person" })).toHaveValue("memenoboxdev");
   });
 
   it("gives each person a GTD task workflow and only lets the signed-in person customize their own", async () => {
@@ -659,6 +662,7 @@ describe("NoxHere API-backed platform", () => {
 
     expect(await screen.findByText("Inbox")).toBeInTheDocument();
     expect(screen.getByText("Next actions")).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tasks for person" }), "JasperNoBoxDev");
     await user.click(screen.getByRole("button", { name: "Customize my workflow" }));
     expect(screen.getByText("My task workflow")).toBeInTheDocument();
     const inboxName = screen.getByRole("textbox", { name: "Stage 1 name" });
@@ -670,8 +674,7 @@ describe("NoxHere API-backed platform", () => {
       body: expect.stringContaining('"owner":"JasperNoBoxDev"'),
     })));
 
-    await user.click(screen.getByRole("combobox", { name: "Tasks for person" }));
-    await user.click(screen.getByRole("option", { name: "memenoboxdev" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tasks for person" }), "memenoboxdev");
     expect(await screen.findByText("memenoboxdev's workflow")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Customize my workflow" })).not.toBeInTheDocument();
   });

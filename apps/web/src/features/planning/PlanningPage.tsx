@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useFilterPreference } from "../../lib/filterPreferences";
 
 const tabs = [["board", "Features"], ["tasks", "Tasks"], ["backlog", "Backlog"], ["completed", "Completed"], ["settings", "Settings"]] as const;
-const allFeaturesPerson = "__all__";
+const allPlanningPeople = "__all__";
 
 type Stage = TaskStage;
 type FeatureLink = { url: string; label?: string };
@@ -232,14 +232,14 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   const [queries, setQueries] = useState<Record<FeatureView, string>>(() => ({ board: "", backlog: "", completed: "" }));
   const query = queries[mode];
   const people = members.includes(actor) ? members : [actor, ...members];
-  const [person, setPerson] = useFilterPreference({ actorId: actor, organizationId, projectId, filterId: "planning.feature-person" }, [allFeaturesPerson, ...people], allFeaturesPerson);
+  const [person, setPerson] = useFilterPreference({ actorId: actor, organizationId, projectId, filterId: "planning.feature-person" }, [allPlanningPeople, ...people], allPlanningPeople);
   const [sort, setSort] = useState<"updated" | "title">("updated");
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = features.find((feature) => feature.id === selectedId) ?? null;
   const normalizedPerson = person.toLowerCase();
-  const showsAllPeople = person === allFeaturesPerson;
+  const showsAllPeople = person === allPlanningPeople;
   const active = useMemo(() => features.filter((feature) => !feature.closed && !feature.backlog && (showsAllPeople || featureOwnedBy(feature, normalizedPerson)) && matches(feature, query, "")).sort(sort === "title" ? byTitle : () => 0), [features, normalizedPerson, query, showsAllPeople, sort]);
   const backlog = useMemo(() => features.filter((feature) => !feature.closed && feature.backlog && (showsAllPeople || featureOwnedBy(feature, normalizedPerson)) && matches(feature, query, "")).sort(byTitle), [features, normalizedPerson, query, showsAllPeople]);
   const completed = useMemo(() => features.filter((feature) => feature.closed && (showsAllPeople || featureOwnedBy(feature, normalizedPerson)) && matches(feature, query, "")), [features, normalizedPerson, query, showsAllPeople]);
@@ -267,7 +267,7 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
   return <>
     <div className="ticket-toolbar">
       <input aria-label={`Search ${mode === "board" ? "features" : mode}`} value={query} onChange={(event) => setQueries((current) => ({ ...current, [mode]: event.target.value }))} placeholder={`Search ${mode === "board" ? "features" : mode}…`} />
-      <label className="planning-person-picker"><span>Planning for</span><select name="featurePerson" aria-label="Planning for person" value={person} onChange={(event) => selectPerson(event.target.value)}><option value={allFeaturesPerson}>All</option>{people.map((member) => <option value={member} key={member}>{member === actor ? `${member} (you)` : member}</option>)}</select></label>
+      <label className="planning-person-picker"><span>Planning for</span><select name="featurePerson" aria-label="Planning for person" value={person} onChange={(event) => selectPerson(event.target.value)}><option value={allPlanningPeople}>All</option>{people.map((member) => <option value={member} key={member}>{member === actor ? `${member} (you)` : member}</option>)}</select></label>
       <select aria-label="Sort features" value={sort} onChange={(event) => setSort(event.target.value as "updated" | "title")}><option value="updated">Default</option><option value="title">Title A–Z</option></select>
       <span className="toolbar-spacer" />{mode === "board" ? <button type="button" className="button" disabled={productionCount === 0 || saving} onClick={completeProduction}>{saving ? "Moving…" : `Move production to completed${productionCount ? ` (${productionCount})` : ""}`}</button> : null}<Button type="button" variant={adding ? "outline" : "cut"} onClick={() => setAdding(true)}>New feature</Button>
     </div>
@@ -284,15 +284,16 @@ function FeaturesWorkspace({ organizationId, projectId, mode, stages, features, 
 function TasksBoard({ organizationId, projectId, features, tasks, actor, members, createTask, updateTask, deleteTask, saving }: { organizationId: string; projectId: string; features: PlanningFeature[]; tasks: PlanningTask[]; actor: string; members: string[]; createTask: (input: TaskInput) => void; updateTask: (id: string, patch: Partial<Pick<PlanningTask, "status" | "stageId" | "position">>) => void; deleteTask: (id: string) => void; saving: boolean }) {
   const queryClient = useQueryClient();
   const people = members.includes(actor) ? members : [actor, ...members];
-  const [person, setPerson] = useState(actor);
+  const [person, setPerson] = useFilterPreference({ actorId: actor, organizationId, projectId, filterId: "planning.task-person" }, [allPlanningPeople, ...people], allPlanningPeople);
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState(false);
   const [draftStages, setDraftStages] = useState<Stage[]>(defaultTaskStages);
   const workflowKey = ["planning", organizationId, projectId, "task-workflow", person.toLowerCase()] as const;
-  const workflowQuery = useQuery({ queryKey: workflowKey, queryFn: ({ signal }) => platformApi.taskWorkflow(organizationId, projectId, person, signal) });
-  const savedStages = workflowQuery.data?.stages?.length ? workflowQuery.data.stages : defaultTaskStages;
-  const ownBoard = person.toLowerCase() === actor.toLowerCase();
+  const showsAllPeople = person === allPlanningPeople;
+  const workflowQuery = useQuery({ queryKey: workflowKey, queryFn: ({ signal }) => platformApi.taskWorkflow(organizationId, projectId, person, signal), enabled: !showsAllPeople });
+  const savedStages = showsAllPeople ? defaultTaskStages : workflowQuery.data?.stages?.length ? workflowQuery.data.stages : defaultTaskStages;
+  const ownBoard = !showsAllPeople && person.toLowerCase() === actor.toLowerCase();
   const stages = editingWorkflow && ownBoard ? draftStages : savedStages;
   const saveWorkflow = useMutation({
     mutationFn: (next: Stage[]) => platformApi.setTaskWorkflow(organizationId, projectId, actor, next),
@@ -310,8 +311,8 @@ function TasksBoard({ organizationId, projectId, features, tasks, actor, members
   const normalizedQuery = query.trim().toLowerCase();
   const featureByNumber = useMemo(() => new Map(features.map((feature) => [feature.id, feature])), [features]);
   const visibleTasks = useMemo(() => tasks
-    .filter((task) => task.owner.toLowerCase() === person.toLowerCase() && (!normalizedQuery || `${task.title} ${task.note}`.toLowerCase().includes(normalizedQuery)))
-    .sort(byTitle), [normalizedQuery, person, tasks]);
+    .filter((task) => (showsAllPeople || task.owner.toLowerCase() === person.toLowerCase()) && (!normalizedQuery || `${task.title} ${task.note}`.toLowerCase().includes(normalizedQuery)))
+    .sort(byTitle), [normalizedQuery, person, showsAllPeople, tasks]);
   const doneStage = stages.find((stage) => stage.completed)?.id ?? stages.at(-1)?.id ?? "done";
   const stageForTask = (task: PlanningTask) => {
     if (task.status === "completed") return doneStage;
@@ -329,14 +330,14 @@ function TasksBoard({ organizationId, projectId, features, tasks, actor, members
   return <>
     <div className="ticket-toolbar">
       <input aria-label="Search tasks" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tasks…" />
-      <label className="planning-person-picker"><span>Tasks for</span><SearchableSelect ariaLabel="Tasks for person" value={person} onChange={(next) => { setPerson(next); setAdding(false); setEditingWorkflow(false); }} options={people.map((member) => ({ value: member, label: member === actor ? `${member} (you)` : member }))} /></label>
+      <label className="planning-person-picker"><span>Tasks for</span><select name="taskPerson" aria-label="Tasks for person" value={person} onChange={(event) => { setPerson(event.target.value); setAdding(false); setEditingWorkflow(false); }}><option value={allPlanningPeople}>All</option>{people.map((member) => <option value={member} key={member}>{member === actor ? `${member} (you)` : member}</option>)}</select></label>
       <span className="toolbar-spacer" />
-      {ownBoard ? <button type="button" className="button" onClick={() => { if (editingWorkflow) setEditingWorkflow(false); else { setDraftStages(savedStages.map((stage) => ({ ...stage }))); setEditingWorkflow(true); } }}>{editingWorkflow ? "Close workflow" : "Customize my workflow"}</button> : <span className="personal-workflow-label">{person}&apos;s workflow</span>}
+      {ownBoard ? <button type="button" className="button" onClick={() => { if (editingWorkflow) setEditingWorkflow(false); else { setDraftStages(savedStages.map((stage) => ({ ...stage }))); setEditingWorkflow(true); } }}>{editingWorkflow ? "Close workflow" : "Customize my workflow"}</button> : <span className="personal-workflow-label">{showsAllPeople ? "Standard workflow" : <>{person}&apos;s workflow</>}</span>}
       <Button type="button" variant={adding ? "outline" : "cut"} onClick={() => setAdding(true)}>New task</Button>
     </div>
     {editingWorkflow && ownBoard ? <div className="personal-task-workflow"><StageSettings title="My task workflow" detail="Your columns are private preferences for this project. Start with GTD, then rename, reorder, add, or remove stages to match how you work." stages={draftStages} setStages={setDraftStages} saveStages={persistWorkflow} saving={saveWorkflow.isPending} error={saveWorkflow.error} completionSelectable maxStages={10} /><button type="button" className="button" disabled={saveWorkflow.isPending} onClick={() => persistWorkflow(defaultTaskStages.map((stage) => ({ ...stage })))}>Reset to GTD</button></div> : null}
     {workflowQuery.isError ? <DataNotice title="Personal workflow unavailable" detail="The task board could not load this person's workflow." /> : null}
-    {adding ? <div className="board-task-composer"><TaskComposer owner={person} initialStageId={stages.find((stage) => !stage.completed)?.id ?? "inbox"} features={features} onCreate={(input) => { createTask(input); setAdding(false); }} onCancel={() => setAdding(false)} saving={saving} /></div> : null}
+    {adding ? <div className="board-task-composer"><TaskComposer owner={showsAllPeople ? actor : person} initialStageId={stages.find((stage) => !stage.completed)?.id ?? "inbox"} features={features} onCreate={(input) => { createTask(input); setAdding(false); }} onCancel={() => setAdding(false)} saving={saving} /></div> : null}
     {!workflowQuery.isError ? <div className="ticket-board task-board">{stages.map((stage) => {
       const items = visibleTasks.filter((task) => stageForTask(task) === stage.id).sort((a, b) => a.position - b.position || byTitle(a, b));
       return <section className="ticket-column" aria-label={`${stage.label} column`} style={{ "--stage-color": stage.color } as CSSProperties} key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, stage.id, items.length)}><header><span className="stage-title"><i /><b>{stage.label}</b></span><span>{items.length}</span></header>{items.map((task, index) => <div draggable onDragStart={(event) => { event.dataTransfer.setData("text/plain", task.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.stopPropagation(); drop(event, stage.id, index); }} key={task.id}><TaskCard task={task} feature={task.featureNumber === null ? null : featureByNumber.get(task.featureNumber) ?? null} color={stage.color} onDelete={() => deleteTask(task.id)} /></div>)}</section>;
