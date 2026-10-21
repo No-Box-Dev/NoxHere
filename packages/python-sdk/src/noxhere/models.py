@@ -1067,6 +1067,11 @@ class ListUsageCardsPath(TypedDict, total=False):
 class ListUsageKeysPath(TypedDict, total=False):
     sourceId: Required[str]
 
+class MergePullRequestBody(TypedDict, total=False):
+    method: NotRequired[Literal['merge', 'squash', 'rebase']]
+    number: Required[int]
+    repo: Required[str]
+
 class PatchNoxServiceConfigPath(TypedDict, total=False):
     service: Required[Literal['noxhere', 'planning', 'activity', 'feedback', 'telemetry']]
 

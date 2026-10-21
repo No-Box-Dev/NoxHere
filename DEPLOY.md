@@ -65,7 +65,7 @@ Create a GitHub App (Settings → Developer settings → GitHub Apps → New) wi
 - **Callback URL:** `https://<your-app-domain>/auth/github/callback`
 - **Webhook URL:** `https://<your-app-domain>/api/webhook`
 - **Webhook secret:** generate a random string; you'll set it as `GITHUB_WEBHOOK_SECRET`
-- **Permissions:** Repository → Contents (read), Issues (read/write), Pull requests (read), Metadata (read); Organization → Members (read)
+- **Permissions:** Repository → Contents (read/write), Issues (read/write), Pull requests (read/write), Metadata (read); Organization → Members (read)
 - **Subscribe to events:** Issues, Pull request, Pull request review, Push, Release, Member
 - Enable **"Request user authorization (OAuth) during installation"** and **expiring user tokens** (enables refresh-token rotation)
 

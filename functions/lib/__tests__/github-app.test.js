@@ -105,8 +105,17 @@ describe("getInstallationToken", () => {
     const getGitHubInstallationToken = vi.fn(async () => "ghs_from_connections");
     const { getInstallationToken } = await import("../github-app.js");
 
-    await expect(getInstallationToken({ NOXHERE: { getGitHubInstallationToken } }, 321)).resolves.toBe("ghs_from_connections");
+    await expect(getInstallationToken({ CONNECTIONS: { getGitHubInstallationToken } }, 321)).resolves.toBe("ghs_from_connections");
     expect(getGitHubInstallationToken).toHaveBeenCalledWith(321);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("keeps the legacy NOXHERE binding as a compatibility fallback", async () => {
+    const getGitHubInstallationToken = vi.fn(async () => "ghs_from_legacy_binding");
+    const { getInstallationToken } = await import("../github-app.js");
+
+    await expect(getInstallationToken({ NOXHERE: { getGitHubInstallationToken } }, 654)).resolves.toBe("ghs_from_legacy_binding");
+    expect(getGitHubInstallationToken).toHaveBeenCalledWith(654);
     expect(fetch).not.toHaveBeenCalled();
   });
 

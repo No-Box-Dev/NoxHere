@@ -2062,6 +2062,23 @@ export const operationDefinitions = [
     "servers": []
   },
   {
+    "id": "mergePullRequest",
+    "method": "POST",
+    "path": "/api/v1/prs/merge",
+    "namespace": "activity",
+    "authentication": "admin",
+    "automationScope": null,
+    "projectScope": "optional",
+    "changeSafety": "destructive",
+    "requestContentTypes": [
+      "application/json"
+    ],
+    "responseContentTypes": [
+      "application/json"
+    ],
+    "servers": []
+  },
+  {
     "id": "patchNoxServiceConfig",
     "method": "PATCH",
     "path": "/api/v1/services/{service}/config",
