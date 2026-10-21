@@ -164,7 +164,7 @@ describe('showOverlay — optimistic flow', () => {
     expect(onCaptureError).toHaveBeenCalledWith(failure);
   });
 
-  it('keeps one picker instruction and removes it when the overlay closes', async () => {
+  it('does not render a picker instruction and cleans up stale ones on close', async () => {
     vi.mocked(initToolbar).mockImplementation((container, options) => {
       container.querySelector('[data-tool="element"]').addEventListener('click', () => {
         options.onToolChange('element');
@@ -191,9 +191,13 @@ describe('showOverlay — optimistic flow', () => {
     img.dispatchEvent(new Event('load'));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(overlay.querySelectorAll('.feedback-picker-instruction')).toHaveLength(1);
+    expect(overlay.querySelectorAll('.feedback-picker-instruction')).toHaveLength(0);
     overlay.querySelector('[data-tool="element"]').click();
-    expect(overlay.querySelectorAll('.feedback-picker-instruction')).toHaveLength(1);
+    expect(overlay.querySelectorAll('.feedback-picker-instruction')).toHaveLength(0);
+
+    const staleInstruction = document.createElement('div');
+    staleInstruction.className = 'feedback-picker-instruction';
+    document.body.appendChild(staleInstruction);
 
     hideOverlay();
     expect(document.querySelector('.feedback-picker-instruction')).toBeNull();

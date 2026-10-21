@@ -27,7 +27,7 @@ async function exercisePickerCleanup(page: import("@playwright/test").Page) {
   const picker = overlay.locator('[data-tool="element"]');
   await picker.click();
   await picker.click();
-  await expect(page.locator(".feedback-picker-instruction")).toHaveCount(1);
+  await expect(page.locator(".feedback-picker-instruction")).toHaveCount(0);
 
   await overlay.getByRole("button", { name: "Close" }).click();
   await expect(overlay).toHaveCount(0);
