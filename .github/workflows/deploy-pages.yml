@@ -23,6 +23,9 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+      STAGING_RELEASE_RECEIPT: ${{ runner.temp }}/noxhere-staging-release.json
+      PRODUCTION_ROLLBACK_MANIFEST: ${{ runner.temp }}/noxhere-production-rollback.json
+      PRODUCTION_PROMOTION_RECEIPT: ${{ runner.temp }}/noxhere-production-release.json
     steps:
       - uses: actions/checkout@v5
         with:
@@ -67,16 +70,6 @@ jobs:
           node scripts/check-worker-secrets.mjs services/connections/wrangler.jsonc staging
           GITHUB_WEBHOOK_SECRET POSTMARK_WEBHOOK_SECRET SLACK_CLIENT_ID
           SLACK_CLIENT_SECRET SLACK_SIGNING_SECRET
-      - name: Deploy staging Connections capability
-        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
-      - name: Deploy staging Telemetry capability
-        run: npx wrangler deploy --config services/telemetry/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
-      - name: Deploy staging Activity capability
-        run: npx wrangler deploy --config services/activity/wrangler.toml --env staging --message "$DEPLOY_SHA"
-      - name: Deploy staging Planning capability
-        run: npx wrangler deploy --config services/planning/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
-      - name: Deploy staging Feedback capability
-        run: npx wrangler deploy --config services/feedback/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize staging internal authorization secret
         env:
           NOXHERE_INTERNAL_SECRET: ${{ secrets.NOXHERE_INTERNAL_SECRET }}
@@ -96,6 +89,16 @@ jobs:
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/gateway/wrangler.jsonc --env staging
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/feedback/wrangler.jsonc --env staging
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env staging
+      - name: Deploy staging Connections capability
+        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env staging --message "$DEPLOY_SHA"
+      - name: Deploy staging Telemetry capability
+        run: npx wrangler deploy --config services/telemetry/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+      - name: Deploy staging Activity capability
+        run: npx wrangler deploy --config services/activity/wrangler.toml --env staging --message "$DEPLOY_SHA"
+      - name: Deploy staging Planning capability
+        run: npx wrangler deploy --config services/planning/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+      - name: Deploy staging Feedback capability
+        run: npx wrangler deploy --config services/feedback/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy staging private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env staging --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional staging background-worker secrets
@@ -121,9 +124,19 @@ jobs:
         run: npm run login:staging:acceptance
         env:
           NOX_LOGIN_ACCEPTANCE_EXPECTED_SHA: ${{ env.DEPLOY_SHA }}
+      - name: Record verified staging release
+        run: >-
+          node scripts/promote-verified-release.mjs record-staging
+          --sha "$DEPLOY_SHA" --output "$STAGING_RELEASE_RECEIPT"
 
       - name: Re-verify release is still the current main commit
         run: node scripts/assert-main-release.mjs
+      - name: Capture production rollback targets
+        id: authorize_production
+        run: >-
+          node scripts/promote-verified-release.mjs capture-rollback
+          --sha "$DEPLOY_SHA" --receipt "$STAGING_RELEASE_RECEIPT"
+          --output "$PRODUCTION_ROLLBACK_MANIFEST"
 
       - name: Migrate production platform database
         run: npx wrangler d1 migrations apply DB --config services/core-api/wrangler.jsonc --env="" --remote
@@ -138,16 +151,6 @@ jobs:
           node scripts/check-worker-secrets.mjs services/connections/wrangler.jsonc default
           GITHUB_WEBHOOK_SECRET POSTMARK_WEBHOOK_SECRET SLACK_CLIENT_ID
           SLACK_CLIENT_SECRET SLACK_SIGNING_SECRET
-      - name: Deploy production Connections capability
-        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
-      - name: Deploy production Telemetry capability
-        run: npx wrangler deploy --config services/telemetry/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
-      - name: Deploy production Activity capability
-        run: npx wrangler deploy --config services/activity/wrangler.toml --env="" --message "$DEPLOY_SHA"
-      - name: Deploy production Planning capability
-        run: npx wrangler deploy --config services/planning/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
-      - name: Deploy production Feedback capability
-        run: npx wrangler deploy --config services/feedback/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize production internal authorization secret
         env:
           NOXHERE_INTERNAL_SECRET: ${{ secrets.NOXHERE_INTERNAL_SECRET }}
@@ -167,6 +170,16 @@ jobs:
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/gateway/wrangler.jsonc --env=""
           printf '%s' "$TELEMETRY_INGEST_KEY" | npx wrangler secret put TELEMETRY_INGEST_KEY --config services/feedback/wrangler.jsonc --env=""
           printf '%s' "$NOXHERE_IDENTITY_HASH_KEY" | npx wrangler secret put NOXHERE_IDENTITY_HASH_KEY --config services/core-api/wrangler.jsonc --env=""
+      - name: Deploy production Connections capability
+        run: npx wrangler deploy --config services/connections/wrangler.jsonc --env="" --message "$DEPLOY_SHA"
+      - name: Deploy production Telemetry capability
+        run: npx wrangler deploy --config services/telemetry/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+      - name: Deploy production Activity capability
+        run: npx wrangler deploy --config services/activity/wrangler.toml --env="" --message "$DEPLOY_SHA"
+      - name: Deploy production Planning capability
+        run: npx wrangler deploy --config services/planning/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
+      - name: Deploy production Feedback capability
+        run: npx wrangler deploy --config services/feedback/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Deploy production private API
         run: npx wrangler deploy --config services/core-api/wrangler.jsonc --env="" --var "BUILD_SHA:$DEPLOY_SHA" --message "$DEPLOY_SHA"
       - name: Synchronize optional production background-worker secrets
@@ -209,3 +222,25 @@ jobs:
         env:
           ECOSYSTEM_HEALTH_WAIT_SECONDS: "960"
         run: node scripts/check-ecosystem-health.mjs https://app.noxhere.com noxhere "$DEPLOY_SHA"
+      - name: Finalize verified production release
+        run: >-
+          node scripts/promote-verified-release.mjs finalize
+          --sha "$DEPLOY_SHA" --receipt "$STAGING_RELEASE_RECEIPT"
+          --rollback-manifest "$PRODUCTION_ROLLBACK_MANIFEST"
+          --output "$PRODUCTION_PROMOTION_RECEIPT"
+      - name: Roll back failed production promotion
+        if: ${{ failure() && steps.authorize_production.outcome == 'success' }}
+        run: >-
+          node scripts/promote-verified-release.mjs rollback
+          --sha "$DEPLOY_SHA" --manifest "$PRODUCTION_ROLLBACK_MANIFEST"
+      - name: Retain release receipts
+        if: ${{ always() && steps.authorize_production.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: noxhere-release-${{ env.DEPLOY_SHA }}
+          path: |
+            ${{ env.STAGING_RELEASE_RECEIPT }}
+            ${{ env.PRODUCTION_ROLLBACK_MANIFEST }}
+            ${{ env.PRODUCTION_PROMOTION_RECEIPT }}
+          if-no-files-found: warn
+          retention-days: 30

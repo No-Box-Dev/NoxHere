@@ -1,4 +1,4 @@
-export const activeMilestone = "M5";
+export const activeMilestone = "M6";
 
 export const milestones = [
   {
@@ -164,8 +164,15 @@ export const milestones = [
     id: "M6",
     name: "Safe promotion and rollback",
     objective: "Require a verified staging release and retain a tested rollback target before production promotion.",
-    requiredPaths: ["scripts/promote-verified-release.mjs"],
-    gates: [{ name: "Promotion and rollback contract", command: "node", args: ["scripts/promote-verified-release.mjs", "--check"] }],
+    requiredPaths: [
+      "scripts/promote-verified-release.mjs",
+      "scripts/promote-verified-release.test.js",
+      ".github/workflows/deploy-pages.yml",
+    ],
+    gates: [
+      { name: "Promotion workflow contract", command: "node", args: ["scripts/promote-verified-release.mjs", "--check"] },
+      { name: "Promotion receipt and rollback behavior", command: "npx", args: ["vitest", "run", "scripts/promote-verified-release.test.js"] },
+    ],
   },
   {
     id: "M7",
