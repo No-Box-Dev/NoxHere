@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { platformServices } from "../config/platform-services.mjs";
+import { validateHealthContracts } from "./check-health-contracts.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const wrangler = resolve(root, "node_modules/.bin/wrangler");
@@ -15,6 +16,7 @@ const REQUIRED_STAGING_CHECKS = [
   "api-surface",
   "login-acceptance",
   "readiness",
+  "health-contracts",
   "deployment-versions",
 ];
 
@@ -205,19 +207,26 @@ export async function verifyReleaseHealth(origin, expectedSha, fetchImpl = fetch
     if (!response.ok) fail(`${path} returned ${response.status}: ${JSON.stringify(body)}`);
     return body;
   };
-  const [platform, readiness] = await Promise.all([get("/__noxhere/health"), get("/api/health/ready")]);
+  const [platform, readiness, contracts] = await Promise.all([
+    get("/__noxhere/health"),
+    get("/api/health/ready"),
+    get("/__noxhere/health/contracts"),
+  ]);
   if (platform?.status !== "ok" || platform?.service !== "noxhere" || platform?.plane !== "public-platform") {
     fail("gateway liveness is not healthy");
   }
-  const requiredChecks = ["database", "backgroundWorker", "deliveryQueue", "planning", "feedback", "telemetry", "activity"];
+  const requiredChecks = [
+    "database", "backgroundWorker", "deliveryQueue", "connections",
+    "planning", "feedback", "telemetry", "activity", "scheduler",
+  ];
   if (readiness?.status !== "ok" || requiredChecks.some((check) => readiness?.checks?.[check] !== true)) {
     fail("ecosystem readiness is not healthy");
   }
-  for (const component of ["noxhere", "background", "planning", "feedback", "telemetry"]) {
+  for (const component of ["noxhere", "background", "connections", "planning", "feedback", "telemetry", "activity", "scheduler"]) {
     if (readiness?.versions?.[component] !== expectedSha) fail(`${component} readiness does not match ${expectedSha}`);
   }
-  if (readiness?.versions?.activity && readiness.versions.activity !== expectedSha) fail(`activity readiness does not match ${expectedSha}`);
-  return { platform, readiness };
+  validateHealthContracts(contracts, expectedSha);
+  return { platform, readiness, contracts };
 }
 
 export function rollbackToManifest(manifest, expectedSha, {

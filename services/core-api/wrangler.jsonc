@@ -41,7 +41,8 @@
     { "binding": "PLANNING_SERVICE", "service": "noxhere-planning" },
     { "binding": "TELEMETRY_RESPONSE", "service": "noxhere-telemetry" },
     { "binding": "TELEMETRY_INGEST", "service": "noxhere-telemetry" },
-    { "binding": "ACTIVITY_RESPONSE", "service": "noxhere-activity" }
+    { "binding": "ACTIVITY_RESPONSE", "service": "noxhere-activity" },
+    { "binding": "BACKGROUND_SERVICE", "service": "noxhere-orchestrator" }
   ],
   "r2_buckets": [
     { "binding": "SPEC_ATTACHMENTS", "bucket_name": "noxhere-spec-attachments" },
@@ -62,7 +63,8 @@
         { "binding": "PLANNING_SERVICE", "service": "noxhere-planning-staging" },
         { "binding": "TELEMETRY_RESPONSE", "service": "noxhere-telemetry-staging" },
         { "binding": "TELEMETRY_INGEST", "service": "noxhere-telemetry-staging" },
-        { "binding": "ACTIVITY_RESPONSE", "service": "noxhere-activity-staging" }
+        { "binding": "ACTIVITY_RESPONSE", "service": "noxhere-activity-staging" },
+        { "binding": "BACKGROUND_SERVICE", "service": "noxhere-orchestrator-staging" }
       ],
       "d1_databases": [
         {

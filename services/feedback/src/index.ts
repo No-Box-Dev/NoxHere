@@ -44,6 +44,7 @@ import {
   reportSiteError,
 } from "./telemetry";
 import { resolutionResponsePage, submitResolutionResponse, type FeedbackEnv } from "./resolution-response";
+import { livenessResponse, readinessResponse } from "../../../packages/contracts/health";
 
 type AppContext = Context<{ Bindings: FeedbackEnv }>;
 
@@ -598,22 +599,30 @@ app.get("/widget/:siteId{.+\\.js$}", async (context) => {
   });
 });
 
-app.get("/health", async (context) => {
-  context.header("Cache-Control", "no-store");
+app.get("/health/live", (context) => livenessResponse("feedback", context.env.BUILD_SHA));
+
+async function feedbackReadiness(env: FeedbackEnv): Promise<Response> {
   try {
-    await context.env.DB.prepare("SELECT id, org_id, project_id, repo, name, widget_config FROM spot_sites LIMIT 1").first();
-    return context.json({
-      status: "ok", service: "noxhere-feedback", owner: "noxhere", plane: "public-capture",
-      contractVersion: 1, buildSha: context.env.BUILD_SHA ?? "development",
+    await env.DB.prepare("SELECT id, org_id, project_id, repo, name, widget_config FROM spot_sites LIMIT 1").first();
+    return readinessResponse("feedback", env.BUILD_SHA, {
+      database: true,
+      assets: Boolean(env.ASSETS),
+      taskQueue: Boolean(env.TASK_QUEUE),
     });
   } catch (error) {
     console.error(JSON.stringify({ event: "feedback_readiness_failed", error: message(error) }));
-    return context.json({
-      status: "unavailable", service: "noxhere-feedback", owner: "noxhere", plane: "public-capture",
-      contractVersion: 1, buildSha: context.env.BUILD_SHA ?? "development",
-    }, 503);
+    return readinessResponse("feedback", env.BUILD_SHA, {
+      database: false,
+      assets: Boolean(env.ASSETS),
+      taskQueue: Boolean(env.TASK_QUEUE),
+    });
   }
-});
+}
+
+app.get("/health/ready", (context) => feedbackReadiness(context.env));
+// Compatibility alias for existing private callers; readiness is explicit at
+// /health/ready and liveness never touches D1.
+app.get("/health", (context) => feedbackReadiness(context.env));
 
 app.get("/", (context) => context.json({ name: "NoxHere Feedback capture API", contractVersion: 1 }));
 
@@ -621,7 +630,7 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export { RateLimiter };
+export { RateLimiter, feedbackReadiness };
 
 export default class FeedbackService extends WorkerEntrypoint<FeedbackEnv> {
   describe() {

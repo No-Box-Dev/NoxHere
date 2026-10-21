@@ -5,6 +5,8 @@ interface Env {
   FEEDBACK_RESPONSE?: Fetcher;
   TELEMETRY_RESPONSE?: TelemetryService;
   ACTIVITY_RESPONSE?: Fetcher;
+  CONNECTIONS?: Fetcher;
+  BACKGROUND_SERVICE?: Fetcher;
 }
 
 interface TelemetryService extends Fetcher {
@@ -25,18 +27,39 @@ interface HeartbeatRow { status: string; last_succeeded_at: string | null; relea
 interface CountRow { count: number }
 
 const BACKGROUND_HEARTBEAT_MAX_AGE_MS = 10 * 60 * 1000;
-const REQUIRED_CHECKS = ["database", "deliveryQueue", "planning", "feedback", "telemetry", "activity"] as const;
+const REQUIRED_CHECKS = [
+  "database", "backgroundWorker", "deliveryQueue", "connections",
+  "planning", "feedback", "telemetry", "activity", "scheduler",
+] as const;
 const SERVICE_TIMEOUT_MS = 2_000;
 interface ServiceProbe { ok: boolean; buildSha?: string }
 
-async function probeService(service: Fetcher | undefined, url: string): Promise<ServiceProbe> {
+async function probeService(
+  service: Fetcher | undefined,
+  url: string,
+  expectedService: string,
+  expectedBuildSha: string,
+): Promise<ServiceProbe> {
   if (!service) return { ok: false };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SERVICE_TIMEOUT_MS);
   try {
     const response = await service.fetch(new Request(url, { signal: controller.signal }));
-    const body: { buildSha?: unknown } = await response.json<{ buildSha?: unknown }>().catch(() => ({}));
-    return { ok: response.ok, ...(typeof body.buildSha === "string" ? { buildSha: body.buildSha } : {}) };
+    const body = await response.json().catch(() => ({})) as {
+      buildSha?: unknown;
+      kind?: unknown;
+      service?: unknown;
+      status?: unknown;
+    };
+    const buildSha = typeof body.buildSha === "string" ? body.buildSha : undefined;
+    return {
+      ok: response.ok
+        && body.kind === "readiness"
+        && body.service === expectedService
+        && body.status === "ok"
+        && buildSha === expectedBuildSha,
+      ...(buildSha ? { buildSha } : {}),
+    };
   } catch {
     return { ok: false };
   } finally {
@@ -59,7 +82,7 @@ async function withServiceTimeout<T>(operation: Promise<T>): Promise<T> {
 }
 
 async function probeTelemetry(service: TelemetryService | undefined, expectedBuildSha: string): Promise<ServiceProbe> {
-  const health = await probeService(service, "https://telemetry.internal/health");
+  const health = await probeService(service, "https://telemetry.internal/health/ready", "telemetry", expectedBuildSha);
   if (!health.ok || !health.buildSha || health.buildSha !== expectedBuildSha || !service) return { ...health, ok: false };
   try {
     const occurredAt = "2026-01-01T00:00:00.000Z";
@@ -98,6 +121,8 @@ export async function onRequestGet(context: Context): Promise<Response> {
     feedback: false,
     telemetry: false,
     activity: false,
+    connections: false,
+    scheduler: false,
   };
 
   try {
@@ -122,31 +147,42 @@ export async function onRequestGet(context: Context): Promise<Response> {
     // Public health responses expose component state, never internal errors.
   }
 
-  const [ticket, spot, cue, feed] = await Promise.all([
-    probeService(context.env.PLANNING_SERVICE, "https://planning.internal/health"),
-    probeService(context.env.FEEDBACK_RESPONSE, "https://feedback.internal/health"),
+  const [connections, ticket, spot, cue, feed, scheduler] = await Promise.all([
+    probeService(context.env.CONNECTIONS, "https://connections.internal/health/ready", "connections", expectedBuildSha),
+    probeService(context.env.PLANNING_SERVICE, "https://planning.internal/health/ready", "planning", expectedBuildSha),
+    probeService(context.env.FEEDBACK_RESPONSE, "https://feedback.internal/health/ready", "feedback", expectedBuildSha),
     probeTelemetry(context.env.TELEMETRY_RESPONSE, expectedBuildSha),
-    probeService(context.env.ACTIVITY_RESPONSE, "https://activity.internal/health"),
+    probeService(context.env.ACTIVITY_RESPONSE, "https://activity.internal/health/ready", "activity", expectedBuildSha),
+    probeService(context.env.BACKGROUND_SERVICE, "https://scheduler.internal/health/ready", "scheduler", expectedBuildSha),
   ]);
+  checks.connections = connections.ok;
   checks.planning = ticket.ok;
   checks.feedback = spot.ok;
   checks.telemetry = cue.ok;
   checks.activity = feed.ok;
+  checks.scheduler = scheduler.ok;
   const versions = {
     noxhere: expectedBuildSha,
     ...(backgroundRelease ? { background: backgroundRelease } : {}),
+    ...(connections.buildSha ? { connections: connections.buildSha } : {}),
     ...(ticket.buildSha ? { planning: ticket.buildSha } : {}),
     ...(spot.buildSha ? { feedback: spot.buildSha } : {}),
     ...(cue.buildSha ? { telemetry: cue.buildSha } : {}),
     ...(feed.buildSha ? { activity: feed.buildSha } : {}),
+    ...(scheduler.buildSha ? { scheduler: scheduler.buildSha } : {}),
   };
 
   const ready = REQUIRED_CHECKS.every((check) => checks[check]);
-  const status = ready
-    ? (checks.backgroundWorker ? "ok" : "degraded")
-    : "not_ready";
   return Response.json(
-    { service: "noxhere", status, checks, versions },
+    {
+      contractVersion: 1,
+      kind: "readiness",
+      service: "core-api",
+      status: ready ? "ok" : "not_ready",
+      buildSha: expectedBuildSha,
+      checks,
+      versions,
+    },
     { status: ready ? 200 : 503, headers: { "Cache-Control": "no-store" } },
   );
 }

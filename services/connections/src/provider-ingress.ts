@@ -11,6 +11,7 @@ import { onRequestPatch as updateSlackConnection } from "../../../functions/api/
 import { onRequestPost as disconnectSlack } from "../../../functions/api/slack/disconnect.js";
 import { onRequestPost as startIntegrationConnection } from "../../../functions/api/integrations/connections/[provider]/start.js";
 import { verifyNoxHereAssertion } from "../../../functions/lib/noxhere-assertion";
+import { livenessResponse, readinessResponse } from "../../../packages/contracts/health";
 
 type NoxHereAssertion = NonNullable<Awaited<ReturnType<typeof verifyNoxHereAssertion>>>;
 
@@ -23,6 +24,7 @@ export interface ProviderIngressEnv {
   SLACK_CLIENT_ID?: string;
   SLACK_CLIENT_SECRET?: string;
   SLACK_SIGNING_SECRET?: string;
+  BUILD_SHA?: string;
   NOXHERE_INTERNAL_SECRET?: string;
   NOXHERE_INTERNAL_SECRET_PREVIOUS?: string;
   [key: string]: unknown;
@@ -60,7 +62,14 @@ const AUTHENTICATED_ROUTES = new Map<string, {
 
 export async function handleProviderIngress(context: ProviderIngressContext): Promise<Response> {
   const url = new URL(context.request.url);
-  if (url.pathname === "/__noxhere/provider-ingress/ready") {
+  if (url.pathname === "/health/live") {
+    if (context.request.method !== "GET" && context.request.method !== "HEAD") {
+      return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+    return livenessResponse("connections", context.env.BUILD_SHA);
+  }
+  if (url.pathname === "/health/ready" || url.pathname === "/health"
+      || url.pathname === "/__noxhere/provider-ingress/ready") {
     if (context.request.method !== "GET" && context.request.method !== "HEAD") {
       return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
     }
@@ -108,8 +117,19 @@ export async function handleProviderIngress(context: ProviderIngressContext): Pr
   return authenticatedRoute.handler(authenticatedContext);
 }
 
-export function providerIngressReadiness(env: ProviderIngressEnv): Response {
+export async function providerIngressReadiness(env: ProviderIngressEnv): Promise<Response> {
+  let database = false;
+  try {
+    await env.DB.prepare("SELECT id FROM orgs LIMIT 1").first();
+    database = true;
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "connections_readiness_failed",
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
   const checks = {
+    database,
     github: Boolean(env.GITHUB_WEBHOOK_SECRET),
     slack: Boolean(
       env.ENCRYPTION_KEY
@@ -119,14 +139,5 @@ export function providerIngressReadiness(env: ProviderIngressEnv): Response {
     ),
     postmark: Boolean(env.POSTMARK_WEBHOOK_SECRET),
   };
-  const ready = Object.values(checks).every(Boolean);
-  return Response.json({
-    service: "noxhere-connections",
-    status: ready ? "ok" : "degraded",
-    dependency: "provider-ingress",
-    checks,
-  }, {
-    status: ready ? 200 : 503,
-    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
-  });
+  return readinessResponse("connections", env.BUILD_SHA, checks);
 }

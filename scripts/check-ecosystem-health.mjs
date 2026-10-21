@@ -1,3 +1,5 @@
+import { validateHealthContracts } from "./check-health-contracts.mjs";
+
 const [origin, expectedService, expectedSha] = process.argv.slice(2);
 if (!origin) throw new Error("Usage: check-ecosystem-health.mjs <origin> [service] [sha]");
 const waitSeconds = Number(process.env.ECOSYSTEM_HEALTH_WAIT_SECONDS ?? "0");
@@ -18,10 +20,11 @@ async function json(path) {
 }
 
 async function check() {
-  const [platform, boundary, readiness] = await Promise.all([
+  const [platform, boundary, readiness, contracts] = await Promise.all([
     json("/__noxhere/health"),
     json("/__noxhere/health/private-boundary"),
     json("/api/health/ready"),
+    json("/__noxhere/health/contracts"),
   ]);
 
   if (platform?.service !== "noxhere" || platform?.status !== "ok") {
@@ -30,7 +33,10 @@ async function check() {
   if (boundary?.status !== "ok") {
     throw new Error(`Private service boundary is degraded: ${JSON.stringify(boundary)}`);
   }
-  const requiredChecks = ["database", "backgroundWorker", "deliveryQueue", "planning", "feedback", "telemetry", "activity"];
+  const requiredChecks = [
+    "database", "backgroundWorker", "deliveryQueue", "connections",
+    "planning", "feedback", "telemetry", "activity", "scheduler",
+  ];
   if (readiness?.status !== "ok"
     || requiredChecks.some((component) => readiness?.checks?.[component] !== true)) {
     throw new Error(`Ecosystem readiness failed: ${JSON.stringify(readiness)}`);
@@ -44,8 +50,9 @@ async function check() {
   if (expectedSha && readiness?.versions?.background !== expectedSha) {
     throw new Error(`background is ${readiness?.versions?.background ?? "unknown"}; expected ${expectedSha}`);
   }
+  if (expectedSha) validateHealthContracts(contracts, expectedSha);
 
-  return { platform, readiness };
+  return { platform, readiness, contracts };
 }
 
 let result;

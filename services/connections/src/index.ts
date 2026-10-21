@@ -36,6 +36,7 @@ import { sendSlackMessage } from "./slack-message";
 interface Env {
   DB: D1Database;
   TASK_QUEUE: Queue;
+  BUILD_SHA?: string;
   GITHUB_APP_ID?: string;
   GITHUB_APP_PRIVATE_KEY?: string;
   ANTHROPIC_API_KEY?: string;

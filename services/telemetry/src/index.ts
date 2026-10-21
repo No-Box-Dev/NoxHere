@@ -12,6 +12,10 @@ import {
 } from "./response";
 import { runEndpointMonitors, testEndpointMonitor } from "./monitor";
 import { TELEMETRY_SERVICE_MANIFEST } from "./service-manifest";
+import { livenessResponse } from "../../../packages/contracts/health";
+import { telemetryReadiness } from "./health";
+
+export { telemetryReadiness } from "./health";
 
 function jsonError(error: string, status: number): Response {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -27,11 +31,14 @@ export default class TelemetryService extends WorkerEntrypoint<Env> {
   }
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/health/live") {
+      return livenessResponse("telemetry", this.env.BUILD_SHA);
+    }
+    if (request.method === "GET" && (url.pathname === "/health/ready" || url.pathname === "/health")) {
+      return telemetryReadiness(this.env);
+    }
     const chartResponse = await handleChartImage(request, this.env.NOX_DB);
     if (chartResponse) return chartResponse;
-    if (request.method === "GET" && url.pathname === "/health") {
-      return Response.json({ service: "telemetry", status: "ok", buildSha: this.env.BUILD_SHA ?? "development" });
-    }
     if (url.pathname === "/v1/events") {
       return handleTelemetryEvent(request, this.env);
     }

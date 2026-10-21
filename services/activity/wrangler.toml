@@ -2,6 +2,9 @@ name = "noxhere-activity"
 main = "src/index.js"
 compatibility_date = "2026-09-09"
 
+[vars]
+BUILD_SHA = "development"
+
 [observability]
 enabled = true
 
@@ -16,6 +19,9 @@ migrations_dir = "migrations"
 
 [env.staging]
 name = "noxhere-activity-staging"
+
+[env.staging.vars]
+BUILD_SHA = "development"
 
 [[env.staging.d1_databases]]
 binding = "DEMO_DB"

@@ -34,6 +34,7 @@ import { projectPlatformEvent } from "../../../functions/lib/platform-event-proj
 import { recoverPlatformEventProjections } from "../../../functions/lib/platform-event-store.ts";
 import { recoverTransportDeliveryEvents } from "../../../functions/lib/transport-delivery-events.ts";
 import { recoverAbandonedReconciliations } from "./reconciliation-recovery.js";
+import { livenessResponse, readinessResponse } from "../../../packages/contracts/health.ts";
 
 // Bound how many independent reconciliation messages a maintenance tick can
 // publish. Queue consumers process one organization per invocation.
@@ -43,6 +44,7 @@ const MAX_RECONCILIATIONS_PER_TICK = 100;
 // 1-based). We record the terminal failure on the FINAL delivery, so this must
 // equal max_retries + 1 (max_retries is set in services/scheduler/wrangler.toml).
 const MAX_DELIVERIES = 5;
+const SCHEDULE_HEARTBEAT_MAX_AGE_MS = 10 * 60 * 1000;
 
 function heartbeatRelease(env) {
   return env.BUILD_SHA ?? env.CF_VERSION_METADATA?.id;
@@ -108,11 +110,17 @@ export default {
 
   // Manual trigger for `wrangler dev --test-scheduled` and curl /__scheduled.
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/health/live") {
+      return livenessResponse("scheduler", heartbeatRelease(env));
+    }
+    if (request.method === "GET" && (url.pathname === "/health/ready" || url.pathname === "/health")) {
+      return schedulerReadiness(env);
+    }
     // These routes mutate shared state and exist only for deliberate local
     // diagnostics. Production has no ENABLE_MANUAL_CRON binding, so its public
     // workers.dev hostname exposes no operator surface.
     if (env.ENABLE_MANUAL_CRON !== "true") return new Response("not found", { status: 404 });
-    const url = new URL(request.url);
     if (url.pathname === "/__scheduled") {
       ctx.waitUntil(runTick(env));
       return new Response("ok\n");
@@ -128,6 +136,36 @@ export default {
     return new Response("not found", { status: 404 });
   },
 };
+
+export async function schedulerReadiness(env, now = Date.now()) {
+  let database = false;
+  let schedule = false;
+  try {
+    const heartbeat = await env.DB.prepare(
+      "SELECT status, last_succeeded_at, release FROM service_heartbeats WHERE component = 'background.schedule'",
+    ).first();
+    database = true;
+    const succeededAt = heartbeat?.last_succeeded_at ? Date.parse(heartbeat.last_succeeded_at) : Number.NaN;
+    schedule = heartbeat?.status === "healthy"
+      && Number.isFinite(succeededAt)
+      && now - succeededAt <= SCHEDULE_HEARTBEAT_MAX_AGE_MS
+      && heartbeat?.release === heartbeatRelease(env);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "scheduler_readiness_failed",
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
+  return readinessResponse("scheduler", heartbeatRelease(env), {
+    database,
+    schedule,
+    taskQueue: Boolean(env.TASK_QUEUE),
+    connections: Boolean(env.NOXHERE),
+    feedback: Boolean(env.FEEDBACK_RESPONSE),
+    telemetry: Boolean(env.TELEMETRY_RESPONSE),
+    activity: Boolean(env.ACTIVITY_RESPONSE),
+  });
+}
 
 async function runScheduledEvent(env, event) {
   // This heartbeat proves Cloudflare delivered a trigger. Job health is tracked

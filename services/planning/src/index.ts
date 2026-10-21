@@ -5,7 +5,8 @@ import { createFeature, listFeatures, updateFeature } from "./features";
 import { deleteFeatureAttachment, getFeatureAttachment, listFeatureAttachments, putFeatureAttachment } from "./feature-attachments";
 import { activityMessage, featureAddedMessage, testMessage } from "./messages";
 import { PLANNING_MANIFEST } from "./manifest";
-import { checkReadiness } from "./readiness";
+import { livenessResponse } from "../../../packages/contracts/health";
+import { planningReadiness } from "./health";
 import { createTask, deleteTask, listTasks, updateTask, type TaskFilters } from "./tasks";
 import { getTaskWorkflow, putTaskWorkflow } from "./task-workflows";
 import {
@@ -17,6 +18,8 @@ import {
   type SpecFilters,
   type TicketScope,
 } from "./specs";
+
+export { planningReadiness } from "./health";
 
 export default class PlanningService extends WorkerEntrypoint<Env> {
   describe() { return PLANNING_MANIFEST; }
@@ -80,16 +83,11 @@ export default class PlanningService extends WorkerEntrypoint<Env> {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/health") {
-      try {
-        return Response.json(await checkReadiness(this.env.DB, this.env.BUILD_SHA));
-      } catch (error) {
-        console.error(JSON.stringify({
-          event: "planning_readiness_failed",
-          error: error instanceof Error ? error.message : String(error),
-        }));
-        return Response.json({ service: "planning", status: "unavailable", contractVersion: 1 }, { status: 503 });
-      }
+    if (request.method === "GET" && url.pathname === "/health/live") {
+      return livenessResponse("planning", this.env.BUILD_SHA);
+    }
+    if (request.method === "GET" && (url.pathname === "/health/ready" || url.pathname === "/health")) {
+      return planningReadiness(this.env);
     }
     return Response.json({ error: "not_found" }, { status: 404 });
   }
