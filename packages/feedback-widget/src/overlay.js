@@ -300,7 +300,7 @@ export function hideOverlay() {
   // The picker instruction is intentionally cleaned independently from the
   // overlay state. This also removes coachmarks orphaned by an interrupted or
   // older picker lifecycle.
-  hidePickerInstruction();
+  removePickerInstructions();
   if (!overlayElement) return;
 
   document.removeEventListener('keydown', handleKeyDown);
@@ -523,10 +523,7 @@ function activateScreenshotElementPicker() {
   // Clicking the already-active toolbar button must not register duplicate
   // listeners or create another instruction. Duplicate coachmarks used to
   // leave the earlier one behind after the overlay closed.
-  if (elementPickerActive) {
-    showPickerInstruction();
-    return;
-  }
+  if (elementPickerActive) return;
   elementPickerActive = true;
   disableCanvas(); // Prevent drawing while selecting elements
 
@@ -567,15 +564,12 @@ function activateScreenshotElementPicker() {
   wrapper.addEventListener('touchmove', handleScreenshotTouchMove, { passive: false });
   wrapper.addEventListener('touchend', handleScreenshotTouchEnd);
 
-  // Show instruction
-  showPickerInstruction();
-
   debugLog('[Feedback] Screenshot element picker activated');
 }
 
 function deactivateScreenshotElementPicker() {
-  // Always remove the instruction even if picker state was reset out of band.
-  hidePickerInstruction();
+  // Clean coachmarks left behind by older cached widget bundles.
+  removePickerInstructions();
   if (!elementPickerActive) return;
   elementPickerActive = false;
   enableCanvas(); // Re-enable drawing when leaving element picker
@@ -817,41 +811,9 @@ function handleScreenshotTouchEnd(e) {
   }
 }
 
-let pickerInstructionEl = null;
-
-function showPickerInstruction() {
-  if (!overlayElement || pickerInstructionEl?.isConnected) return;
-  hidePickerInstruction();
-  const isMobile = window.matchMedia('(max-width: 767px)').matches;
-  pickerInstructionEl = document.createElement('div');
-  pickerInstructionEl.className = 'feedback-picker-instruction';
-  pickerInstructionEl.style.cssText = `
-    position: fixed;
-    top: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #201E1D;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px;
-    z-index: 2147483647;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  `;
-  pickerInstructionEl.textContent = isMobile
-    ? 'Tap to highlight, tap again to select'
-    : 'Click on an element to select it';
-  // Keep the coachmark owned by the overlay so removing the overlay can never
-  // leave it floating over the host application.
-  overlayElement.appendChild(pickerInstructionEl);
-}
-
-function hidePickerInstruction() {
-  pickerInstructionEl?.remove();
-  // Clean up any duplicate coachmarks produced by an older widget bundle.
+function removePickerInstructions() {
+  // Clean up coachmarks produced by older cached widget bundles.
   document.querySelectorAll('.feedback-picker-instruction').forEach((element) => element.remove());
-  pickerInstructionEl = null;
 }
 
 function handleElementSelected(elementInfo) {
