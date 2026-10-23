@@ -72,6 +72,11 @@ jobs:
         run: |
           node --input-type=module -e 'const expected = "22.23.4"; if (process.versions.node !== expected) { console.error(`Expected patched Node.js ${expected}; running ${process.versions.node}`); process.exit(1); } console.log(`Verified Node.js ${process.versions.node}`);'
       - run: npm ci
+      - name: Install locked login milestone dependencies
+        run: |
+          for package in apps/web services/gateway services/activity services/planning services/feedback services/telemetry packages/sdk; do
+            npm ci --prefix "$package" || exit "$?"
+          done
       - name: Enforce active platform event milestone
         run: npm run milestones:verify
       - name: Enforce active login hardening milestone
