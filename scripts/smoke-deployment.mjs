@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { NATIVE_DEVICE_CLIENTS } from "../packages/contracts/native-clients.ts";
 
 const [platformOrigin, spotOrigin, expectedSha] = process.argv.slice(2);

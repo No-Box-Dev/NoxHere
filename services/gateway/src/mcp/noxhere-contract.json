@@ -1,0 +1,761 @@
+{
+  "source": "https://github.com/No-Box-Dev/NoxHere/blob/69985fc1623ccda050d46cb6d03fe9b937a2ddfe/public/openapi.json",
+  "sourceCommit": "69985fc1623ccda050d46cb6d03fe9b937a2ddfe",
+  "apiVersion": "1.0.0",
+  "domains": [
+    {
+      "name": "Spots",
+      "status": "partial",
+      "note": "Known report detail only; report listing is not token-supported."
+    },
+    {
+      "name": "Incidents",
+      "status": "partial",
+      "note": "Latest 50 unresolved incidents only; requires optional issues:read."
+    },
+    {
+      "name": "Work",
+      "status": "read-only",
+      "note": "Tasks, features, specifications, and repository issues."
+    },
+    {
+      "name": "Growth",
+      "status": "unavailable",
+      "note": "Dashboard routes are absent from the project-token allowlist."
+    },
+    {
+      "name": "Usage",
+      "status": "unavailable",
+      "note": "Dashboard routes are absent from the project-token allowlist."
+    },
+    {
+      "name": "Activity",
+      "status": "read-only",
+      "note": "Engineering activity, releases, and pull requests."
+    },
+    {
+      "name": "Admin",
+      "status": "unavailable",
+      "note": "Organization administration requires separate privileged authorization."
+    }
+  ],
+  "operations": [
+    {
+      "name": "spots_get_report",
+      "operationId": "getFeedbackReport",
+      "path": "/api/v1/feedback/reports/{reportId}",
+      "method": "GET",
+      "scope": "feedback:read",
+      "summary": "Read one feedback report and protected evidence metadata by ID",
+      "parameters": [
+        {
+          "name": "reportId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9:_-]{1,120}$"
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9:_-]{1,120}$"
+          }
+        },
+        "required": [
+          "reportId"
+        ]
+      },
+      "authorizationEvidence": {
+        "kind": "verified_runtime_contract_drift",
+        "note": "Published OpenAPI omits noxApiToken. Existing gateway scope mapping, connector allowlist, resource lookup, and report/evidence SQL already admit project-bound feedback:read tokens. No authorization expansion is required for this GET. Authenticated staging verification remains required.",
+        "sourceCommit": "69985fc1623ccda050d46cb6d03fe9b937a2ddfe",
+        "paths": [
+          "services/gateway/src/control/auth.ts",
+          "functions/lib/api-auth.js",
+          "functions/_middleware.js",
+          "functions/api/feedback/reports/[id].ts",
+          "functions/lib/__tests__/api-auth.test.ts"
+        ]
+      },
+      "domain": "Spots",
+      "title": "Get Spot report",
+      "description": "Read one widget report and its evidence references.\nUse a known report ID; evidence files are not downloaded."
+    },
+    {
+      "name": "incidents_list",
+      "domain": "Incidents",
+      "title": "List Incidents",
+      "description": "List the latest 50 unresolved runtime incidents.\nThis is a bounded snapshot, not a complete incident history.",
+      "operationId": "getProjectIncidents",
+      "path": "/api/v1/projects/{projectId}/incidents",
+      "method": "GET",
+      "scope": "issues:read",
+      "summary": "Read project incidents from the existing overview route",
+      "parameters": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "contextPathParameters": {
+        "projectId": "projectId"
+      },
+      "projection": "incidents",
+      "authorizationEvidence": {
+        "kind": "verified_runtime_contract_drift",
+        "sourceCommit": "69985fc1623ccda050d46cb6d03fe9b937a2ddfe",
+        "note": "The existing gateway issues:read mapping and connector GET collection allowlist admit this route. The existing handler binds org and project and limits unresolved errors to 50. Only errors are exposed; metrics and source metadata are discarded. No auth code or token grants are changed. Detail GET remains unsupported.",
+        "paths": [
+          "services/gateway/src/control/auth.ts",
+          "functions/lib/api-auth.js",
+          "functions/_middleware.js",
+          "functions/api/v1/projects/[id]/incidents.ts",
+          "functions/api/telemetry/project-overview.ts"
+        ]
+      }
+    },
+    {
+      "name": "work_list_tasks",
+      "operationId": "listPlanningTasks",
+      "path": "/api/v1/tasks",
+      "method": "GET",
+      "scope": "planning:read",
+      "summary": "List Planning tasks",
+      "parameters": [
+        {
+          "name": "owner",
+          "in": "query",
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "status",
+          "in": "query",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "open",
+              "completed",
+              "all"
+            ],
+            "default": "all",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "featureNumber",
+          "in": "query",
+          "schema": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "string",
+                "const": "general"
+              }
+            ]
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "owner": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "completed",
+              "all"
+            ],
+            "default": "all",
+            "maxLength": 2048
+          },
+          "featureNumber": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "string",
+                "const": "general"
+              }
+            ]
+          }
+        }
+      },
+      "domain": "Work",
+      "title": "List Work tasks",
+      "description": "List tasks by owner, status, or feature.\nUse this to see what needs doing in the connected project."
+    },
+    {
+      "name": "work_list_features",
+      "operationId": "listFeatures",
+      "path": "/api/v1/features",
+      "method": "GET",
+      "scope": "planning:read",
+      "summary": "List Planning features",
+      "parameters": [
+        {
+          "name": "state",
+          "in": "query",
+          "schema": {
+            "type": "string",
+            "default": "open",
+            "maxLength": 2048
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "type": "string",
+            "default": "open",
+            "maxLength": 2048
+          }
+        }
+      },
+      "domain": "Work",
+      "title": "List Work features",
+      "description": "List the project\u2019s features.\nUse feature numbers to find their tasks and specifications."
+    },
+    {
+      "name": "work_list_specs",
+      "operationId": "listSpecs",
+      "path": "/api/v1/specs",
+      "method": "GET",
+      "scope": "planning:read",
+      "summary": "List Planning specifications",
+      "parameters": [
+        {
+          "name": "featureNumber",
+          "in": "query",
+          "schema": {
+            "type": "string",
+            "description": "Positive feature number or unfiled",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "include",
+          "in": "query",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "all"
+            ],
+            "maxLength": 2048
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "featureNumber": {
+            "type": "string",
+            "description": "Positive feature number or unfiled",
+            "maxLength": 2048
+          },
+          "include": {
+            "type": "string",
+            "enum": [
+              "all"
+            ],
+            "maxLength": 2048
+          }
+        }
+      },
+      "domain": "Work",
+      "title": "List Work specifications",
+      "description": "List specifications, optionally for one feature.\nUse a returned specification ID with work_get_spec."
+    },
+    {
+      "name": "work_get_spec",
+      "operationId": "getSpec",
+      "path": "/api/v1/specs/{specId}",
+      "method": "GET",
+      "scope": "planning:read",
+      "summary": "Get one specification",
+      "parameters": [
+        {
+          "name": "specId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "specId": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "specId"
+        ]
+      },
+      "domain": "Work",
+      "title": "Get Work specification",
+      "description": "Read one specification by ID.\nUse work_list_specs first when the ID is unknown."
+    },
+    {
+      "name": "work_list_issues",
+      "operationId": "listIssues",
+      "path": "/api/v1/issues",
+      "method": "GET",
+      "scope": "activity:read",
+      "summary": "List tracked GitHub issues",
+      "parameters": [
+        {
+          "name": "state",
+          "in": "query",
+          "required": false,
+          "description": "Issue state filter",
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "repo",
+          "in": "query",
+          "required": false,
+          "description": "Repository name",
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "description": "Page number",
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        {
+          "name": "page_size",
+          "in": "query",
+          "required": false,
+          "description": "Results per page",
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 30
+          }
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false,
+          "description": "Sort field",
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "sort_dir",
+          "in": "query",
+          "required": false,
+          "description": "Sort direction",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "maxLength": 2048
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Issue state filter"
+          },
+          "repo": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Repository name"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Page number"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 30,
+            "description": "Results per page"
+          },
+          "sort": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Sort field"
+          },
+          "sort_dir": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "maxLength": 2048,
+            "description": "Sort direction"
+          }
+        }
+      },
+      "domain": "Work",
+      "title": "List Work issues",
+      "description": "List tracked repository issues in the project.\nThese are linked work items, not OTel incidents."
+    },
+    {
+      "name": "work_get_issue",
+      "operationId": "getIssue",
+      "path": "/api/v1/issues/{repo}/{number}",
+      "method": "GET",
+      "scope": "activity:read",
+      "summary": "Get one tracked GitHub issue",
+      "parameters": [
+        {
+          "name": "repo",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "number",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "repo": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "repo",
+          "number"
+        ]
+      },
+      "domain": "Work",
+      "title": "Get Work issue",
+      "description": "Read one tracked repository issue.\nProvide its repository name and issue number."
+    },
+    {
+      "name": "activity_list_events",
+      "operationId": "getActivity",
+      "path": "/api/v1/activity",
+      "method": "GET",
+      "scope": "activity:read",
+      "summary": "Get normalized current work, posts, and release notes",
+      "parameters": [
+        {
+          "name": "mode",
+          "in": "query",
+          "required": false,
+          "description": "Feed event mode",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "opened",
+              "merged",
+              "release-notes"
+            ],
+            "default": "merged",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "repo",
+          "in": "query",
+          "required": false,
+          "description": "Repository name",
+          "schema": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        {
+          "name": "actor",
+          "in": "query",
+          "required": false,
+          "description": "GitHub login",
+          "schema": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "description": "Maximum events",
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 25
+          }
+        },
+        {
+          "name": "before",
+          "in": "query",
+          "required": false,
+          "description": "Composite cursor returned by the previous page",
+          "schema": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "opened",
+              "merged",
+              "release-notes"
+            ],
+            "default": "merged",
+            "maxLength": 2048,
+            "description": "Feed event mode"
+          },
+          "repo": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Repository name"
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "GitHub login"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 25,
+            "description": "Maximum events"
+          },
+          "before": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Composite cursor returned by the previous page"
+          }
+        }
+      },
+      "domain": "Activity",
+      "title": "List Activity events",
+      "description": "List engineering activity or release notes.\nUse the returned cursor to read the next page."
+    },
+    {
+      "name": "activity_list_pull_requests",
+      "operationId": "listPullRequests",
+      "path": "/api/v1/prs",
+      "method": "GET",
+      "scope": "activity:read",
+      "summary": "List tracked pull requests",
+      "parameters": [
+        {
+          "name": "state",
+          "in": "query",
+          "required": false,
+          "description": "Pull-request state filter",
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "author",
+          "in": "query",
+          "required": false,
+          "description": "GitHub author login",
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "repo",
+          "in": "query",
+          "required": false,
+          "description": "Repository name",
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "description": "Page number",
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        {
+          "name": "page_size",
+          "in": "query",
+          "required": false,
+          "description": "Results per page",
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 100
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Pull-request state filter"
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "GitHub author login"
+          },
+          "repo": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Repository name"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Page number"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 100,
+            "description": "Results per page"
+          }
+        }
+      },
+      "domain": "Activity",
+      "title": "List Activity pull requests",
+      "description": "List tracked pull requests in the project.\nFilter by repository, author, or state."
+    },
+    {
+      "name": "activity_get_pull_request",
+      "operationId": "getPullRequest",
+      "path": "/api/v1/prs/{repo}/{number}",
+      "method": "GET",
+      "scope": "activity:read",
+      "summary": "Get one tracked pull request",
+      "parameters": [
+        {
+          "name": "repo",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        {
+          "name": "number",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "repo": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "repo",
+          "number"
+        ]
+      },
+      "domain": "Activity",
+      "title": "Get Activity pull request",
+      "description": "Read one tracked pull request.\nProvide its repository name and pull request number."
+    }
+  ]
+}

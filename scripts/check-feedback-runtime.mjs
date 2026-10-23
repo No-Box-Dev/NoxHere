@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { createTestHarness } from "wrangler";
 import process from "node:process";
 

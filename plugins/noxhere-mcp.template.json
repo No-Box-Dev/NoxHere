@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "noxhere": {
+      "type": "streamable-http",
+      "url": "REPLACE_ONLY_AFTER_ENDPOINT_DEPLOYMENT_AND_VERIFICATION",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "api_key",
+            "headerScheme": "bearer"
+          }
+        }
+      }
+    }
+  }
+}

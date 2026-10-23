@@ -13,6 +13,7 @@
       }
     ],
     "runWorkerFirst": [
+      "/mcp",
       "/assets/*",
       "/api/*",
       "/auth/github/callback",

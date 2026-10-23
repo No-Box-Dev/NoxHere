@@ -31,12 +31,15 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
-      - name: Verify release is the current main commit
-        run: node scripts/assert-main-release.mjs
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: '22.23.4'
           cache: npm
+      - name: Verify patched Node.js binary
+        run: |
+          node --input-type=module -e 'const expected = "22.23.4"; if (process.versions.node !== expected) { console.error(`Expected patched Node.js ${expected}; running ${process.versions.node}`); process.exit(1); } console.log(`Verified Node.js ${process.versions.node}`);'
+      - name: Verify release is the current main commit
+        run: node scripts/assert-main-release.mjs
       - run: npm ci
       - name: Install service dependencies
         run: |

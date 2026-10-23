@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './check-node-version.mjs';
 
 const [sourceBucket, destinationBucket] = process.argv.slice(2);
 const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;

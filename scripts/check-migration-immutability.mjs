@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { execFileSync } from "node:child_process";
 
 const [baseRef] = process.argv.slice(2);

@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";

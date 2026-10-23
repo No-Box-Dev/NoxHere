@@ -7,13 +7,14 @@ describe("Planning health", () => {
     const response = await planningReadiness({
       DB: { prepare: vi.fn(() => ({ first })) } as unknown as D1Database,
       SPEC_ATTACHMENTS: {} as R2Bucket,
-      BUILD_SHA: "release-1",
+      BUILD_SHA: "development",
     });
     expect(response.status).toBe(200);
     expect(first).toHaveBeenCalledTimes(3);
     await expect(response.json()).resolves.toMatchObject({
       service: "planning",
       kind: "readiness",
+      buildSha: "development",
       checks: { database: true, schemaV3: true, attachments: true },
     });
   });

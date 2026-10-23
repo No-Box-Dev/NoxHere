@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run",
-    "typecheck": "npm run cf-typegen && tsc --noEmit",
-    "build": "wrangler deploy --dry-run --outdir dist --env=\"\"",
-    "cf-typegen": "wrangler types worker-configuration.d.ts",
-    "db:migrate:staging": "wrangler d1 migrations apply DB --env staging --remote",
-    "db:migrate:production": "wrangler d1 migrations apply DB --remote",
-    "deploy:staging": "npm run db:migrate:staging && wrangler deploy --env staging",
-    "predeploy:production": "node ../../scripts/assert-main-release.mjs",
-    "deploy:production": "npm run db:migrate:production && wrangler deploy"
+    "test": "node ../../scripts/check-node-version.mjs && vitest run",
+    "typecheck": "node ../../scripts/check-node-version.mjs && npm run cf-typegen && tsc --noEmit",
+    "build": "node ../../scripts/check-node-version.mjs && wrangler deploy --dry-run --outdir dist --env=\"\"",
+    "cf-typegen": "node ../../scripts/check-node-version.mjs && wrangler types worker-configuration.d.ts",
+    "db:migrate:staging": "node ../../scripts/check-node-version.mjs && wrangler d1 migrations apply DB --env staging --remote",
+    "db:migrate:production": "node ../../scripts/check-node-version.mjs && wrangler d1 migrations apply DB --remote",
+    "deploy:staging": "node ../../scripts/check-node-version.mjs && npm run db:migrate:staging && wrangler deploy --env staging",
+    "predeploy:production": "node ../../scripts/check-node-version.mjs && node ../../scripts/assert-main-release.mjs",
+    "deploy:production": "node ../../scripts/check-node-version.mjs && npm run db:migrate:production && wrangler deploy",
+    "preinstall": "node ../../scripts/check-node-version.mjs"
   },
   "dependencies": {
     "zod": "^4.1.11"
@@ -22,5 +23,8 @@
     "typescript": "^5.9.2",
     "vitest": "^4.1.11",
     "wrangler": "^4.151.0"
+  },
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || ^26.12.1"
   }
 }

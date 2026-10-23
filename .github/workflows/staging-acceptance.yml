@@ -29,8 +29,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: '22.23.4'
           cache: npm
+      - name: Verify patched Node.js binary
+        run: |
+          node --input-type=module -e 'const expected = "22.23.4"; if (process.versions.node !== expected) { console.error(`Expected patched Node.js ${expected}; running ${process.versions.node}`); process.exit(1); } console.log(`Verified Node.js ${process.versions.node}`);'
       - run: npm ci
       - name: Run read-only preflight
         if: ${{ github.event_name == 'schedule' || inputs.full != true }}

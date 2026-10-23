@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "noxhere",
+  "version": "0.1.0",
+  "description": "Read Spots, Work and Activity in one connected NoxHere project, with optional unresolved Incidents access.",
+  "author": { "name": "No Box Dev" },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "NoxHere",
+        "shortDescription": "Your NoxHere project in chat",
+        "longDescription": "Read-only access to your project through your own project-scoped automation token. Get a known Spot report, inspect Work tasks, features, specifications and repository issues, and review Activity and pull requests. An additional approved issues:read scope enables the latest 50 unresolved Incidents. Growth, Usage and Admin tools are not available in this release. Evidence is metadata and references only. No edits, downloads, credential management or external messages are exposed.",
+        "developerName": "No Box Dev",
+        "category": "Developer Tools",
+        "capabilities": [],
+        "defaultPrompt": [
+          "Summarize Work in my NoxHere project.",
+          "Read this Spot report and explain the evidence.",
+          "Review recent Activity and pull requests."
+        ]
+      }
+    }
+  }
+}
