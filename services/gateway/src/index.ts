@@ -96,6 +96,19 @@ export async function handleRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
 
+  if (url.pathname === "/mcp") {
+    const control = services.control;
+    if (!control) return unavailableResponse();
+    const [{ handleMcp }, { authenticate }] = await Promise.all([
+      import("./mcp/mcp"),
+      import("./control/auth"),
+    ]);
+    return gatewayResponse(await handleMcp(request, {
+      authenticate: (readRequest: Request) => authenticate(readRequest, control.db),
+      dispatch: (readRequest: Request) => handleRequest(readRequest, services),
+    }));
+  }
+
   if (url.pathname === GATEWAY_LIVE_PATH) {
     if (request.method !== "GET" && request.method !== "HEAD") {
       return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });

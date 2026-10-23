@@ -19142,5 +19142,13 @@
       "name": "Incidents",
       "description": "Legacy compatibility routes superseded by Issues."
     }
-  ]
+  ],
+  "x-mcp": {
+    "path": "/mcp",
+    "transport": "streamable-http",
+    "protocolVersion": "2026-07-28",
+    "authentication": "Project-scoped NoxHere automation bearer token; services:read plus each tool’s existing read scope.",
+    "description": "Read-only native MCP transport. Use authenticated MCP tools/list for supported tools; this is not a REST or generated CLI operation.",
+    "documentation": "https://github.com/No-Box-Dev/NoxHere/blob/main/docs/NATIVE_MCP.md"
+  }
 }

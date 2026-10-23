@@ -24,6 +24,14 @@ Spot, Telemetry, and Connect are not separate products or browser applications.
 The retired root `src/` frontend was removed. Do not recreate a second web
 application at the repository root.
 
+## Native MCP transport
+
+`POST /mcp` provides the read-only native MCP transport, separate from the REST
+`/api/v1` and its generated CLI operations. OpenAPI records it in the
+`x-mcp` transport extension; tool discovery and schemas are owned by MCP.
+See `docs/NATIVE_MCP.md` for the product taxonomy, authorization boundaries and
+activation gates. Adding a tool never grants a token a scope.
+
 ## Runtime boundaries
 
 `services/gateway/` is the only public application authority. It authenticates
