@@ -642,6 +642,32 @@ describe("NoxHere gateway", () => {
     expect(connector.fetch).toHaveBeenCalledOnce();
   });
 
+  it("stops connector error inspection on request abort while preserving status logging", async () => {
+    const controller = new AbortController();
+    const cancel = vi.fn();
+    const upstream = new Response(new ReadableStream({ cancel }), { status: 502 });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const connector = { fetch: vi.fn(async () => {
+      setTimeout(() => controller.abort(), 10);
+      return upstream;
+    }) };
+    try {
+      const response = await handleRequest(new Request("https://app.noxhere.com/api/v1/activity", {
+        headers: { Cookie: "__Host-nox_session=opaque", "X-Org": "acme" },
+        signal: controller.signal,
+      }), controlledServices(connector));
+      expect(response.status).toBe(502);
+      expect(log).toHaveBeenCalledWith(JSON.stringify({
+        event: "connector_request_rejected", path: "/api/v1/activity", status: 502,
+        code: "unknown", orgId: 7,
+      }));
+      await response.body!.cancel();
+      expect(cancel).toHaveBeenCalledOnce();
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it("fails closed when cached organization membership is stale and cannot be verified", async () => {
     const connector = { fetch: vi.fn(async () => Response.json({ private: true })) };
     const response = await handleRequest(

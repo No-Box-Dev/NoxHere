@@ -1,3 +1,4 @@
+import { boundedErrorCode } from "./bounded-error-code";
 import { createTelemetry } from "../../../packages/sdk/src/telemetry/server.js";
 import { apiError } from "./control/http";
 import { matchesGatewayRoute, PLATFORM_GATEWAY_MANIFEST } from "./generated/platform-service-manifest";
@@ -294,7 +295,7 @@ export async function handleRequest(
           event: "gateway_auth_rejected",
           path: url.pathname,
           status: authenticated.response.status,
-          code: await boundedErrorCode(authenticated.response),
+          code: await boundedErrorCode(authenticated.response, request.signal),
           sessionCookiePresent: /(?:^|;\s*)__Host-nox_session=/.test(request.headers.get("Cookie") ?? ""),
           credentialKind: authorization.startsWith("Bearer nox_at_")
             ? "native"
@@ -368,7 +369,7 @@ export async function handleRequest(
       const destination = providerRequest ? services.provider! : services.connector;
       const response = await destination.fetch(relayed);
       if (!response.ok) {
-        const error = await boundedErrorCode(response);
+        const error = await boundedErrorCode(response, request.signal);
         console.error(JSON.stringify({
           event: "connector_request_rejected",
           path: url.pathname,
@@ -537,7 +538,7 @@ async function privateBoundaryHealth(request: Request, services: PlatformService
     guestAccess: null,
   }, control.assertionSecret);
   const downstream = await services.connector.fetch(new Request(target, { headers }));
-  const code = downstream.ok ? null : await boundedErrorCode(downstream);
+  const code = downstream.ok ? null : await boundedErrorCode(downstream, request.signal);
   return Response.json({
     service: "noxhere",
     status: downstream.ok ? "ok" : "degraded",
@@ -576,17 +577,6 @@ async function identityBoundaryHealth(services: PlatformServices): Promise<Respo
   } catch (error) {
     console.error(JSON.stringify({ event: "identity_boundary_health_failed", error: error instanceof Error ? error.message : String(error) }));
     return Response.json({ service: "noxhere", status: "degraded", dependency: "connections", code: "identity_service_unavailable" }, { status: 503 });
-  }
-}
-
-async function boundedErrorCode(response: Response): Promise<string> {
-  const declared = Number(response.headers.get("Content-Length"));
-  if (Number.isFinite(declared) && declared > 64 * 1024) return "response_too_large";
-  try {
-    const body = await response.clone().json<{ error?: { code?: unknown } }>();
-    return typeof body.error?.code === "string" ? body.error.code : "unknown";
-  } catch {
-    return "unknown";
   }
 }
 
