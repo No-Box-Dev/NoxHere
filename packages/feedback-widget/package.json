@@ -10,10 +10,11 @@
     "directory": "packages/feedback-widget"
   },
   "scripts": {
-    "build": "npm run build:loader && npm run build:core",
-    "build:loader": "esbuild src/loader.js --bundle --minify --outfile=dist/feedback.min.js --format=iife --global-name=Feedback",
-    "build:core": "esbuild src/core-entry.js --bundle --minify --outfile=dist/feedback-core.min.js --format=iife",
-    "test": "vitest run"
+    "build": "node ../../scripts/check-node-version.mjs && npm run build:loader && npm run build:core",
+    "build:loader": "node ../../scripts/check-node-version.mjs && esbuild src/loader.js --bundle --minify --outfile=dist/feedback.min.js --format=iife --global-name=Feedback",
+    "build:core": "node ../../scripts/check-node-version.mjs && esbuild src/core-entry.js --bundle --minify --outfile=dist/feedback-core.min.js --format=iife",
+    "test": "node ../../scripts/check-node-version.mjs && vitest run",
+    "preinstall": "node ../../scripts/check-node-version.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
@@ -24,7 +25,7 @@
     "wrangler": "^4.151.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.23.4 || ^24.22.1 || ^26.12.1"
   },
   "license": "PolyForm-Noncommercial-1.0.0"
 }

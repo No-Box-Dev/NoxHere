@@ -1,5 +1,8 @@
 # `@noxhere/sdk`
 
+For Node.js use, require stable 22.23.4+ (22.x), 24.22.1+ (24.x), or 26.12.1+ (26.x). Upgrade the binary before installing or making requests.
+Browser and Cloudflare Worker imports remain platform-neutral; no Node-only runtime guard is included in SDK exports.
+
 One SDK for the complete NoxHere API. Its catalog is generated from the
 repository's canonical OpenAPI contract and is grouped by functionality:
 

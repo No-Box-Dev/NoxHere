@@ -22,7 +22,10 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: '22.23.4'
+      - name: Verify patched Node.js binary
+        run: |
+          node --input-type=module -e 'const expected = "22.23.4"; if (process.versions.node !== expected) { console.error(`Expected patched Node.js ${expected}; running ${process.versions.node}`); process.exit(1); } console.log(`Verified Node.js ${process.versions.node}`);'
       - name: Verify staging ecosystem
         run: node scripts/check-ecosystem-health.mjs https://noxhere-staging.jasper-414.workers.dev
       - name: Verify production ecosystem and deployed SHA

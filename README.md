@@ -1,5 +1,7 @@
 # NoxHere
 
+Node.js development/build requirements: [supported patched runtimes](docs/node-runtime.md).
+
 NoxHere is the public product, identity, API, and web application. A
 person signs in once and uses the same account session across every
 organization, project, and enabled capability.

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './check-node-version.mjs';
 
 import { createHash, createHmac, randomBytes } from "node:crypto";
 import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";

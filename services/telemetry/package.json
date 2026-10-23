@@ -7,21 +7,22 @@
     "packages/*"
   ],
   "scripts": {
-    "predeploy": "node ../../scripts/assert-main-release.mjs",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --env=\"\"",
-    "build": "wrangler deploy --dry-run --outdir dist --env=\"\"",
-    "cf-typegen": "wrangler types",
-    "typecheck": "tsc --noEmit",
-    "example:check": "tsc --ignoreConfig --noEmit --strict --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution Bundler examples/browser/telemetry.ts",
-    "sdk:build": "npm run build --workspace @noxhere/telemetry-sdk",
-    "sdk:check": "npm run check --workspace @noxhere/telemetry-sdk",
-    "sdk:contract": "python3 scripts/generate-sdk-contract.py --check",
-    "sdk:python:test": "PYTHONPATH=../../packages/python-sdk/src:packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v",
-    "sdk:parity": "npm run sdk:contract && npm run sdk:check && npm --prefix ../../packages/sdk test && npm run sdk:python:test",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "check": "npm run cf-typegen && npm run typecheck && npm run sdk:build && npm run example:check && npm test && npm run build"
+    "predeploy": "node ../../scripts/check-node-version.mjs && node ../../scripts/assert-main-release.mjs",
+    "dev": "node ../../scripts/check-node-version.mjs && wrangler dev",
+    "deploy": "node ../../scripts/check-node-version.mjs && wrangler deploy --env=\"\"",
+    "build": "node ../../scripts/check-node-version.mjs && wrangler deploy --dry-run --outdir dist --env=\"\"",
+    "cf-typegen": "node ../../scripts/check-node-version.mjs && wrangler types",
+    "typecheck": "node ../../scripts/check-node-version.mjs && tsc --noEmit",
+    "example:check": "node ../../scripts/check-node-version.mjs && tsc --ignoreConfig --noEmit --strict --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution Bundler examples/browser/telemetry.ts",
+    "sdk:build": "node ../../scripts/check-node-version.mjs && npm run build --workspace @noxhere/telemetry-sdk",
+    "sdk:check": "node ../../scripts/check-node-version.mjs && npm run check --workspace @noxhere/telemetry-sdk",
+    "sdk:contract": "node ../../scripts/check-node-version.mjs && python3 scripts/generate-sdk-contract.py --check",
+    "sdk:python:test": "node ../../scripts/check-node-version.mjs && PYTHONPATH=../../packages/python-sdk/src:packages/python-sdk/src python3 -m unittest discover -s packages/python-sdk/tests -v",
+    "sdk:parity": "node ../../scripts/check-node-version.mjs && npm run sdk:contract && npm run sdk:check && npm --prefix ../../packages/sdk test && npm run sdk:python:test",
+    "test": "node ../../scripts/check-node-version.mjs && vitest run",
+    "test:watch": "node ../../scripts/check-node-version.mjs && vitest",
+    "check": "node ../../scripts/check-node-version.mjs && npm run cf-typegen && npm run typecheck && npm run sdk:build && npm run example:check && npm test && npm run build",
+    "preinstall": "node ../../scripts/check-node-version.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
@@ -35,7 +36,7 @@
     "wrangler": "^4.151.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.23.4 || ^24.22.1 || ^26.12.1"
   },
   "overrides": {
     "sharp": "0.35.5"

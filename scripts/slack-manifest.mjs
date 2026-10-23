@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { readFile } from "node:fs/promises";
 
 const SLACK_API = "https://slack.com/api";

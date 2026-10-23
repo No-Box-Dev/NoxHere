@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './lib/check-node-version.mjs';
 
 import { parseArgs } from "node:util";
 import {

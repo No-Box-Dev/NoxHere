@@ -4,21 +4,22 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "dev:backend": "node scripts/dev-backend.mjs",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview --host 127.0.0.1",
-    "typecheck": "tsc -b --pretty false",
-    "lint": "eslint . && npm run boundaries",
-    "boundaries": "node scripts/check-boundaries.mjs",
-    "docs:cli-check": "node ../../scripts/check-cli-docs.mjs",
-    "docs:stale-check": "node ../../scripts/check-public-docs.mjs",
-    "docs:check": "npm run docs:cli-check && npm run docs:stale-check",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:widget": "npm --prefix ../../packages/feedback-widget run build && playwright test --config=playwright.widget.config.ts",
-    "check": "npm run typecheck && npm run lint && npm run docs:check && npm run test && npm run build"
+    "dev": "node ../../scripts/check-node-version.mjs && vite --host 127.0.0.1",
+    "dev:backend": "node ../../scripts/check-node-version.mjs && node scripts/dev-backend.mjs",
+    "build": "node ../../scripts/check-node-version.mjs && tsc -b && vite build",
+    "preview": "node ../../scripts/check-node-version.mjs && vite preview --host 127.0.0.1",
+    "typecheck": "node ../../scripts/check-node-version.mjs && tsc -b --pretty false",
+    "lint": "node ../../scripts/check-node-version.mjs && eslint . && npm run boundaries",
+    "boundaries": "node ../../scripts/check-node-version.mjs && node scripts/check-boundaries.mjs",
+    "docs:cli-check": "node ../../scripts/check-node-version.mjs && node ../../scripts/check-cli-docs.mjs",
+    "docs:stale-check": "node ../../scripts/check-node-version.mjs && node ../../scripts/check-public-docs.mjs",
+    "docs:check": "node ../../scripts/check-node-version.mjs && npm run docs:cli-check && npm run docs:stale-check",
+    "test": "node ../../scripts/check-node-version.mjs && vitest run",
+    "test:watch": "node ../../scripts/check-node-version.mjs && vitest",
+    "test:e2e": "node ../../scripts/check-node-version.mjs && playwright test",
+    "test:e2e:widget": "node ../../scripts/check-node-version.mjs && npm --prefix ../../packages/feedback-widget run build && playwright test --config=playwright.widget.config.ts",
+    "check": "node ../../scripts/check-node-version.mjs && npm run typecheck && npm run lint && npm run docs:check && npm run test && npm run build",
+    "preinstall": "node ../../scripts/check-node-version.mjs"
   },
   "dependencies": {
     "@fontsource/familjen-grotesk": "^5.3.0",
@@ -51,5 +52,8 @@
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || ^26.12.1"
   }
 }

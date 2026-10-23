@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './check-node-version.mjs';
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { findTelemetryEvent, findIssue, findRelease, marker, mergePullRequestWithRefresh, validateSafety } from "./staging-acceptance-lib.mjs";
