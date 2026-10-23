@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 

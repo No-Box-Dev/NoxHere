@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import assert from "node:assert/strict";
 import worker from "../services/core-api/.generated/index.js";
 

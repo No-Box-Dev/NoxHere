@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { createHmac } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";

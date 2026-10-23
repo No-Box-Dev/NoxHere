@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './check-node-version.mjs';
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";

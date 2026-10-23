@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { execFileSync } from "node:child_process";
 
 function git(...args) {

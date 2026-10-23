@@ -1,3 +1,4 @@
+import './check-node-version.mjs';
 import { validateHealthContracts } from "./check-health-contracts.mjs";
 
 const [origin, expectedService, expectedSha] = process.argv.slice(2);

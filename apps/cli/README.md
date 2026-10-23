@@ -1,5 +1,7 @@
 # NoxHere CLI
 
+For Node.js use, require stable 22.23.4+ (22.x), 24.22.1+ (24.x), or 26.12.1+ (26.x). Upgrade the binary before installing or making requests.
+
 One NoxHere login works across every organization, project, and enabled
 capability available to the signed-in person.
 
