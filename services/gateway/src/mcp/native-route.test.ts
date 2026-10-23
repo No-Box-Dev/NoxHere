@@ -15,14 +15,19 @@ function request(method: string, params: Record<string, unknown> = {}) {
       Accept: "application/json, text/event-stream", "MCP-Protocol-Version": PROTOCOL_VERSION,
       "Mcp-Method": method, ...(method === "tools/call" ? { "Mcp-Name": String(params.name) } : {}),
       Cookie: "ignored=1", "X-Org": "untrusted-org", "X-Project-ID": "untrusted-project",
+      "CF-Connecting-IP": "192.0.2.1",
     },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params: {
       ...params, _meta: { "io.modelcontextprotocol/protocolVersion": PROTOCOL_VERSION, "io.modelcontextprotocol/clientCapabilities": {} },
     } }),
   });
 }
-function bindings(options: { scopes?: string[]; disabled?: boolean; downstreamStatus?: number; revoked?: boolean } = {}) {
+function bindings(options: { scopes?: string[]; disabled?: boolean; downstreamStatus?: number; revoked?: boolean; admissionFailure?: boolean; admissionLimited?: boolean } = {}) {
   const db = {
+    async batch(statements: unknown[]) {
+      if (options.admissionFailure) throw new Error("fixture missing rate-limit schema");
+      return statements.map(() => ({ success: true, results: [{ request_count: options.admissionLimited ? 121 : 1, window_start: Math.floor(Date.now() / 60_000) * 60_000, retry_after: 60 }] }));
+    },
     prepare(sql: string) {
       const statement = {
         bind() { return statement; },
@@ -53,6 +58,24 @@ function bindings(options: { scopes?: string[]; disabled?: boolean; downstreamSt
 }
 
 describe("native MCP gateway boundary", () => {
+  it("fails closed for an unavailable admission database without connector or SPA fallback", async () => {
+    const services = bindings({ admissionFailure: true });
+    const response = await handleRequest(request("tools/list"), services);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ error: { code: "mcp_rate_limit_unavailable" } });
+    expect(services.assets.fetch).not.toHaveBeenCalled();
+    expect(services.connector.fetch).not.toHaveBeenCalled();
+  });
+
+  it("enforces native admission budgets before tools can dispatch", async () => {
+    const services = bindings({ admissionLimited: true });
+    const response = await handleRequest(request("tools/call", { name: "work_list_features" }), services);
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("60");
+    expect(services.assets.fetch).not.toHaveBeenCalled();
+    expect(services.connector.fetch).not.toHaveBeenCalled();
+  });
+
   it("runs before SPA handling", async () => {
     const services = bindings();
     const response = await handleRequest(request("tools/list"), services);

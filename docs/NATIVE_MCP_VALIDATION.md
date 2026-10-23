@@ -4,7 +4,50 @@ Validated locally on 2026-10-23 against source baseline
 `69985fc1623ccda050d46cb6d03fe9b937a2ddfe`. This is a draft integration, not an
 activated connection or production readiness certification.
 
-## Completed
+## Local follow-up candidate
+
+The unpublished correction to draft commit
+`88f244893b82ee8860c456a6129787aa1eb558b3` was checked in a complete isolated
+worktree with official Node 22.23.4 and each package's locked npm dependencies
+(install lifecycle scripts disabled). The earlier results below are historical.
+
+- Regenerated the SDK contract and canonical gateway route outputs using the
+  repository generators. Root tests pass **1,441 tests** and SDK/route drift
+  checks pass.
+- Gateway passes **170 tests in 18 files**, typechecking and its Worker dry-run
+  with the real web build. Ten deadline tests cover stalled admission/authentication,
+  request/response streams, dispatch, late responses, caller cancellation,
+  cleanup and a shared 15-second budget. Timeout errors preserve a known safe
+  request ID and omit an unidentified ID.
+- Planning and Telemetry health fixtures now use the generated configuration's
+  `development` literal; no types or existing assertions were weakened.
+  Planning adds a build-SHA response assertion. Both full service checks pass.
+- Platform milestones through M7, Login through M8 and Telemetry through M8
+  pass. The original platform 240-second timeout is retained in the local
+  receipts; the unchanged suite passed with a 600-second command allowance.
+  Repeated fresh application of all 134 migrations accounts for the longer run.
+- Root lint, documentation checks, functions typechecking and generated
+  contracts pass. Swift execution remains unverified because the environment
+  has no Swift executable. Python checks used 3.12.14 rather than CI's 3.10.
+
+The adapter deadline bounds its response time and propagates abort; it cannot
+force a dependency that ignores abort to stop executing. A proposed atomic
+CONTROL_DB limiter now has ten SQLite tests, a concurrent local D1-binding test,
+and two native gateway admission tests. Its append-only migration was applied
+only to an isolated local database. Budgets are 120 requests/minute per trusted
+ingress IP, 60 per authenticated token and 120 per organization/project, including
+discovery. The database clock defines fixed one-minute windows. Counts saturate,
+backend failure fails closed, and 429 responses include Retry-After. Keys contain
+only purpose-separated digests. Expired counters are eligible after 24 hours;
+at most 100 are cleaned per pre-auth request, with no guaranteed idle-time TTL.
+The proposed limits, retention and trusted ingress assumptions require review.
+Effective deployed admission and edge protection remain unverified. No provider
+security configuration, new binding or live migration was changed.
+Host ingestion, secure credential entry, live tenant/resource denial checks and
+all deployed-tool acceptance remain separate gates. Nothing was pushed, merged,
+deployed, or connected by this follow-up.
+
+## Original draft results
 
 - After the two protocol-error corrections: **67 focused tests passed in 3 files**
   (58 adapter, 7 native-route and 2 package/configuration tests). Six precise

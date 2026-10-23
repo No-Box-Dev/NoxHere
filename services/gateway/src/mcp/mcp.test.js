@@ -33,6 +33,7 @@ function dependencies(options = {}) {
   const dispatchCalls = [];
   return {
     authCalls, dispatchCalls,
+    rateLimit: async () => null,
     authenticate: async (request) => {
       authCalls.push(request);
       if (options.authError) throw new Error("Do not reveal credential");

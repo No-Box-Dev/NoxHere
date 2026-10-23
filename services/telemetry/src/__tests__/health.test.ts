@@ -6,13 +6,13 @@ describe("Telemetry health", () => {
     const response = await telemetryReadiness({
       NOX_DB: { prepare: vi.fn(() => ({ first: vi.fn(async () => null) })) } as unknown as D1Database,
       NOX_TASKS: {} as Queue,
-      BUILD_SHA: "release-1",
+      BUILD_SHA: "development",
     });
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       service: "telemetry",
       kind: "readiness",
-      buildSha: "release-1",
+      buildSha: "development",
       checks: { database: true, taskQueue: true },
     });
   });
@@ -21,7 +21,7 @@ describe("Telemetry health", () => {
     const response = await telemetryReadiness({
       NOX_DB: { prepare: vi.fn(() => ({ first: vi.fn(async () => { throw new Error("missing table"); }) })) } as unknown as D1Database,
       NOX_TASKS: {} as Queue,
-      BUILD_SHA: "release-1",
+      BUILD_SHA: "development",
     });
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({ status: "not_ready", checks: { database: false } });

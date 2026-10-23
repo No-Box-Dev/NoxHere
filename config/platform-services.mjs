@@ -8,6 +8,7 @@ export const platformServices = {
     serviceId: "gateway",
     productionRoutes: [{ pattern: "app.noxhere.com/*", zone_name: "noxhere.com" }],
     runWorkerFirst: [
+      "/mcp",
       "/assets/*",
       "/api/*",
       "/auth/github/callback",

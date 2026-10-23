@@ -19,16 +19,19 @@ interface Operation {
 }
 export interface McpContext {
   credentialType: string; projectId: string | null; orgLogin: string; scopes: string[];
+  credentialId?: string | null; orgId?: number;
 }
 export interface McpDependencies {
   authenticate(request: Request): Promise<{ context: McpContext } | { response: Response }>;
   dispatch(request: Request): Promise<Response>;
+  rateLimit(request: Request, context?: McpContext): Promise<Response | null>;
 }
 const contract = rawContract as unknown as { operations: Operation[] };
 
 export const PROTOCOL_VERSION = "2026-07-28";
 export const MAX_REQUEST_BYTES = 16 * 1024;
 export const MAX_RESPONSE_BYTES = 1024 * 1024;
+export const MCP_REQUEST_TIMEOUT_MS = 15_000;
 const operations = new Map(contract.operations.map((op) => [op.name, op]));
 const META = "io.modelcontextprotocol/";
 const RESPONSE_HEADERS = {
@@ -84,25 +87,30 @@ function sanitizedResult(value: unknown, bearerToken: string, depth = 0): unknow
   return output;
 }
 
-export async function readBoundedBody(body: ReadableStream<Uint8Array> | null, maxBytes: number): Promise<string> {
+export async function readBoundedBody(body: ReadableStream<Uint8Array> | null, maxBytes: number, signal?: AbortSignal): Promise<string> {
+  signal?.throwIfAborted();
   if (!body) return "";
   const reader = body.getReader();
+  const cancel = () => { void reader.cancel().catch(() => {}); };
+  signal?.addEventListener("abort", cancel, { once: true });
   const decoder = new TextDecoder("utf-8", { fatal: true });
   let bytes = 0;
   let text = "";
   try {
     for (;;) {
       const { done, value } = await reader.read();
+      signal?.throwIfAborted();
       if (done) break;
       bytes += value.byteLength;
       if (bytes > maxBytes) {
-        await reader.cancel();
+        cancel();
         throw new Error("body_too_large");
       }
       text += decoder.decode(value, { stream: true });
     }
     return text + decoder.decode();
   } finally {
+    signal?.removeEventListener("abort", cancel);
     reader.releaseLock();
   }
 }
@@ -211,7 +219,32 @@ function decodeHeader(value: string | null): string | null {
  * authenticate must be the existing NoxHere authenticate() against the gateway D1 database.
  * dispatch must be the existing gateway handleRequest(), never a bare connector fetch.
  */
-export async function handleMcp(request: Request, { authenticate, dispatch }: McpDependencies): Promise<Response> {
+export async function handleMcp(request: Request, { authenticate, dispatch, rateLimit }: McpDependencies): Promise<Response> {
+  const controller = new AbortController();
+  let expired = false;
+  let responseId: RpcId | undefined;
+  let onAbort: () => void = () => {};
+  const interrupted = new Promise<Response>((resolve) => {
+    onAbort = () => resolve(rpcError(responseId, -32603,
+      expired ? "MCP request deadline exceeded." : "MCP request cancelled.", expired ? 504 : 408));
+    controller.signal.addEventListener("abort", onAbort, { once: true });
+  });
+  const cancel = () => controller.abort();
+  request.signal.addEventListener("abort", cancel, { once: true });
+  const timer = setTimeout(() => { expired = true; cancel(); }, MCP_REQUEST_TIMEOUT_MS);
+  try {
+    if (request.signal.aborted) cancel();
+    if (controller.signal.aborted) return await interrupted;
+    const bounded = new Request(request, { signal: controller.signal });
+    return await Promise.race([interrupted, handleMcpRequest(bounded, { authenticate, dispatch, rateLimit }, (id) => { responseId = id; })]);
+  } finally {
+    clearTimeout(timer);
+    request.signal.removeEventListener("abort", cancel);
+    controller.signal.removeEventListener("abort", onAbort);
+  }
+}
+
+async function handleMcpRequest(request: Request, { authenticate, dispatch, rateLimit }: McpDependencies, identify: (id: RpcId | undefined) => void): Promise<Response> {
   const requestUrl = new URL(request.url);
   if (requestUrl.pathname !== "/mcp") return new Response(null, { status: 404 });
   const origin = request.headers.get("Origin");
@@ -226,6 +259,11 @@ export async function handleMcp(request: Request, { authenticate, dispatch }: Mc
   if (request.headers.get("Content-Type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
     return rpcError(undefined, -32600, "Use application/json.", 415);
   }
+  try {
+    const denied = await rateLimit(request);
+    if (denied) return denied;
+    request.signal.throwIfAborted();
+  } catch { return json({ error: { code: "mcp_rate_limit_unavailable" } }, 503); }
   const auth = request.headers.get("Authorization") ?? "";
   if (!/^Bearer nox_sk_[A-Za-z0-9_-]{12,512}$/.test(auth)) return unauthorized();
 
@@ -246,17 +284,24 @@ export async function handleMcp(request: Request, { authenticate, dispatch }: Mc
     return unauthorized(status === 403 || status === 404 ? status : 401);
   }
   const context = authenticated.context;
+  if (request.signal.aborted) return rpcError(undefined, -32603, "MCP request cancelled.", 408);
   if (context?.credentialType !== "api_token" || !context.projectId || !context.orgLogin
       || !hasScope(context, "services:read")) return unauthorized(403);
+  try {
+    const denied = await rateLimit(request, context);
+    if (denied) return denied;
+    request.signal.throwIfAborted();
+  } catch { return json({ error: { code: "mcp_rate_limit_unavailable" } }, 503); }
 
   let message: unknown;
-  try { message = JSON.parse(await readBoundedBody(request.body, MAX_REQUEST_BYTES)); }
+  try { message = JSON.parse(await readBoundedBody(request.body, MAX_REQUEST_BYTES, request.signal)); }
   catch (error) { return rpcError(undefined, -32700, "Invalid or oversized JSON request.", (error instanceof Error ? error.message : "Unknown error") === "body_too_large" ? 413 : 400); }
   // Preserve readable, safe IDs even when another envelope field is invalid.
   // Unknown or credential-bearing IDs must be omitted, never serialized as null.
   const parsedId = rpcIdSchema.safeParse(isObject(message) ? message.id : undefined);
   const id = parsedId.success && (typeof parsedId.data !== "string"
     || sanitizedResult(parsedId.data, auth.slice(7)) === parsedId.data) ? parsedId.data : undefined;
+  identify(id);
   const parsedMessage = rpcMessageSchema.safeParse(message);
   if (!parsedMessage.success || id === undefined) {
     return rpcError(id, -32600, "Expected one JSON-RPC request with a safe id and valid envelope.");
@@ -302,18 +347,23 @@ export async function handleMcp(request: Request, { authenticate, dispatch }: Mc
   try { apiRequest = operationRequest(request, op, validatedArgs(params.arguments === undefined ? {} : params.arguments, op), context); }
   catch (error) { return rpcError(id, -32602, (error instanceof Error ? error.message : "Unknown error")); }
   try {
+    request.signal.throwIfAborted();
     const response = await dispatch(apiRequest);
+    if (request.signal.aborted) {
+      void response.body?.cancel().catch(() => {});
+      request.signal.throwIfAborted();
+    }
     if (!response.ok) {
-      await response.body?.cancel();
+      void response.body?.cancel().catch(() => {});
       const retry = response.headers.get("Retry-After");
       return toolError(id, `noxhere_http_${response.status}`, "NoxHere rejected or could not complete this read.",
         retry && /^\d{1,6}$/.test(retry) ? { retryAfterSeconds: Number(retry) } : {});
     }
     if (!response.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {
-      await response.body?.cancel();
+      void response.body?.cancel().catch(() => {});
       return toolError(id, "invalid_response", "NoxHere returned a non-JSON response.");
     }
-    const data = JSON.parse(await readBoundedBody(response.body, MAX_RESPONSE_BYTES));
+    const data = JSON.parse(await readBoundedBody(response.body, MAX_RESPONSE_BYTES, request.signal));
     // This allowlist excludes credential, ingest-key, download, and setup endpoints.
     const projected = op.projection === "incidents" ? projectIncidents(data) : data;
     const structuredContent = { data: sanitizedResult(projected, auth.slice(7)) };

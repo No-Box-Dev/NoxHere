@@ -99,13 +99,15 @@ export async function handleRequest(
   if (url.pathname === "/mcp") {
     const control = services.control;
     if (!control) return unavailableResponse();
-    const [{ handleMcp }, { authenticate }] = await Promise.all([
+    const [{ handleMcp }, { authenticate }, { checkMcpRateLimit }] = await Promise.all([
       import("./mcp/mcp"),
       import("./control/auth"),
+      import("./mcp/rate-limit"),
     ]);
     return gatewayResponse(await handleMcp(request, {
       authenticate: (readRequest: Request) => authenticate(readRequest, control.db),
       dispatch: (readRequest: Request) => handleRequest(readRequest, services),
+      rateLimit: (readRequest, context) => checkMcpRateLimit(control.db, readRequest, context),
     }));
   }
 

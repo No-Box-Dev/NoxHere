@@ -19143,6 +19143,14 @@
       "name": "Incidents"
     }
   ],
+  "x-mcp": {
+    "authentication": "Project-scoped NoxHere automation bearer token; services:read plus each tool’s existing read scope.",
+    "description": "Read-only native MCP transport. Use authenticated MCP tools/list for supported tools; this is not a REST or generated CLI operation.",
+    "documentation": "https://github.com/No-Box-Dev/NoxHere/blob/main/docs/NATIVE_MCP.md",
+    "path": "/mcp",
+    "protocolVersion": "2026-07-28",
+    "transport": "streamable-http"
+  },
   "x-sdk-contract-version": 1,
   "x-sdk-namespaces": [
     "activity",
@@ -34500,5 +34508,5 @@
     }
   ],
   "x-sdk-source": "public/openapi.json",
-  "x-sdk-source-sha256": "9758e9223a67fccf7cf6ee1e5c7661adb35bb35ac40c57f4f8b48fbadd01f190"
+  "x-sdk-source-sha256": "e9028445af26c88b4f760fb4ce57f03613ec5b1c0af0ca3036e7e089cbe88c95"
 }
