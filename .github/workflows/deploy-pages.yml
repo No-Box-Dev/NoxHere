@@ -23,10 +23,12 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
-      STAGING_RELEASE_RECEIPT: ${{ runner.temp }}/noxhere-staging-release.json
-      PRODUCTION_ROLLBACK_MANIFEST: ${{ runner.temp }}/noxhere-production-rollback.json
-      PRODUCTION_PROMOTION_RECEIPT: ${{ runner.temp }}/noxhere-production-release.json
     steps:
+      - name: Initialize release receipt paths
+        run: |
+          printf 'STAGING_RELEASE_RECEIPT=%s/noxhere-staging-release.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'PRODUCTION_ROLLBACK_MANIFEST=%s/noxhere-production-rollback.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'PRODUCTION_PROMOTION_RECEIPT=%s/noxhere-production-release.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.workflow_run.head_sha }}

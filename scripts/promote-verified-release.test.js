@@ -1,3 +1,7 @@
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { platformServices } from "../config/platform-services.mjs";
 import {
@@ -128,4 +132,38 @@ describe("verified release promotion", () => {
     await expect(verifyReleaseHealth("https://example.test", sha, fetchImpl)).resolves.toMatchObject({ readiness: ready });
     await expect(verifyReleaseHealth("https://example.test", previousSha, fetchImpl)).rejects.toThrow("noxhere readiness");
   });
+});
+
+it("initializes receipt paths at runner time before every consumer", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/deploy-pages.yml", import.meta.url), "utf8");
+  const steps = workflow.indexOf("    steps:\n");
+  expect(steps).toBeGreaterThan(0);
+  const jobConfiguration = workflow.slice(0, steps);
+  expect(jobConfiguration).not.toMatch(/\$\{\{\s*runner\./);
+  const initialization = workflow.slice(steps).match(/^    steps:\n      - name: Initialize release receipt paths\n        run: \|\n((?:          .*\n)+)/);
+  expect(initialization).not.toBeNull();
+  const script = initialization[1].split("\n").map((line) => line.slice(10)).join("\n");
+  const directory = mkdtempSync(join(tmpdir(), "nox receipt paths "));
+  const envFile = join(directory, "github-env");
+  try {
+    execFileSync("bash", ["--noprofile", "--norc", "-e", "-c", script], {
+      env: { PATH: process.env.PATH, RUNNER_TEMP: directory, GITHUB_ENV: envFile },
+    });
+    const expected = {
+      STAGING_RELEASE_RECEIPT: `${directory}/noxhere-staging-release.json`,
+      PRODUCTION_ROLLBACK_MANIFEST: `${directory}/noxhere-production-rollback.json`,
+      PRODUCTION_PROMOTION_RECEIPT: `${directory}/noxhere-production-release.json`,
+    };
+    const written = Object.fromEntries(readFileSync(envFile, "utf8").trim().split("\n").map((line) => {
+      const separator = line.indexOf("=");
+      return [line.slice(0, separator), line.slice(separator + 1)];
+    }));
+    expect(written).toEqual(expected);
+    for (const name of Object.keys(expected)) {
+      expect(jobConfiguration).not.toContain(name);
+      expect(workflow.indexOf(name, steps + initialization[0].length)).toBeGreaterThan(steps + initialization[0].length);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
