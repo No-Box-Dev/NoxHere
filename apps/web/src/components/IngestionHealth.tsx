@@ -14,12 +14,12 @@ export function IngestionHealth({ organizationId, projectId, capability, canConf
   organizationId: string; projectId: string; capability: "growth" | "usage"; canConfigure?: boolean;
 }) {
   const query = useQuery({
-    queryKey: [capability, organizationId, projectId, "sources"],
+    queryKey: [capability, organizationId, projectId, "sources", "health"],
     queryFn: async ({ signal }) => sourcesSchema.parse(await getRawJson(`/api/v1/${capability}/sources`, signal, { organizationId, projectId })),
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
   });
-  const health = query.data ? ingestionHealth(query.data.sources, Date.now()) : null;
+  const health = query.data ? ingestionHealth(query.data.sources, query.dataUpdatedAt) : null;
   const label = query.isError ? "Source status unavailable" : query.isPending ? "Checking sources…" : health?.label ?? "Source status unavailable";
   return <div className="toolbar" role="status" aria-label={`${capability === "growth" ? "Growth" : "Usage"} ingestion status`}>
     <StatusTag tone={query.isError ? "warning" : "neutral"}>{label}</StatusTag>

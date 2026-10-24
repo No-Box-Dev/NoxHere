@@ -16,7 +16,7 @@ export function ingestionHealth(sources: IngestionSource[], now: number) {
     .filter((time) => Number.isFinite(time) && time <= now);
   const latest = times.length ? Math.max(...times) : null;
   const partial = ready.length < sources.length;
-  const label = latest === null ? "Waiting for first event"
+  const label = latest === null ? "Waiting for events"
     : now - latest <= RECENT_ACTIVITY_MS ? "Recent activity" : "No activity in 24h";
   return { label: partial ? `${label} · some sources need attention` : label,
     lastEventAt: latest === null ? null : new Date(latest).toISOString() };

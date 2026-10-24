@@ -9,7 +9,7 @@ describe("ingestion health", () => {
     expect(ingestionHealth([], now).label).toBe("Setup required");
     expect(ingestionHealth([{ ...source, enabled: false }], now).label).toBe("Ingestion paused");
     expect(ingestionHealth([{ ...source, keys: [{ revokedAt: "2026-10-23" }] }], now).label).toBe("Ingest key required");
-    expect(ingestionHealth([source], now).label).toBe("Waiting for first event");
+    expect(ingestionHealth([source], now).label).toBe("Waiting for events");
   });
   it("expires recent activity and rejects invalid or future timestamps as evidence", () => {
     const at = (time: number) => ({ ...source, lastEventAt: new Date(time).toISOString() });
@@ -20,7 +20,7 @@ describe("ingestion health", () => {
   });
   it("does not let a disabled source hide an active source failure", () => {
     const result = ingestionHealth([source, { ...source, enabled: false, lastEventAt: new Date(now).toISOString() }], now);
-    expect(result.label).toBe("Waiting for first event · some sources need attention");
+    expect(result.label).toBe("Waiting for events · some sources need attention");
     expect(result.lastEventAt).toBeNull();
   });
 });
