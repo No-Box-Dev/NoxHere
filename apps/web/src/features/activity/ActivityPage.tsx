@@ -93,7 +93,7 @@ export default function ActivityPage() {
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
     <DeliveryHealth organizationId={organizationId} projectId={projectId} />
     {(!isFeedStream && !isLegacyDashboard && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading delivery" detail="Reading project delivery…" /> : null}
-    {(!isFeedStream && !isLegacyDashboard && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Delivery is unavailable" detail="Project delivery could not be loaded. Try refreshing this page." /> : null}
+    {(!isFeedStream && !isLegacyDashboard && query.isError && !query.data) || (isFeedStream && stream.isError && !stream.data) ? <Empty title="Delivery is unavailable" detail="Project delivery could not be loaded. Try refreshing this page." /> : null}
     {query.data?.planningUnavailable && view === "current" ? <p role="status">Partial workload: Planning is unavailable. Feature counts are omitted; GitHub pull requests and issues are still shown.</p> : null}
     {membersError && view === "current" ? <p role="status">People could not be refreshed. Workload coverage may be incomplete. <button className="button" onClick={retryMembers}>Retry people</button></p> : null}
     {releaseNotes.isError && view === "merged" ? <p role="status">Release notes are unavailable. The pull request feed is still shown.</p> : null}

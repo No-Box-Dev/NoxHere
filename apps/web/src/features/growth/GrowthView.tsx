@@ -70,7 +70,7 @@ function GrowthEvents({ organizationId, projectId }: Pick<GrowthViewProps, "orga
     queryKey: ["growth", organizationId, projectId, "events"],
     queryFn: ({ signal }) => platformApi.growthEvents(organizationId, projectId, signal),
   });
-  return <AsyncState loading={events.isLoading} error={events.error}>
+  return <AsyncState loading={events.isLoading} error={events.data ? null : events.error}>
     <div className="toolbar"><span>{events.data?.length ?? 0} events</span><span className="toolbar-spacer" /><StatusTag tone={events.isError ? "warning" : "neutral"}>{events.isError ? "Refresh failed" : "Recorded events"}</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
     <div className="list-surface">{events.data?.map((event) => <ListRow key={event.id} symbol="↗" tone="positive" title={event.name.replaceAll(".", " ")} description={`${event.environment}${event.subject ? ` · ${event.subject}` : " · anonymous"}`} meta={<><StatusTag>{event.value.toLocaleString()}</StatusTag><span>{new Date(event.occurredAt).toLocaleString()}</span></>} />)}</div>
     {!events.data?.length ? <div className="empty-view"><h2>No growth events yet</h2><p>Website and subscription conversion events will appear here.</p></div> : null}

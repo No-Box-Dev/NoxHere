@@ -1748,5 +1748,26 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByRole("link", { name: "Manage roles and guest access" })).toHaveAttribute("href", `/no-box-dev/${project.id}/settings/integrations/overview`);
   });
 
+  it.each(["growth", "usage"])("retains cached %s events and retry controls after refresh failure", async (capability) => {
+    const user = userEvent.setup();
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    let calls = 0;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `/api/v1/projects/${project.id}/${capability}/events`) {
+        if (++calls > 1) return json({ error: "Temporarily unavailable" }, 503);
+        return json(capability === "growth"
+          ? [{ id: "retained", name: "Cached event", value: 1, subject: null, environment: "production", occurredAt: "2026-10-24T00:00:00Z" }]
+          : [{ id: "retained", name: "Cached event", type: "users.active", subject: "opaque", environment: "production", receivedAt: "2026-10-24T00:00:00Z", status: "accepted" }]);
+      }
+      return baseFetch(input, init);
+    });
+    renderApp(<App />, `/no-box-dev/${project.id}/${capability}/events`);
+    expect(await screen.findByText("Cached event")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(await screen.findByText("Refresh failed")).toBeInTheDocument();
+    expect(screen.getByText("Cached event")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
+  });
+
 });
 

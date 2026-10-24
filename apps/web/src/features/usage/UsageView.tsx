@@ -185,7 +185,7 @@ function UsageEvents({ organizationId, projectId, actorId }: UsageViewProps) {
   );
   const filtered = (events.data ?? []).filter((event) => (type === ALL_FILTER_VALUE || event.type === type) && (environment === ALL_FILTER_VALUE || event.environment.toLowerCase() === environment));
   return (
-    <AsyncState loading={events.isLoading} error={events.error}>
+    <AsyncState loading={events.isLoading} error={events.data ? null : events.error}>
       <div className="toolbar"><select name="eventType" aria-label="Event type" value={type} onChange={(event) => setType(event.target.value)}><option value="all">All usage events</option>{eventTypes.map((value) => <option value={value} key={value}>{value}</option>)}</select><select name="eventEnvironment" aria-label="Environment" value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="all">All environments</option>{environments.map((value) => <option value={value.toLowerCase()} key={value}>{value}</option>)}</select><span className="toolbar-spacer" /><span>{filtered.length} events</span><StatusTag tone={events.isError ? "warning" : "neutral"}>{events.isError ? "Refresh failed" : "Recorded events"}</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
       <div className="list-surface">
         {filtered.map((event) => <ListRow key={event.id} symbol="↗" tone="positive" title={event.name} description={<span className="mono">{event.type} · {event.subject} · {event.environment}</span>} meta={<><StatusTag tone="positive">Accepted</StatusTag><span>{event.receivedAt}</span></>} />)}
