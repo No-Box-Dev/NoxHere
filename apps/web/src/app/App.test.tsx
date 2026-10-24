@@ -448,7 +448,7 @@ describe("NoxHere API-backed platform", () => {
     expect(screen.getByRole("link", { name: "Feedback" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Growth" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Usage" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "NoxHere capabilities" })).getByRole("link", { name: "Incidents" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Connections" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
@@ -1435,7 +1435,7 @@ describe("NoxHere API-backed platform", () => {
     const moved = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/activity/issues`);
     await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/issues/repository`));
     expect(await screen.findByText("Move this issue")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toHaveClass("active");
+    expect(within(screen.getByRole("navigation", { name: "NoxHere capabilities" })).getByRole("link", { name: "Incidents" })).toHaveClass("active");
     expect(screen.getByRole("link", { name: "Repository" })).toBeInTheDocument();
     moved.unmount();
 
@@ -1447,12 +1447,12 @@ describe("NoxHere API-backed platform", () => {
   it("keeps Growth, Usage, and Issues as separate capabilities", async () => {
     const usage = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/usage/overview`);
     expect(await screen.findByRole("link", { name: "Overview" })).toHaveClass("active");
-    expect(screen.queryByRole("link", { name: /^Incidents$/ })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Service views" })).queryByRole("link", { name: /^Incidents$/ })).not.toBeInTheDocument();
     usage.unmount();
 
     const incidents = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/issues/incidents`);
-    expect(await screen.findByRole("link", { name: /^Incidents$/ })).toHaveClass("active");
-    expect(screen.getByRole("link", { name: "Incidents" })).toHaveClass("active");
+    expect(await within(await screen.findByRole("navigation", { name: "Service views" })).findByRole("link", { name: /^Incidents$/ })).toHaveClass("active");
+    expect(within(screen.getByRole("navigation", { name: "NoxHere capabilities" })).getByRole("link", { name: "Incidents" })).toHaveClass("active");
     expect(screen.queryByRole("link", { name: "Engagement" })).not.toBeInTheDocument();
     incidents.unmount();
   });
@@ -1617,7 +1617,7 @@ describe("NoxHere API-backed platform", () => {
     renderApp(<App />, `/no-box-dev/${project.id}/stats/overview`);
     expect(await screen.findByRole("link", { name: "Growth" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Usage" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "NoxHere capabilities" })).getByRole("link", { name: "Incidents" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Planning" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
   });
@@ -1744,7 +1744,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("separates member tracking from connection and access management", async () => {
     renderApp(<App />, `/no-box-dev/${project.id}/settings/people`);
-    expect(await screen.findByRole("heading", { name: "Member tracking" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Member tracking" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Manage roles and guest access" })).toHaveAttribute("href", `/no-box-dev/${project.id}/settings/integrations/overview`);
   });
 
