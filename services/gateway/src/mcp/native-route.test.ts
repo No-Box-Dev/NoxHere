@@ -142,6 +142,6 @@ describe("native MCP gateway boundary", () => {
     expect(projectScopedApiTokenPathSupported("/api/v1/projects/project-a/incidents/inc_" + "a".repeat(32), "GET")).toBe(false);
     expect(projectScopedApiTokenPathSupported("/api/v1/feedback/project-overview", "GET")).toBe(false);
     expect(requiredScope("/api/v1/projects", "POST")).toBeNull();
-    expect(contract.operations.some((op) => op.domain === "Admin" || op.domain === "Growth" || op.domain === "Usage")).toBe(false);
+    expect(contract.operations.some((op) => op.domain === "Settings" || op.domain === "Growth" || op.domain === "Usage")).toBe(false);
   });
 });

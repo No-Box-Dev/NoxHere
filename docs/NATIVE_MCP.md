@@ -4,16 +4,16 @@ This change adds a native, read-only MCP transport to the existing NoxHere gatew
 
 ## Product surface
 
-The taxonomy is Spots, Incidents, Work, Growth, Usage, Activity and Admin. These are product areas, not seven generic tools. See [the capability matrix](NATIVE_MCP_CAPABILITIES.md) for source evidence and unavailable actions.
+The product areas are Feedback, Incidents, Planning, Growth, Usage, Delivery and Settings. Existing tool names, scopes and API paths retain their compatibility identifiers. These are product areas, not seven generic tools. See [the capability matrix](NATIVE_MCP_CAPABILITIES.md) for source evidence and unavailable actions.
 
 | Area | Tools | Required read scope |
 | --- | --- | --- |
-| Spots | `spots_get_report` | `feedback:read` |
+| Feedback | `spots_get_report` | `feedback:read` |
 | Incidents | `incidents_list` | `issues:read`, optional and separately approved |
-| Work | `work_list_tasks`, `work_list_features`, `work_list_specs`, `work_get_spec` | `planning:read` |
-| Work | `work_list_issues`, `work_get_issue` | `activity:read` |
-| Activity | `activity_list_events`, `activity_list_pull_requests`, `activity_get_pull_request` | `activity:read` |
-| Growth, Usage, Admin | None in this release | No authorization expansion |
+| Planning | `work_list_tasks`, `work_list_features`, `work_list_specs`, `work_get_spec` | `planning:read` |
+| Planning | `work_list_issues`, `work_get_issue` | `activity:read` |
+| Delivery | `activity_list_events`, `activity_list_pull_requests`, `activity_get_pull_request` | `activity:read` |
+| Growth, Usage, Settings | None in this release | No authorization expansion |
 
 All MCP requests require `services:read`. The baseline connection therefore exposes ten tools with `services:read`, `planning:read`, `activity:read`, and `feedback:read`. Adding an explicitly approved `issues:read` scope exposes the eleventh tool, `incidents_list`. The adapter accepts the existing native write-equivalent scope rule but always dispatches GET; a broad token cannot enable write tools or unsupported domains.
 
@@ -21,7 +21,7 @@ Spots are widget reports. Read-by-ID already works in the pinned runtime despite
 
 Incidents are runtime/OTel errors, not repository issues. The existing overview returns the latest 50 unresolved errors ordered by last seen; the adapter exposes only that errors array and explicit coverage metadata. It discards the overview's telemetry metrics, sources and project metadata. It does not offer incident detail, history, status changes or rules. This route is already admitted by native `issues:read` and the connector GET allowlist; adding this mapping does not grant the connection that scope.
 
-Growth and Usage have project-filtered dashboard handlers but lack connector automation-token admission. Admin is organization-level privileged management. None are advertised as tools, even if a token contains similarly named scopes.
+Growth and Usage have project-filtered dashboard handlers but lack connector automation-token admission. Settings includes organization-level privileged management. None are advertised as tools, even if a token contains similarly named scopes.
 
 ## Native boundary
 
@@ -89,3 +89,4 @@ Runtime baseline: `69985fc1623ccda050d46cb6d03fe9b937a2ddfe`.
 - [MCP Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http)
 - [MCP discovery](https://modelcontextprotocol.io/specification/2026-07-28/server/discover)
 - [MCP tools](https://modelcontextprotocol.io/specification/2026-07-28/server/tools)
+

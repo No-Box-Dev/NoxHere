@@ -1,3 +1,4 @@
+import { DeliveryHealth } from "../../components/DeliveryHealth";
 import { useCallback, useMemo } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
@@ -11,9 +12,9 @@ import { StatusTag } from "../../components/StatusTag";
 import type { PlatformOutletContext } from "../../app/platform-context";
 import { Button } from "@/components/ui/button";
 
-const tabs = [["current", "Current"], ["opened", "Opened"], ["merged", "Merged"]] as const;
+const tabs = [["current", "Current work"], ["opened", "Pull requests"], ["merged", "Releases"]] as const;
 type WorkItem = { id: number; repo: string; number: number; title: string; state: string; author?: string; author_avatar?: string; assignees?: Array<{ login: string; avatar_url?: string }>; html_url?: string; updated_at?: string; draft?: boolean };
-type CurrentResult = { prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[]; members: GithubMember[]; excludedMembers: string[]; planningEnabled: boolean };
+type CurrentResult = { prs: WorkItem[]; issues: WorkItem[]; features: WorkItem[]; members: GithubMember[]; excludedMembers: string[]; planningEnabled: boolean; planningUnavailable: boolean };
 type CurrentSummary = { prs: WorkItem[]; issues: WorkItem[]; members: GithubMember[]; excludedMembers: string[] };
 type FeedEvent = { id: string; type: string; createdAt: string; repo: string; summary: string; technicalSummary: string; actor: { login: string; name: string | null; avatarUrl: string | null }; pr: { number: number; title: string; url: string } | null };
 type FeedResult = { events?: FeedEvent[]; releaseNotes?: FeedEvent[]; nextCursor?: string | null };
@@ -21,7 +22,7 @@ type QuickView = "opened" | "merged";
 
 export default function ActivityPage() {
   const { organizationId = "", projectId = "", view = "current", person } = useParams();
-  const { bootstrap, members } = useOutletContext<PlatformOutletContext>();
+  const { bootstrap, members, membersError, retryMembers } = useOutletContext<PlatformOutletContext>();
   const project = bootstrap.projects.find((item) => item.id === projectId);
   const planningEnabled = true;
   const isFeedStream = view === "opened" || view === "merged";
@@ -32,20 +33,23 @@ export default function ActivityPage() {
   const query = useQuery({
     queryKey: ["activity", organizationId, projectId, view, planningEnabled],
     queryFn: async ({ signal }) => {
-      const [summary, featureRecords] = await Promise.all([
+      const [summary, planning] = await Promise.all([
         getRawJson("/api/v1/activity/current-summary", signal, scope) as Promise<CurrentSummary>,
         // Planning enriches the Current view, but it is not required to show
         // GitHub PRs and issues. Keep the core workload usable if that
         // capability is temporarily unavailable.
         planningEnabled
-          ? platformApi.planningFeatures(organizationId, projectId, signal).catch(() => [])
-          : Promise.resolve([]),
+          ? platformApi.planningFeatures(organizationId, projectId, signal).then((features) => ({ features, unavailable: false })).catch((error: unknown) => {
+            if (signal.aborted) throw error;
+            return { features: [], unavailable: true };
+          })
+          : Promise.resolve({ features: [], unavailable: false }),
       ]);
-      const features = (featureRecords as PlanningFeatureRecord[]).filter((feature) => feature.state === "open").map((feature) => ({
+      const features = (planning.features as PlanningFeatureRecord[]).filter((feature) => feature.state === "open").map((feature) => ({
         id: Number(feature.id ?? feature.number), repo: project?.name ?? "Planning", number: feature.number, title: feature.title, state: feature.state,
         assignees: feature.assignees, html_url: feature.html_url ?? undefined, updated_at: feature.updated_at ?? undefined,
       }));
-      return { prs: summary.prs ?? [], issues: summary.issues ?? [], features, members: summary.members ?? [], excludedMembers: summary.excludedMembers ?? [], planningEnabled } satisfies CurrentResult;
+      return { prs: summary.prs ?? [], issues: summary.issues ?? [], features, members: summary.members ?? [], excludedMembers: summary.excludedMembers ?? [], planningEnabled: planningEnabled && !planning.unavailable, planningUnavailable: planning.unavailable } satisfies CurrentResult;
     },
     enabled: !isFeedStream && !isSettings && !isLegacyDashboard,
   });
@@ -87,8 +91,14 @@ export default function ActivityPage() {
   if (isLegacyDashboard) return <Navigate replace to={`/${organizationId}/${projectId}/dashboard/overview`} />;
   const streamEvents = stream.data?.pages.flatMap((page) => page.events ?? []) ?? [];
   return <section><ServiceTabs base={base} active={view} tabs={tabs} onIntent={prefetchView} /><div className="workspace-view feed-view">
-    {(!isFeedStream && !isLegacyDashboard && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading activity" detail="Reading project activity…" /> : null}
-    {(!isFeedStream && !isLegacyDashboard && query.isError) || (isFeedStream && stream.isError) ? <Empty title="Activity is unavailable" detail="The project activity API could not be reached. No placeholder activity is being shown." /> : null}
+    <DeliveryHealth organizationId={organizationId} projectId={projectId} />
+    {(!isFeedStream && !isLegacyDashboard && query.isLoading) || (isFeedStream && stream.isLoading) ? <Empty title="Loading delivery" detail="Reading project delivery…" /> : null}
+    {(!isFeedStream && !isLegacyDashboard && query.isError && !query.data) || (isFeedStream && stream.isError && !stream.data) ? <Empty title="Delivery is unavailable" detail="Project delivery could not be loaded. Try refreshing this page." /> : null}
+    {query.data?.planningUnavailable && view === "current" ? <p role="status">Partial workload: Planning is unavailable. Feature counts are omitted; GitHub pull requests and issues are still shown.</p> : null}
+    {membersError && view === "current" ? <p role="status">People could not be refreshed. Workload coverage may be incomplete. <button className="button" onClick={retryMembers}>Retry people</button></p> : null}
+    {releaseNotes.isError && view === "merged" ? <p role="status">Release notes are unavailable. The pull request feed is still shown.</p> : null}
+    {stream.isError && stream.data ? <p role="status">Delivery refresh failed. Previously loaded items are shown.</p> : null}
+    {query.isError && query.data ? <p role="status">Workload refresh failed. Previously loaded items are shown.</p> : null}
     {query.data && view === "current" ? <Current data={{ ...(query.data as CurrentResult), members }} base={base} person={person} scope={scope} isAdmin={bootstrap.actor.isAdmin} /> : null}
     {stream.data && isFeedStream ? <Events events={streamEvents} releaseNotes={releaseNotes.data?.events ?? []} label={view} hasNextPage={stream.hasNextPage} loadingMore={stream.isFetchingNextPage} onLoadMore={() => void stream.fetchNextPage()} /> : null}
   </div></section>;
@@ -199,3 +209,4 @@ function PlainEnglishSummary({ text }: { text: string }) {
   if (!items.length) return null;
   return <section className="feed-plain-summary" aria-label="Plain-English summary"><span>Plain-English summary</span><ol>{items.map((item, index) => <li key={`${item.label}-${index}`}><b>{item.label}</b><p>{item.detail}</p></li>)}</ol></section>;
 }
+

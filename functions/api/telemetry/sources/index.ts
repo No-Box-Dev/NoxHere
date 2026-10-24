@@ -36,6 +36,7 @@ interface SourceRow {
   slack_route_level: "source" | "project" | "organization" | "fallback" | null;
   last_registration_at: string | null;
   last_activity_at: string | null;
+  last_event_at: string | null;
   allowed_origins_json: string;
   allowed_events_json: string;
   report_title: string | null;
@@ -133,6 +134,12 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
                 WHERE registration.source_id = source.id) AS last_registration_at,
               (SELECT MAX(activity.received_at) FROM telemetry_user_active_days activity
                 WHERE activity.source_id = source.id) AS last_activity_at,
+              (SELECT MAX(received_at) FROM (
+                SELECT MAX(received_at) AS received_at FROM telemetry_user_registrations WHERE source_id = source.id
+                UNION ALL SELECT MAX(received_at) FROM telemetry_user_active_days WHERE source_id = source.id
+                UNION ALL SELECT MAX(received_at) FROM telemetry_activity_events WHERE source_id = source.id
+                UNION ALL SELECT MAX(received_at) FROM telemetry_tracked_events WHERE source_id = source.id
+              )) AS last_event_at,
               source.created_at
          FROM telemetry_sources source
          LEFT JOIN projects project ON project.id = source.project_id
@@ -222,6 +229,7 @@ export async function onRequestGet(context: Ctx): Promise<Response> {
       slackRouteLevel: source.slack_route_level,
       lastRegistrationAt: source.last_registration_at,
       lastActivityAt: source.last_activity_at,
+      lastEventAt: source.last_event_at ?? null,
       createdAt: source.created_at,
       keys: (keysBySource.get(source.id) ?? []).map((key) => ({
         id: key.id,
@@ -310,3 +318,4 @@ export async function onRequestPost(context: Ctx): Promise<Response> {
   })).run();
   return jsonResponse({ id, projectId: targetProjectId }, 201);
 }
+

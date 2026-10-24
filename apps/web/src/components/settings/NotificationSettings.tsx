@@ -5,7 +5,7 @@ import { platformApi } from "../../api/platform";
 import { Button } from "@/components/ui/button";
 
 const ROUTES = [
-  ["activity_posts", "Activity posts"],
+  ["activity_posts", "Delivery updates"],
   ["activity_release_notes", "Release notes"],
   ["activity_daily_summary", "Daily summary"],
 ] as const;
@@ -24,7 +24,7 @@ export function NotificationSettings({ organizationId, projectId, isAdmin }: { o
   const saveRoute = useMutation({ mutationFn: ({ route, channelId }: { route: string; channelId: string | null }) => patchRawJson("/api/v1/integrations/slack/routing", { routes: { [route]: channelId }, connections: { [route]: channelId ? connection?.id : null } }, {}, scope), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["feed-routing", organizationId, projectId] }) });
   const testRoute = useMutation({ mutationFn: (route: string) => postRawJson("/api/v1/integrations/slack/test", { route }, scope) });
   const backfill = useMutation({ mutationFn: () => postRawJson(`/api/v1/projects/${encodeURIComponent(projectId)}/backfill-prs`, { days }, scope) });
-  if (!isAdmin) return <div className="empty-view"><h2>Admin access required</h2><p>Only administrators can change Activity delivery and generation settings.</p></div>;
+  if (!isAdmin) return <div className="empty-view"><h2>Admin access required</h2><p>Only administrators can change Delivery notification and generation settings.</p></div>;
   return <div className="settings-stack feed-settings">
     <section className="settings-card"><header><div><b>Slack delivery</b><p>Choose independent destinations for posts, release notes, and the daily summary.</p></div></header>{status.data?.connected ? <div className="feed-route-list">{ROUTES.map(([route, label]) => <label key={route}><span>{label}</span><select value={(routing.data?.routes as Record<string, string | null> | undefined)?.[route] ?? ""} disabled={!connection || saveRoute.isPending} onChange={(event) => saveRoute.mutate({ route, channelId: event.target.value || null })}><option value="">Disabled</option>{(channels.data?.channels ?? []).filter((channel) => !channel.is_archived).map((channel) => <option value={channel.id} key={channel.id}>#{channel.name}</option>)}</select><button type="button" className="mini-button" disabled={!(routing.data?.routes as Record<string, string | null> | undefined)?.[route] || testRoute.isPending} onClick={() => testRoute.mutate(route)}>Test</button></label>)}</div> : <p>Connect Slack in Integrations before choosing channels.</p>}</section>
     {config.data ? <FeedPromptEditor key={config.data.revision} initial={config.data.config.releaseNotesPrompt ?? ""} etag={config.data.etag} scope={scope} onSaved={() => queryClient.invalidateQueries({ queryKey: ["feed-config", organizationId, projectId] })} /> : <section className="settings-card"><p>{config.isError ? "Release-note settings could not be loaded." : "Loading release-note settings…"}</p></section>}
@@ -35,5 +35,6 @@ export function NotificationSettings({ organizationId, projectId, isAdmin }: { o
 function FeedPromptEditor({ initial, etag, scope, onSaved }: { initial: string; etag: string; scope: { organizationId: string; projectId: string }; onSaved: () => Promise<unknown> }) {
   const [prompt, setPrompt] = useState(initial);
   const save = useMutation({ mutationFn: () => patchRawJson<FeedConfig>("/api/v1/services/activity/config", { releaseNotesPrompt: prompt.trim() || null }, { "If-Match": etag }, scope), onSuccess: () => void onSaved() });
-  return <section className="settings-card"><header><div><b>Release-note instructions</b><p>Optional project-specific guidance used when Activity writes release notes.</p></div></header><textarea rows={8} maxLength={20_000} value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Focus on customer impact and avoid implementation detail." /><Button variant="outline" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save instructions"}</Button>{save.error ? <small role="alert">{save.error.message}</small> : null}</section>;
+  return <section className="settings-card"><header><div><b>Release-note instructions</b><p>Optional project-specific guidance used when Delivery writes release notes.</p></div></header><textarea rows={8} maxLength={20_000} value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Focus on customer impact and avoid implementation detail." /><Button variant="outline" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save instructions"}</Button>{save.error ? <small role="alert">{save.error.message}</small> : null}</section>;
 }
+

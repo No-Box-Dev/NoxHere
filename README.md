@@ -6,14 +6,16 @@ NoxHere is the public product, identity, API, and web application. A
 person signs in once and uses the same account session across every
 organization, project, and enabled capability.
 
-Activity, Planning, Feedback, Stats, Incidents, and Connections are capability
-areas inside NoxHere rather than separate products.
+Feedback, Incidents, Planning, Growth, Usage, and Delivery are capability
+areas inside NoxHere. Settings contains connections and access management.
+Existing API namespaces and URLs remain compatible; `activity` is the internal
+identifier for Delivery. Secrets is outside this navigation update.
 
 The separate product site for [noxhere.com](https://noxhere.com) lives in the
 [`noxhere-website`](https://github.com/JasperNoBoxDev/noxhere-website) repository.
 It deliberately shares no application bindings or credentials with this app.
-- **Connections** — GitHub, Slack, provider credentials, and delivery
-- **Activity** — current work, releases, and engineering activity
+- **Settings** — GitHub, Slack, provider credentials, and delivery
+- **Delivery** — current work, releases, and engineering activity
 - **Planning** — features, backlog, specifications, and board stages
 - **Feedback** — widgets, sites, reports, and screenshots
 - **Incidents** — lifecycle events, feature health, alerts, and reports
@@ -115,3 +117,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_OF_COND
 ## Privacy
 
 Self-hosted instances keep all data in your own Cloudflare account. For the hosted instance, see [PRIVACY.md](./PRIVACY.md) and [TERMS.md](./TERMS.md).
+

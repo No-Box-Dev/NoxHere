@@ -1,3 +1,4 @@
+import { IngestionHealth } from "../../components/IngestionHealth";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { GrowthDashboard as GrowthDashboardData } from "../../api/contracts";
@@ -18,6 +19,7 @@ const tabs = [["overview", "Overview"], ["funnel", "Funnel"], ["acquisition", "A
 export function GrowthView({ organizationId, projectId, actorId, view }: GrowthViewProps) {
   const base = `/${organizationId}/${projectId}/growth`;
   return <><ServiceTabs base={base} active={view} tabs={tabs} /><div className="workspace-view">
+    <IngestionHealth organizationId={organizationId} projectId={projectId} capability="growth" />
     {view === "events" ? <GrowthEvents organizationId={organizationId} projectId={projectId} /> : <GrowthDashboard organizationId={organizationId} projectId={projectId} actorId={actorId} view={view} />}
   </div></>;
 }
@@ -29,7 +31,7 @@ function GrowthDashboard({ organizationId, projectId, actorId, view }: GrowthVie
     queryFn: ({ signal }) => platformApi.growthDashboard(organizationId, projectId, range, signal),
   });
   return <AsyncState loading={dashboard.isLoading} error={dashboard.error}>{dashboard.data ? <>
-    <div className="toolbar"><select aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="all">All time</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select><span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">Growth data</StatusTag></div>
+    <div className="toolbar"><select aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="all">All time</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select><span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag>Recorded data</StatusTag></div>
     {view === "overview" ? <div className="stat-grid">{dashboard.data.metrics.map((metric) => <article className="stat-card" key={metric.id}><span className="stat-card-head"><b>{metric.label}</b><small>{dashboard.data.range}</small></span><span className="stat-value"><strong>{metric.value.toLocaleString()}</strong></span><Sparkline points={metric.points} /></article>)}<article className="stat-card"><span className="stat-card-head"><b>Revenue</b><small>{dashboard.data.range}</small></span><span className="stat-value"><strong>{formatRevenue(dashboard.data.revenue.amountMinor, dashboard.data.revenue.currency)}</strong></span></article></div> : null}
     {view === "funnel" ? <Funnel funnel={dashboard.data.funnel} /> : null}
     {view === "acquisition" ? <Acquisition acquisition={dashboard.data.acquisition} /> : null}
@@ -68,9 +70,10 @@ function GrowthEvents({ organizationId, projectId }: Pick<GrowthViewProps, "orga
     queryKey: ["growth", organizationId, projectId, "events"],
     queryFn: ({ signal }) => platformApi.growthEvents(organizationId, projectId, signal),
   });
-  return <AsyncState loading={events.isLoading} error={events.error}>
-    <div className="toolbar"><span>{events.data?.length ?? 0} events</span><span className="toolbar-spacer" /><StatusTag tone="positive">Receiving</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
+  return <AsyncState loading={events.isLoading} error={events.data ? null : events.error}>
+    <div className="toolbar"><span>{events.data?.length ?? 0} events</span><span className="toolbar-spacer" /><StatusTag tone={events.isError ? "warning" : "neutral"}>{events.isError ? "Refresh failed" : "Recorded events"}</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
     <div className="list-surface">{events.data?.map((event) => <ListRow key={event.id} symbol="↗" tone="positive" title={event.name.replaceAll(".", " ")} description={`${event.environment}${event.subject ? ` · ${event.subject}` : " · anonymous"}`} meta={<><StatusTag>{event.value.toLocaleString()}</StatusTag><span>{new Date(event.occurredAt).toLocaleString()}</span></>} />)}</div>
     {!events.data?.length ? <div className="empty-view"><h2>No growth events yet</h2><p>Website and subscription conversion events will appear here.</p></div> : null}
   </AsyncState>;
 }
+
