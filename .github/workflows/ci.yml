@@ -78,7 +78,12 @@ jobs:
             npm ci --prefix "$package" || exit "$?"
           done
       - name: Enforce active platform event milestone
-        run: npm run milestones:verify
+        run: |
+          set +e
+          npm run milestones:verify > "$RUNNER_TEMP/platform-milestones.log" 2>&1
+          result=$?
+          tail -n 200 "$RUNNER_TEMP/platform-milestones.log"
+          exit "$result"
       - name: Enforce active login hardening milestone
         run: npm run login:milestones:verify
       - name: Verify API docs and complete CLI command reference
