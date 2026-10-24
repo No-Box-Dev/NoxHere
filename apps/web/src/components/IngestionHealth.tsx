@@ -15,7 +15,13 @@ export function IngestionHealth({ organizationId, projectId, capability, canConf
 }) {
   const query = useQuery({
     queryKey: [capability, organizationId, projectId, "sources", "health"],
-    queryFn: async ({ signal }) => sourcesSchema.parse(await getRawJson(`/api/v1/${capability}/sources`, signal, { organizationId, projectId })),
+    queryFn: async ({ signal }) => {
+      const scope = { organizationId, projectId };
+      const response = capability === "growth"
+        ? await getRawJson("/api/v1/growth/sources", signal, scope)
+        : await getRawJson("/api/v1/usage/sources", signal, scope);
+      return sourcesSchema.parse(response);
+    },
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
   });
