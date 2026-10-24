@@ -292,7 +292,7 @@ test("two callers cannot reuse a cached project, context, token, or response", a
 test("product taxonomy is explicit and unsupported areas are never advertised", async () => {
   const broad = { ...context, scopes: [...context.scopes, "issues:read", "growth:read", "usage:read", "telemetry:read", "admin:write"] };
   const { body } = await invoke(rpc("tools/list"), { context: broad });
-  assert.deepEqual(contract.domains.map((domain) => domain.name), ["Spots", "Incidents", "Work", "Growth", "Usage", "Activity", "Admin"]);
+  assert.deepEqual(contract.domains.map((domain) => domain.name), ["Feedback", "Incidents", "Planning", "Growth", "Usage", "Delivery", "Settings"]);
   assert.deepEqual(body.result.tools.map((tool) => tool.name), [
     "spots_get_report", "incidents_list", "work_list_tasks", "work_list_features", "work_list_specs", "work_get_spec",
     "work_list_issues", "work_get_issue", "activity_list_events", "activity_list_pull_requests", "activity_get_pull_request",
@@ -496,3 +496,4 @@ test("omitted params never allow unsafe or credential-bearing ids to be echoed",
     assert.equal(result.deps.dispatchCalls.length, 0);
   }
 });
+

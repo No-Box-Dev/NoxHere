@@ -82,6 +82,8 @@ beforeEach(() => {
       const organizationName = organizationId.toLowerCase() === "no-box-dev" ? "No-Box-Dev" : organizationId;
       return json(bootstrapBody({ organizationId, organizationName }));
     }
+    if (url === "/api/v1/growth/sources" || url === "/api/v1/usage/sources") return json({ sources: [] });
+    if (url === "/api/v1/sync") return json({ isStale: false, lastSync: "2026-10-24T04:00:00Z", resources: {} });
     if (url === "/api/v1/me") return json({ login: "JasperNoBoxDev", org: "No-Box-Dev", isAdmin: true });
     if (url === `/api/v1/projects/${project.id}/usage/actions`) return json({ projectId: project.id, windowDays: 7, actions: [
       { slot: 1, key: "custom.comments.written", label: "Comments written" },
@@ -442,13 +444,14 @@ describe("NoxHere API-backed platform", () => {
     const capabilityLinks = within(screen.getByRole("navigation", { name: "NoxHere capabilities" })).getAllByRole("link");
     expect(capabilityLinks[0]).toHaveAccessibleName("Dashboard");
     expect(screen.getByRole("link", { name: "Planning" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Activity" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Delivery" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feedback" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Growth" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Usage" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Issues" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "NoxKey" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Connections" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Connections" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
   });
 
   it("returns to sign-in when an authenticated API request reports an expired session", async () => {
@@ -610,7 +613,7 @@ describe("NoxHere API-backed platform", () => {
     expect(within(planningMenu).getByRole("link", { name: "Backlog" })).toBeInTheDocument();
     expect(within(planningMenu).getByRole("link", { name: "Completed" })).toBeInTheDocument();
     expect(within(planningMenu).getByRole("link", { name: "Settings" })).toBeInTheDocument();
-    expect(within(planningMenu).queryByRole("link", { name: "Activity" })).not.toBeInTheDocument();
+    expect(within(planningMenu).queryByRole("link", { name: "Delivery" })).not.toBeInTheDocument();
     expect(screen.queryByRole("tablist", { name: "Feature views" })).not.toBeInTheDocument();
   });
 
@@ -983,7 +986,9 @@ describe("NoxHere API-backed platform", () => {
 
     expect(await screen.findByText("JasperNoBoxDev")).toBeInTheDocument();
     expect(screen.getByText("0 open items")).toBeInTheDocument();
-    expect(screen.queryByText("Activity is unavailable")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delivery is unavailable")).not.toBeInTheDocument();
+    expect(screen.getByText(/Partial workload: Planning is unavailable/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("0 features")).not.toBeInTheDocument();
   });
 
   it("shows the native team Stats experience in the top-level Dashboard", async () => {
@@ -1019,7 +1024,7 @@ describe("NoxHere API-backed platform", () => {
 
   it("prefetches Activity data before a user selects another tab", async () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/activity/current");
-    const merged = await screen.findByRole("link", { name: "Merged" });
+    const merged = await screen.findByRole("link", { name: "Releases" });
 
     fireEvent.mouseEnter(merged);
 
@@ -1027,7 +1032,7 @@ describe("NoxHere API-backed platform", () => {
       expect(fetch).toHaveBeenCalledWith("/api/v1/activity?mode=merged&limit=20", expect.any(Object));
       expect(fetch).toHaveBeenCalledWith("/api/v1/activity?mode=release-notes", expect.any(Object));
     });
-    expect(screen.getByRole("link", { name: "Current" })).toHaveClass("active");
+    expect(screen.getByRole("link", { name: "Current work" })).toHaveClass("active");
   });
 
   it("opens a person's PRs, issues, and Planning features", async () => {
@@ -1160,7 +1165,7 @@ describe("NoxHere API-backed platform", () => {
   it("labels the active Feedback queue as Open", async () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/feedback/issues");
     expect(await screen.findByRole("link", { name: "Open" })).toBeInTheDocument();
-    expect(within(screen.getByRole("navigation", { name: "Service views" })).queryByRole("link", { name: "Issues" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Service views" })).queryByRole("link", { name: "Incidents" })).not.toBeInTheDocument();
   });
 
   it("loads project capture widgets instead of showing a placeholder", async () => {
@@ -1430,7 +1435,7 @@ describe("NoxHere API-backed platform", () => {
     const moved = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/activity/issues`);
     await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/issues/repository`));
     expect(await screen.findByText("Move this issue")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Issues" })).toHaveClass("active");
+    expect(screen.getByRole("link", { name: "Incidents" })).toHaveClass("active");
     expect(screen.getByRole("link", { name: "Repository" })).toBeInTheDocument();
     moved.unmount();
 
@@ -1447,7 +1452,7 @@ describe("NoxHere API-backed platform", () => {
 
     const incidents = renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/issues/incidents`);
     expect(await screen.findByRole("link", { name: /^Incidents$/ })).toHaveClass("active");
-    expect(screen.getByRole("link", { name: "Issues" })).toHaveClass("active");
+    expect(screen.getByRole("link", { name: "Incidents" })).toHaveClass("active");
     expect(screen.queryByRole("link", { name: "Engagement" })).not.toBeInTheDocument();
     incidents.unmount();
   });
@@ -1612,7 +1617,7 @@ describe("NoxHere API-backed platform", () => {
     renderApp(<App />, `/no-box-dev/${project.id}/stats/overview`);
     expect(await screen.findByRole("link", { name: "Growth" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Usage" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Issues" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Incidents" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Planning" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
   });
@@ -1626,7 +1631,7 @@ describe("NoxHere API-backed platform", () => {
     renderApp(<><App /><CurrentRoute /></>, `/no-box-dev/${project.id}/usage/overview`);
     expect(await screen.findByRole("link", { name: "Growth" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Usage" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Issues" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Incidents" })).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("current-route")).toHaveTextContent(`/no-box-dev/${project.id}/growth/overview`));
   });
 
@@ -1720,4 +1725,28 @@ describe("NoxHere API-backed platform", () => {
     renderApp(<App />, "/no-box-dev/proj_no-box-dev_playnist/planning/settings");
     await waitFor(() => expect(screen.getByRole("combobox", { name: "Planning feature alert channel" })).toHaveValue("C-FEATURES"));
   });
+  it.each(["growth", "usage"])("shows missing %s setup without claiming events are arriving", async (capability) => {
+    renderApp(<App />, `/no-box-dev/${project.id}/${capability}/events`);
+    expect(await screen.findByText("Setup required")).toBeInTheDocument();
+    expect(screen.queryByText("Receiving")).not.toBeInTheDocument();
+  });
+
+  it("keeps a source-status error distinct from missing setup", async () => {
+    const baseFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/usage/sources") return json({ error: "Unavailable" }, 503);
+      return baseFetch(input, init);
+    });
+    renderApp(<App />, `/no-box-dev/${project.id}/usage/events`);
+    expect(await screen.findByText("Source status unavailable")).toBeInTheDocument();
+    expect(screen.queryByText("Setup required")).not.toBeInTheDocument();
+  });
+
+  it("separates member tracking from connection and access management", async () => {
+    renderApp(<App />, `/no-box-dev/${project.id}/settings/people`);
+    expect(await screen.findByRole("heading", { name: "Member tracking" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Manage roles and guest access" })).toHaveAttribute("href", `/no-box-dev/${project.id}/settings/integrations/overview`);
+  });
+
 });
+

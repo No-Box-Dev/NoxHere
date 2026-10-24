@@ -61,5 +61,6 @@ function LegacyIncidentsRoute() {
 
 function ProjectFallback() {
   const { organizationId = "", projectId = "" } = useParams();
-  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/connections/overview`} />;
+  return <Navigate replace to={`/${encodeURIComponent(organizationId)}/${encodeURIComponent(projectId)}/settings/integrations/overview`} />;
 }
+

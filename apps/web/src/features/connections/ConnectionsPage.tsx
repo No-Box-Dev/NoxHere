@@ -12,7 +12,7 @@ import { useConfirmDialog } from "../../components/ConfirmDialog";
 
 type ConnectionsSection = "services" | "connections" | "people" | "repositories";
 type GuestCapability = "planning" | "activity" | "feedback" | "growth" | "usage" | "issues";
-const serviceRows = [["planning", "P", "Planning", "Planning and delivery"], ["activity", "A", "Activity", "Engineering activity and releases"], ["feedback", "F", "Feedback", "Reports and reporter messaging"], ["growth", "G", "Growth", "Acquisition, conversion and churn"], ["usage", "U", "Usage", "Product adoption and engagement"], ["issues", "I", "Issues", "Repository issues, incidents and alerts"]] as const;
+const serviceRows = [["planning", "P", "Planning", "Planning and delivery"], ["activity", "A", "Delivery", "Engineering activity and releases"], ["feedback", "F", "Feedback", "Reports and reporter messaging"], ["growth", "G", "Growth", "Acquisition, conversion and churn"], ["usage", "U", "Usage", "Product adoption and engagement"], ["issues", "I", "Incidents", "Repository issues, incidents and alerts"]] as const;
 
 export default function ConnectionsPage() {
   const { organizationId = "", projectId = "", view = "overview" } = useParams();
@@ -30,7 +30,7 @@ export default function ConnectionsPage() {
           <Accordion id="connections" current={selected} symbol="C" title="Connections" description="GitHub and Slack capabilities for this project" status={connectionStatus(project)}>
             <Connections project={project} projectName={projectName} />
           </Accordion>
-          <Accordion id="people" current={selected} symbol="P" title="People and access" description={`Verified GitHub organization members with access to ${projectName}`} status={membersLoading ? "Loading" : `${members.length} people`}>
+          <Accordion id="people" current={selected} symbol="P" title="People and access" description={`Verified GitHub organization members with access to ${projectName}`} status={membersLoading ? "Loading" : membersError ? "Directory unavailable" : `${members.length} people`}>
             <People members={members} membersLoading={membersLoading} membersError={membersError} retryMembers={retryMembers} organizationId={organizationId} projectId={projectId} canInvite={bootstrap.actor.isAdmin} />
           </Accordion>
           <Accordion id="repositories" current={selected} symbol="R" title="Project repositories" description="Repositories included across every capability" status={`${project?.connections.filter((connection) => connection.provider === "github").length ?? 0} included`}>
@@ -137,17 +137,17 @@ function MemberRow({ member, managed, canManage, busy, onRole }: { member: Githu
 function GuestRow({ guest, status, pending = false, busy, onScope, onResend, onRevoke }: { guest: GuestInvite; status: string; pending?: boolean; busy: boolean; onScope: (serviceId: "all" | GuestCapability) => void; onResend?: () => void; onRevoke: () => void }) {
   const { confirm, confirmation } = useConfirmDialog();
   const current = guest.service ?? "all";
-  return <><div className="list-row"><span className="list-symbol">G</span><span className="list-copy"><b>{guest.email}</b><small>Guest · {guest.service ? serviceNameFromApi(guest.service) : "All capabilities"} · {guest.projectName ?? "Organization"}{guest.expiresAt ? ` · expires ${new Date(guest.expiresAt).toLocaleDateString()}` : ""}</small></span><span className="list-meta">{guest.scopeType !== "organization" ? <select aria-label={`Access for ${guest.email}`} value={current} disabled={busy} onChange={(event) => onScope(event.target.value as "all" | GuestCapability)}><option value="all">All capabilities</option><option value="planning">Planning</option><option value="activity">Activity</option><option value="feedback">Feedback</option><option value="growth">Growth</option><option value="usage">Usage</option><option value="issues">Issues</option>{guest.service === "telemetry" ? <option value="telemetry" disabled>Legacy analytics access</option> : null}</select> : null}<StatusTag tone={pending ? "warning" : "positive"}>{status}</StatusTag>{pending && onResend ? <button type="button" className="mini-button" disabled={busy} onClick={onResend}>Resend</button> : null}<button type="button" className="mini-button destructive" disabled={busy} onClick={() => void confirm({ title: pending ? "Cancel guest invitation?" : "Revoke guest access?", detail: pending ? `${guest.email} will no longer be able to accept this invitation.` : `${guest.email} will immediately lose this guest access.`, confirmLabel: pending ? "Cancel invitation" : "Revoke access", destructive: true }).then((confirmed) => { if (confirmed) onRevoke(); })}>{pending ? "Cancel invite" : "Revoke"}</button></span></div>{confirmation}</>;
+  return <><div className="list-row"><span className="list-symbol">G</span><span className="list-copy"><b>{guest.email}</b><small>Guest · {guest.service ? serviceNameFromApi(guest.service) : "All capabilities"} · {guest.projectName ?? "Organization"}{guest.expiresAt ? ` · expires ${new Date(guest.expiresAt).toLocaleDateString()}` : ""}</small></span><span className="list-meta">{guest.scopeType !== "organization" ? <select aria-label={`Access for ${guest.email}`} value={current} disabled={busy} onChange={(event) => onScope(event.target.value as "all" | GuestCapability)}><option value="all">All capabilities</option><option value="planning">Planning</option><option value="activity">Delivery</option><option value="feedback">Feedback</option><option value="growth">Growth</option><option value="usage">Usage</option><option value="issues">Incidents</option>{guest.service === "telemetry" ? <option value="telemetry" disabled>Legacy analytics access</option> : null}</select> : null}<StatusTag tone={pending ? "warning" : "positive"}>{status}</StatusTag>{pending && onResend ? <button type="button" className="mini-button" disabled={busy} onClick={onResend}>Resend</button> : null}<button type="button" className="mini-button destructive" disabled={busy} onClick={() => void confirm({ title: pending ? "Cancel guest invitation?" : "Revoke guest access?", detail: pending ? `${guest.email} will no longer be able to accept this invitation.` : `${guest.email} will immediately lose this guest access.`, confirmLabel: pending ? "Cancel invitation" : "Revoke access", destructive: true }).then((confirmed) => { if (confirmed) onRevoke(); })}>{pending ? "Cancel invite" : "Revoke"}</button></span></div>{confirmation}</>;
 }
 
 function roleLabel(role: OrganizationMember["role"]) { return role[0].toUpperCase() + role.slice(1); }
 
 function serviceName(id: GuestCapability) {
-  return ({ planning: "Planning", activity: "Activity", feedback: "Feedback", growth: "Growth", usage: "Usage", issues: "Issues" } as const)[id];
+  return ({ planning: "Planning", activity: "Delivery", feedback: "Feedback", growth: "Growth", usage: "Usage", issues: "Incidents" } as const)[id];
 }
 
 function serviceNameFromApi(id: NonNullable<GuestInvite["service"]>) {
-  return ({ planning: "Planning", activity: "Activity", feedback: "Feedback", growth: "Growth", usage: "Usage", issues: "Issues", telemetry: "Legacy analytics access" } as const)[id];
+  return ({ planning: "Planning", activity: "Delivery", feedback: "Feedback", growth: "Growth", usage: "Usage", issues: "Incidents", telemetry: "Legacy analytics access" } as const)[id];
 }
 
 function repositoryNames(project?: Project) { return project?.connections.filter((connection) => connection.provider === "github").map((connection) => connection.label.split("/").at(-1) ?? connection.label) ?? []; }
@@ -157,3 +157,4 @@ function Services() {
     <ListRow key={id} symbol={symbol} title={title} description={description} meta={<StatusTag tone="positive">Available</StatusTag>} />
   ))}</div>;
 }
+

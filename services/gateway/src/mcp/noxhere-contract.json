@@ -4,7 +4,7 @@
   "apiVersion": "1.0.0",
   "domains": [
     {
-      "name": "Spots",
+      "name": "Feedback",
       "status": "partial",
       "note": "Known report detail only; report listing is not token-supported."
     },
@@ -14,7 +14,7 @@
       "note": "Latest 50 unresolved incidents only; requires optional issues:read."
     },
     {
-      "name": "Work",
+      "name": "Planning",
       "status": "read-only",
       "note": "Tasks, features, specifications, and repository issues."
     },
@@ -29,12 +29,12 @@
       "note": "Dashboard routes are absent from the project-token allowlist."
     },
     {
-      "name": "Activity",
+      "name": "Delivery",
       "status": "read-only",
       "note": "Engineering activity, releases, and pull requests."
     },
     {
-      "name": "Admin",
+      "name": "Settings",
       "status": "unavailable",
       "note": "Organization administration requires separate privileged authorization."
     }
@@ -87,7 +87,7 @@
           "functions/lib/__tests__/api-auth.test.ts"
         ]
       },
-      "domain": "Spots",
+      "domain": "Feedback",
       "title": "Get Spot report",
       "description": "Read one widget report and its evidence references.\nUse a known report ID; evidence files are not downloaded."
     },
@@ -203,7 +203,7 @@
           }
         }
       },
-      "domain": "Work",
+      "domain": "Planning",
       "title": "List Work tasks",
       "description": "List tasks by owner, status, or feature.\nUse this to see what needs doing in the connected project."
     },
@@ -236,7 +236,7 @@
           }
         }
       },
-      "domain": "Work",
+      "domain": "Planning",
       "title": "List Work features",
       "description": "List the project\u2019s features.\nUse feature numbers to find their tasks and specifications."
     },
@@ -287,7 +287,7 @@
           }
         }
       },
-      "domain": "Work",
+      "domain": "Planning",
       "title": "List Work specifications",
       "description": "List specifications, optionally for one feature.\nUse a returned specification ID with work_get_spec."
     },
@@ -322,7 +322,7 @@
           "specId"
         ]
       },
-      "domain": "Work",
+      "domain": "Planning",
       "title": "Get Work specification",
       "description": "Read one specification by ID.\nUse work_list_specs first when the ID is unknown."
     },
@@ -445,7 +445,7 @@
           }
         }
       },
-      "domain": "Work",
+      "domain": "Planning",
       "title": "List Work issues",
       "description": "List tracked repository issues in the project.\nThese are linked work items, not OTel incidents."
     },
@@ -494,7 +494,7 @@
           "number"
         ]
       },
-      "domain": "Work",
+      "domain": "Planning",
       "title": "Get Work issue",
       "description": "Read one tracked repository issue.\nProvide its repository name and issue number."
     },
@@ -604,7 +604,7 @@
           }
         }
       },
-      "domain": "Activity",
+      "domain": "Delivery",
       "title": "List Activity events",
       "description": "List engineering activity or release notes.\nUse the returned cursor to read the next page."
     },
@@ -704,7 +704,7 @@
           }
         }
       },
-      "domain": "Activity",
+      "domain": "Delivery",
       "title": "List Activity pull requests",
       "description": "List tracked pull requests in the project.\nFilter by repository, author, or state."
     },
@@ -753,7 +753,7 @@
           "number"
         ]
       },
-      "domain": "Activity",
+      "domain": "Delivery",
       "title": "Get Activity pull request",
       "description": "Read one tracked pull request.\nProvide its repository name and pull request number."
     }

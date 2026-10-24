@@ -14,12 +14,13 @@ import { ApiTokens } from "./ApiTokens";
 import { Maintenance } from "./Maintenance";
 import { SlackMessageBridge } from "./SlackMessageBridge";
 import { SlackConnections } from "./SlackConnections";
+import ConnectionsPage from "../connections/ConnectionsPage";
 import { BrandingSettings } from "./BrandingSettings";
 import type { PlatformOutletContext } from "../../app/platform-context";
 
 const settingsGroups = [
-  { items: [{ id: "project", label: "Project" }, { id: "branding", label: "Branding" }, { id: "people", label: "People & access" }] },
-  { label: "Integrations", items: [{ id: "integrations/github", label: "GitHub" }, { id: "integrations/slack", label: "Slack" }, { id: "integrations/growth", label: "Growth" }, { id: "integrations/usage", label: "Usage" }, { id: "integrations/api", label: "API access" }] },
+  { items: [{ id: "project", label: "Project" }, { id: "branding", label: "Branding" }, { id: "people", label: "Member tracking" }] },
+  { label: "Integrations", items: [{ id: "integrations/overview", label: "Connections & access" }, { id: "integrations/github", label: "GitHub" }, { id: "integrations/slack", label: "Slack" }, { id: "integrations/growth", label: "Growth" }, { id: "integrations/usage", label: "Usage" }, { id: "integrations/api", label: "API access" }] },
   { label: "Automation", items: [{ id: "notifications", label: "Notifications" }, { id: "alert-rules", label: "Alert rules" }] },
   { label: "System", items: [{ id: "maintenance", label: "Maintenance" }] },
 ] as const;
@@ -57,7 +58,8 @@ export default function SettingsPage() {
   return <SettingsShell base={base} active={requestedSection} groups={settingsGroups}>
     {requestedSection === "project" ? <><SettingsPageHeader title="Project" description="Review the identity and shared scope for this project." /><SettingsSection title="Project details"><div className="settings-card"><div className="list-surface"><ListRow symbol="P" title={projectName} description={`Project ID · ${projectId}`} meta={<StatusTag tone="positive">{project?.environment ?? "Production"}</StatusTag>} /><ListRow symbol="R" title={`${connectedRepositories.length} repositories`} description="Repository scope is managed through the GitHub integration." meta={<Link className="mini-button" to={`${base}/integrations/github`}>Manage GitHub</Link>} /></div></div></SettingsSection></> : null}
     {requestedSection === "branding" ? <><SettingsPageHeader title="Branding" description="Set the shared product identity used by customer-facing Nox surfaces." /><SettingsSection title="Product branding" description="One project-level source of truth for people, widgets, and agents.">{settings.isLoading ? <div className="settings-card"><p>Loading branding…</p></div> : <BrandingSettings key={JSON.stringify(settings.data?.branding ?? {})} projectName={projectName} settings={settings.data ?? {}} saving={saveTracking.isPending} error={saveTracking.error} canManage={bootstrap.actor.capabilities.includes("organization.manage")} onSave={(branding) => saveTracking.mutate({ ...(settings.data ?? {}), branding })} />}</SettingsSection></> : null}
-    {requestedSection === "people" ? <><SettingsPageHeader title="People & access" description="Control who is represented in project activity and ownership views." scope="Workspace" /><SettingsSection title="Tracked members" description={membersLoading || settings.isLoading ? "Loading member directory…" : `${trackedCount} of ${members.length} members tracked.`}>{tracking}</SettingsSection></> : null}
+    {requestedSection === "people" ? <><SettingsPageHeader title="Member tracking" description="Choose whose work appears in Delivery. This does not change access permissions." scope="Workspace" /><p><Link to={`${base}/integrations/overview`}>Manage roles and guest access</Link></p><SettingsSection title="Tracked members" description={membersLoading || settings.isLoading ? "Loading member directory…" : `${trackedCount} of ${members.length} members tracked.`}>{tracking}</SettingsSection></> : null}
+    {requestedSection === "integrations/overview" ? <><SettingsPageHeader title="Connections & access" description="Review provider connections, repositories, member roles, and guest access." /><ConnectionsPage /></> : null}
     {requestedSection === "integrations/github" ? <><SettingsPageHeader title="GitHub" description="Manage the repositories that supply work, issues, and delivery activity." /><SettingsSection title="Repository access"><ProjectRepositories organizationId={organizationId} projectId={projectId} projectName={projectName} canManage={bootstrap.actor.isAdmin} connectedRepositories={connectedRepositories} /></SettingsSection></> : null}
     {requestedSection === "integrations/slack" ? <><SettingsPageHeader title="Slack" description="Manage workspace connections and verify message delivery." scope="Workspace" /><SettingsSection title="Connections"><SlackConnections organizationId={organizationId} projectId={projectId} projects={bootstrap.projects} isAdmin={bootstrap.actor.isAdmin} /></SettingsSection><SettingsSection title="Delivery test" description="Send a test message through a connected workspace."><SlackMessageBridge organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} /></SettingsSection></> : null}
     {requestedSection === "integrations/growth" ? <><SettingsPageHeader title="Growth" description="Manage acquisition and conversion sources, ingest credentials, and reporting schedules." /><TelemetrySources organizationId={organizationId} projectId={projectId} isAdmin={bootstrap.actor.isAdmin} capability="growth" /></> : null}
@@ -104,3 +106,4 @@ function ApiReference({ projectName }: { projectName: string }) {
     <p className="section-note">Project IDs, tokens, scopes and API documentation stay together in project settings.</p>
   </div>;
 }
+

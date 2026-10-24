@@ -1,3 +1,4 @@
+import { IngestionHealth } from "../../components/IngestionHealth";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { TelemetryStat } from "../../api/contracts";
@@ -27,6 +28,7 @@ export function UsageView({ organizationId, projectId, actorId, canConfigure = f
     <>
       <ServiceTabs base={base} active={view} tabs={tabs} />
       <div className="workspace-view">
+        <IngestionHealth organizationId={organizationId} projectId={projectId} capability="usage" canConfigure={canConfigure} />
         {view === "overview" ? <UsageDashboard organizationId={organizationId} projectId={projectId} actorId={actorId} canConfigure={canConfigure} mode="overview" /> : view === "engagement" ? <UsageDashboard organizationId={organizationId} projectId={projectId} actorId={actorId} canConfigure={canConfigure} mode="engagement" /> : <UsageEvents organizationId={organizationId} projectId={projectId} actorId={actorId} />}
       </div>
     </>
@@ -60,7 +62,7 @@ function UsageDashboard({ organizationId, projectId, actorId, canConfigure = fal
       {dashboard.data ? <>
         <div className="toolbar">
           <select name="timeRange" aria-label="Time range" value={range} onChange={(event) => setRange(event.target.value)}><option value="all">All time</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">This year</option></select>
-          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag tone="positive">{dashboard.data.reportStatus}</StatusTag>{mode === "engagement" && canConfigure ? <button className="button" onClick={() => setConfiguring(true)}>Configure actions</button> : null}<button className="button" onClick={exportCsv}>Export CSV</button>
+          <span className="toolbar-spacer" /><span>{dashboard.data.dateLabel}</span><StatusTag>Recorded data</StatusTag>{mode === "engagement" && canConfigure ? <button className="button" onClick={() => setConfiguring(true)}>Configure actions</button> : null}<button className="button" onClick={exportCsv}>Export CSV</button>
         </div>
         <div className="stat-grid">
           {dashboard.data.stats.filter((stat) => mode === "engagement" ? stat.id.startsWith("custom.") : !stat.id.startsWith("custom.")).map((stat) => <StatCard key={stat.id} stat={stat} />)}
@@ -184,7 +186,7 @@ function UsageEvents({ organizationId, projectId, actorId }: UsageViewProps) {
   const filtered = (events.data ?? []).filter((event) => (type === ALL_FILTER_VALUE || event.type === type) && (environment === ALL_FILTER_VALUE || event.environment.toLowerCase() === environment));
   return (
     <AsyncState loading={events.isLoading} error={events.error}>
-      <div className="toolbar"><select name="eventType" aria-label="Event type" value={type} onChange={(event) => setType(event.target.value)}><option value="all">All usage events</option>{eventTypes.map((value) => <option value={value} key={value}>{value}</option>)}</select><select name="eventEnvironment" aria-label="Environment" value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="all">All environments</option>{environments.map((value) => <option value={value.toLowerCase()} key={value}>{value}</option>)}</select><span className="toolbar-spacer" /><span>{filtered.length} events</span><StatusTag tone="positive">Receiving</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
+      <div className="toolbar"><select name="eventType" aria-label="Event type" value={type} onChange={(event) => setType(event.target.value)}><option value="all">All usage events</option>{eventTypes.map((value) => <option value={value} key={value}>{value}</option>)}</select><select name="eventEnvironment" aria-label="Environment" value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="all">All environments</option>{environments.map((value) => <option value={value.toLowerCase()} key={value}>{value}</option>)}</select><span className="toolbar-spacer" /><span>{filtered.length} events</span><StatusTag tone={events.isError ? "warning" : "neutral"}>{events.isError ? "Refresh failed" : "Recorded events"}</StatusTag><button className="button" onClick={() => void events.refetch()}>Refresh</button></div>
       <div className="list-surface">
         {filtered.map((event) => <ListRow key={event.id} symbol="↗" tone="positive" title={event.name} description={<span className="mono">{event.type} · {event.subject} · {event.environment}</span>} meta={<><StatusTag tone="positive">Accepted</StatusTag><span>{event.receivedAt}</span></>} />)}
       </div>
@@ -192,3 +194,4 @@ function UsageEvents({ organizationId, projectId, actorId }: UsageViewProps) {
     </AsyncState>
   );
 }
+
